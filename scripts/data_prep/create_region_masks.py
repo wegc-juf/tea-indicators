@@ -4,13 +4,10 @@ author: hst
 """
 
 import argparse
-import cartopy.io.shapereader as shpreader
 import geopandas as gpd
 import numpy as np
 import os
 from pathlib import Path
-import pandas as pd
-import shapely.geometry as sgeom
 from shapely.geometry import Polygon, MultiPolygon
 import sys
 from tqdm import trange
