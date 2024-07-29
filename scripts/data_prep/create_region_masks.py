@@ -38,7 +38,7 @@ def get_opts():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--region', default='AUT', type=str,
-                        help='Larger region for mask creation.')
+                        help='Region for mask creation.')
 
     parser.add_argument('--subreg',
                         type=str,
@@ -202,12 +202,14 @@ def run():
     nw_mask[np.where(mask > 0)] = 1
 
     # Create output dataset
-    da_mask = xr.DataArray(data=mask, coords={x: ([x], xvals.data), y: ([y], yvals.data)},
-                           attrs={'name': 'mask', 'long_name': 'weighted mask',
-                                  'coordinate_sys': f'EPSG:{opts.target_sys}'})
-    da_nwmask = xr.DataArray(data=nw_mask, coords={x: ([x], xvals.data), y: ([y], yvals.data)},
-                             attrs={'name': 'nw_mask', 'long_name': 'non weighted mask',
-                                    'coordinate_sys': f'EPSG:{opts.target_sys}'})
+    da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
+                           attrs={'long_name': 'weighted mask',
+                                  'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                           name='mask')
+    da_nwmask = xr.DataArray(data=nw_mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
+                             attrs={'long_name': 'non weighted mask',
+                                    'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                             name='nw_mask')
 
     ds = xr.merge([da_mask, da_nwmask])
     ds = create_history(cli_params=sys.argv, ds=ds)
