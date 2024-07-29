@@ -9,6 +9,7 @@ import argparse
 import glob
 import numpy as np
 import os
+from pathlib import Path
 import pyproj
 import sys
 from tqdm import trange
@@ -67,7 +68,7 @@ def define_wegn_grid_1000x1000(opts):
 
     # Load sample SPARTACUS data
     original_grid = xr.open_dataset(
-        os.path.join(f'{opts.folder_input}', f'{opts.parameter}2000.nc'))
+        os.path.join(f'{opts.inpath}', f'{opts.parameter}2000.nc'))
 
     # Open WEGN sample data
     wegnet = xr.open_mfdataset(os.path.join('/data/users/hst/cdrDPS/wegnet/',
@@ -197,6 +198,9 @@ def run():
 
         # Save output
         encoding = {opts.parameter: {'dtype': 'int16', 'scale_factor': 0.1, '_FillValue': -9999}}
+
+        path = Path(f'{opts.outpath}')
+        path.mkdir(parents=True, exist_ok=True)
         ds_new.to_netcdf(f'{opts.outpath}{filename}', encoding=encoding,
                          engine='netcdf4')
 
