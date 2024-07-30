@@ -179,6 +179,32 @@ def run_sea(opts):
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
 
+def create_lt1500m_mask(opts, da_nwmask):
+    """
+    create mask of all cells with an altitude lower than 1500m
+    Args:
+        opts: CLI parameter
+        da_nwmask: non weightes mask da
+
+    Returns:
+        lt1500_mask: lower than 1500m mask da
+
+    """
+    orog = xr.open_dataset(opts.orofile)
+    if 'altitude' in orog.data_vars:
+        orog = orog.altitude
+    else:
+        orog = orog.orog
+
+    lt1500_mask = da_nwmask.copy()
+    lt1500_mask = lt1500_mask.where(orog < 1500)
+    lt1500_mask = lt1500_mask.rename('lt1500_mask')
+    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
+                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    return lt1500_mask
+
+
 def run():
     opts = get_opts()
 
@@ -243,12 +269,7 @@ def run():
                                  name='nw_mask')
 
         # Create below 1500m mask
-        orog = xr.open_dataset(opts.orofile)
-        lt1500_mask = da_nwmask.copy()
-        lt1500_mask = lt1500_mask.where(orog < 1500)
-        lt1500_mask = lt1500_mask.rename('lt1500_mask')
-        lt1500_mask.attrs = {'long_name': 'below 1500m mask',
-                             'coordinate_sys': f'EPSG:{opts.target_sys}'}
+        lt1500_mask = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
         ds = create_history(cli_params=sys.argv, ds=ds)
