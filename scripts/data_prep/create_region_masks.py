@@ -16,6 +16,8 @@ import xarray as xr
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
 
+# /data/reloclim/backup/ZAMG_SPARTACUS/data/v202402_v2.1/SPARTACUS2-DAILY_TX_2022.nc
+
 
 def get_opts():
     """
@@ -136,7 +138,7 @@ def create_cell_polygons(opts, xvals, yvals, offset):
             cell = {'ix': row['ix'], 'iy': row['iy'], 'geometry': row['geometry']}
             cells.append(cell)
     except:
-        cells = []
+        cells_list = []
         for ix in trange(len(yvals) - 1, desc='Creating polygons for individual cells'):
             for iy in range(len(xvals) - 1):
                 cell = Polygon(
@@ -145,38 +147,19 @@ def create_cell_polygons(opts, xvals, yvals, offset):
                      (xvals[iy] + offset, yvals[ix] + offset),
                      (xvals[iy] - offset, yvals[ix] + offset),
                      (xvals[iy] - offset, yvals[ix] - offset)])
-                cells.append((ix, iy, cell))
+                cells_list.append((ix, iy, cell))
 
-        gdf = gpd.GeoDataFrame(cells, columns=['ix', 'iy', 'geometry'])
+        gdf = gpd.GeoDataFrame(cells_list, columns=['ix', 'iy', 'geometry'])
         gdf.to_file(fname, driver='ESRI Shapefile')
 
+        # Load gdf from file otherwise index error later
+        gdf = gpd.read_file(fname)
+        cells = []
+        for idx, row in gdf.iterrows():
+            cell = {'ix': row['ix'], 'iy': row['iy'], 'geometry': row['geometry']}
+            cells.append(cell)
+
     return cells
-
-
-def run_sea(opts):
-    """
-    create SEA mask (part of SAr that's within AUT)
-    Args:
-        opts: CLI parameter
-
-    Returns:
-
-    """
-
-    try:
-        aut = xr.open_dataset(f'{opts.outpath}AUT_masks_{opts.target_ds}.nc')
-        sar = xr.open_dataset(f'{opts.outpath}SAR_masks_{opts.target_ds}.nc')
-    except FileNotFoundError:
-        raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
-
-    mask = sar['nw_mask'].where(aut['mask'].notnull())
-    nwmask = mask.where(mask.isnull(), 1)
-    lt1500_mask = sar['lt1500_mask'].where(aut['lt1500_mask'].notnull())
-
-    ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
-
-    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
 
 def create_lt1500m_mask(opts, da_nwmask):
@@ -205,6 +188,41 @@ def create_lt1500m_mask(opts, da_nwmask):
     return lt1500_mask
 
 
+def run_sea(opts):
+    """
+    create SEA mask (part of SAr that's within AUT)
+    Args:
+        opts: CLI parameter
+
+    Returns:
+
+    """
+
+    try:
+        aut = xr.open_dataset(f'{opts.outpath}AUT_masks_{opts.target_ds}.nc')
+        sar = xr.open_dataset(f'{opts.outpath}SAR_masks_{opts.target_ds}.nc')
+    except FileNotFoundError:
+        raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
+
+    mask = aut['mask'].where(sar['nw_mask'].notnull())
+    mask = mask.rename('mask')
+    mask.attrs = {'long_name': 'weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    nwmask = mask.copy()
+    nwmask = nwmask.where(mask.isnull(), 1)
+    nwmask = nwmask.rename('nw_mask')
+    nwmask.attrs = {'long_name': 'non weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    lt1500_mask = sar['lt1500_mask'].where(aut['lt1500_mask'].notnull())
+    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
+                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    ds = xr.merge([mask, nwmask, lt1500_mask])
+    ds = create_history(cli_params=sys.argv, ds=ds)
+
+    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
+
+
 def run():
     opts = get_opts()
 
@@ -223,8 +241,13 @@ def run():
         xvals, yvals = dummy[x], dummy[y]
 
         # Get grid spacing
-        dx = set(xvals[1:].values - xvals[:-1].values)
-        dy = set(yvals[1:].values - yvals[:-1].values)
+        # Coordinates of ERA5Land have some precision trouble
+        if opts.target_ds == 'ERA5Land':
+            dx = set(abs(np.round(xvals[1:].values - xvals[:-1].values, 2)))
+            dy = set(abs(np.round(yvals[1:].values - yvals[:-1].values, 2)))
+        else:
+            dx = set(abs(xvals[1:].values - xvals[:-1].values))
+            dy = set(abs(yvals[1:].values - yvals[:-1].values))
         if len(dx) > 1 or len(dx) > 1 or dx != dy:
             raise ValueError('The given test file does not have a regular grid. '
                              'Provide a file with a rugular grid.')

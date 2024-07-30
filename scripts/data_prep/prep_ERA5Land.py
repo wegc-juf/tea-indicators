@@ -213,7 +213,9 @@ def run():
 
     # Save altitude in separate file
     altitude = create_history(cli_params=sys.argv, ds=altitude)
-    altitude.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
+    alt_out = altitude.copy()
+    alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
+    alt_out.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
 
     for ifile in trange(len(files), desc='Preparing ERA5Land data'):
         file = files[ifile]
@@ -240,6 +242,8 @@ def run():
         ds_out = xr.merge([tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, wind, pressure,
                            humidity, altitude])
         ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+        ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
+
         ds_out.to_netcdf(f'{opts.outpath}{filename}')
 
 
