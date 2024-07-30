@@ -153,78 +153,107 @@ def create_cell_polygons(opts, xvals, yvals, offset):
     return cells
 
 
-def run():
-    opts = get_opts()
+def run_sea(opts):
+    """
+    create SEA mask (part of SAr that's within AUT)
+    Args:
+        opts: CLI parameter
 
-    # Load dummy file
-    dummy = xr.open_dataset(opts.testfile)
-    xy = opts.xy_name.split(',')
-    x, y = xy[0], xy[1]
+    Returns:
 
-    # Load shp file and transform it to desired coordinate system
-    shp = load_shp(opts=opts)
+    """
 
-    # Define the cell grid
-    xvals, yvals = dummy[x], dummy[y]
+    try:
+        aut = xr.open_dataset(f'{opts.outpath}AUT_masks_{opts.target_ds}.nc')
+        sar = xr.open_dataset(f'{opts.outpath}SAR_masks_{opts.target_ds}.nc')
+    except FileNotFoundError:
+        raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
 
-    # Get grid spacing
-    dx = set(xvals[1:].values - xvals[:-1].values)
-    dy = set(yvals[1:].values - yvals[:-1].values)
-    if len(dx) > 1 or len(dx) > 1 or dx != dy:
-        raise ValueError('The given test file does not have a regular grid. '
-                         'Provide a file with a rugular grid.')
-    dx, dy = list(dx)[0], list(dy)[0]
-    offset = dx / 2
+    mask = sar['nw_mask'].where(aut['mask'].notnull())
+    nwmask = mask.where(mask.isnull(), 1)
+    lt1500_mask = sar['lt1500_mask'].where(aut['lt1500_mask'].notnull())
 
-    # Initialize mask array
-    mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
-
-    geom = shp.geometry.iloc[0]
-    if isinstance(geom, MultiPolygon):
-        poly = geom.geoms[1]
-    else:
-        poly = geom
-
-    cells = create_cell_polygons(opts=opts, xvals=xvals, yvals=yvals, offset=offset)
-
-    # Check intersections and calculate mask values
-    total_cells = len(cells)
-    for i in trange(total_cells, desc='Calculating fractions for cells'):
-        icell = cells[i]
-        ix, iy, cell = icell['ix'], icell['iy'], icell['geometry']
-        intersection = poly.intersection(cell)
-        if not intersection.is_empty:
-            mask[ix, iy] += intersection.area / cell.area
-
-    # Set cells outside of region to nan
-    mask[np.where(mask == 0)] = np.nan
-
-    # Create non-weighted mask
-    nw_mask = mask.copy()
-    nw_mask[np.where(mask > 0)] = 1
-
-    # Convert to da
-    da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
-                           attrs={'long_name': 'weighted mask',
-                                  'coordinate_sys': f'EPSG:{opts.target_sys}'},
-                           name='mask')
-    da_nwmask = xr.DataArray(data=nw_mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
-                             attrs={'long_name': 'non weighted mask',
-                                    'coordinate_sys': f'EPSG:{opts.target_sys}'},
-                             name='nw_mask')
-
-    # Create below 1500m mask
-    orog = xr.open_dataset(opts.orofile)
-    lt1500_mask = da_nwmask.copy()
-    lt1500_mask = lt1500_mask.where(orog < 1500)
-    lt1500_mask = lt1500_mask.rename('lt1500_mask')
-    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
-                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
+    ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history(cli_params=sys.argv, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
+
+
+def run():
+    opts = get_opts()
+
+    if opts.region == 'SEA':
+        run_sea(opts=opts)
+    else:
+        # Load dummy file
+        dummy = xr.open_dataset(opts.testfile)
+        xy = opts.xy_name.split(',')
+        x, y = xy[0], xy[1]
+
+        # Load shp file and transform it to desired coordinate system
+        shp = load_shp(opts=opts)
+
+        # Define the cell grid
+        xvals, yvals = dummy[x], dummy[y]
+
+        # Get grid spacing
+        dx = set(xvals[1:].values - xvals[:-1].values)
+        dy = set(yvals[1:].values - yvals[:-1].values)
+        if len(dx) > 1 or len(dx) > 1 or dx != dy:
+            raise ValueError('The given test file does not have a regular grid. '
+                             'Provide a file with a rugular grid.')
+        dx, dy = list(dx)[0], list(dy)[0]
+        offset = dx / 2
+
+        # Initialize mask array
+        mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
+
+        geom = shp.geometry.iloc[0]
+        if isinstance(geom, MultiPolygon):
+            poly = geom.geoms[1]
+        else:
+            poly = geom
+
+        cells = create_cell_polygons(opts=opts, xvals=xvals, yvals=yvals, offset=offset)
+
+        # Check intersections and calculate mask values
+        total_cells = len(cells)
+        for i in trange(total_cells, desc='Calculating fractions for cells'):
+            icell = cells[i]
+            ix, iy, cell = icell['ix'], icell['iy'], icell['geometry']
+            intersection = poly.intersection(cell)
+            if not intersection.is_empty:
+                mask[ix, iy] += intersection.area / cell.area
+
+        # Set cells outside of region to nan
+        mask[np.where(mask == 0)] = np.nan
+
+        # Create non-weighted mask
+        nw_mask = mask.copy()
+        nw_mask[np.where(mask > 0)] = 1
+
+        # Convert to da
+        da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
+                               attrs={'long_name': 'weighted mask',
+                                      'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                               name='mask')
+        da_nwmask = xr.DataArray(data=nw_mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
+                                 attrs={'long_name': 'non weighted mask',
+                                        'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                                 name='nw_mask')
+
+        # Create below 1500m mask
+        orog = xr.open_dataset(opts.orofile)
+        lt1500_mask = da_nwmask.copy()
+        lt1500_mask = lt1500_mask.where(orog < 1500)
+        lt1500_mask = lt1500_mask.rename('lt1500_mask')
+        lt1500_mask.attrs = {'long_name': 'below 1500m mask',
+                             'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+        ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
+        ds = create_history(cli_params=sys.argv, ds=ds)
+
+        ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
 
 if __name__ == '__main__':

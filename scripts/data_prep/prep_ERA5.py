@@ -5,14 +5,10 @@
 """
 
 import argparse
-from cftime import date2num
-import datetime as dt
 import glob
-import netCDF4 as nc
 from metpy import calc
 import numpy as np
 import os
-import pandas as pd
 import sys
 from tqdm import trange
 import warnings
@@ -83,7 +79,7 @@ def calc_altitude_dt(data):
 
 def resample_temperature(data, delta, tz):
     """
-    resample temperature to daily data and save it in degree C
+    resample temperature to daily data and save it in °C
     Args:
         data: 2m temperature data
         delta: time offset to UTC
@@ -116,9 +112,9 @@ def resample_temperature(data, delta, tz):
         tmin = tmin + tmin_tz
         tmax = tmax + tmax_tz
 
-    tav = tav.rename('Tav')
-    tmin = tmin.rename('Tmin')
-    tmax = tmax.rename('Tmax')
+    tav = tav.rename('T')
+    tmin = tmin.rename('Tn')
+    tmax = tmax.rename('Tx')
 
     # Set attributes
     tmin.attrs = {'units': '°C', 'long_name': 'daily minimum temperature'}
@@ -274,6 +270,10 @@ def run():
 
     files = sorted(glob.glob(f'{opts.inpath}*ERA5*nc'))
     altitude, delta_utc, time_zones = calc_altitude_dt(data=files[0])
+
+    # Save altitude in separate file
+    altitude = create_history(cli_params=sys.argv, ds=altitude)
+    altitude.to_netcdf(f'{opts.outpath}ERA5_orography.nc')
 
     for ifile in trange(len(files), desc='Preparing ERA5 data'):
         file = files[ifile]
