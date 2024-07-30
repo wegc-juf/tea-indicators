@@ -211,6 +211,8 @@ def run():
     ds = xr.merge([da_mask, da_nwmask])
     ds = create_history(cli_params=sys.argv, ds=ds)
 
+    # TODO: add orography mask creation here
+
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
 

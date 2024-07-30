@@ -29,7 +29,13 @@ def get_opts():
         if os.path.isdir(path):
             return path
         else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path')
+            raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
+
+    def file(entry):
+        if os.path.isfile(entry):
+            return entry
+        else:
+            raise argparse.ArgumentTypeError(f'{entry} is not a valid file.')
 
     parser = argparse.ArgumentParser()
 
@@ -44,6 +50,16 @@ def get_opts():
                         default='/data/reloclim/backup/ZAMG_SPARTACUS/data/v202108/',
                         type=dir_path,
                         help='Path of folder where data is located.')
+
+    parser.add_argument('--orography',
+                        action='store_true',
+                        help='Set if orography should be regridded.')
+
+    parser.add_argument('--orofile',
+                        default='/data/reloclim/backup/ZAMG_INCA/data/original/'
+                                'INCA_orog_corrected_y_dim.nc',
+                        type=file,
+                        help='Orography file only necessary if "orography" is set to true.')
 
     parser.add_argument('--outpath',
                         default='/data/users/hst/TEA-clean/SPARTACUS/',
@@ -171,38 +187,59 @@ def regrid_spartacus(opts, ds_in, method="linear"):
     return ds_regridded
 
 
+def regrid_orog(opts):
+    """
+    regrid orography to new grid
+    :return:
+    """
+
+    orog_file = xr.open_dataset(opts.orofile)
+    oro_new = regrid_spartacus(opts=opts, ds_in=orog_file.orog, method='linear')
+    oro_new = oro_new.assign_attrs(grid_mapping='UTM33N')
+    oro_new = create_history(cli_params=sys.argv, ds=oro_new)
+    oro_new.attrs['crs'] = 'EPSG:32633'
+
+    path = Path(f'{opts.outpath}')
+    path.mkdir(parents=True, exist_ok=True)
+    oro_new.to_netcdf(f'{opts.outpath}SPARTACUSreg_orography.nc')
+
+
 def run():
     opts = get_opts()
-    input_files = sorted(glob.glob(f'{opts.inpath}/*{opts.parameter}*.nc'))
 
-    for ifile in trange(len(input_files), desc='Regridding files'):
-        filename = input_files[ifile].split('/')[-1]
+    if opts.orography:
+        regrid_orog(opts=opts)
+    else:
+        input_files = sorted(glob.glob(f'{opts.inpath}/*{opts.parameter}*.nc'))
+        for ifile in trange(len(input_files), desc='Regridding files'):
+            filename = input_files[ifile].split('/')[-1]
 
-        # Open SPARTACUS file
-        ds = xr.open_dataset(input_files[ifile], engine='netcdf4')
+            # Open SPARTACUS file
+            ds = xr.open_dataset(input_files[ifile], engine='netcdf4')
 
-        # Regrid to extended WEGN grid
-        ds_new = regrid_spartacus(opts=opts, ds_in=ds, method='linear')
-        ds_new = ds_new.assign_attrs(grid_mapping='UTM33N')
+            # Regrid to extended WEGN grid
+            ds_new = regrid_spartacus(opts=opts, ds_in=ds, method='linear')
+            ds_new = ds_new.assign_attrs(grid_mapping='UTM33N')
 
-        # Add history to attributes and change crs to EPSG:32633
-        ds_new = create_history(cli_params=sys.argv, ds=ds_new)
-        ds_new.attrs['crs'] = 'EPSG:32633'
+            # Add history to attributes and change crs to EPSG:32633
+            ds_new = create_history(cli_params=sys.argv, ds=ds_new)
+            ds_new.attrs['crs'] = 'EPSG:32633'
 
-        # Rename variables if necessary
-        if opts.parameter == 'TX':
-            ds_new = ds_new.rename({'TX': 'Tx'})
-            opts.parameter = 'Tx'
-        elif opts.parameter == 'TN':
-            ds_new = ds_new.rename({'TN': 'Tn'})
+            # Rename variables if necessary
+            if opts.parameter == 'TX':
+                ds_new = ds_new.rename({'TX': 'Tx'})
+                opts.parameter = 'Tx'
+            elif opts.parameter == 'TN':
+                ds_new = ds_new.rename({'TN': 'Tn'})
 
-        # Save output
-        encoding = {opts.parameter: {'dtype': 'int16', 'scale_factor': 0.1, '_FillValue': -9999}}
+            # Save output
+            encoding = {opts.parameter: {'dtype': 'int16', 'scale_factor': 0.1,
+                                         '_FillValue': -9999}}
 
-        path = Path(f'{opts.outpath}')
-        path.mkdir(parents=True, exist_ok=True)
-        ds_new.to_netcdf(f'{opts.outpath}{filename}', encoding=encoding,
-                         engine='netcdf4')
+            path = Path(f'{opts.outpath}')
+            path.mkdir(parents=True, exist_ok=True)
+            ds_new.to_netcdf(f'{opts.outpath}{filename}', encoding=encoding,
+                             engine='netcdf4')
 
 
 if __name__ == '__main__':
