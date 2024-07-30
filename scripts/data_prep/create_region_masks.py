@@ -16,8 +16,6 @@ import xarray as xr
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
 
-# /data/reloclim/backup/ZAMG_SPARTACUS/data/v202402_v2.1/SPARTACUS2-DAILY_TX_2022.nc
-
 
 def get_opts():
     """
@@ -42,7 +40,7 @@ def get_opts():
     parser.add_argument('--subreg',
                         type=str,
                         help='Optional: In case of Austrian states, give name of state. '
-                             'In case of european country, give ISO3 code od country.')
+                             'In case of european country, give ISO2 code od country.')
 
     parser.add_argument('--target_sys',
                         default=3416,
@@ -127,9 +125,13 @@ def create_cell_polygons(opts, xvals, yvals, offset):
 
     """
 
-    path = Path(f'{opts.outpath}polygons/{opts.region}_EPSG{opts.target_sys}_{opts.target_ds}/')
+    out_region = opts.region
+    if opts.subreg:
+        out_region = opts.subreg
+
+    path = Path(f'{opts.outpath}polygons/{out_region}_EPSG{opts.target_sys}_{opts.target_ds}/')
     path.mkdir(parents=True, exist_ok=True)
-    fname = f'{path}/{opts.region}_cells_EPSG{opts.target_sys}_{opts.target_ds}.shp'
+    fname = f'{path}/{out_region}_cells_EPSG{opts.target_sys}_{opts.target_ds}.shp'
 
     try:
         gdf = gpd.read_file(fname)
@@ -241,8 +243,8 @@ def run():
         xvals, yvals = dummy[x], dummy[y]
 
         # Get grid spacing
-        # Coordinates of ERA5Land have some precision trouble
-        if opts.target_ds == 'ERA5Land':
+        # Coordinates of ERA5(Land) have some precision trouble
+        if opts.target_ds in ['ERA5', 'ERA5Land']:
             dx = set(abs(np.round(xvals[1:].values - xvals[:-1].values, 2)))
             dy = set(abs(np.round(yvals[1:].values - yvals[:-1].values, 2)))
         else:
@@ -250,16 +252,21 @@ def run():
             dy = set(abs(yvals[1:].values - yvals[:-1].values))
         if len(dx) > 1 or len(dx) > 1 or dx != dy:
             raise ValueError('The given test file does not have a regular grid. '
-                             'Provide a file with a rugular grid.')
+                             'Provide a file with a regular grid.')
         dx, dy = list(dx)[0], list(dy)[0]
         offset = dx / 2
 
         # Initialize mask array
         mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
 
+        # The following part is very sensible to the shape file that is used.
+        # Lots of trial and error here...
         geom = shp.geometry.iloc[0]
-        if isinstance(geom, MultiPolygon):
-            poly = geom.geoms[1]
+        if not opts.subreg:
+            if isinstance(geom, MultiPolygon):
+                poly = geom.geoms[1]
+            else:
+                poly = geom
         else:
             poly = geom
 
@@ -297,7 +304,11 @@ def run():
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
         ds = create_history(cli_params=sys.argv, ds=ds)
 
-        ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
+        out_region = opts.region
+        if opts.subreg:
+            out_region = opts.subreg
+
+        ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
 
 
 if __name__ == '__main__':
