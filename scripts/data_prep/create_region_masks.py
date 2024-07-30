@@ -67,6 +67,11 @@ def get_opts():
                         type=file,
                         help='File with coordinate information of target grid.')
 
+    parser.add_argument('--orofile',
+                        type=file,
+                        default='/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc',
+                        help='File with orography information of target grid.')
+
     parser.add_argument('--outpath',
                         dest='outpath',
                         default='/data/users/hst/TEA-clean/masks/',
@@ -198,7 +203,7 @@ def run():
     nw_mask = mask.copy()
     nw_mask[np.where(mask > 0)] = 1
 
-    # Create output dataset
+    # Convert to da
     da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
                            attrs={'long_name': 'weighted mask',
                                   'coordinate_sys': f'EPSG:{opts.target_sys}'},
@@ -208,10 +213,16 @@ def run():
                                     'coordinate_sys': f'EPSG:{opts.target_sys}'},
                              name='nw_mask')
 
-    ds = xr.merge([da_mask, da_nwmask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    # Create below 1500m mask
+    orog = xr.open_dataset(opts.orofile)
+    lt1500_mask = da_nwmask.copy()
+    lt1500_mask = lt1500_mask.where(orog < 1500)
+    lt1500_mask = lt1500_mask.rename('lt1500_mask')
+    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
+                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
-    # TODO: add orography mask creation here
+    ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
+    ds = create_history(cli_params=sys.argv, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
