@@ -19,3 +19,10 @@ EOBS: 4326
 
 *Note: all data that is regridded to the extended WEGN grid has the same coordinate system as the 
 WEGN data (EPSG:32633).
+
+### Orography files
+SPARTACUS: `/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc` (created with 
+`regrid_SPARTACUS_toWEGNext.py`) \
+ERA5: `/data/users/hst/TEA-clean/ERA5/ERA5_orography.nc` (created with `prep_ERA5.py`) \
+ERA5Land: `/data/users/hst/TEA-clean/ERA5Land/ERA5Land_orography.nc` (created with 
+`prep_ERA5Land.py`) \
