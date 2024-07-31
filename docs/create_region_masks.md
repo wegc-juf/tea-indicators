@@ -26,3 +26,6 @@ SPARTACUS: `/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc` (crea
 ERA5: `/data/users/hst/TEA-clean/ERA5/ERA5_orography.nc` (created with `prep_ERA5.py`) \
 ERA5Land: `/data/users/hst/TEA-clean/ERA5Land/ERA5Land_orography.nc` (created with 
 `prep_ERA5Land.py`) \
+
+### Land Sea Mask
+ERA5: `/data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc`

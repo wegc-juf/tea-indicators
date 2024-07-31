@@ -72,6 +72,12 @@ def get_opts():
                         default='/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc',
                         help='File with orography information of target grid.')
 
+    parser.add_argument('--lsmfile',
+                        type=file,
+                        default='/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc',
+                        help='File with land sea mask of target grid. Only necessary if mask for '
+                             'EUR should be created.')
+
     parser.add_argument('--outpath',
                         dest='outpath',
                         default='/data/users/hst/TEA-clean/masks/',
@@ -192,7 +198,7 @@ def create_lt1500m_mask(opts, da_nwmask):
 
 def run_sea(opts):
     """
-    create SEA mask (part of SAr that's within AUT)
+    create SEA mask (part of SAR that's within AUT)
     Args:
         opts: CLI parameter
 
@@ -225,11 +231,87 @@ def run_sea(opts):
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
 
+def prep_lsm(opts):
+    """
+    load LSM and convert coordinates
+    Args:
+        opts: CLI parameter
+
+    Returns:
+        lsm: land sea mask
+    """
+    lsm_raw = xr.open_dataset(opts.lsmfile)
+
+    data = xr.open_dataset(opts.orofile)
+    data = data.altitude
+
+    lsm_e = lsm_raw.sel(longitude=slice(180.25, 360))
+    lsm_w = lsm_raw.sel(longitude=slice(0, 180))
+    lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]),
+                                axis=1)
+
+    lsm_lon = np.arange(-180, 180, 0.25)
+
+    lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
+            'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})
+
+    lsm = lsm.sel(lat=data.lat.values, lon=data.lon.values)
+
+    return lsm
+
+
+def run_eur(opts):
+    """
+    create EUR mask
+    Args:
+        opts: CLI parameter
+
+    Returns:
+
+    """
+
+    if opts.target_ds != 'ERA5':
+        raise AttributeError('EUR mask can only be created for ERA5 data.')
+
+    # load LSM and only keep cells with more than 50% land in them
+    lsm = prep_lsm(opts=opts)
+    lsm = lsm.where(lsm > 0.5)
+
+    # create weighted mask
+    mask = lsm.copy()
+    mask = mask.where(mask > 0)
+    mask = mask.rename('mask')
+    mask.attrs = {'long_name': 'weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    # create non weighted mask
+    nwmask = mask.copy()
+    nwmask = nwmask.where(mask.isnull(), 1)
+    nwmask = nwmask.rename('nw_mask')
+    nwmask.attrs = {'long_name': 'non weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    # load orography
+    orog = xr.open_dataset(opts.orofile)
+    orog = orog.altitude
+    # create below 1500 m mask
+    lt1500_mask = nwmask.copy()
+    lt1500_mask = lt1500_mask.where(orog < 1500)
+    lt1500_mask = lt1500_mask.rename('lt1500_mask')
+    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
+                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    ds = xr.merge([mask, nwmask, lt1500_mask])
+    ds = create_history(cli_params=sys.argv, ds=ds)
+
+    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
+
+
 def run():
     opts = get_opts()
 
     if opts.region == 'SEA':
         run_sea(opts=opts)
+    elif opts.region == 'EUR':
+        run_eur(opts=opts)
     else:
         # Load dummy file
         dummy = xr.open_dataset(opts.testfile)
