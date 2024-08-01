@@ -392,6 +392,8 @@ def run():
 
         ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
 
+        # TODO: check why there is lat and lon in SPARTACUS files
+
 
 if __name__ == '__main__':
     run()

@@ -135,6 +135,7 @@ def area_grid(opts, masks):
 
     # apply GR mask
     agrid = agrid.where(masks['lt1500_mask'] == 1)
+    agrid = agrid * masks['mask']
     agrid = agrid.rename('area_grid')
     agrid.attrs = {'units': 'areals'}
 
