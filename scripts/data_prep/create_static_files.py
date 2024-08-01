@@ -194,6 +194,12 @@ def load_ref_data(opts, masks, ds_params):
         data_yr = xr.open_dataset(file)
         data_param = data_yr[var]
 
+        # in case of European wide data set all cells outside of region to nan (ERA5 data is not
+        # smoothed --> we don't need data outside of the GR and can apply mask here to reduce
+        # memory usage)
+        if opts.dataset == 'ERA5':
+            data_param = data_param.where(masks['lt1500_mask'] == 1)
+
         # only select WAS and wet days for precip
         if opts.parameter == 'P':
             data_param = data_param.sel(time=slice(f'{yr}-04-01', f'{yr}-10-31'))
@@ -273,14 +279,17 @@ def calc_percentiles(opts, masks):
         percent_smooth = xr.full_like(percent, np.nan)
         percent_smooth[:, :] = percent_smooth_arr
 
-    unit = '°C'
+    unit, vname = '°C', f'TMax-p{opts.threshold}ANN AllDOYs Ref1961-1990'
     if opts.parameter == 'P':
-        unit = 'mm'
+        unit, vname = 'mm', f'{opts.precip_var}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
+
+    percent_smooth = percent_smooth.drop('quantile')
 
     # apply GR mask
     percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
     percent_smooth = percent_smooth.rename('threshold')
-    percent_smooth.attrs = {'units': unit}
+    percent_smooth.attrs = {'units': unit, 'methods_variable_name': vname,
+                            'percentile': f'{opts.threshold}p'}
 
     return percent_smooth
 
@@ -305,13 +314,19 @@ def run():
         thr_grid = xr.full_like(masks['nw_mask'], opts.threshold)
         thr_grid = thr_grid.where(masks['lt1500_mask'] == 1)
         thr_grid = thr_grid.rename('threshold')
-        thr_grid.attrs = {'units': unit}
+        thr_grid.attrs = {'units': unit, 'abs_threshold': f'{opts.threshold}{unit}'}
     else:
         thr_grid = calc_percentiles(opts=opts, masks=masks)
 
     # combine to single dataset
     ds_out = xr.merge([area, gr_size, thr_grid])
+    del ds_out.attrs['units']
     ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+
+    # add additional attributes
+    ds_out.attrs['region'] = opts.region
+    ds_out.attrs['dataset'] = opts.dataset
+    ds_out.attrs['coordinate_sys'] = masks.attrs['coordinate_sys']
 
     # save output
     pstr = opts.parameter

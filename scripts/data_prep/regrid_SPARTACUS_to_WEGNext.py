@@ -232,6 +232,9 @@ def run():
             elif opts.parameter == 'TN':
                 ds_new = ds_new.rename({'TN': 'Tn'})
 
+            # drop unnecessary coords
+            ds_new = ds_new.drop(['lat', 'lon'])
+
             # Save output
             encoding = {opts.parameter: {'dtype': 'int16', 'scale_factor': 0.1,
                                          '_FillValue': -9999}}

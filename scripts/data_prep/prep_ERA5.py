@@ -262,7 +262,7 @@ def calc_specific_hum(t_dp, pressure, delta, tz):
 
 
 def run():
-
+    warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
     warnings.filterwarnings(action='ignore', message='invalid value encountered in true_divide')
     warnings.filterwarnings(action='ignore', message='overflow encountered in exp')
 
