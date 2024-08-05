@@ -16,6 +16,10 @@ import pandas as pd
 import warnings
 import xarray as xr
 
+DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
+             'ERA5': {'xname': 'lon', 'yname': 'lat'},
+             'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
+
 
 def getopts():
     """
@@ -82,7 +86,7 @@ def getopts():
                              '"abs" for absolute thresholds.')
 
     parser.add_argument('--inpath',
-                        default='/data/users/hst/TEA-clean/SPARTACUS/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
                         type=dir_path,
                         help='Path of folder where data is located.')
 
@@ -97,8 +101,13 @@ def getopts():
 
     parser.add_argument('--statpath',
                         type=dir_path,
-                        default='/data/users/hst/TEA-clean/static/',
-                        help='Path of folder where static files are located.')
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
+                        help='Path of folder where static file is located.')
+
+    parser.add_argument('--maskpath',
+                        type=dir_path,
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
+                        help='Path of folder where mask file is located.')
 
     parser.add_argument('--dataset',
                         dest='dataset',
@@ -163,12 +172,12 @@ def get_data(opts):
 
     # select only times of interest
     if opts.period == 'seasonal' and opts.start != '1961':
-        start = f'{opts.start-1}-12-01'
+        start = f'{opts.start - 1}-12-01'
         end = f'{opts.end}-11-30'
         ds = ds.sel(time=slice(start, end))
     elif opts.period == 'seasonal' and opts.start == '1961':
         # if first year is first year of record, exclude first winter (data of Dec 1960 missing)
-        start = f'{opts.start-1}-03-01'
+        start = f'{opts.start - 1}-03-01'
         end = f'{opts.end}-11-30'
         ds = ds.sel(time=slice(start, end))
 
@@ -186,8 +195,209 @@ def get_data(opts):
         else:
             var = opts.precip_var
     data = ds[var]
+    data = data.rename(time='days')
 
     return data
+
+
+def load_static_files(opts):
+    """
+    load GR masks and static file
+    Args:
+        opts: CLI parameter
+
+    Returns:
+        masks: GR masks (ds)
+        static: ds with threshold, area_grid, etc.
+
+    """
+
+    masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
+
+    pstr = opts.parameter
+    if opts.parameter == 'P':
+        pstr = opts.precip_var
+
+    param_str = f'{pstr}{opts.threshold}p'
+    if opts.threshold_type == 'abs':
+        unit_str = 'degC'
+        if opts.parameter == 'P':
+            unit_str = 'mm'
+        param_str = f'{pstr}{opts.threshold}{unit_str}'
+    static = xr.open_dataset(f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc')
+
+    return masks, static
+
+
+def calc_daily_basis_vars(opts, static, data):
+    """
+    compute daily basis variables following chapter 3 of TEA methods
+    Args:
+        opts: CLI parameter
+        static: static ds
+        data: data
+
+    Returns:
+        basic_vars: ds with daily basis variables (DTEC, DTEM, DTEA) both gridded and for GR
+        dtem_max: da daily maximum threshold exceedance magnitude
+
+    """
+
+    if opts.parameter == 'T':
+        data_unit = '°C'
+    else:
+        data_unit = 'mm'
+
+    # set minimum tea (unit: 100 km2)
+    tea_min = 1
+
+    # calculate DTEM
+    # equation 07
+    dtem = data - static['threshold']
+    dtem = dtem.where(dtem > 0)
+    dtem = dtem.rename('DTEM')
+    dtem.attrs = {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit}
+
+    # equation 01
+    # store DTEM for all DTEC == 1
+    dtec = dtem.where(dtem.isnull(), 1)
+    dtec = dtec.rename('DTEC')
+    dtec.attrs = {'long_name': 'daily threshold exceedance count', 'units': '1'}
+
+    # equation 02_1 not needed (cells with TEC == 0 are already nan in tem)
+    # equation 02_2
+    dtea = dtec * static['area_grid']
+
+    # equation 06
+    # calculate DTEA_GR
+    dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
+    dtea_gr = dtea_gr.rename('DTEA_GR')
+    dtea_gr = dtea_gr.assign_attrs({'long_name': 'daily threshold exceedance area',
+                                    'units': 'areals'})
+
+    # equation 03
+    # if DTEA < 1, set DTEC and DTEM to nan --> exceedance area needs to be greater
+    # than 100 km2 (1 areal) in order to keep the day as an exceedance day also replace 0 in
+    # dtea_gr by nan
+    dtec = dtec.where(dtea_gr > tea_min)
+    dtem = dtem.where(dtea_gr > tea_min)
+    dtea_gr = dtea_gr.where(dtea_gr > tea_min)
+    area_frac = (dtea_gr / static['GR_size']) * 100
+    area_frac = area_frac.rename('DTEA_frac')
+
+    # calculate dtec_gr (continues equation 03)
+    dtec_gr = dtec.notnull().any(dim=static['threshold'].dims)
+    dtec_gr = dtec_gr.where(dtec_gr == True)
+    dtec_gr = dtec_gr.rename(f'{dtec.name}_GR')
+    dtec_gr = dtec_gr.assign_attrs({'long_name': 'daily threshold exceedance count (GR)',
+                                    'units': '1'})
+
+    # equation 08
+    # calculate dtem_gr (area weighted DTEM)
+    area_fac = static['area_grid'] / dtea_gr.T
+    dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
+    dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
+    dtem_gr = dtem_gr.assign_attrs({'long_name': 'daily threshold exceedance magnitude (GR)',
+                                    'units': data_unit})
+
+    # equation 09
+    # save maximum DTEM
+    dtem_max = dtem.max(dim=static['threshold'].dims)
+    dtem_max = dtem_max.assign_attrs({'long_name': 'daily maximum grid cell exceedance magnitude',
+                                     'units': data_unit})
+
+    # equations 4 and 5
+    # calculate DTEEC(_GR)
+    dteec = calculate_event_count(dtec=dtec)
+    dteec_gr = calculate_event_count(dtec=dtec_gr)
+
+    # combine all basic variables (except DTEM_max) into one ds
+    basic_vars = xr.merge((dtec, dtec_gr, dteec, dteec_gr, dtem, dtem_gr, dtea_gr, area_frac))
+
+    return basic_vars, dtem_max
+
+
+def resample_time(opts, dys):
+    """
+    create dictionary of all start & end dates, the chosen frequency and period
+    Args:
+        opts: CLI parameter
+        dys: days array
+
+    Returns:
+
+    """
+
+    freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS_JUN',
+             'monthly': 'MS'}
+    freq = freqs[opts.period]
+
+    pstarts = pd.date_range(dys[0].values, dys[-1].values, freq=freq).to_series()
+    if opts.period == 'WAS':
+        pends = pd.date_range(dys[0].values, dys[-1].values, freq='A-OCT').to_series()
+    elif opts.period == 'ESS':
+        pends = pd.date_range(dys[0].values, dys[-1].values, freq='A-SEP').to_series()
+    else:
+        pends = pstarts - timedelta(days=1)
+        pends[0:-1] = pends[1:]
+        pends.iloc[-1] = dys[-1].values
+
+    periods = {'start': pstarts, 'end': pends, 'freq': freq, 'period': opts.period}
+
+    return periods
+
+
+def calc_dteec_1d(dtec_cell):
+    # Convert to a NumPy array and change NaN to 0
+    dtec_np = np.nan_to_num(dtec_cell, nan=0)
+
+    # Find the starts and ends of sequences (change NaNs to 0 before the diff operation)
+    change = np.diff(np.concatenate(
+        ([np.zeros((1,) + dtec_np.shape[1:]), dtec_np, np.zeros((1,) + dtec_np.shape[1:])]),
+        axis=0), axis=0)
+    starts = np.where(change == 1)
+    ends = np.where(change == -1)
+
+    # Calculate the middle points (as flat indices)
+    middle_indices = (starts[0] + ends[0] - 1) // 2
+
+    # Create an output array filled with NaNs
+    events_np = np.full(dtec_cell.shape, np.nan)
+
+    # Set the middle points to 1 (use flat indices to index into the 3D array)
+    events_np[middle_indices] = 1
+
+    return events_np
+
+
+def calculate_event_count(dtec):
+    """
+    calculate DTEEC(_GR) according to equations 4 and 5
+    Args:
+        dtec: daily threshold exceedance count
+
+    Returns:
+
+    """
+
+    if 'GR' in dtec.name:
+        dteec_np = calc_dteec_1d(dtec_cell=dtec.values)
+        dteec = xr.DataArray(dteec_np, coords=dtec.coords, dims=dtec.dims)
+        gr_str, gr_var_str = ' (GR)', '_GR'
+    else:
+        dteec = xr.full_like(dtec, np.nan)
+        dtec_3d = dtec.values
+        # loop through all rows and calculate DTEEC
+        for iy in range(len(dtec_3d[0, :, 0])):
+            dtec_row = dtec_3d[:, iy, :]
+            dteec_row = np.apply_along_axis(calc_dteec_1d, axis=0, arr=dtec_row)
+            dteec[:, iy, :] = dteec_row
+        gr_str, gr_var_str = '', ''
+
+    dteec = dteec.rename(f'DTEEC{gr_var_str}')
+    dteec.attrs = {'long_name': f'daily threshold exceedance event count{gr_str}', 'units': '1'}
+
+    return dteec
 
 
 def calc_indicators(opts):
@@ -201,7 +411,20 @@ def calc_indicators(opts):
     """
 
     data = get_data(opts=opts)
-    print()
+
+    # load GR masks and static file
+    masks, static = load_static_files(opts=opts)
+
+    # apply mask to data
+    data = data * (masks['lt1500_mask'] * masks['mask'])
+
+    # computation of daily basis variables (Methods chapter 3)
+    dbv, dtem_max = calc_daily_basis_vars(opts=opts, static=static, data=data)
+
+    # get dates for periods
+    pdates = resample_time(opts, dys=dbv.days)
+
+    # calculate EF
 
 
 def run():

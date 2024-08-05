@@ -198,6 +198,7 @@ def regrid_orog(opts):
     oro_new = oro_new.assign_attrs(grid_mapping='UTM33N')
     oro_new = create_history(cli_params=sys.argv, ds=oro_new)
     oro_new.attrs['crs'] = 'EPSG:32633'
+    oro_new = oro_new.drop(['lat', 'lon'])
 
     path = Path(f'{opts.outpath}')
     path.mkdir(parents=True, exist_ok=True)
