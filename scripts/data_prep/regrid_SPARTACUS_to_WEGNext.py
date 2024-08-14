@@ -47,7 +47,8 @@ def get_opts():
                              '[options: Tx (default), Tn, RR, RRhr].')
 
     parser.add_argument('--inpath',
-                        default='/data/reloclim/backup/ZAMG_SPARTACUS/data/v202108/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/'
+                                'v2024_v1.5/',
                         type=dir_path,
                         help='Path of folder where data is located.')
 
@@ -62,7 +63,7 @@ def get_opts():
                         help='Orography file only necessary if "orography" is set to true.')
 
     parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/SPARTACUS/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
                         help='Path of folder where output data should be saved.')
 
     myopts = parser.parse_args()
@@ -84,7 +85,7 @@ def define_wegn_grid_1000x1000(opts):
 
     # Load sample SPARTACUS data
     original_grid = xr.open_dataset(
-        os.path.join(f'{opts.inpath}', f'{opts.parameter}2000.nc'))
+        os.path.join(f'{opts.inpath}', f'SPARTACUS-DAILY_{opts.parameter}_2000.nc'))
 
     # Open WEGN sample data
     wegnet = xr.open_mfdataset(os.path.join('/data/users/hst/cdrDPS/wegnet/',

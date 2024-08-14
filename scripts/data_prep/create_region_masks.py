@@ -65,22 +65,25 @@ def get_opts():
 
     parser.add_argument('--testfile',
                         type=file,
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/'
+                                'SPARTACUS-DAILY_Tx_1961.nc',
                         help='File with coordinate information of target grid.')
 
     parser.add_argument('--orofile',
                         type=file,
-                        default='/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/'
+                                'SPARTACUSreg_orography.nc',
                         help='File with orography information of target grid.')
 
     parser.add_argument('--lsmfile',
                         type=file,
-                        default='/data/users/hst/TEA-clean/SPARTACUS/SPARTACUSreg_orography.nc',
+                        default='/data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc',
                         help='File with land sea mask of target grid. Only necessary if mask for '
                              'EUR should be created.')
 
     parser.add_argument('--outpath',
                         dest='outpath',
-                        default='/data/users/hst/TEA-clean/masks/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
                         help='Path of folder where output data should be saved.')
 
     myopts = parser.parse_args()
