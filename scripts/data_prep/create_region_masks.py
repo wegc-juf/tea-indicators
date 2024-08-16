@@ -39,8 +39,10 @@ def get_opts():
 
     parser.add_argument('--subreg',
                         type=str,
-                        help='Optional: In case of Austrian states, give name of state. '
-                             'In case of european country, give ISO2 code od country.')
+                        help='Optional: Only necessary if selected region is not the entire region '
+                             'in the shp file (Austrian states, european countries etc.). '
+                             'In case of Austrian states, give name of state. '
+                             'In case of european country, give ISO2 code of country.')
 
     parser.add_argument('--target_sys',
                         default=3416,
