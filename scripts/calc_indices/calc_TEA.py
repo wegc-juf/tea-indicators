@@ -301,7 +301,7 @@ def assign_ctp_coords(opts, data):
 
     """
 
-    freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS_JUN',
+    freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
              'monthly': 'MS'}
     freq = freqs[opts.period]
 
@@ -322,7 +322,7 @@ def assign_ctp_coords(opts, data):
     # map the 'days' coordinate to 'ctp'
     def map_to_ctp(dy, starts, ends):
         for start, end, ctp in zip(starts, ends, starts):
-            if start <= day <= end:
+            if start <= dy <= end:
                 return ctp
         return np.nan
 
@@ -331,12 +331,15 @@ def assign_ctp_coords(opts, data):
         ctp_dy = map_to_ctp(dy=day, starts=pstarts, ends=pends)
         days_to_ctp.append(ctp_dy)
 
-    data.coords['ctp'] = days_to_ctp
+    data.coords['ctp'] = ('days', days_to_ctp)
 
-    return data
+    # group into CTPs
+    data_per = data.groupby('ctp')
+
+    return data, data_per
 
 
-def calc_event_frequency(periods, dteecs):
+def calc_event_frequency_old(periods, dteecs):
     """
     calculate event frequency (Eq. 11 & 12)
     Args:
@@ -370,6 +373,28 @@ def calc_event_frequency(periods, dteecs):
         pdata = dteecs.sel(days=slice(per, periods['end'][iper]))
         ef.loc[per, :, :] = pdata['DTEEC'].sum(dim='days')
         ef_gr.loc[per] = pdata['DTEEC_GR'].sum(dim='days')
+
+    ef_ds = xr.merge([ef, ef_gr])
+
+    return ef_ds
+
+def calc_event_frequency(pdata):
+    """
+    calculate event frequency (Eq. 11 & 12)
+    Args:
+        pdata: daily basis variables grouped into CTP
+
+    Returns:
+        ef: event frequency
+    """
+
+    ef = pdata.sum('days').DTEEC
+    ef = ef.rename('EF')
+    ef.attrs = {'long_name': 'event frequency', 'units': '1'}
+
+    ef_gr = pdata.sum('days').DTEEC_GR
+    ef_gr = ef_gr.rename('EF_GR')
+    ef_gr.attrs = {'long_name': 'event frequency (GR)', 'units': '1'}
 
     ef_ds = xr.merge([ef, ef_gr])
 
@@ -409,13 +434,10 @@ def calc_indicators(opts):
             dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
     # get dates for climatic time periods (CTP) and assign coords to dbv
-    # pdates = resample_time_old(opts, dys=dbv.days)
-    pdates = assign_ctp_coords(opts, data=dbv)
-
-    # assign periods as coordinates to dbv
+    dbv, dbv_per = assign_ctp_coords(opts, data=dbv)
 
     # calculate EF
-    ef = calc_event_frequency(periods=pdates, dteecs=dbv[['DTEEC', 'DTEEC_GR']])
+    ef = calc_event_frequency(pdata=dbv_per)
 
 
 def run():
