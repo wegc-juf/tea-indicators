@@ -260,7 +260,7 @@ def load_static_files(opts):
     return masks, static
 
 
-def resample_time(opts, dys):
+def resample_time_old(opts, dys):
     """
     create dictionary of all start & end dates, the chosen frequency and period
     Args:
@@ -290,11 +290,56 @@ def resample_time(opts, dys):
     return periods
 
 
-def calc_event_frequency(opts, periods, dteecs):
+def assign_ctp_coords(opts, data):
+    """
+    create dictionary of all start & end dates, the chosen frequency and period
+    Args:
+        opts: CLI parameter
+        data: data array
+
+    Returns:
+
+    """
+
+    freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS_JUN',
+             'monthly': 'MS'}
+    freq = freqs[opts.period]
+
+    pstarts = pd.date_range(data.days[0].values, data.days[-1].values,
+                            freq=freq).to_series()
+    if opts.period == 'WAS':
+        pends = pd.date_range(data.days[0].values, data.days[-1].values,
+                              freq='A-OCT').to_series()
+    elif opts.period == 'ESS':
+        pends = pd.date_range(data.days[0].values, data.days[-1].values,
+                              freq='A-SEP').to_series()
+    else:
+        pends = pstarts - timedelta(days=1)
+        pends[0:-1] = pends[1:]
+        pends.iloc[-1] = data.days[-1].values
+
+    # add ctp as coordinates to enable using groupby later
+    # map the 'days' coordinate to 'ctp'
+    def map_to_ctp(dy, starts, ends):
+        for start, end, ctp in zip(starts, ends, starts):
+            if start <= day <= end:
+                return ctp
+        return np.nan
+
+    days_to_ctp = []
+    for day in data.days.values:
+        ctp_dy = map_to_ctp(dy=day, starts=pstarts, ends=pends)
+        days_to_ctp.append(ctp_dy)
+
+    data.coords['ctp'] = days_to_ctp
+
+    return data
+
+
+def calc_event_frequency(periods, dteecs):
     """
     calculate event frequency (Eq. 11 & 12)
     Args:
-        opts: CLI parameter
         periods: start and end dates of periods
         dteecs: daily threshold exceedance event count (gridded and GR)
 
@@ -302,17 +347,33 @@ def calc_event_frequency(opts, periods, dteecs):
         ef: event frequency
     """
 
-    # TODO: create empty da for ef and ef_gr and fill it later
+    period_ranges = xr.DataArray(
+        pd.IntervalIndex.from_arrays(periods['start'], periods['end'], closed='both'),
+        dims='periods')
+    dteecs = dteecs.assign_coords(periods=period_ranges)
+    ef_grouped = dteecs.groupby('periods').sum('days')
+    ef_gr_new = ef_grouped['DTEEC_GR'].sum(dim='days')
+
     ef = xr.DataArray(data=np.zeros((len(periods['start']), len(dteecs.y), len(dteecs.x))),
                       coords={'periods': (['periods'], periods['start']),
-                              'x': (['x'], dteecs.x.data),
-                              'y': (['y'], dteecs.y.data)})
+                              'y': (['y'], dteecs.y.data),
+                              'x': (['x'], dteecs.x.data)},
+                      name='EF',
+                      attrs={'long_name': 'event frequency', 'units': '1'})
+
+    ef_gr = xr.DataArray(data=np.zeros((len(periods['start']))),
+                         coords={'periods': (['periods'], periods['start'])},
+                         name='EF_GR',
+                         attrs={'long_name': 'event frequency (GR)', 'units': '1'})
 
     for iper, per in enumerate(periods['start']):
         pdata = dteecs.sel(days=slice(per, periods['end'][iper]))
-        print()
+        ef.loc[per, :, :] = pdata['DTEEC'].sum(dim='days')
+        ef_gr.loc[per] = pdata['DTEEC_GR'].sum(dim='days')
 
-    print()
+    ef_ds = xr.merge([ef, ef_gr])
+
+    return ef_ds
 
 
 def calc_indicators(opts):
@@ -340,17 +401,21 @@ def calc_indicators(opts):
         f'{opts.outpath}daily_basis_variables/'
         f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
-    # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates
+    # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
+    # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
     for vvar in dbv.data_vars:
         if 'GR' in vvar:
             dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
-    # get dates for climatic time periods (CTP)
-    pdates = resample_time(opts, dys=dbv.days)
+    # get dates for climatic time periods (CTP) and assign coords to dbv
+    # pdates = resample_time_old(opts, dys=dbv.days)
+    pdates = assign_ctp_coords(opts, data=dbv)
+
+    # assign periods as coordinates to dbv
 
     # calculate EF
-    ef = calc_event_frequency(opts=opts, periods=pdates, dteecs=dbv[['DTEEC', 'DTEEC_GR']])
+    ef = calc_event_frequency(periods=pdates, dteecs=dbv[['DTEEC', 'DTEEC_GR']])
 
 
 def run():
