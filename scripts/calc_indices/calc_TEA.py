@@ -339,50 +339,11 @@ def assign_ctp_coords(opts, data):
     return data, data_per
 
 
-def calc_event_frequency_old(periods, dteecs):
-    """
-    calculate event frequency (Eq. 11 & 12)
-    Args:
-        periods: start and end dates of periods
-        dteecs: daily threshold exceedance event count (gridded and GR)
-
-    Returns:
-        ef: event frequency
-    """
-
-    period_ranges = xr.DataArray(
-        pd.IntervalIndex.from_arrays(periods['start'], periods['end'], closed='both'),
-        dims='periods')
-    dteecs = dteecs.assign_coords(periods=period_ranges)
-    ef_grouped = dteecs.groupby('periods').sum('days')
-    ef_gr_new = ef_grouped['DTEEC_GR'].sum(dim='days')
-
-    ef = xr.DataArray(data=np.zeros((len(periods['start']), len(dteecs.y), len(dteecs.x))),
-                      coords={'periods': (['periods'], periods['start']),
-                              'y': (['y'], dteecs.y.data),
-                              'x': (['x'], dteecs.x.data)},
-                      name='EF',
-                      attrs={'long_name': 'event frequency', 'units': '1'})
-
-    ef_gr = xr.DataArray(data=np.zeros((len(periods['start']))),
-                         coords={'periods': (['periods'], periods['start'])},
-                         name='EF_GR',
-                         attrs={'long_name': 'event frequency (GR)', 'units': '1'})
-
-    for iper, per in enumerate(periods['start']):
-        pdata = dteecs.sel(days=slice(per, periods['end'][iper]))
-        ef.loc[per, :, :] = pdata['DTEEC'].sum(dim='days')
-        ef_gr.loc[per] = pdata['DTEEC_GR'].sum(dim='days')
-
-    ef_ds = xr.merge([ef, ef_gr])
-
-    return ef_ds
-
 def calc_event_frequency(pdata):
     """
     calculate event frequency (Eq. 11 & 12)
     Args:
-        pdata: daily basis variables grouped into CTP
+        pdata: daily basis variables grouped into CTPs
 
     Returns:
         ef: event frequency
@@ -399,6 +360,54 @@ def calc_event_frequency(pdata):
     ef_ds = xr.merge([ef, ef_gr])
 
     return ef_ds
+
+
+def calc_supplementary_event_vars(data):
+    """
+    calculate supplementary event variables (Eq. 13)
+    Args:
+        data: daily basis variables grouped into CTPs
+
+    Returns:
+        svars: supplementary variables
+
+    """
+
+    doy = [pd.Timestamp(dy.values).day_of_year for dy in data.days]
+    data.coords['doy'] = ('days', doy)
+
+    # calculate dEfirst(_GR), dElast(_GR)
+    doy_events_gr = data['doy'].where(data['DTEEC_GR'].notnull())
+    doy_events = data['doy'].where(data['DTEEC'].notnull())
+    doy_first, doy_first_gr = doy_events.groupby('ctp').min(), doy_events_gr.groupby('ctp').min()
+    doy_last, doy_last_gr = doy_events.groupby('ctp').max(), doy_events_gr.groupby('ctp').max()
+
+    # calculate annual exposure period
+    delta_y = (doy_last - doy_first + 1) / 30.5
+    delta_y_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
+
+    # add attributes
+    doy_first = doy_first.rename(f'doy_first')
+    doy_first = doy_first.assign_attrs({'long_name': 'day of first event occurrence', 'units': '1'})
+    doy_first_gr = doy_first_gr.rename(f'doy_first_GR')
+    doy_first_gr = doy_first_gr.assign_attrs({'long_name': 'day of first event occurrence (GR)',
+                                              'units': '1'})
+
+    doy_last = doy_last.rename(f'doy_last')
+    doy_last = doy_last.assign_attrs({'long_name': 'day of last event occurrence', 'units': '1'})
+    doy_last_gr = doy_last_gr.rename(f'doy_last_GR')
+    doy_last_gr = doy_last_gr.assign_attrs({'long_name': 'day of last event occurrence (GR)',
+                                            'units': '1'})
+
+    delta_y = delta_y.rename(f'delta_y')
+    delta_y = delta_y.assign_attrs({'long_name': 'annual exposure period', 'units': 'days'})
+    delta_y_gr = delta_y_gr.rename(f'delta_y_GR')
+    delta_y_gr = delta_y_gr.assign_attrs({'long_name': 'annual exposure period (GR)',
+                                          'units': 'days'})
+
+    svars = xr.merge([doy_first, doy_last, delta_y, doy_first_gr, doy_last_gr, delta_y_gr])
+
+    return svars
 
 
 def calc_indicators(opts):
@@ -436,8 +445,12 @@ def calc_indicators(opts):
     # get dates for climatic time periods (CTP) and assign coords to dbv
     dbv, dbv_per = assign_ctp_coords(opts, data=dbv)
 
-    # calculate EF
+    # calculate EF and corresponding supplementary variables
     ef = calc_event_frequency(pdata=dbv_per)
+    svars = calc_supplementary_event_vars(data=dbv)
+
+    # calculate ED
+    print()
 
 
 def run():
