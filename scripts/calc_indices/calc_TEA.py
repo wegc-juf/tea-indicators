@@ -6,15 +6,12 @@
 """
 
 import argparse
-import os
-
-import cftime as cft
 from datetime import timedelta
 import glob
 import numpy as np
+import os
 import pandas as pd
 from pathlib import Path
-import re
 import sys
 import warnings
 import xarray as xr
@@ -25,6 +22,7 @@ from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
                                           calc_event_duration, calc_exceedance_magnitude,
                                           calc_exceedance_area_tex_sev)
+from calc_decadal_indicators import calc_decadal_indicators
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -154,7 +152,7 @@ def extend_opts(opts):
 
     pstr = opts.parameter
     if opts.parameter == 'P':
-        pstr = opts.precip_var
+        pstr = f'{opts.precip_var}_'
 
     param_str = f'{pstr}{opts.threshold}p'
     if opts.threshold_type == 'abs':
@@ -255,7 +253,7 @@ def load_static_files(opts):
 
     pstr = opts.parameter
     if opts.parameter == 'P':
-        pstr = opts.precip_var
+        pstr = f'{opts.precip_var}_'
 
     param_str = f'{pstr}{opts.threshold}p'
     if opts.threshold_type == 'abs':
@@ -416,66 +414,6 @@ def calc_indicators(opts):
 
     # save output
     save_output(opts=opts, ef=ef, ed=ed, em=em, ea=ea, svars=svars, em_suppl=em_suppl, masks=masks)
-
-
-def calc_decadal_indicators(opts, suppl=False):
-    """
-    calculate decadal-mean ctp indicator variables (Eq. 23)
-    Args:
-        opts: CLI parameter
-
-    Returns:
-
-    """
-
-    ctppath = f'{opts.outpath}ctp_indicator_variables/'
-
-    sdir, suppl_str = '', ''
-    if suppl:
-        sdir = 'supplementary/'
-        suppl_str = 'suppl'
-
-    def is_in_period(filename, start, end):
-        match = re.search(r'(\d{4})to(\d{4})', filename)
-        if match:
-            file_start, file_end = int(match.group(1)), int(match.group(2))
-            return file_start <= end and file_end >= start
-        else:
-            return False
-
-    files = sorted(glob.glob(
-        f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.dataset}*.nc'))
-    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
-
-    data = xr.open_mfdataset(files, data_vars='minimal')
-
-    # check is more data than chosen period is loaded and select correct period if so
-    syr, eyr = int(files[0].split('_')[-1][:4]), int(files[-1].split('_')[-1][6:10])
-    if opts.start != syr or opts.end != eyr:
-        data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
-
-    # equation 23 (decadal averaging)
-    weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
-    for ivar in data.data_vars:
-        data[ivar] = data.rolling(ctp=10, center=True).construct('window')[ivar].dot(
-            weights)
-
-    # adjust doy_first(_GR) and doy_last(_GR) (Eq. 24)
-    if 'doy_first' in data.data_vars:
-        data['doy_first'] = data['doy_first'] - 0.5 * (
-                    30.5 * data['delta_y'] - (data['doy_last'] - data['doy_first'] + 1))
-        data['doy_last'] = data['doy_last'] + 0.5 * (
-                    30.5 * data['delta_y'] - (data['doy_last'] - data['doy_first'] + 1))
-        data['doy_first_GR'] = data['doy_first_GR'] - 0.5 * (
-                    30.5 * data['delta_y_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
-        data['doy_last_GR'] = data['doy_last_GR'] + 0.5 * (
-                    30.5 * data['delta_y_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
-
-    path = Path(f'{opts.outpath}dec_indicator_variables/supplementary/')
-    path.mkdir(parents=True, exist_ok=True)
-    data.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                   f'DEC{suppl_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
 
 
 def run():
