@@ -14,10 +14,16 @@ import glob
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import sys
 import warnings
 import xarray as xr
 
+sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+from general_functions import create_history
 from calc_daily_basis_vars import calc_daily_basis_vars
+from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
+                                          calc_event_duration, calc_exceedance_magnitude,
+                                          calc_exceedance_area_tex_sev)
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -260,36 +266,6 @@ def load_static_files(opts):
     return masks, static
 
 
-def resample_time_old(opts, dys):
-    """
-    create dictionary of all start & end dates, the chosen frequency and period
-    Args:
-        opts: CLI parameter
-        dys: days array
-
-    Returns:
-
-    """
-
-    freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS_JUN',
-             'monthly': 'MS'}
-    freq = freqs[opts.period]
-
-    pstarts = pd.date_range(dys[0].values, dys[-1].values, freq=freq).to_series()
-    if opts.period == 'WAS':
-        pends = pd.date_range(dys[0].values, dys[-1].values, freq='A-OCT').to_series()
-    elif opts.period == 'ESS':
-        pends = pd.date_range(dys[0].values, dys[-1].values, freq='A-SEP').to_series()
-    else:
-        pends = pstarts - timedelta(days=1)
-        pends[0:-1] = pends[1:]
-        pends.iloc[-1] = dys[-1].values
-
-    periods = {'start': pstarts, 'end': pends, 'freq': freq, 'period': opts.period}
-
-    return periods
-
-
 def assign_ctp_coords(opts, data):
     """
     create dictionary of all start & end dates, the chosen frequency and period
@@ -339,75 +315,51 @@ def assign_ctp_coords(opts, data):
     return data, data_per
 
 
-def calc_event_frequency(pdata):
+def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
     """
-    calculate event frequency (Eq. 11 & 12)
+    save data arrays to output datasets
     Args:
-        pdata: daily basis variables grouped into CTPs
+        opts: CLI parameter
+        ef: EF da
+        ed: ED da
+        em: EM da
+        ea: EA da
+        svars: suppl. vars da
+        em_suppl: suppl. EM da
+        masks: masks
 
     Returns:
-        ef: event frequency
-    """
-
-    ef = pdata.sum('days').DTEEC
-    ef = ef.rename('EF')
-    ef.attrs = {'long_name': 'event frequency', 'units': '1'}
-
-    ef_gr = pdata.sum('days').DTEEC_GR
-    ef_gr = ef_gr.rename('EF_GR')
-    ef_gr.attrs = {'long_name': 'event frequency (GR)', 'units': '1'}
-
-    ef_ds = xr.merge([ef, ef_gr])
-
-    return ef_ds
-
-
-def calc_supplementary_event_vars(data):
-    """
-    calculate supplementary event variables (Eq. 13)
-    Args:
-        data: daily basis variables grouped into CTPs
-
-    Returns:
-        svars: supplementary variables
 
     """
+    # combine to output dataset
+    ds_out = xr.merge([ef, ed, em, ea])
+    ds_out_suppl = xr.merge([svars, em_suppl])
 
-    doy = [pd.Timestamp(dy.values).day_of_year for dy in data.days]
-    data.coords['doy'] = ('days', doy)
+    ds_out['ctp'] = ds_out['ctp'].assign_attrs(
+        {'long_name': f'climatic time period ({opts.period})'})
+    ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(
+        {'long_name': f'climatic time period ({opts.period})'})
 
-    # calculate dEfirst(_GR), dElast(_GR)
-    doy_events_gr = data['doy'].where(data['DTEEC_GR'].notnull())
-    doy_events = data['doy'].where(data['DTEEC'].notnull())
-    doy_first, doy_first_gr = doy_events.groupby('ctp').min(), doy_events_gr.groupby('ctp').min()
-    doy_last, doy_last_gr = doy_events.groupby('ctp').max(), doy_events_gr.groupby('ctp').max()
+    mask = masks['lt1500_mask'] * masks['mask']
+    # apply masks to grid data again (sum etc. results in 0 outside of region)
+    for vvar in ds_out.data_vars:
+        if 'GR' not in vvar:
+            ds_out[vvar] = ds_out[vvar].where(mask == 1)
+    for vvar in ds_out_suppl.data_vars:
+        if 'GR' not in vvar:
+            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(mask == 1)
 
-    # calculate annual exposure period
-    delta_y = (doy_last - doy_first + 1) / 30.5
-    delta_y_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
+    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    ds_out_suppl = create_history(cli_params=sys.argv, ds=ds_out_suppl)
 
-    # add attributes
-    doy_first = doy_first.rename(f'doy_first')
-    doy_first = doy_first.assign_attrs({'long_name': 'day of first event occurrence', 'units': '1'})
-    doy_first_gr = doy_first_gr.rename(f'doy_first_GR')
-    doy_first_gr = doy_first_gr.assign_attrs({'long_name': 'day of first event occurrence (GR)',
-                                              'units': '1'})
-
-    doy_last = doy_last.rename(f'doy_last')
-    doy_last = doy_last.assign_attrs({'long_name': 'day of last event occurrence', 'units': '1'})
-    doy_last_gr = doy_last_gr.rename(f'doy_last_GR')
-    doy_last_gr = doy_last_gr.assign_attrs({'long_name': 'day of last event occurrence (GR)',
-                                            'units': '1'})
-
-    delta_y = delta_y.rename(f'delta_y')
-    delta_y = delta_y.assign_attrs({'long_name': 'annual exposure period', 'units': 'days'})
-    delta_y_gr = delta_y_gr.rename(f'delta_y_GR')
-    delta_y_gr = delta_y_gr.assign_attrs({'long_name': 'annual exposure period (GR)',
-                                          'units': 'days'})
-
-    svars = xr.merge([doy_first, doy_last, delta_y, doy_first_gr, doy_last_gr, delta_y_gr])
-
-    return svars
+    path = Path(f'{opts.outpath}ctp_indicator_variables/')
+    path.mkdir(parents=True, exist_ok=True)
+    ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/'
+                     f'CTP_{opts.param_str}_{opts.region}_{opts.dataset}'
+                     f'_{opts.start}to{opts.end}.nc')
+    ds_out_suppl.to_netcdf(f'{opts.outpath}ctp_indicator_variables/'
+                           f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.dataset}'
+                           f'_{opts.start}to{opts.end}.nc')
 
 
 def calc_indicators(opts):
@@ -420,17 +372,16 @@ def calc_indicators(opts):
 
     """
 
-    # data = get_data(opts=opts)
+    data = get_data(opts=opts)
 
     # load GR masks and static file
-    # masks, static = load_static_files(opts=opts)
-    #
-    # # apply mask to data
-    # data = data * (masks['lt1500_mask'] * masks['mask'])
+    masks, static = load_static_files(opts=opts)
+
+    # apply mask to data
+    data = data * (masks['lt1500_mask'] * masks['mask'])
 
     # computation of daily basis variables (Methods chapter 3)
-    # TODO: uncomment again later
-    # calc_daily_basis_vars(opts=opts, static=static, data=data)
+    calc_daily_basis_vars(opts=opts, static=static, data=data)
     dbv = xr.open_dataset(
         f'{opts.outpath}daily_basis_variables/'
         f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
@@ -450,7 +401,16 @@ def calc_indicators(opts):
     svars = calc_supplementary_event_vars(data=dbv)
 
     # calculate ED
-    print()
+    ed = calc_event_duration(pdata=dbv_per, ef=ef)
+
+    # calculate EM
+    em, em_suppl = calc_exceedance_magnitude(opts=opts, pdata=dbv_per, ed=ed)
+
+    # calculate EA
+    ea = calc_exceedance_area_tex_sev(opts=opts, data=dbv, ed=ed, em=em)
+
+    # save output
+    save_output(opts=opts, ef=ef, ed=ed, em=em, ea=ea, svars=svars, em_suppl=em_suppl, masks=masks)
 
 
 def run():
