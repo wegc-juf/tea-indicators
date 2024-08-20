@@ -129,18 +129,18 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     em_avg_gr = em_avg_gr.rename('EMavg_GR')
     em_avg_gr.attrs = {'long_name': 'average exceedance magnitude (GR)', 'units': data_unit}
 
-    em_avg_med = em_avg_med.rename('EMavg_med')
+    em_avg_med = em_avg_med.rename('EMavg_Md')
     em_avg_med.attrs = {'long_name': 'average daily-median  exceedance magnitude',
                         'units': data_unit}
 
-    em_avg_gr_med = em_avg_gr_med.rename('EMavg_GR_med')
+    em_avg_gr_med = em_avg_gr_med.rename('EMavg_Md_GR')
     em_avg_gr_med.attrs = {'long_name': 'average daily-median exceedance magnitude (GR)',
                            'units': data_unit}
 
-    em_med = em_med.rename('EM_med')
+    em_med = em_med.rename('EM_Md')
     em_med.attrs = {'long_name': 'cumulative daily-median exceedance magnitude', 'units': data_unit}
 
-    em_gr_med = em_gr_med.rename('EM_GR_med')
+    em_gr_med = em_gr_med.rename('EM_Md_GR')
     em_gr_med.attrs = {'long_name': 'cumulative daily-median exceedance magnitude (GR)',
                        'units': data_unit}
 
@@ -148,7 +148,7 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     em_gr_max.attrs = {'long_name': 'cumulative maximum exceedance magnitude (GR)',
                        'units': data_unit}
 
-    em_gr_avg_max = em_gr_avg_max.rename('EM_Max_avg_GR')
+    em_gr_avg_max = em_gr_avg_max.rename('EMavg_Max_GR')
     em_gr_avg_max.attrs = {'long_name': 'average maximum exceedance magnitude (GR)',
                            'units': data_unit}
 

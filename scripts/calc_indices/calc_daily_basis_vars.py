@@ -1,5 +1,6 @@
 import glob
 import numpy as np
+import os
 from pathlib import Path
 import xarray as xr
 
@@ -178,11 +179,12 @@ def calc_daily_basis_vars(opts, static, data):
     calculate_event_count(opts=opts, dtec=dtec_gr)
 
     # combine all basic variables into one ds
-    bv_ds = xr.open_mfdataset(sorted(glob.glob(
+    bv_files = sorted(glob.glob(
         f'{opts.outpath}daily_basis_variables/tmp/'
-        f'*_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')),
-                              data_vars='minimal')
+        f'*_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc'))
+    bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
     bv_ds.to_netcdf(f'{opts.outpath}daily_basis_variables/'
                     f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
-    # TODO: remove tmp folder after this (couldn't figure out how yet)
+    for file in bv_files:
+        os.system(f'rm {file}')

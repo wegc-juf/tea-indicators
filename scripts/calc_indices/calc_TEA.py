@@ -234,6 +234,9 @@ def get_data(opts):
     data = ds[var]
     data = data.rename(time='days')
 
+    if opts.dataset == 'SPARTACUS':
+        data = data.drop('lambert_conformal_conic')
+
     return data
 
 
@@ -372,16 +375,16 @@ def calc_indicators(opts):
 
     """
 
-    # data = get_data(opts=opts)
+    data = get_data(opts=opts)
 
     # load GR masks and static file
     masks, static = load_static_files(opts=opts)
 
     # apply mask to data
-    # data = data * (masks['lt1500_mask'] * masks['mask'])
+    data = data * (masks['lt1500_mask'] * masks['mask'])
 
     # computation of daily basis variables (Methods chapter 3)
-    # calc_daily_basis_vars(opts=opts, static=static, data=data)
+    calc_daily_basis_vars(opts=opts, static=static, data=data)
     dbv = xr.open_dataset(
         f'{opts.outpath}daily_basis_variables/'
         f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
@@ -419,8 +422,6 @@ def calc_indicators(opts):
 def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
-    # warnings.filterwarnings(action='ignore', message='invalid value encountered in true_divide')
-    # warnings.filterwarnings(action='ignore', message='invalid value encountered in multiply')
 
     # load CLI parameter
     opts = getopts()

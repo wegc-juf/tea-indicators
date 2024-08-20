@@ -136,7 +136,7 @@ def calc_exceedance_area_tex_sev(opts, data, ed, em):
     if opts.parameter == 'T':
         em_var, em_avg_var = 'EM_GR', 'EMavg_GR'
     else:
-        em_var, em_avg_var = 'EM_GR_med', 'EMavg_GR_med'
+        em_var, em_avg_var = 'EM_Md_GR', 'EMavg_Md_GR'
 
     tex = (data['DTEM_GR'] * data['DTEA_GR']).groupby('ctp').sum('days')
     ea_gr = tex / em[em_var]

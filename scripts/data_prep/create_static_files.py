@@ -64,19 +64,19 @@ def get_opts():
 
     parser.add_argument('--inpath',
                         dest='inpath',
-                        default='/data/users/hst/TEA-clean/SPARTACUS/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
                         type=dir_path,
                         help='Path of input data.')
 
     parser.add_argument('--maskpath',
                         dest='maskpath',
-                        default='/data/users/hst/TEA-clean/masks/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
                         type=dir_path,
                         help='Path of folder where GR masks are located.')
 
     parser.add_argument('--outpath',
                         dest='outpath',
-                        default='/data/users/hst/TEA-clean/static/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
                         type=dir_path,
                         help='Path of folder where static file should be saved.')
 
@@ -187,7 +187,7 @@ def load_ref_data(opts, masks, ds_params):
 
     idx = 0
     for yr in ref_period:
-        files = sorted(glob.glob(f'{opts.inpath}{param_str}*{yr}.nc'))
+        files = sorted(glob.glob(f'{opts.inpath}*{param_str}*{yr}.nc'))
         if len(files) > 1:
             raise FileNotFoundError(f'There are multiple files for {yr} in the given input '
                                     f'directory. Please check and rerun.')
