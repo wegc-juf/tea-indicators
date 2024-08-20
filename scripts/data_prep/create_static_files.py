@@ -332,7 +332,7 @@ def run():
     # save output
     pstr = opts.parameter
     if opts.parameter == 'P':
-        pstr = opts.precip_var
+        pstr = f'{opts.precip_var}_'
 
     param_str = f'{pstr}{opts.threshold}p'
     if opts.threshold_type == 'abs':
