@@ -49,10 +49,10 @@ def create_svars_ds(doy_first, doy_first_gr, doy_last, doy_last_gr, delta_y, del
                                             'units': '1'})
 
     delta_y = delta_y.rename(f'delta_y')
-    delta_y = delta_y.assign_attrs({'long_name': 'annual exposure period', 'units': 'days'})
+    delta_y = delta_y.assign_attrs({'long_name': 'annual exposure period', 'units': 'dys'})
     delta_y_gr = delta_y_gr.rename(f'delta_y_GR')
     delta_y_gr = delta_y_gr.assign_attrs({'long_name': 'annual exposure period (GR)',
-                                          'units': 'days'})
+                                          'units': 'dys'})
 
     svars_ds = xr.merge([doy_first, doy_last, delta_y, doy_first_gr, doy_last_gr, delta_y_gr])
 
@@ -74,13 +74,13 @@ def create_ed_ds(ed, ed_gr, ed_avg, ed_avg_gr):
     """
 
     ed = ed.rename('ED')
-    ed = ed.assign_attrs({'long_name': 'cumulative events duration', 'units': 'days'})
+    ed = ed.assign_attrs({'long_name': 'cumulative events duration', 'units': 'dys'})
     ed_gr = ed_gr.rename('ED_GR')
-    ed_gr.attrs = {'long_name': 'cumulative events duration (GR)', 'units': 'days'}
+    ed_gr.attrs = {'long_name': 'cumulative events duration (GR)', 'units': 'dys'}
     ed_avg = ed_avg.rename('EDavg')
-    ed_avg.attrs = {'long_name': 'average events duration', 'units': 'days'}
+    ed_avg.attrs = {'long_name': 'average events duration', 'units': 'dys'}
     ed_avg_gr = ed_avg_gr.rename('EDavg_GR')
-    ed_avg_gr.attrs = {'long_name': 'average events duration (GR)', 'units': 'days'}
+    ed_avg_gr.attrs = {'long_name': 'average events duration (GR)', 'units': 'dys'}
 
     ed_ds = xr.merge([ed, ed_gr, ed_avg, ed_avg_gr])
 
@@ -178,9 +178,9 @@ def create_ea_ds(opts, ea_gr, tex, es_gr):
     """
 
     if opts.parameter:
-        unit = 'areal °C days'
+        unit = 'areal °C dys'
     else:
-        unit = 'areal mm days'
+        unit = 'areal mm dys'
 
     ea_gr = ea_gr.rename('EAavg_GR')
     ea_gr.attrs = {'long_name': 'average exceedance area (GR)', 'units': 'areals'}

@@ -67,9 +67,13 @@ def calc_event_duration(pdata, ef):
     pdata_sum = pdata.sum('days')
     ed, ed_gr = pdata_sum['DTEC'], pdata_sum['DTEC_GR']
 
+    # set EF = 0 to nan
+    ef_no0 = ef['EF'].where(ef['EF'] > 0)
+    ef_gr_no0 = ef['EF_GR'].where(ef['EF_GR'] > 0)
+
     # calc average event duration (Eq. 14_1 and 15_1)
-    ed_avg = ed / ef['EF']
-    ed_avg_gr = ed_gr / ef['EF_GR']
+    ed_avg = ed / ef_no0
+    ed_avg_gr = ed_gr / ef_gr_no0
 
     # combine to ds
     ed_ds = create_ed_ds(ed=ed, ed_gr=ed_gr, ed_avg=ed_avg, ed_avg_gr=ed_avg_gr)

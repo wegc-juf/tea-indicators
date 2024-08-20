@@ -20,7 +20,7 @@ import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
-from calc_daily_basis_vars import calc_daily_basis_vars
+from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
                                           calc_event_duration, calc_exceedance_magnitude,
                                           calc_exceedance_area_tex_sev)
@@ -341,7 +341,7 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
         {'long_name': f'climatic time period ({opts.period})'})
 
     mask = masks['lt1500_mask'] * masks['mask']
-    # apply masks to grid data again (sum etc. results in 0 outside of region)
+    # apply masks to grid data again (sum etc. result in 0 outside of region)
     for vvar in ds_out.data_vars:
         if 'GR' not in vvar:
             ds_out[vvar] = ds_out[vvar].where(mask == 1)
@@ -352,12 +352,12 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
     ds_out = create_history(cli_params=sys.argv, ds=ds_out)
     ds_out_suppl = create_history(cli_params=sys.argv, ds=ds_out_suppl)
 
-    path = Path(f'{opts.outpath}ctp_indicator_variables/')
+    path = Path(f'{opts.outpath}ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/'
                      f'CTP_{opts.param_str}_{opts.region}_{opts.dataset}'
                      f'_{opts.start}to{opts.end}.nc')
-    ds_out_suppl.to_netcdf(f'{opts.outpath}ctp_indicator_variables/'
+    ds_out_suppl.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
                            f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.dataset}'
                            f'_{opts.start}to{opts.end}.nc')
 
@@ -372,16 +372,16 @@ def calc_indicators(opts):
 
     """
 
-    data = get_data(opts=opts)
+    # data = get_data(opts=opts)
 
     # load GR masks and static file
     masks, static = load_static_files(opts=opts)
 
     # apply mask to data
-    data = data * (masks['lt1500_mask'] * masks['mask'])
+    # data = data * (masks['lt1500_mask'] * masks['mask'])
 
     # computation of daily basis variables (Methods chapter 3)
-    calc_daily_basis_vars(opts=opts, static=static, data=data)
+    # calc_daily_basis_vars(opts=opts, static=static, data=data)
     dbv = xr.open_dataset(
         f'{opts.outpath}daily_basis_variables/'
         f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
@@ -390,7 +390,10 @@ def calc_indicators(opts):
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
     for vvar in dbv.data_vars:
-        if 'GR' in vvar:
+        if vvar == 'DTEEC_GR':
+            # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
+            dbv[vvar] = calculate_event_count(opts=opts, dtec=dbv['DTEC_GR'], da_out=True)
+        elif 'GR' in vvar:
             dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
     # get dates for climatic time periods (CTP) and assign coords to dbv
@@ -415,8 +418,8 @@ def calc_indicators(opts):
 
 def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
+    warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
     # warnings.filterwarnings(action='ignore', message='invalid value encountered in true_divide')
-    # warnings.filterwarnings(action='ignore', message='divide by zero encountered in true_divide')
     # warnings.filterwarnings(action='ignore', message='invalid value encountered in multiply')
 
     # load CLI parameter

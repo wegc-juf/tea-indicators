@@ -81,7 +81,7 @@ def calc_dteec_1d(dtec_cell):
     return events_np
 
 
-def calculate_event_count(opts, dtec):
+def calculate_event_count(opts, dtec, da_out=False):
     """
     calculate DTEEC(_GR) according to equations 4 and 5
     Args:
@@ -112,10 +112,13 @@ def calculate_event_count(opts, dtec):
     dteec = dteec.rename(f'DTEEC{gr_var_str}')
     dteec.attrs = {'long_name': f'daily threshold exceedance event count{gr_str}', 'units': '1'}
 
-    outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-               f'{dteec.name}_{opts.param_str}_{opts.region}_{opts.dataset}'
-               f'_{opts.start}to{opts.end}.nc')
-    dteec.to_netcdf(outname)
+    if not da_out:
+        outname = (f'{opts.outpath}daily_basis_variables/tmp/'
+                   f'{dteec.name}_{opts.param_str}_{opts.region}_{opts.dataset}'
+                   f'_{opts.start}to{opts.end}.nc')
+        dteec.to_netcdf(outname)
+    else:
+        return dteec
 
 
 def calc_daily_basis_vars(opts, static, data):
@@ -148,7 +151,6 @@ def calc_daily_basis_vars(opts, static, data):
     dtem.attrs = {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit}
 
     dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=dtem, static=static)
-    # dtem = dtem.where(dtea_gr > tea_min)
 
     # equation 08
     # calculate dtem_gr (area weighted DTEM)
@@ -176,8 +178,11 @@ def calc_daily_basis_vars(opts, static, data):
     calculate_event_count(opts=opts, dtec=dtec_gr)
 
     # combine all basic variables into one ds
-    bv_ds = xr.open_mfdataset(sorted(glob.glob(f'{opts.outpath}daily_basis_variables/tmp/*nc')),
+    bv_ds = xr.open_mfdataset(sorted(glob.glob(
+        f'{opts.outpath}daily_basis_variables/tmp/'
+        f'*_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')),
                               data_vars='minimal')
     bv_ds.to_netcdf(f'{opts.outpath}daily_basis_variables/'
                     f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
+    # TODO: remove tmp folder after this (couldn't figure out how yet)
