@@ -17,21 +17,15 @@ import warnings
 import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
-from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
-from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
-                                          calc_event_duration, calc_exceedance_magnitude,
-                                          calc_exceedance_area_tex_sev)
-from calc_decadal_indicators import calc_decadal_indicators
+from general_functions import create_history, ref_cc_params
+from calc_TEA import extend_opts
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
-             'ERA5': {'xname': 'lon', 'yname': 'lat'},
-             'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
+PARAMS = ref_cc_params()
 
 
 def getopts():
@@ -99,7 +93,7 @@ def getopts():
                              '"abs" for absolute thresholds.')
 
     parser.add_argument('--inpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
+                        default='/data/users/hst/TEA-clean/TEA/dec_indicator_variables/',
                         type=dir_path,
                         help='Path of folder where TEA data is located.')
 
@@ -118,6 +112,168 @@ def getopts():
 
     return myopts
 
+
+def load_data(opts):
+    """
+    load decadal-mean data
+    Args:
+        opts: CLI parameter
+
+    Returns:
+
+    """
+
+    file = (f'{opts.inpath}'
+            f'DEC_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+    data = xr.open_dataset(file)
+
+    return data
+
+
+def calc_ref_cc_mean(data):
+    """
+    calc mean of Reference and Current Climate period (Eq. 26)
+    Args:
+        data: dec TEA ds
+
+    Returns:
+        ref: mean values of reference period
+        cc: mean values of current climate period
+    """
+
+    ref_ds = data.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    cc_ds = data.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
+
+    ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
+    cc_db = (1 / len(cc_ds.ctp)) * (np.log10(cc_ds)).sum(dim='ctp')
+
+    ref = 10 ** ref_db
+    cc = 10 ** cc_db
+
+    for vvar in ref.data_vars:
+        if 'long_name' in ref[vvar].attrs:
+            ref[vvar].attrs['long_name'] += ' REF mean'
+            ref[vvar].attrs['long_name'] += ' CC mean'
+
+    return ref, cc
+
+
+def calc_basis_amplification_factors(data, ref, cc):
+    """
+    calcualte amplification factors of basis variables (Eq. 28 & 29)
+    Args:
+        data: decadal-mean data
+        ref: mean of REF
+        cc: mean of CC
+
+    Returns:
+        af_ds: AF time series ds
+        af_cc_ds: AF CC ds
+
+    """
+
+    af_ds = data / ref
+    af_cc_ds = cc / ref
+
+    # update attributes
+    for vvar in af_ds.data_vars:
+        af_ds[vvar].attrs = data[vvar].attrs
+        af_cc_ds[vvar].attrs = data[vvar].attrs
+        if 'long_name' in af_ds[vvar].attrs:
+            af_ds[vvar].attrs['long_name'] += ' amplification'
+            af_cc_ds[vvar].attrs['long_name'] += ' CC amplification'
+        if 'units' in af_ds[vvar].attrs:
+            af_ds[vvar].attrs['units'] = '1'
+            af_cc_ds[vvar].attrs['units'] = '1'
+
+    # rename vars
+    rename_dict_af_ds = {vvar: f'{vvar}_AF' for vvar in af_ds.data_vars}
+    rename_dict_af_cc_ds = {vvar: f'{vvar}_AF_CC' for vvar in af_cc_ds.data_vars}
+    af_ds = af_ds.rename(rename_dict_af_ds)
+    af_cc_ds = af_cc_ds.rename(rename_dict_af_cc_ds)
+
+    return af_ds, af_cc_ds
+
+
+def calc_compound_amplification_factors(opts, af, af_cc):
+    """
+    calculate amplification factors of compund variables (Eq. 30)
+    Args:
+        opts: CLI parameter
+        af: amplification factor time series
+        af_cc: CC amplification factors
+
+    Returns:
+        af: amplification factor time series with compund AF added
+        af_cc: CC amplification factors with compund AF adde
+
+    """
+
+    em_var = 'EMavg_GR_AF'
+    if opts.parameter == 'P':
+        em_var = 'EMavg_Md_GR_AF'
+
+    # tEX
+    af_tEX = af['EF_GR_AF'] * af['EDavg_GR_AF'] * af[em_var]
+    af_tEX = af_tEX.rename('tEX_AF')
+    af_tEX = af_tEX.assign_attrs(
+        {'long_name': 'decadal-mean temporal events extremity amplification', 'units': '1'})
+    af_cc_tEX = af_cc['EF_GR_AF_CC'] * af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
+    af_cc_tEX = af_cc_tEX.rename('tEX_AF_CC')
+    af_cc_tEX = af_cc_tEX.assign_attrs(
+        {'long_name': 'decadal-mean temporal events extremity CC amplification', 'units': '1'})
+
+    # ES
+    af_es = af['EDavg_GR_AF'] * af[em_var] * af['EAavg_GR_AF']
+    af_es = af_es.rename('ES_AF')
+    af_es = af_es.assign_attrs(
+        {'long_name': 'decadal-mean event severity amplification', 'units': '1'})
+    af_cc_es = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_GR_AF_CC']
+    af_cc_es = af_cc_es.rename('ES_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(
+        {'long_name': 'decadal-mean event severity CC amplification', 'units': '1'})
+
+    # TEX
+    af_TEX = af['EF_GR_AF'] * af_es
+    af_TEX = af_TEX.rename('TEX_AF')
+    af_TEX = af_TEX.assign_attrs(
+        {'long_name': 'decadal-mean total events extremity amplification', 'units': '1'})
+    af_cc_TEX = af_cc['EF_GR_AF_CC'] * af_cc_es
+    af_cc_TEX = af_cc_TEX.rename('TEX_AF_CC')
+    af_cc_TEX = af_cc_TEX.assign_attrs(
+        {'long_name': 'decadal-mean total events extremity CC amplification', 'units': '1'})
+
+    af = xr.merge([af, af_tEX, af_es, af_TEX])
+    af_cc = xr.merge([af_cc, af_cc_tEX, af_cc_es, af_cc_TEX])
+
+    return af, af_cc
+
+
+def run():
+    opts = getopts()
+    opts = extend_opts(opts)
+
+    # load DEC TEA data
+    ds = load_data(opts=opts)
+
+    # calc mean of REF and CC periods
+    ref_avg, cc_avg = calc_ref_cc_mean(data=ds)
+
+    # calc amplification factors of basis variables
+    bvars = [vvar for vvar in ds.data_vars if vvar not in ['TEX_GR', 'ESavg_GR']]
+    af, af_cc = calc_basis_amplification_factors(data=ds[bvars], ref=ref_avg, cc=cc_avg)
+
+    # calc amplification factors of compound variables
+    af, af_cc = calc_compound_amplification_factors(opts=opts, af=af, af_cc=af_cc)
+
+    # save output
+    ds_out = xr.merge([af, af_cc])
+    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    path = Path(f'{opts.outpath}amplification/')
+    path.mkdir(parents=True, exist_ok=True)
+    ds_out.to_netcdf(f'{opts.outpath}amplification/'
+                     f'AF_{opts.param_str}_{opts.region}_{opts.dataset}'
+                     f'_{opts.start}to{opts.end}.nc')
 
 
 if __name__ == '__main__':
