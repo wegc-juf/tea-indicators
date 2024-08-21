@@ -138,9 +138,11 @@ def calc_spread_estimators(data, dec_data):
         slow.loc[{'ctp':cy}] = slow_per
 
     for vvar in supp.data_vars:
-        supp[vvar].attrs['long_name'] = f'{supp[vvar].attrs["long_name"]} upper spread estimator'
+        if 'long_name' in supp[vvar].attrs:
+            supp[vvar].attrs['long_name'] += ' upper spread estimator'
     for vvar in slow.data_vars:
-        slow[vvar].attrs['long_name'] = f'{slow[vvar].attrs["long_name"]} lower spread estimator'
+        if 'long_name' in slow[vvar].attrs:
+            slow[vvar].attrs['long_name'] += ' lower spread estimator'
 
     rename_dict_supp = {vvar: f'{vvar}_supp' for vvar in supp.data_vars}
     rename_dict_slow = {vvar: f'{vvar}_slow' for vvar in slow.data_vars}

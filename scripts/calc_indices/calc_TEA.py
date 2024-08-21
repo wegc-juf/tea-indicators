@@ -8,6 +8,7 @@
 import argparse
 from datetime import timedelta
 import glob
+import logging
 import numpy as np
 import os
 import pandas as pd
@@ -23,6 +24,11 @@ from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementa
                                           calc_event_duration, calc_exceedance_magnitude,
                                           calc_exceedance_area_tex_sev)
 from calc_decadal_indicators import calc_decadal_indicators
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -438,13 +444,15 @@ def run():
         for start, end in zip(starts, ends):
             opts.start = start
             opts.end = end
-            print(f'{opts.start}-{opts.end}')
+            logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
             calc_indicators(opts=opts)
     else:
         calc_indicators(opts=opts)
 
     if opts.decadal:
+        logging.info(f'Calculating decadal-mean primary variables.')
         calc_decadal_indicators(opts=opts, suppl=False)
+        logging.info(f'Calculating decadal-mean supplementary variables.')
         calc_decadal_indicators(opts=opts, suppl=True)
 
 
