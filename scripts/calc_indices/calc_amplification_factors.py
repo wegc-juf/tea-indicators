@@ -101,6 +101,11 @@ def getopts():
                         default='/data/users/hst/TEA-clean/TEA/',
                         help='Path of folder where output data should be saved.')
 
+    parser.add_argument('--maskpath',
+                        type=dir_path,
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
+                        help='Path of folder where mask file is located.')
+
     parser.add_argument('--dataset',
                         dest='dataset',
                         default='SPARTACUS',
@@ -215,38 +220,66 @@ def calc_compound_amplification_factors(opts, af, af_cc):
 
     # tEX
     af_tEX = af['EF_GR_AF'] * af['EDavg_GR_AF'] * af[em_var]
-    af_tEX = af_tEX.rename('tEX_AF')
+    af_tEX = af_tEX.rename('tEX_GR_AF')
     af_tEX = af_tEX.assign_attrs(
-        {'long_name': 'decadal-mean temporal events extremity amplification', 'units': '1'})
+        {'long_name': 'decadal-mean temporal events extremity (GR) amplification', 'units': '1'})
     af_cc_tEX = af_cc['EF_GR_AF_CC'] * af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
-    af_cc_tEX = af_cc_tEX.rename('tEX_AF_CC')
+    af_cc_tEX = af_cc_tEX.rename('tEX_GR_AF_CC')
     af_cc_tEX = af_cc_tEX.assign_attrs(
-        {'long_name': 'decadal-mean temporal events extremity CC amplification', 'units': '1'})
+        {'long_name': 'decadal-mean temporal events extremity (GR) CC amplification', 'units': '1'})
 
     # ES
     af_es = af['EDavg_GR_AF'] * af[em_var] * af['EAavg_GR_AF']
-    af_es = af_es.rename('ES_AF')
+    af_es = af_es.rename('ES_GR_AF')
     af_es = af_es.assign_attrs(
-        {'long_name': 'decadal-mean event severity amplification', 'units': '1'})
+        {'long_name': 'decadal-mean event severity (GR) amplification', 'units': '1'})
     af_cc_es = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_GR_AF_CC']
-    af_cc_es = af_cc_es.rename('ES_AF_CC')
+    af_cc_es = af_cc_es.rename('ES_GR_AF_CC')
     af_cc_es = af_cc_es.assign_attrs(
-        {'long_name': 'decadal-mean event severity CC amplification', 'units': '1'})
+        {'long_name': 'decadal-mean event severity (GR) CC amplification', 'units': '1'})
 
     # TEX
     af_TEX = af['EF_GR_AF'] * af_es
-    af_TEX = af_TEX.rename('TEX_AF')
+    af_TEX = af_TEX.rename('TEX_GR_AF')
     af_TEX = af_TEX.assign_attrs(
-        {'long_name': 'decadal-mean total events extremity amplification', 'units': '1'})
+        {'long_name': 'decadal-mean total events extremity (GR) amplification', 'units': '1'})
     af_cc_TEX = af_cc['EF_GR_AF_CC'] * af_cc_es
-    af_cc_TEX = af_cc_TEX.rename('TEX_AF_CC')
+    af_cc_TEX = af_cc_TEX.rename('TEX_GR_AF_CC')
     af_cc_TEX = af_cc_TEX.assign_attrs(
-        {'long_name': 'decadal-mean total events extremity CC amplification', 'units': '1'})
+        {'long_name': 'decadal-mean total events extremity (GR) CC amplification', 'units': '1'})
 
     af = xr.merge([af, af_tEX, af_es, af_TEX])
     af_cc = xr.merge([af_cc, af_cc_tEX, af_cc_es, af_cc_TEX])
 
     return af, af_cc
+
+def save_output(opts, af, af_cc):
+    """
+    save amplification data to nc files
+    Args:
+        opts: CLI parameter
+        af: amplification factors ds
+        af_cc: CC amplification factors ds
+
+    Returns:
+
+    """
+
+    ds_out = xr.merge([af, af_cc])
+
+    # apply masks to grid data again (sum etc. result in 0 outside of region)
+    masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
+    mask = masks['lt1500_mask'] * masks['mask']
+    for vvar in ds_out.data_vars:
+        if 'GR' not in vvar:
+            ds_out[vvar] = ds_out[vvar].where(mask == 1)
+
+    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    path = Path(f'{opts.outpath}amplification/')
+    path.mkdir(parents=True, exist_ok=True)
+    ds_out.to_netcdf(f'{opts.outpath}amplification/'
+                     f'AF_{opts.param_str}_{opts.region}_{opts.dataset}'
+                     f'_{opts.start}to{opts.end}.nc')
 
 
 def run():
@@ -261,19 +294,14 @@ def run():
 
     # calc amplification factors of basis variables
     bvars = [vvar for vvar in ds.data_vars if vvar not in ['TEX_GR', 'ESavg_GR']]
-    af, af_cc = calc_basis_amplification_factors(data=ds[bvars], ref=ref_avg, cc=cc_avg)
+    af, af_cc = calc_basis_amplification_factors(data=ds[bvars], ref=ref_avg[bvars],
+                                                 cc=cc_avg[bvars])
 
     # calc amplification factors of compound variables
     af, af_cc = calc_compound_amplification_factors(opts=opts, af=af, af_cc=af_cc)
 
     # save output
-    ds_out = xr.merge([af, af_cc])
-    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
-    path = Path(f'{opts.outpath}amplification/')
-    path.mkdir(parents=True, exist_ok=True)
-    ds_out.to_netcdf(f'{opts.outpath}amplification/'
-                     f'AF_{opts.param_str}_{opts.region}_{opts.dataset}'
-                     f'_{opts.start}to{opts.end}.nc')
+    save_output(opts=opts, af=af, af_cc=af_cc)
 
 
 if __name__ == '__main__':
