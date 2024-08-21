@@ -1,4 +1,5 @@
 import glob
+import logging
 import numpy as np
 from pathlib import Path
 import re
@@ -7,6 +8,11 @@ import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def load_ctp_data(opts, suppl):
     """
@@ -182,6 +188,7 @@ def calc_decadal_indicators(opts, suppl=False):
 
     su, sl = None, None
     if opts.spreads:
+        logging.info(f'Calculating spread estimators.')
         su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
 
     save_output(opts=opts, data=dec_data, su=su, sl=sl, suppl=suppl)
