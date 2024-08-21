@@ -88,8 +88,6 @@ def save_output(opts, data, su, sl, suppl):
         suppl_str = 'suppl'
 
     data = create_history(cli_params=sys.argv, ds=data)
-    sl = create_history(cli_params=sys.argv, ds=sl)
-    su = create_history(cli_params=sys.argv, ds=su)
 
     path = Path(f'{opts.outpath}dec_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
@@ -97,12 +95,15 @@ def save_output(opts, data, su, sl, suppl):
                    f'DEC{suppl_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}.nc')
 
-    sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                   f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
-    su.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                   f'DEC{suppl_str}_sUPP_{opts.param_str}_{opts.region}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
+    if su:
+        sl = create_history(cli_params=sys.argv, ds=sl)
+        su = create_history(cli_params=sys.argv, ds=su)
+        sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
+                       f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.dataset}'
+                       f'_{opts.start}to{opts.end}.nc')
+        su.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
+                       f'DEC{suppl_str}_sUPP_{opts.param_str}_{opts.region}_{opts.dataset}'
+                       f'_{opts.start}to{opts.end}.nc')
 
 
 def calc_spread_estimators(data, dec_data):
@@ -179,6 +180,8 @@ def calc_decadal_indicators(opts, suppl=False):
     if 'doy_first' in data.data_vars:
         dec_data = adjust_doy(data=dec_data)
 
-    su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
+    su, sl = None, None
+    if opts.spreads:
+        su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
 
     save_output(opts=opts, data=dec_data, su=su, sl=sl, suppl=suppl)

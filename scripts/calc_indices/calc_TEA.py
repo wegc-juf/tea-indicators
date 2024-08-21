@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 @author: hst
-@reviewer: juf, 2024-07-29
 """
 
 import argparse
@@ -26,7 +25,7 @@ from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementa
 from calc_decadal_indicators import calc_decadal_indicators
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -125,18 +124,26 @@ def getopts():
                         choices=['SPARTACUS', 'ERA5', 'ERA5Land'],
                         help='Input dataset. Options: SPARTACUS (default), ERA5, ERA5Land.')
 
-    parser.add_argument('--gr-only',
-                        dest='gr',
-                        default=False,
-                        action='store_true',
-                        help='Set if output shall only contain GR variables. [default: False].')
-
     parser.add_argument('--decadal',
                         dest='decadal',
                         default=False,
                         action='store_true',
                         help='Set if decadal TEA indicators should also be calculated. '
                              'Only possible if end - start >= 10.')
+
+    parser.add_argument('--spreads',
+                        dest='spreads',
+                        default=False,
+                        action='store_true',
+                        help='Set if spread estimators of decadal TEA indicators should also '
+                             'be calculated. Default: False.')
+
+    parser.add_argument('--decadal_only',
+                        dest='decadal_only',
+                        default=False,
+                        action='store_true',
+                        help='Set if ONLY decadal TEA indicators should be calculated. '
+                             'Only possible if CTP vars already calculated.')
 
     myopts = parser.parse_args()
 
@@ -438,18 +445,19 @@ def run():
 
     validate_period(opts)
 
-    if end - start > 10 - 1:
-        starts = np.arange(start, end, 10)
-        ends = np.append(np.arange(start + 10 - 1, end, 10), end)
-        for start, end in zip(starts, ends):
-            opts.start = start
-            opts.end = end
-            logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
+    if not opts.decadal_only:
+        if end - start > 10 - 1:
+            starts = np.arange(start, end, 10)
+            ends = np.append(np.arange(start + 10 - 1, end, 10), end)
+            for start, end in zip(starts, ends):
+                opts.start = start
+                opts.end = end
+                logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
+                calc_indicators(opts=opts)
+        else:
             calc_indicators(opts=opts)
-    else:
-        calc_indicators(opts=opts)
 
-    if opts.decadal:
+    if opts.decadal or opts.decadal_only:
         logging.info(f'Calculating decadal-mean primary variables.')
         calc_decadal_indicators(opts=opts, suppl=False)
         logging.info(f'Calculating decadal-mean supplementary variables.')
