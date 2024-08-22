@@ -83,6 +83,7 @@ def getopts():
 
     parser.add_argument('--outpath',
                         default='/data/users/hst/TEA-clean/TEA/',
+                        type=dir_path,
                         help='Path of folder where output data should be saved.')
 
     myopts = parser.parse_args()
@@ -248,6 +249,8 @@ def calc_ctp_indicators(opts, data):
 
 def run():
     opts = getopts()
+    if opts.parameter == 'P':
+        opts.precip_var = 'P24h_7to7'
     opts = extend_opts(opts=opts)
 
     data = load_data(opts=opts)

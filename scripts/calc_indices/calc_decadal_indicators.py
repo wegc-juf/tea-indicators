@@ -161,6 +161,30 @@ def calc_spread_estimators(data, dec_data):
     return supp, slow
 
 
+def rolling_decadal_mean(data):
+    """
+    apply rolling decadal mean
+    Args:
+        data: annual data
+
+    Returns:
+        data: decadal-mean data
+    """
+
+    # equation 23 (decadal averaging)
+    weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
+    for ivar in data.data_vars:
+        data[ivar] = data.rolling(ctp=10, center=True).construct('window')[ivar].dot(
+            weights)
+        attrs = data[ivar].attrs
+        if 'long_name' in attrs:
+            attrs['long_name'] = f'decadal-mean {attrs["long_name"]}'
+        else:
+            attrs['long_name'] = f'decadal-mean {ivar}'
+        data[ivar].attrs = attrs
+
+    return data
+
 def calc_decadal_indicators(opts, suppl=False):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
@@ -175,14 +199,7 @@ def calc_decadal_indicators(opts, suppl=False):
 
     dec_data = data.copy()
 
-    # equation 23 (decadal averaging)
-    weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
-    for ivar in data.data_vars:
-        dec_data[ivar] = data.rolling(ctp=10, center=True).construct('window')[ivar].dot(
-            weights)
-        attrs = data[ivar].attrs
-        attrs['long_name'] = f'decadal-mean {attrs["long_name"]}'
-        dec_data[ivar].attrs = attrs
+    dec_data = rolling_decadal_mean(data=dec_data)
 
     # equation 24 (re-adjusting doy vars)
     if 'doy_first' in data.data_vars:
