@@ -14,6 +14,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+
 def load_ctp_data(opts, suppl):
     """
     load CTP data
@@ -41,7 +42,8 @@ def load_ctp_data(opts, suppl):
             return False
 
     files = sorted(glob.glob(
-        f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.dataset}*.nc'))
+        f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}'
+        f'_{opts.dataset}*.nc'))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
 
     data = xr.open_mfdataset(paths=files, data_vars='minimal')
@@ -98,18 +100,18 @@ def save_output(opts, data, su, sl, suppl):
     path = Path(f'{opts.outpath}dec_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     data.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                   f'DEC{suppl_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
+                   f'DEC{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}.nc')
 
     if su:
         sl = create_history(cli_params=sys.argv, ds=sl)
         su = create_history(cli_params=sys.argv, ds=su)
         sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                       f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.dataset}'
-                       f'_{opts.start}to{opts.end}.nc')
+                     f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.period}'
+                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
         su.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                       f'DEC{suppl_str}_sUPP_{opts.param_str}_{opts.region}_{opts.dataset}'
-                       f'_{opts.start}to{opts.end}.nc')
+                     f'DEC{suppl_str}_sUPP_{opts.param_str}_{opts.region}_{opts.period}'
+                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
 
 def calc_spread_estimators(data, dec_data):
@@ -126,23 +128,23 @@ def calc_spread_estimators(data, dec_data):
     supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
     for icy, cy in enumerate(data.ctp):
         # skip first and last 5 years
-        if icy < 5 or icy > len(data.ctp)-5:
+        if icy < 5 or icy > len(data.ctp) - 5:
             continue
         pdata = data.isel(ctp=slice(icy - 5, icy + 5))
         cupp = xr.where(pdata > dec_data.isel(ctp=icy), 1, 0)
 
         cupp_sum = cupp.sum(dim='ctp')
         cupp_sum = cupp_sum.where(cupp_sum > 0, 1)
-        supp_per = np.sqrt((1/(cupp_sum.max()))
-                           * ((cupp * (data - dec_data.isel(ctp=icy))**2).sum()))
+        supp_per = np.sqrt((1 / (cupp_sum.max()))
+                           * ((cupp * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
 
         clow_sum = (1 - cupp.sum(dim='ctp'))
         clow_sum = clow_sum.where(clow_sum > 0, 1)
-        slow_per = np.sqrt((1/(clow_sum.max()))
-                           * (((1 - cupp) * (data - dec_data.isel(ctp=icy))**2).sum()))
+        slow_per = np.sqrt((1 / (clow_sum.max()))
+                           * (((1 - cupp) * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
 
-        supp.loc[{'ctp':cy}] = supp_per
-        slow.loc[{'ctp':cy}] = slow_per
+        supp.loc[{'ctp': cy}] = supp_per
+        slow.loc[{'ctp': cy}] = slow_per
 
     for vvar in supp.data_vars:
         if 'long_name' in supp[vvar].attrs:

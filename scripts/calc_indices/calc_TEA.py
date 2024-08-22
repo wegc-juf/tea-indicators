@@ -368,10 +368,10 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
     path = Path(f'{opts.outpath}ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/'
-                     f'CTP_{opts.param_str}_{opts.region}_{opts.dataset}'
+                     f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                      f'_{opts.start}to{opts.end}.nc')
     ds_out_suppl.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
-                           f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.dataset}'
+                           f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                            f'_{opts.start}to{opts.end}.nc')
 
 
