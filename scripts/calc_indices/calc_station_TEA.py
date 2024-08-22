@@ -6,15 +6,13 @@
 """
 
 import argparse
-import cf_units as cf
 import os
 import copy
 
-from datetime import timedelta
 import glob
 import logging
-import numpy as np
 import pandas as pd
+from pathlib import Path
 import sys
 import xarray as xr
 
@@ -166,12 +164,14 @@ def interpolate_gaps(opts, data):
 
     return data
 
+
 def calc_thresh(opts):
     opts_ref = copy.deepcopy(opts)
     opts_ref.period = 'annual'
 
     data = load_data(opts=opts_ref)
-    ref_data = data[(data.index.year >= int(PARAMS['REF']['start'][:4])) & (data.index.year <= int(PARAMS['REF']['end'][:4]))]
+    ref_data = data[(data.index.year >= int(PARAMS['REF']['start'][:4]))
+                    & (data.index.year <= int(PARAMS['REF']['end'][:4]))]
 
     if opts.threshold_type == 'abs':
         thresh = opts.threshold
@@ -179,6 +179,7 @@ def calc_thresh(opts):
         thresh = ref_data[opts.parameter].quantile(opts.threshold / 100)
 
     return thresh
+
 
 def calc_basis(opts, data):
     """
@@ -225,10 +226,24 @@ def calc_ctp_indicators(opts, data):
     ed = pdata['DTEC'] / ef
     if opts.parameter == 'T':
         em = pdata['DTEM'] / ed
+        data_unit = '°C'
     else:
         em = data.median('days')['DTEM'] * ed
+        data_unit = 'mm'
 
-    #TODO: add attributes and combine to one dataset
+    # add attributes and combine to one dataset
+    ef = ef.rename('EF')
+    ef = ef.assign_attrs({'long_name': 'event frequency', 'units': '1'})
+
+    ed = ed.rename('EDavg')
+    ed.attrs = {'long_name': 'average events duration', 'units': 'dys'}
+
+    em = em.rename('EMavg')
+    em.attrs = {'long_name': 'average exceedance magnitude', 'units': data_unit}
+
+    ctp = xr.merge([ef, ed, em])
+
+    return ctp
 
 
 def run():
@@ -236,13 +251,19 @@ def run():
     opts = extend_opts(opts=opts)
 
     data = load_data(opts=opts)
-    dbv, data = calc_basis(opts=opts, data=data)
 
+    # calc daily basis variables
+    dbv, data = calc_basis(opts=opts, data=data)
     dbv, dbv_per = assign_ctp_coords(opts=opts, data=dbv)
 
-    calc_ctp_indicators(opts=opts, data=dbv_per)
+    # calc CTP variables
+    ctp = calc_ctp_indicators(opts=opts, data=dbv_per)
 
-    print()
+    # save output
+    ds_out = create_history(cli_params=sys.argv, ds=ctp)
+    path = Path(f'{opts.outpath}station_indices/')
+    path.mkdir(parents=True, exist_ok=True)
+    ds_out.to_netcdf(f'{opts.outpath}station_indices/CTP_{opts.param_str}_{opts.station}.nc')
 
 
 if __name__ == '__main__':
