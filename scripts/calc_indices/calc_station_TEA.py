@@ -224,25 +224,26 @@ def calc_ctp_indicators(opts, data):
     pdata = data.sum('days')
 
     ef = pdata.DTEEC
-    ed = pdata['DTEC'] / ef
+    ed = pdata['DTEC']
+    ed_avg = ed / ef
     if opts.parameter == 'T':
-        em = pdata['DTEM'] / ed
+        em_avg = pdata['DTEM'] / ed
         data_unit = '°C'
     else:
-        em = data.median('days')['DTEM'] * ed
+        em_avg = data.median('days')['DTEM']
         data_unit = 'mm'
 
     # add attributes and combine to one dataset
     ef = ef.rename('EF')
     ef = ef.assign_attrs({'long_name': 'event frequency', 'units': '1'})
 
-    ed = ed.rename('EDavg')
-    ed.attrs = {'long_name': 'average events duration', 'units': 'dys'}
+    ed_avg = ed_avg.rename('EDavg')
+    ed_avg.attrs = {'long_name': 'average events duration', 'units': 'dys'}
 
-    em = em.rename('EMavg')
-    em.attrs = {'long_name': 'average exceedance magnitude', 'units': data_unit}
+    em_avg = em_avg.rename('EMavg')
+    em_avg.attrs = {'long_name': 'average exceedance magnitude', 'units': data_unit}
 
-    ctp = xr.merge([ef, ed, em])
+    ctp = xr.merge([ef, ed_avg, em_avg])
 
     return ctp
 
