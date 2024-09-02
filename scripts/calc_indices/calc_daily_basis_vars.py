@@ -157,6 +157,7 @@ def calc_daily_basis_vars(opts, static, data):
     # calculate dtem_gr (area weighted DTEM)
     area_fac = static['area_grid'] / dtea_gr.T
     dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
+    dtem_gr = dtem_gr.where(dtem_gr > 0)
     dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
     dtem_gr = dtem_gr.assign_attrs({'long_name': 'daily threshold exceedance magnitude (GR)',
                                     'units': data_unit})

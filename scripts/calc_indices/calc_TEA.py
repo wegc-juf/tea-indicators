@@ -12,6 +12,7 @@ import numpy as np
 import os
 import pandas as pd
 from pathlib import Path
+import re
 import sys
 import warnings
 import xarray as xr
@@ -45,6 +46,12 @@ def getopts():
             return path
         else:
             raise argparse.ArgumentTypeError(f'{path} is not a valid path')
+
+    def float_1pcd(value):
+        if not re.match(r'^\d+(\.\d{1})?$', value):
+            raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
+                                             'the decimal point')
+        return float(value)
 
     parser = argparse.ArgumentParser()
 
@@ -88,7 +95,7 @@ def getopts():
 
     parser.add_argument('--threshold',
                         default=99,
-                        type=float,
+                        type=float_1pcd,
                         help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
 
     parser.add_argument('--threshold_type',
@@ -167,9 +174,9 @@ def extend_opts(opts):
     if opts.parameter == 'P':
         pstr = f'{opts.precip_var}_'
 
-    param_str = f'{pstr}{opts.threshold}p'
+    param_str = f'{pstr}{opts.threshold:.1f}p'
     if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold}{unit_str}'
+        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
 
     opts.unit = unit
     opts.unit_str = unit_str

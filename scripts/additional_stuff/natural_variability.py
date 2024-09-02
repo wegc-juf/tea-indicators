@@ -72,9 +72,11 @@ def load_data(opts):
     """
 
     if opts.parameter == 'T':
-        perc = 'T99p'
+        perc = 'T99.0p'
+        split_idx = 2
     else:
-        perc = 'P24h_7to7_95p'
+        perc = 'P24h_7to7_95.0p'
+        split_idx = 4
 
     files = sorted(glob.glob(f'{opts.inpath}station_indices/*{perc}*.nc'))
 
@@ -89,10 +91,15 @@ def load_data(opts):
 
     for ifile, file in enumerate(files):
         basename = os.path.basename(file)
-        if basename.split('_')[2][:4].upper() not in stations:
+        station_abbr = basename.split('_')[split_idx][:4].upper()
+        if station_abbr not in stations:
             continue
         # load data
         data = xr.open_dataset(file)
+
+        # fill nans in ED and EM with 0
+        data['EDavg'] = data['EDavg'].where(data['EDavg'].notnull(), 0)
+        data['EMavg'] = data['EMavg'].where(data['EMavg'].notnull(), 0)
 
         # calculate decadal means
         data = rolling_decadal_mean(data=data)
@@ -106,29 +113,22 @@ def load_data(opts):
         for vvar in ampl.columns:
             if vvar in ['tEX', 'DM']:
                 continue
-            basename = os.path.basename(file)
-            ampl.loc[basename.split('_')[2][:4].upper(), vvar] = ampl_cc_facs[
-                f'{vvar}_AF_CC'].values
-        ampl.loc[basename.split('_')[2][:4].upper(), 'DM'] = ampl.loc[basename.split('_')[2][
-                                                                      :4].upper(), 'EDavg'] * \
-                                                             ampl.loc[basename.split('_')[2][
-                                                                      :4].upper(), 'EMavg']
-        ampl.loc[basename.split('_')[2][:4].upper(), 'tEX'] = ampl.loc[basename.split('_')[2][
-                                                                       :4].upper(), 'EF'] * \
-                                                              ampl.loc[basename.split('_')[2][
-                                                                       :4].upper(), 'EDavg'] * \
-                                                              ampl.loc[basename.split('_')[2][
-                                                                       :4].upper(), 'EMavg']
+            ampl.loc[station_abbr, vvar] = ampl_cc_facs[f'{vvar}_AF_CC'].values
+        ampl.loc[station_abbr, 'DM'] = (ampl.loc[station_abbr, 'EDavg']
+                                        * ampl.loc[station_abbr, 'EMavg'])
+        ampl.loc[station_abbr, 'tEX'] = (ampl.loc[station_abbr, 'EF']
+                                         * ampl.loc[station_abbr, 'EDavg']
+                                         * ampl.loc[station_abbr, 'EMavg'])
 
         tef_stat = pd.DataFrame(index=data.ctp.values,
                                 data=ampl_facs.EF_AF.values,
-                                columns=[basename.split('_')[2][:4].upper()])
+                                columns=[station_abbr])
         ed_stat = pd.DataFrame(index=data.ctp.values,
                                data=ampl_facs.EDavg_AF.values,
-                               columns=[basename.split('_')[2][:4].upper()])
+                               columns=[station_abbr])
         em_stat = pd.DataFrame(index=data.ctp.values,
                                data=ampl_facs.EMavg_AF.values,
-                               columns=[basename.split('_')[2][:4].upper()])
+                               columns=[station_abbr])
 
         ef = pd.concat([ef, tef_stat], axis=1)
         ed = pd.concat([ed, ed_stat], axis=1)
@@ -155,9 +155,6 @@ def load_data(opts):
     # combine in dict
     data = {'EF': ef, 'ED': ed, 'EM': em, 'DM': dm, 'tEX': tEX}
 
-    # equation 32_4 and 32_5 left part
-    # ampl = ampl.mean(axis=0)
-
     return data, ampl
 
 
@@ -172,14 +169,16 @@ def get_gr_vals(opts):
     """
 
     if opts.parameter == 'T':
-        pstr = 'T99p'
+        pstr = 'T99.0p'
+        em_var = 'EMavg_GR'
     else:
-        pstr = 'Precip24Hsum_7to7_95percentile'
+        pstr = 'P24h_7to7_95.0p'
+        em_var = 'EMavg_Md_GR'
 
     ref_data = xr.open_dataset(f'{opts.inpath}dec_indicator_variables/'
                                f'DEC_{pstr}_{opts.region}_WAS_SPARTACUS_1961to2022.nc')
 
-    vkeep = ['EF_GR', 'EDavg_GR', 'EMavg_GR', 'EAavg_GR']
+    vkeep = ['EF_GR', 'EDavg_GR', em_var, 'EAavg_GR']
     vdrop = [vvar for vvar in ref_data.data_vars if vvar not in vkeep]
     ref_data = ref_data.drop_vars(vdrop)
 
@@ -187,20 +186,21 @@ def get_gr_vals(opts):
     ampl, cc_ampl = calc_basis_amplification_factors(data=ref_data, ref=ref_vals, cc=cc_vals)
 
     # add combined indicator variables
-    ref_vals['DM'] = ref_vals['EDavg_GR'] * ref_vals['EMavg_GR']
-    ref_vals['tEX'] = ref_vals['EF_GR'] * ref_vals['EDavg_GR'] * ref_vals['EMavg_GR']
-    cc_vals['DM'] = cc_vals['EDavg_GR'] * cc_vals['EMavg_GR']
-    cc_vals['tEX'] = cc_vals['EF_GR'] * cc_vals['EDavg_GR'] * cc_vals['EMavg_GR']
-    cc_ampl['DM'] = cc_ampl['EDavg_GR_AF_CC'] * cc_ampl['EMavg_GR_AF_CC']
-    cc_ampl['tEX'] = cc_ampl['EF_GR_AF_CC'] * cc_ampl['EDavg_GR_AF_CC'] * cc_ampl['EMavg_GR_AF_CC']
+    ref_vals['DM'] = ref_vals['EDavg_GR'] * ref_vals[em_var]
+    ref_vals['tEX'] = ref_vals['EF_GR'] * ref_vals['EDavg_GR'] * ref_vals[em_var]
+    cc_vals['DM'] = cc_vals['EDavg_GR'] * cc_vals[em_var]
+    cc_vals['tEX'] = cc_vals['EF_GR'] * cc_vals['EDavg_GR'] * cc_vals[em_var]
+    cc_ampl['DM'] = cc_ampl['EDavg_GR_AF_CC'] * cc_ampl[f'{em_var}_AF_CC']
+    cc_ampl['tEX'] = cc_ampl['EF_GR_AF_CC'] * cc_ampl['EDavg_GR_AF_CC'] * cc_ampl[f'{em_var}_AF_CC']
 
     return ref_vals, cc_vals, ampl, cc_ampl
 
 
-def calc_factors(st_am, gr_am):
+def calc_factors(opts, st_am, gr_am):
     """
     calculate factor by which station amplification is larger than GR amplification
     Args:
+        opts: CLI parameter
         st_am: station amplification data
         gr_am: GR amplification data
 
@@ -208,35 +208,41 @@ def calc_factors(st_am, gr_am):
         factors: ds with factors
     """
 
+    if opts.parameter == 'T':
+        em_var = 'EMavg'
+    else:
+        em_var = 'EMavg_Md'
+
     # calc mean station amplification
     st_am = ((st_am ** 2).mean()) ** (1/2)
 
     # equation 32_4 and 32_5 left part
-    factors = pd.DataFrame(columns=['EF', 'EDavg', 'EMavg'])
+    factors = pd.DataFrame(columns=['EF', 'EDavg', em_var])
     factors.loc[0, 'EF'] = (gr_am['EF_GR_AF_CC'].values / st_am['EF'])
     factors.loc[0, 'ED'] = (gr_am['EDavg_GR_AF_CC'].values / st_am['EDavg'])
-    factors.loc[0, 'EM'] = (gr_am['EMavg_GR_AF_CC'].values / st_am['EMavg'])
+    factors.loc[0, 'EM'] = (gr_am[f'{em_var}_GR_AF_CC'].values / st_am[em_var])
 
     # calc DM factor
     gr_dm = 10 ** (np.log10(gr_am['EDavg_GR_AF_CC'].values)
-                   + np.log10(gr_am['EMavg_GR_AF_CC'].values))
-    st_dm = 10 ** (np.log10(st_am['EDavg']) + np.log10(st_am['EMavg']))
+                   + np.log10(gr_am[f'{em_var}_GR_AF_CC'].values))
+    st_dm = 10 ** (np.log10(st_am['EDavg']) + np.log10(st_am[em_var]))
     factors.loc[0, 'DM'] = (gr_dm / st_dm)
 
     # calc tEX factor
     gr_tEX = 10 ** (np.log10(gr_am['EF_GR_AF_CC'].values)
                     + np.log10(gr_am['EDavg_GR_AF_CC'].values)
-                    + np.log10(gr_am['EMavg_GR_AF_CC'].values))
+                    + np.log10(gr_am[f'{em_var}_GR_AF_CC'].values))
     st_tEX = 10 ** (np.log10(st_am['EF']) + np.log10(st_am['EDavg']) + np.log10(st_am['EMavg']))
     factors.loc[0, 'tEX'] = (gr_tEX / st_tEX)
 
     return factors
 
 
-def calc_nat_var(st_data, st_acc, gr_acc, facs):
+def calc_nat_var(opts, st_data, st_acc, gr_acc, facs):
     """
     calculate natural variability (Eq. 32)
     Args:
+        opts: CLI parameter
         st_data: station amplification data
         st_acc: station CC amplification data
         gr_acc: GR CC amplification data
@@ -247,12 +253,13 @@ def calc_nat_var(st_data, st_acc, gr_acc, facs):
     """
 
     if facs:
-        scaling = calc_factors(st_am=st_acc, gr_am=gr_acc)
+        scaling = calc_factors(opts=opts, st_am=st_acc, gr_am=gr_acc)
 
     std = pd.DataFrame(index=st_data.keys(), columns=['lower', 'upper'])
 
     for vvar in st_data.keys():
         data = st_data[vvar]
+        data = data.loc[data.index <= PARAMS['REF']['end_cy']]
 
         cupp = (data >= 1).astype(int)
         supp = np.sqrt((1/cupp.sum()) * (cupp*(data - 1)**2).sum())
@@ -271,11 +278,17 @@ def calc_nat_var(st_data, st_acc, gr_acc, facs):
     return std
 
 
-def calc_combined_indicators_natvar(gr_ampl, natvar):
+def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
+
+    if opts.parameter == 'T':
+        em_var = 'EMavg_GR_AF'
+    else:
+        em_var = 'EMavg_Md_GR_AF'
 
     gr_ampl_ref = gr_ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+
     # calc DM
-    gr_ampl_ref['DM_AF'] = gr_ampl_ref['EDavg_GR_AF'] * gr_ampl_ref['EMavg_GR_AF']
+    gr_ampl_ref['DM_AF'] = gr_ampl_ref['EDavg_GR_AF'] * gr_ampl_ref[em_var]
 
     # Eq. 33_1 and 33_2
     s_a_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
@@ -305,13 +318,12 @@ def run():
 
     data, st_ampl = load_data(opts=opts)
     gr_ref, gr_cc, gr_ampl, gr_cc_ampl = get_gr_vals(opts=opts)
-    nv = calc_nat_var(st_data=data, st_acc=st_ampl, gr_acc=gr_cc_ampl, facs=apply_facs)
-    nv = calc_combined_indicators_natvar(gr_ampl=gr_ampl, natvar=nv)
+    nv = calc_nat_var(opts=opts, st_data=data, st_acc=st_ampl, gr_acc=gr_cc_ampl, facs=apply_facs)
+    nv = calc_combined_indicators_natvar(opts=opts, gr_ampl=gr_ampl, natvar=nv)
 
     path = Path(f'{opts.outpath}natural_variability/')
     path.mkdir(parents=True, exist_ok=True)
-    nv.to_csv(f'{opts.outpath}natural_variability/'
-              f'NV_{opts.parameter}_{opts.region}.nc')
+    nv.to_csv(f'{opts.outpath}natural_variability/NV_AF_{opts.parameter}_{opts.region}.nc')
 
 
 if __name__ == '__main__':

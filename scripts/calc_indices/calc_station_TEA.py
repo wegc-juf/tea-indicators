@@ -110,10 +110,9 @@ def load_data(opts):
         rename_dict = {'nied': 'P'}
 
     # read csv file of station data and set time as index of df
-    try:
-        filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'
-        file = glob.glob(filenames)
-    except FileNotFoundError:
+    filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'
+    file = glob.glob(filenames)
+    if len(file) == 0:
         filenames = f'{opts.inpath}{pstr}_{opts.station}*.csv'
         file = glob.glob(filenames)
     data = pd.read_csv(file[0])
@@ -216,7 +215,9 @@ def calc_basis(opts, data):
                                    'DTEEC': (['days'], dteec)},
                         coords={'days': (['days'], data.index.values)})
 
-    return basics, data
+    basics['DTEM'] = basics['DTEM'].where(basics['DTEM'] > 0)
+
+    return basics
 
 
 def calc_ctp_indicators(opts, data):
@@ -231,6 +232,7 @@ def calc_ctp_indicators(opts, data):
         data_unit = '°C'
     else:
         em_avg = data.median('days')['DTEM']
+        em_avg = em_avg.interpolate_na(dim='ctp')
         data_unit = 'mm'
 
     # add attributes and combine to one dataset
@@ -257,7 +259,7 @@ def run():
     data = load_data(opts=opts)
 
     # calc daily basis variables
-    dbv, data = calc_basis(opts=opts, data=data)
+    dbv = calc_basis(opts=opts, data=data)
     dbv, dbv_per = assign_ctp_coords(opts=opts, data=dbv)
 
     # calc CTP variables
