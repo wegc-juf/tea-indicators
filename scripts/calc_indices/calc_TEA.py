@@ -456,15 +456,16 @@ def run():
         if end - start > 10 - 1:
             starts = np.arange(start, end, 10)
             ends = np.append(np.arange(start + 10 - 1, end, 10), end)
-            for start, end in zip(starts, ends):
-                opts.start = start
-                opts.end = end
+            for pstart, pend in zip(starts, ends):
+                opts.start = pstart
+                opts.end = pend
                 logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
                 calc_indicators(opts=opts)
         else:
             calc_indicators(opts=opts)
 
     if opts.decadal or opts.decadal_only:
+        opts.start, opts.end = start, end
         logging.info(f'Calculating decadal-mean primary variables.')
         calc_decadal_indicators(opts=opts, suppl=False)
         logging.info(f'Calculating decadal-mean supplementary variables.')
