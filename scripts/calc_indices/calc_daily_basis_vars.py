@@ -5,7 +5,7 @@ from pathlib import Path
 import xarray as xr
 
 
-def calc_dtec_dtea(opts, dtem, static):
+def calc_dtec_dtea(opts, dtem, static, cstr):
     """
     calculate DTEC, DTEC_GR, and DTEA_GR and save it to tmp files
     Args:
@@ -42,7 +42,7 @@ def calc_dtec_dtea(opts, dtem, static):
     area_frac = area_frac.rename('DTEA_frac')
 
     areas = xr.merge([dtea_gr, area_frac])
-    areas.to_netcdf(f'{outpath}DTEA_{opts.param_str}_{opts.region}_{opts.dataset}'
+    areas.to_netcdf(f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.dataset}'
                     f'_{opts.start}to{opts.end}.nc')
 
     # calculate dtec_gr (continues equation 03)
@@ -53,7 +53,7 @@ def calc_dtec_dtea(opts, dtem, static):
                                     'units': '1'})
 
     dtecs = xr.merge([dtec, dtec_gr])
-    dtecs.to_netcdf(f'{outpath}DTEC_{opts.param_str}_{opts.region}_{opts.dataset}'
+    dtecs.to_netcdf(f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.dataset}'
                     f'_{opts.start}to{opts.end}.nc')
 
     return dtec, dtec_gr, dtea_gr
@@ -82,12 +82,14 @@ def calc_dteec_1d(dtec_cell):
     return events_np
 
 
-def calculate_event_count(opts, dtec, da_out=False):
+def calculate_event_count(opts, dtec, cstr, da_out=False):
     """
     calculate DTEEC(_GR) according to equations 4 and 5
     Args:
         opts: CLI parameter
         dtec: daily threshold exceedance count
+        cstr: string for subcell
+        da_out: set to true if da is written to output
 
     Returns:
 
@@ -115,20 +117,22 @@ def calculate_event_count(opts, dtec, da_out=False):
 
     if not da_out:
         outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-                   f'{dteec.name}_{opts.param_str}_{opts.region}_{opts.dataset}'
+                   f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}.nc')
         dteec.to_netcdf(outname)
     else:
         return dteec
 
 
-def calc_daily_basis_vars(opts, static, data):
+def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     """
     compute daily basis variables following chapter 3 of TEA methods
     Args:
         opts: CLI parameter
         static: static ds
         data: data
+        large_gr: set if called from calc_TEA_largeGR (saves output in different directory)
+        cell: lat and lon of cell (only relevant if called from calc_TEA_largeGR).
 
     Returns:
         basic_vars: ds with daily basis variables (DTEC, DTEM, DTEA) both gridded and for GR
@@ -141,6 +145,10 @@ def calc_daily_basis_vars(opts, static, data):
     else:
         data_unit = 'mm'
 
+    cell_str = ''
+    if large_gr:
+        cell_str = f'_lat{cell[0]}_lon{cell[1]}'
+
     path = Path(f'{opts.outpath}daily_basis_variables/tmp/')
     path.mkdir(parents=True, exist_ok=True)
 
@@ -151,13 +159,12 @@ def calc_daily_basis_vars(opts, static, data):
     dtem = dtem.rename('DTEM')
     dtem.attrs = {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit}
 
-    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=dtem, static=static)
+    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=dtem, static=static, cstr=cell_str)
 
     # equation 08
     # calculate dtem_gr (area weighted DTEM)
     area_fac = static['area_grid'] / dtea_gr.T
     dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
-    dtem_gr = dtem_gr.where(dtem_gr > 0)
     dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
     dtem_gr = dtem_gr.assign_attrs({'long_name': 'daily threshold exceedance magnitude (GR)',
                                     'units': data_unit})
@@ -171,21 +178,32 @@ def calc_daily_basis_vars(opts, static, data):
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
     outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-               f'DTEM_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+               f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
     dtems.to_netcdf(outname)
 
     # equations 4 and 5
     # calculate DTEEC(_GR)
-    calculate_event_count(opts=opts, dtec=dtec)
-    calculate_event_count(opts=opts, dtec=dtec_gr)
+    calculate_event_count(opts=opts, dtec=dtec, cstr=cell_str)
+    calculate_event_count(opts=opts, dtec=dtec_gr, cstr=cell_str)
 
     # combine all basic variables into one ds
     bv_files = sorted(glob.glob(
         f'{opts.outpath}daily_basis_variables/tmp/'
-        f'*_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc'))
+        f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc'))
     bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
-    bv_ds.to_netcdf(f'{opts.outpath}daily_basis_variables/'
-                    f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+
+    bv_outpath = (f'{opts.outpath}daily_basis_variables/'
+                  f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}'
+                  f'_{opts.start}to{opts.end}.nc')
+    if large_gr:
+        large_gr_path = Path(f'{opts.tmppath}daily_basis_variables/')
+        large_gr_path.mkdir(parents=True, exist_ok=True)
+        bv_outpath = (f'{opts.tmppath}daily_basis_variables/'
+                      f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
+                      f'_{opts.start}to{opts.end}.nc')
+
+    bv_ds.to_netcdf(bv_outpath)
 
     for file in bv_files:
         os.system(f'rm {file}')

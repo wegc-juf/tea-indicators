@@ -24,6 +24,7 @@ from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementa
                                           calc_event_duration, calc_exceedance_magnitude,
                                           calc_exceedance_area_tex_sev)
 from calc_decadal_indicators import calc_decadal_indicators
+import calc_TEA_largeGR
 
 logging.basicConfig(
     level=logging.INFO,
@@ -124,6 +125,13 @@ def getopts():
                         default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
                         help='Path of folder where mask file is located.')
 
+    parser.add_argument('--tmppath',
+                        type=dir_path,
+                        default='/home/hst/tmp_data/TEAclean/largeGR/',
+                        help='Path of folder where tmp files should be stored. '
+                             'Only relevant if large GR (> 100 areals) are processed with '
+                             'ERA5(-Land) data.')
+
     parser.add_argument('--dataset',
                         dest='dataset',
                         default='SPARTACUS',
@@ -191,9 +199,10 @@ def validate_period(opts):
         raise AttributeError(f'For decadal output, please select from {valid_dec_periods} as '
                              f'period! {opts.period} was passed instead.')
 
-    if opts.end - opts.start < 9:
-        raise AttributeError(f'For decadal output, please pass more at least 10 years! '
-                             f'{(opts.end - opts.start) + 1} years were passed instead.')
+    if opts.decadal or opts.decadal_only:
+        if opts.end - opts.start < 9:
+            raise AttributeError(f'For decadal output, please pass more at least 10 years! '
+                                 f'{(opts.end - opts.start) + 1} years were passed instead.')
 
 
 def get_data(opts):
@@ -400,6 +409,11 @@ def calc_indicators(opts):
     # apply mask to data
     data = data * (masks['lt1500_mask'] * masks['mask'])
 
+    # check if GR size is larger than 100 areals
+    if 'ERA' in opts.dataset and static['GR_size'] > 100:
+        calc_TEA_largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
+        return
+
     # computation of daily basis variables (Methods chapter 3)
     calc_daily_basis_vars(opts=opts, static=static, data=data)
     dbv = xr.open_dataset(
@@ -412,7 +426,7 @@ def calc_indicators(opts):
     for vvar in dbv.data_vars:
         if vvar == 'DTEEC_GR':
             # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
-            dbv[vvar] = calculate_event_count(opts=opts, dtec=dbv['DTEC_GR'], da_out=True)
+            dbv[vvar] = calculate_event_count(opts=opts, dtec=dbv['DTEC_GR'], da_out=True, cstr='')
         elif 'GR' in vvar:
             dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
