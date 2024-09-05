@@ -94,13 +94,16 @@ def select_cell(opts, lat, lon, data, static, masks):
     return cell_data, land_frac, cell_static
 
 
-def dbv_to_new_grid(opts, dbv, masks, cell, dbv_ds):
+def dbv_to_new_grid(opts, dbv, masks, cell, dbv_ds, agrid):
     """
     average variables to new grid
     Args:
         opts: CLI parameters
+        dbv: daily basis variables
         masks: masks
         cell: lat and lon of current cell
+        dbv_ds: DBV ds for output
+        agrid: area grid of subcell
 
     Returns:
 
@@ -113,7 +116,8 @@ def dbv_to_new_grid(opts, dbv, masks, cell, dbv_ds):
             dbv[vvar] = dbv[vvar].where(mask == 1)
 
     # calc spatial mean (= grid cell value on new grid)
-    dbv = dbv.mean(dim=('lat', 'lon'))
+    weights = agrid / agrid.sum()
+    dbv = (weights * dbv).sum(dim=('lat', 'lon'))
 
     # assign lat and lon coords to data (to combine back to grid later on)
     if dbv_ds is None:
@@ -132,16 +136,21 @@ def dbv_to_new_grid(opts, dbv, masks, cell, dbv_ds):
     dbv_ds = create_history(cli_params=sys.argv, ds=dbv_ds)
 
     # save tmp files
+    # remove previous file
+    os.system(f'rm {opts.tmppath}/daily_basis_variables/'
+              f'DBV_lat{cell[0]}_lon{cell[1]}_{opts.param_str}_{opts.region}_{opts.period}'
+              f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+
     path = Path(f'{opts.tmppath}daily_basis_variables/')
     path.mkdir(parents=True, exist_ok=True)
     dbv_ds.to_netcdf(f'{opts.tmppath}/daily_basis_variables/'
-                 f'DBV_lat{cell[0]}_lon{cell[1]}_{opts.param_str}_{opts.region}_{opts.period}'
-                 f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+                     f'DBV_lat{cell[0]}_lon{cell[1]}_{opts.param_str}_{opts.region}_{opts.period}'
+                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
     return dbv_ds
 
 
-def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_suppl):
+def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_suppl, area_grid):
     """
     average variables to new grid
     Args:
@@ -156,6 +165,7 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_s
         cell: lat and lon of current cell
         ds: output ds
         ds_suppl: output supplementary ds
+        area_grid: area grid of subcell
 
     Returns:
 
@@ -179,9 +189,10 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_s
         if 'GR' not in vvar:
             ds_out_suppl[vvar] = ds_out_suppl[vvar].where(mask == 1)
 
-    # calc spatial mean (= grid cell value on new grid)
-    ds_out = ds_out.mean(dim=('lat', 'lon'))
-    ds_out_suppl = ds_out_suppl.mean(dim=('lat', 'lon'))
+    # calc weighted spatial mean (= grid cell value on new grid)
+    weights = area_grid / area_grid.sum()
+    ds_out = (weights * ds_out).sum(dim=('lat', 'lon'))
+    ds_out_suppl = (weights * ds_out_suppl).sum(dim=('lat', 'lon'))
 
     # assign lat and lon coords to data (to combine back to grid later on)
     if ds is None:
@@ -252,7 +263,7 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
         dbv = xr.open_dataset(
             f'{opts.tmppath}daily_basis_variables/'
-            f'DBV_lat{lat}_lon{lon}_{opts.param_str}_{opts.region}_{opts.dataset}'
+            f'DBV_lat{lat}_lon{lon}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
 
         # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
@@ -285,39 +296,42 @@ def calc_tea_lat(opts, data, static, masks, lat):
         # calc variables on new grid and save tmp files
         ds, ds_suppl = ctp_to_new_grid(opts=opts, ef=ef, ed=ed, em=em, ea=ea, svars=svars,
                                        em_suppl=em_suppl, masks=masks, cell=[lat, lon],
-                                       ds=ds, ds_suppl=ds_suppl)
+                                       ds=ds, ds_suppl=ds_suppl, area_grid=cell_static.area_grid)
 
         # calc dbv on new grid and save tmp files
-        dbv_ds = dbv_to_new_grid(opts=opts, dbv=dbv, masks=masks, cell=[lat, lon], dbv_ds=dbv_ds)
+        dbv_ds = dbv_to_new_grid(opts=opts, dbv=dbv, masks=masks, cell=[lat, lon], dbv_ds=dbv_ds,
+                                 agrid=cell_static.area_grid)
 
     # save output files
-    dbv_ds.to_netcdf(f'{opts.tmppath}daily_basis_variables/'
-                 f'DBV_lat{lat}_{opts.param_str}_{opts.region}_{opts.period}'
-                 f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-    ds.to_netcdf(f'{opts.tmppath}ctp_indicator_variables/'
-                 f'CTP_lat{lat}_{opts.param_str}_{opts.region}_{opts.period}'
-                 f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-    ds_suppl.to_netcdf(f'{opts.tmppath}ctp_indicator_variables/supplementary/'
-                       f'CTPsuppl_lat{lat}_{opts.param_str}_{opts.region}'
-                       f'_{opts.period}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+    if dbv_ds is not None:
+        dbv_ds.to_netcdf(f'{opts.tmppath}daily_basis_variables/'
+                         f'DBV_lat{lat}_{opts.param_str}_{opts.region}_{opts.period}'
+                         f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+        ds.to_netcdf(f'{opts.tmppath}ctp_indicator_variables/'
+                     f'CTP_lat{lat}_{opts.param_str}_{opts.region}_{opts.period}'
+                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+        ds_suppl.to_netcdf(f'{opts.tmppath}ctp_indicator_variables/supplementary/'
+                           f'CTPsuppl_lat{lat}_{opts.param_str}_{opts.region}'
+                           f'_{opts.period}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
-    # remove individual cell files
-    cell_files_ctp = sorted(glob.glob(f'{opts.tmppath}ctp_indicator_variables/'
-                                  f'CTP_lat{lat}_lon*_{opts.param_str}_{opts.region}_{opts.period}'
-                                  f'_{opts.dataset}_{opts.start}to{opts.end}.nc'))
-    cell_files_suppl = sorted(glob.glob(f'{opts.tmppath}ctp_indicator_variables/supplementary/'
-                                        f'CTPsuppl_lat{lat}_lon*_{opts.param_str}_{opts.region}'
-                                        f'_{opts.period}_{opts.dataset}'
-                                        f'_{opts.start}to{opts.end}.nc'))
-    cell_files_dbv = sorted(glob.glob(f'{opts.tmppath}daily_basis_variables/'
-                                        f'DBV_lat{lat}_lon*_{opts.param_str}_{opts.region}'
-                                        f'_{opts.period}_{opts.dataset}'
-                                        f'_{opts.start}to{opts.end}.nc'))
+        # remove individual cell files
+        cell_files_ctp = sorted(glob.glob(f'{opts.tmppath}ctp_indicator_variables/'
+                                          f'CTP_lat{lat}_lon*_{opts.param_str}_{opts.region}'
+                                          f'_{opts.period}_{opts.dataset}'
+                                          f'_{opts.start}to{opts.end}.nc'))
+        cell_files_suppl = sorted(glob.glob(f'{opts.tmppath}ctp_indicator_variables/supplementary/'
+                                            f'CTPsuppl_lat{lat}_lon*_{opts.param_str}_{opts.region}'
+                                            f'_{opts.period}_{opts.dataset}'
+                                            f'_{opts.start}to{opts.end}.nc'))
+        cell_files_dbv = sorted(glob.glob(f'{opts.tmppath}daily_basis_variables/'
+                                          f'DBV_lat{lat}_lon*_{opts.param_str}_{opts.region}'
+                                          f'_{opts.period}_{opts.dataset}'
+                                          f'_{opts.start}to{opts.end}.nc'))
 
-    for ifile, file in enumerate(cell_files_ctp):
-        os.system(f'rm {file}')
-        os.system(f'rm {cell_files_suppl[ifile]}')
-        os.system(f'rm {cell_files_dbv[ifile]}')
+        for ifile, file in enumerate(cell_files_ctp):
+            os.system(f'rm {file}')
+            os.system(f'rm {cell_files_suppl[ifile]}')
+            os.system(f'rm {cell_files_dbv[ifile]}')
 
 
 def filter_filenames(filenames, lat_range):
@@ -330,12 +344,42 @@ def filter_filenames(filenames, lat_range):
     return filtered_filenames
 
 
-def combine_to_eur(opts, lat_lims):
+def area_grid(opts, da):
+    if opts.dataset == 'ERA5':
+        delta_fac = 4  # to get 0.25° resolution
+    else:
+        delta_fac = 10  # to get 0.1°
+
+    lat = da.lat.values
+    r_mean = 6371
+    u_mean = 2 * np.pi * r_mean
+
+    # calculate earth radius at different latitudes
+    r_lat = np.cos(np.deg2rad(lat)) * r_mean
+
+    # calculate earth circumference at latitude
+    u_lat = 2 * np.pi * r_lat
+
+    # calculate length of 0.25°/0.1° in m for x and y dimension
+    x_len = (u_lat / 360) / delta_fac
+    y_len = (u_mean / 360) / delta_fac
+
+    # calculate size of cells in areals
+    x_len_da = xr.DataArray(data=x_len, coords={'lat': (['lat'], lat)})
+    agrid = xr.DataArray(data=np.ones((len(da.lat), len(da.lon))),
+                         coords={'lat': (['lat'], da.lat.values), 'lon': (['lon'], da.lon.values)})
+    agrid = (agrid * y_len * x_len_da) / 100
+
+    return agrid
+
+
+def combine_to_eur(opts, lat_lims, mask):
     """
     combines files of latitudes to one EUR file
     Args:
         opts: CLI parameter
         lat_lims: min and max latitude of the region
+        mask: GR mask on output grid
 
     Returns:
 
@@ -358,10 +402,45 @@ def combine_to_eur(opts, lat_lims):
 
     files = {'DBV': bv_files, 'CTP': ctp_files, 'CTPsuppl': ctp_suppl_files}
 
+    outpaths = {'DBV': f'{opts.outpath}daily_basis_variables/'
+                       f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                       f'_{opts.start}to{opts.end}.nc',
+                'CTP': f'{opts.outpath}ctp_indicator_variables/'
+                       f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                       f'_{opts.start}to{opts.end}.nc',
+                'CTPsuppl': f'{opts.outpath}ctp_indicator_variables/supplementary/'
+                            f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                            f'_{opts.start}to{opts.end}.nc'}
+
     # load files
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
-        print()
+
+        # calc AGR variables (area-weighted mean of GR vars)
+        area = area_grid(opts=opts, da=ds)
+        area = area.where(mask == 1)
+
+        weights = area / area.sum()
+
+        for vvar in ds.data_vars:
+            # TODO: at the  moment there are DTE(E)C values != [0, 1] because of the weighted mean,
+            #  think about how this should be tackled (maybe calc DTE(E)C on new grid first and
+            #  then calc indices? Not sure how this should be done to be consistent...
+            if vvar == 'doy_first_GR':
+                ds[vvar] = ds[vvar].min(dim=('lat', 'lon'))
+            elif vvar == 'doy_last_GR':
+                ds[vvar] = ds[vvar].max(dim=('lat', 'lon'))
+            elif vvar == 'DTEM_Max':
+                ds[vvar] = ds[vvar].max(dim=('lat', 'lon'))
+            elif 'GR' in vvar:
+                ds[vvar] = (weights * ds[vvar]).sum(dim=('lat', 'lon'))
+
+        ds.to_netcdf(outpaths[vvars])
+        ds.close()
+
+        # remove tmp_files
+        for tfile in files[vvars]:
+            os.system(f'rm {tfile}')
 
 
 def calc_tea_large_gr(opts, data, masks, static):
@@ -376,6 +455,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
 
+    # TODO: multiprocessing gets stuck --> fix that
     # with get_context('spawn').Pool(processes=5) as pool:
     #     pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
     #                                    lats))
@@ -383,7 +463,17 @@ def calc_tea_large_gr(opts, data, masks, static):
     # pool.join()
 
     # for testing with only one latitude
-    # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[2])
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
+    for llat in lats:
+        calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
 
-    combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat])
+    # create region mask on new grid
+    if opts.dataset == 'ERA5':
+        lons = np.arange(-12, 40.5, 0.5)
+    else:
+        lons = np.arange(9, 18, 0.5)
+    ngrid_mask = masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat))
+    ngrid_mask = ngrid_mask.interp(lat=lats, lon=lons)
+
+    logging.info(f'Combining individual latitudes to single file.')
+    combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)

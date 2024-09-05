@@ -42,7 +42,7 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
     area_frac = area_frac.rename('DTEA_frac')
 
     areas = xr.merge([dtea_gr, area_frac])
-    areas.to_netcdf(f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.dataset}'
+    areas.to_netcdf(f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                     f'_{opts.start}to{opts.end}.nc')
 
     # calculate dtec_gr (continues equation 03)
@@ -53,7 +53,7 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
                                     'units': '1'})
 
     dtecs = xr.merge([dtec, dtec_gr])
-    dtecs.to_netcdf(f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.dataset}'
+    dtecs.to_netcdf(f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                     f'_{opts.start}to{opts.end}.nc')
 
     return dtec, dtec_gr, dtea_gr
@@ -117,7 +117,7 @@ def calculate_event_count(opts, dtec, cstr, da_out=False):
 
     if not da_out:
         outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-                   f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.dataset}'
+                   f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}.nc')
         dteec.to_netcdf(outname)
     else:
@@ -178,7 +178,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
     outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-               f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
+               f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                f'_{opts.start}to{opts.end}.nc')
     dtems.to_netcdf(outname)
 
@@ -190,17 +190,18 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     # combine all basic variables into one ds
     bv_files = sorted(glob.glob(
         f'{opts.outpath}daily_basis_variables/tmp/'
-        f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc'))
+        f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+        f'_{opts.start}to{opts.end}.nc'))
     bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
 
     bv_outpath = (f'{opts.outpath}daily_basis_variables/'
-                  f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}'
+                  f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                   f'_{opts.start}to{opts.end}.nc')
     if large_gr:
         large_gr_path = Path(f'{opts.tmppath}daily_basis_variables/')
         large_gr_path.mkdir(parents=True, exist_ok=True)
         bv_outpath = (f'{opts.tmppath}daily_basis_variables/'
-                      f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.dataset}'
+                      f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                       f'_{opts.start}to{opts.end}.nc')
 
     bv_ds.to_netcdf(bv_outpath)
