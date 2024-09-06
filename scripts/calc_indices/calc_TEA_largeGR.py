@@ -94,30 +94,31 @@ def select_cell(opts, lat, lon, data, static, masks):
     return cell_data, land_frac, cell_static
 
 
-def dbv_to_new_grid(opts, dbv, masks, cell, dbv_ds, agrid):
+def dbv_to_new_grid(opts, dbv, cell, dbv_ds):
     """
     average variables to new grid
     Args:
         opts: CLI parameters
         dbv: daily basis variables
-        masks: masks
         cell: lat and lon of current cell
         dbv_ds: DBV ds for output
-        agrid: area grid of subcell
 
     Returns:
 
     """
 
-    mask = masks['lt1500_mask'] * masks['mask']
-    # apply masks to grid data again (sum etc. result in 0 outside of region)
-    for vvar in dbv.data_vars:
-        if 'GR' not in vvar:
-            dbv[vvar] = dbv[vvar].where(mask == 1)
+    # GR vars of 0.5° sub-cells are used as new grid values
+    # --> drop grid values on native 0.25° grid
+    dvars = [vvar for vvar in dbv.data_vars if 'GR' not in vvar]
+    dbv = dbv.drop(dvars)
 
-    # calc spatial mean (= grid cell value on new grid)
-    weights = agrid / agrid.sum()
-    dbv = (weights * dbv).sum(dim=('lat', 'lon'))
+    # rename vars (remove 'GR' from var name and attrs)
+    rename_dict = {}
+    for vvar in dbv.data_vars:
+        new_name = vvar.split('_GR')[0]
+        rename_dict[vvar] = new_name
+        dbv[vvar].attrs['long_name'] = dbv[vvar].attrs['long_name'].split(' (GR)')[0]
+    dbv = dbv.rename(rename_dict)
 
     # assign lat and lon coords to data (to combine back to grid later on)
     if dbv_ds is None:
@@ -150,7 +151,7 @@ def dbv_to_new_grid(opts, dbv, masks, cell, dbv_ds, agrid):
     return dbv_ds
 
 
-def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_suppl, area_grid):
+def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
     """
     average variables to new grid
     Args:
@@ -161,11 +162,9 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_s
         ea: event area ds
         svars: supplementary variables dataset
         em_suppl: supplementary event magnitude ds
-        masks: masks
         cell: lat and lon of current cell
         ds: output ds
         ds_suppl: output supplementary ds
-        area_grid: area grid of subcell
 
     Returns:
 
@@ -180,19 +179,28 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, masks, cell, ds, ds_s
     ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(
         {'long_name': f'climatic time period ({opts.period})'})
 
-    mask = masks['lt1500_mask'] * masks['mask']
-    # apply masks to grid data again (sum etc. result in 0 outside of region)
-    for vvar in ds_out.data_vars:
-        if 'GR' not in vvar:
-            ds_out[vvar] = ds_out[vvar].where(mask == 1)
-    for vvar in ds_out_suppl.data_vars:
-        if 'GR' not in vvar:
-            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(mask == 1)
+    # GR vars of 0.5° sub-cells are used as new grid values
+    # --> drop grid values on native 0.25° grid
+    dvars = [vvar for vvar in ds_out.data_vars if 'GR' not in vvar]
+    dvars_suppl = [vvar for vvar in ds_out_suppl.data_vars if 'GR' not in vvar]
+    ds_out = ds_out.drop(dvars)
+    ds_out_suppl = ds_out_suppl.drop(dvars_suppl)
 
-    # calc weighted spatial mean (= grid cell value on new grid)
-    weights = area_grid / area_grid.sum()
-    ds_out = (weights * ds_out).sum(dim=('lat', 'lon'))
-    ds_out_suppl = (weights * ds_out_suppl).sum(dim=('lat', 'lon'))
+    # rename vars (remove 'GR' from var name and attrs)
+    rename_dict = {}
+    for vvar in ds_out.data_vars:
+        new_name = vvar.split('_GR')[0]
+        rename_dict[vvar] = new_name
+        ds_out[vvar].attrs['long_name'] = ds_out[vvar].attrs['long_name'].split(' (GR)')[0]
+    ds_out = ds_out.rename(rename_dict)
+
+    rename_dict_suppl = {}
+    for vvar in ds_out_suppl.data_vars:
+        new_name = vvar.split('_GR')[0]
+        rename_dict_suppl[vvar] = new_name
+        ds_out_suppl[vvar].attrs['long_name'] = ds_out_suppl[vvar].attrs['long_name'].split(
+            ' (GR)')[0]
+    ds_out_suppl = ds_out_suppl.rename(rename_dict_suppl)
 
     # assign lat and lon coords to data (to combine back to grid later on)
     if ds is None:
@@ -293,17 +301,17 @@ def calc_tea_lat(opts, data, static, masks, lat):
         # calculate EA
         ea = calc_exceedance_area_tex_sev(opts=opts, data=dbv, ed=ed, em=em)
 
+        # calc dbv on new grid and save tmp files
+        dbv_ds = dbv_to_new_grid(opts=opts, dbv=dbv, cell=[lat, lon], dbv_ds=dbv_ds)
+
         # calc variables on new grid and save tmp files
         ds, ds_suppl = ctp_to_new_grid(opts=opts, ef=ef, ed=ed, em=em, ea=ea, svars=svars,
-                                       em_suppl=em_suppl, masks=masks, cell=[lat, lon],
-                                       ds=ds, ds_suppl=ds_suppl, area_grid=cell_static.area_grid)
-
-        # calc dbv on new grid and save tmp files
-        dbv_ds = dbv_to_new_grid(opts=opts, dbv=dbv, masks=masks, cell=[lat, lon], dbv_ds=dbv_ds,
-                                 agrid=cell_static.area_grid)
+                                       em_suppl=em_suppl, cell=[lat, lon],
+                                       ds=ds, ds_suppl=ds_suppl)
 
     # save output files
     if dbv_ds is not None:
+        dbv_ds = dbv_ds.drop(['ctp', 'doy'])
         dbv_ds.to_netcdf(f'{opts.tmppath}daily_basis_variables/'
                          f'DBV_lat{lat}_{opts.param_str}_{opts.region}_{opts.period}'
                          f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
@@ -412,6 +420,11 @@ def combine_to_eur(opts, lat_lims, mask):
                             f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                             f'_{opts.start}to{opts.end}.nc'}
 
+    # list of variables for which a GR version should be calculated
+    gr_vars = ['DTEC', 'DTEEC', 'DTEM', 'DTEM', 'DTEA', 'EF', 'ED', 'EDavg', 'EM', 'EMavg',
+               'EM_Md', 'EMavg_Md', 'EM_Max', 'EMavg_Max', 'ESavg', 'TEX', 'delta_y',
+               'doy_first', 'doy_last']
+
     # load files
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
@@ -423,17 +436,17 @@ def combine_to_eur(opts, lat_lims, mask):
         weights = area / area.sum()
 
         for vvar in ds.data_vars:
-            # TODO: at the  moment there are DTE(E)C values != [0, 1] because of the weighted mean,
-            #  think about how this should be tackled (maybe calc DTE(E)C on new grid first and
-            #  then calc indices? Not sure how this should be done to be consistent...
-            if vvar == 'doy_first_GR':
-                ds[vvar] = ds[vvar].min(dim=('lat', 'lon'))
-            elif vvar == 'doy_last_GR':
-                ds[vvar] = ds[vvar].max(dim=('lat', 'lon'))
+            if vvar == 'doy_first':
+                ds[f'{vvar}_GR'] = ds[vvar].min(dim=('lat', 'lon'))
+            elif vvar == 'doy_last':
+                ds[f'{vvar}_GR'] = ds[vvar].max(dim=('lat', 'lon'))
             elif vvar == 'DTEM_Max':
-                ds[vvar] = ds[vvar].max(dim=('lat', 'lon'))
-            elif 'GR' in vvar:
-                ds[vvar] = (weights * ds[vvar]).sum(dim=('lat', 'lon'))
+                ds[f'{vvar}_GR'] = ds[vvar].max(dim=('lat', 'lon'))
+            elif vvar in gr_vars:
+                ds[f'{vvar}_GR'] = (weights * ds[vvar]).sum(dim=('lat', 'lon'))
+                # TODO: discuss with gki if this is ok so
+                if vvar in ['DTEC', 'DTEEC']:
+                    ds[f'{vvar}_GR'] = np.round(ds[f'{vvar}_GR'])
 
         ds.to_netcdf(outpaths[vvars])
         ds.close()
@@ -455,17 +468,16 @@ def calc_tea_large_gr(opts, data, masks, static):
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
 
-    # TODO: multiprocessing gets stuck --> fix that
     # with get_context('spawn').Pool(processes=5) as pool:
     #     pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
     #                                    lats))
     # pool.close()
     # pool.join()
 
-    # for testing with only one latitude
+    # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
-    for llat in lats:
-        calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
+    # for llat in lats:
+    #     calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
 
     # create region mask on new grid
     if opts.dataset == 'ERA5':
