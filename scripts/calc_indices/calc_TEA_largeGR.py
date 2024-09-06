@@ -470,7 +470,7 @@ def check_tmp_dirs(opts):
             break
 
     if non_empty > 0:
-        print(f'At least one tmp directory is not empty. Tmp files will be deleted first.')
+        logging.info(f'At least one tmp directory is not empty. Tmp files will be deleted first.')
         for ddir in tmp_dirs:
             delete_files_in_directory(ddir)
 

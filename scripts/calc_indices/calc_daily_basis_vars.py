@@ -1,4 +1,5 @@
 import glob
+import logging
 import numpy as np
 import os
 from pathlib import Path
@@ -12,6 +13,7 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
         opts: CLI parameter
         dtem: Daily Threshold Exceedance Magnitude
         static: static files
+        cstr: cell string to add to filename (only if called from calc_TEA_largeGR)
 
     Returns:
         dtec: Daily Threshold Exceedance Count
@@ -146,7 +148,7 @@ def check_tmp_dir(opts):
 
     # Check each directory and interact with the user if necessary
     if not is_directory_empty(tmp_dir):
-        print(f'Tmp directory is not empty, files will be deleted first.')
+        logging.info(f'Tmp directory is not empty, files will be deleted first.')
         delete_files_in_directory(tmp_dir)
 
 def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
