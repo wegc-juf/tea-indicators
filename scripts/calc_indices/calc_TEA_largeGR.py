@@ -429,25 +429,6 @@ def combine_to_eur(opts, lat_lims, mask):
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
 
-        # calc AGR variables (area-weighted mean of GR vars)
-        area = area_grid(opts=opts, da=ds)
-        area = area.where(mask == 1)
-
-        weights = area / area.sum()
-
-        for vvar in ds.data_vars:
-            if vvar == 'doy_first':
-                ds[f'{vvar}_GR'] = ds[vvar].min(dim=('lat', 'lon'))
-            elif vvar == 'doy_last':
-                ds[f'{vvar}_GR'] = ds[vvar].max(dim=('lat', 'lon'))
-            elif vvar == 'DTEM_Max':
-                ds[f'{vvar}_GR'] = ds[vvar].max(dim=('lat', 'lon'))
-            elif vvar in gr_vars:
-                ds[f'{vvar}_GR'] = (weights * ds[vvar]).sum(dim=('lat', 'lon'))
-                # TODO: discuss with gki if this is ok so
-                if vvar in ['DTEC', 'DTEEC']:
-                    ds[f'{vvar}_GR'] = np.round(ds[f'{vvar}_GR'])
-
         ds.to_netcdf(outpaths[vvars])
         ds.close()
 
@@ -456,8 +437,41 @@ def combine_to_eur(opts, lat_lims, mask):
             os.system(f'rm {tfile}')
 
 
+def check_tmp_dirs(opts):
+    def is_directory_empty(directory):
+        return not any(os.scandir(directory))
+
+    def delete_files_in_directory(directory):
+        for entry in os.scandir(directory):
+            if entry.is_file():
+                os.remove(entry.path)
+
+    tmp_dirs = [f'{opts.outpath}daily_basis_variables/tmp/',
+                f'{opts.tmppath}daily_basis_variables/',
+                f'{opts.tmppath}ctp_indicator_variables/',
+                f'{opts.tmppath}ctp_indicator_variables/supplementary/']
+
+    # Check each directory and interact with the user if necessary
+    non_empty = 0
+    for ddir in tmp_dirs:
+        if not is_directory_empty(ddir):
+            non_empty += 1
+            break
+
+    if non_empty > 0:
+        print(f'At least one tmp directory is not empty.')
+        user_input = input('Do you want to delete all old tmp files? (yes/no): ')
+        if user_input.lower() == 'yes':
+            for ddir in tmp_dirs:
+                delete_files_in_directory(ddir)
+            print(f'All old tmp files have been deleted.')
+
+
 def calc_tea_large_gr(opts, data, masks, static):
     logging.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
+
+    # check if tmp directories are empty
+    check_tmp_dirs(opts)
 
     # preselect region to reduce computation time
     min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values
@@ -468,11 +482,11 @@ def calc_tea_large_gr(opts, data, masks, static):
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
 
-    # with get_context('spawn').Pool(processes=5) as pool:
-    #     pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
-    #                                    lats))
-    # pool.close()
-    # pool.join()
+    with get_context('spawn').Pool(processes=5) as pool:
+        pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
+                                       lats))
+    pool.close()
+    pool.join()
 
     # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
@@ -489,3 +503,5 @@ def calc_tea_large_gr(opts, data, masks, static):
 
     logging.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)
+
+    # TODO: check if tmp folders are empty and if not ask users if files should be deleted
