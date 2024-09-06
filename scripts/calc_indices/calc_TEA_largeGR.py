@@ -428,7 +428,9 @@ def combine_to_eur(opts, lat_lims, mask):
     # load files
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
-
+        ds.attrs['info'] = (f'Grid values correspond to GR values of subcells. '
+                            f'GR values for whole region {opts.region} can be calculated after '
+                            f'decadal-mean indicator calculation with aggregate_to_AGR.py.')
         ds.to_netcdf(outpaths[vvars])
         ds.close()
 
@@ -468,12 +470,9 @@ def check_tmp_dirs(opts):
             break
 
     if non_empty > 0:
-        print(f'At least one tmp directory is not empty.')
-        user_input = input('Do you want to delete all old tmp files? (yes/no): ')
-        if user_input.lower() == 'yes':
-            for ddir in tmp_dirs:
-                delete_files_in_directory(ddir)
-            print(f'All old tmp files have been deleted.')
+        print(f'At least one tmp directory is not empty. Tmp files will be deleted first.')
+        for ddir in tmp_dirs:
+            delete_files_in_directory(ddir)
 
 
 def calc_tea_large_gr(opts, data, masks, static):
@@ -512,5 +511,3 @@ def calc_tea_large_gr(opts, data, masks, static):
 
     logging.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)
-
-    # TODO: check if tmp folders are empty and if not ask users if files should be deleted

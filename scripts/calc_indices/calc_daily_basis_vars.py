@@ -146,11 +146,8 @@ def check_tmp_dir(opts):
 
     # Check each directory and interact with the user if necessary
     if not is_directory_empty(tmp_dir):
-        print(f'Tmp directory is not empty.')
-        user_input = input('Do you want to delete all old tmp files? (yes/no): ')
-        if user_input.lower() == 'yes':
-            delete_files_in_directory(tmp_dir)
-            print(f'All old tmp files have been deleted.')
+        print(f'Tmp directory is not empty, files will be deleted first.')
+        delete_files_in_directory(tmp_dir)
 
 def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     """
@@ -181,7 +178,8 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     path.mkdir(parents=True, exist_ok=True)
 
     # check if tmp directory is empty
-    check_tmp_dir(opts)
+    if not large_gr:
+        check_tmp_dir(opts)
 
     # calculate DTEM
     # equation 07
