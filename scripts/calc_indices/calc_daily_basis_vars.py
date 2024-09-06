@@ -124,6 +124,34 @@ def calculate_event_count(opts, dtec, cstr, da_out=False):
         return dteec
 
 
+def check_tmp_dir(opts):
+    """
+    check if tmp directory is empty and ask if files should be deleted
+    Args:
+        opts: CLI parameter
+
+    Returns:
+
+    """
+
+    def is_directory_empty(directory):
+        return not any(os.scandir(directory))
+
+    def delete_files_in_directory(directory):
+        for entry in os.scandir(directory):
+            if entry.is_file():
+                os.remove(entry.path)
+
+    tmp_dir = f'{opts.outpath}daily_basis_variables/tmp/'
+
+    # Check each directory and interact with the user if necessary
+    if not is_directory_empty(tmp_dir):
+        print(f'Tmp directory is not empty.')
+        user_input = input('Do you want to delete all old tmp files? (yes/no): ')
+        if user_input.lower() == 'yes':
+            delete_files_in_directory(tmp_dir)
+            print(f'All old tmp files have been deleted.')
+
 def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     """
     compute daily basis variables following chapter 3 of TEA methods
@@ -151,6 +179,9 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     path = Path(f'{opts.outpath}daily_basis_variables/tmp/')
     path.mkdir(parents=True, exist_ok=True)
+
+    # check if tmp directory is empty
+    check_tmp_dir(opts)
 
     # calculate DTEM
     # equation 07

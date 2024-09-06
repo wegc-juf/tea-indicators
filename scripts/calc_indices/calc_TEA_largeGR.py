@@ -438,6 +438,15 @@ def combine_to_eur(opts, lat_lims, mask):
 
 
 def check_tmp_dirs(opts):
+    """
+    check if tmp directories are empty and ask if files should be deleted
+    Args:
+        opts: CLI parameter
+
+    Returns:
+
+    """
+
     def is_directory_empty(directory):
         return not any(os.scandir(directory))
 
