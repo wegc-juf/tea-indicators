@@ -27,6 +27,9 @@ from calc_decadal_indicators import calc_decadal_indicators
 import calc_TEA_largeGR
 
 logging.basicConfig(
+    filename='LOGFILE_calc_TEA.log',
+    encoding='utf-8',
+    filemode='a',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
@@ -475,6 +478,7 @@ def run():
                 opts.end = pend
                 logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
                 calc_indicators(opts=opts)
+                # TODO: seems to get stuck after a few iterations, check that!!!
         else:
             calc_indicators(opts=opts)
 
@@ -485,6 +489,7 @@ def run():
         logging.info(f'Calculating decadal-mean supplementary variables.')
         calc_decadal_indicators(opts=opts, suppl=True)
 
+    # TODO: figure out where LOG is saved (if it is even saved at all)
 
 if __name__ == '__main__':
     run()

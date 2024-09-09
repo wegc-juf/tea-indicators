@@ -10,11 +10,6 @@ import sys
 import warnings
 import xarray as xr
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-
 warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
 warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
 
@@ -459,7 +454,6 @@ def check_tmp_dirs(opts):
 
     tmp_dirs = [f'{opts.outpath}daily_basis_variables/tmp/',
                 f'{opts.tmppath}daily_basis_variables/',
-                f'{opts.tmppath}ctp_indicator_variables/',
                 f'{opts.tmppath}ctp_indicator_variables/supplementary/']
 
     # Check each directory and interact with the user if necessary
@@ -470,9 +464,12 @@ def check_tmp_dirs(opts):
             break
 
     if non_empty > 0:
-        logging.info(f'At least one tmp directory is not empty. Tmp files will be deleted first.')
+        logging.info(f'At least one tmp directory is not empty. tmp files will be deleted first.')
         for ddir in tmp_dirs:
             delete_files_in_directory(ddir)
+        # ctp dir is always non-empty because of the sub-dir supplementary --> not checked before
+        # delete files now
+        delete_files_in_directory(directory=f'{opts.tmppath}ctp_indicator_variables/')
 
 
 def calc_tea_large_gr(opts, data, masks, static):
