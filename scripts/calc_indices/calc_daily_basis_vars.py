@@ -151,6 +151,7 @@ def check_tmp_dir(opts):
         logging.info(f'Tmp directory is not empty, files will be deleted first.')
         delete_files_in_directory(tmp_dir)
 
+
 def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     """
     compute daily basis variables following chapter 3 of TEA methods

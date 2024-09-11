@@ -1,3 +1,4 @@
+from concurrent.futures import ProcessPoolExecutor
 import glob
 from itertools import repeat
 from multiprocessing import Pool, get_context
@@ -472,6 +473,10 @@ def check_tmp_dirs(opts):
         delete_files_in_directory(directory=f'{opts.tmppath}ctp_indicator_variables/')
 
 
+def calc_tea_lat_wrapper(args):
+    return calc_tea_lat(*args)
+
+
 def calc_tea_large_gr(opts, data, masks, static):
     logging.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
 
@@ -487,16 +492,14 @@ def calc_tea_large_gr(opts, data, masks, static):
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
 
-    with get_context('spawn').Pool(processes=5) as pool:
-        pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
-                                       lats))
-    pool.close()
-    pool.join()
+    # with get_context('spawn').Pool(processes=5) as pool:
+    #     pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
+    #                                    lats))
 
     # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
-    # for llat in lats:
-    #     calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
+    for llat in lats:
+        calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
 
     # create region mask on new grid
     if opts.dataset == 'ERA5':

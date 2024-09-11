@@ -6,6 +6,7 @@
 
 import argparse
 from datetime import timedelta
+import gc
 import glob
 import logging
 import numpy as np
@@ -463,6 +464,11 @@ def run():
     # add necessary strings to opts
     opts = extend_opts(opts)
 
+    # raise warning if large GR and ERA5 data were passed
+    if opts.dataset in ['ERA5', 'ERA5Land'] and opts.region not in ['FBR', 'SEA']:
+        logging.warning(f'A large GR and a scarce dataset were passed. Multiprocessing might cause '
+                        f'problems when script is called from an interactive interpreter.')
+
     # check length of input time span
     start = opts.start
     end = opts.end
@@ -478,7 +484,7 @@ def run():
                 opts.end = pend
                 logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
                 calc_indicators(opts=opts)
-                # TODO: seems to get stuck after a few iterations, check that!!!
+                gc.collect()
         else:
             calc_indicators(opts=opts)
 
