@@ -1,9 +1,5 @@
-from concurrent.futures import ProcessPoolExecutor
 import glob
-from itertools import repeat
-from multiprocessing import Pool, get_context
 import math
-import logging
 import numpy as np
 import os
 from pathlib import Path
@@ -16,6 +12,7 @@ warnings.filterwarnings(action='ignore', message='divide by zero encountered in 
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
+from TEA_logger import logger
 from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_TEA import (assign_ctp_coords, calc_event_frequency, calc_supplementary_event_vars,
                       calc_event_duration, calc_exceedance_magnitude, calc_exceedance_area_tex_sev)
@@ -71,8 +68,17 @@ def select_cell(opts, lat, lon, data, static, masks):
     small_col_e = col_width_e * (fac * len(cell_data.lat))
     frac_e = small_col_e / orig_col
 
-    cell_lsm[:, 0].values = cell_lsm[:, 0].values * frac_w.values
-    cell_lsm[:, -1].values = cell_lsm[:, -1].values * frac_e.values
+    frac_da = xr.DataArray(data=np.ones((len(cell_lsm.lat), len(cell_lsm.lon))),
+                           coords={'lat': (['lat'], cell_lsm.lat.values),
+                                   'lon': (['lon'], cell_lsm.lon.values)},
+                           dims={'lat': (['lon'], cell_lsm.lat.values),
+                                 'lon': (['lon'], cell_lsm.lon.values)})
+
+    frac_da[:, 0] = frac_da[:, 0] * frac_w.values
+    frac_da[:, -1] = frac_da[:, -1] * frac_e.values
+
+    # apply weights to LSM
+    cell_lsm = cell_lsm * frac_da
 
     # calculate fraction covered by valid cells (land below 1500 m)
     land_frac = cell_lsm.sum() / np.size(cell_lsm)
@@ -82,12 +88,37 @@ def select_cell(opts, lat, lon, data, static, masks):
                              lon=slice(lon_min, lon_max))
 
     for vvar in ['area_grid', 'threshold']:
-        cell_static[vvar][:, 0] = cell_static[vvar][:, 0] * frac_w.values
-        cell_static[vvar][:, -1] = cell_static[vvar][:, -1] * frac_e.values
+        cell_static[vvar] = cell_static[vvar] * frac_da
 
     cell_static['GR_size'] = cell_static['area_grid'].sum().values
 
     return cell_data, land_frac, cell_static
+
+
+def dbv_to_new_grid_new(dbv):
+    """
+    average variables to new grid
+    Args:
+        dbv: daily basis variables
+
+    Returns:
+
+    """
+
+    # GR vars of 0.5° sub-cells are used as new grid values
+    # --> drop grid values on native 0.25° grid
+    dvars = [vvar for vvar in dbv.data_vars if 'GR' not in vvar]
+    dbv = dbv.drop_vars(dvars)
+
+    # rename vars (remove 'GR' from var name and attrs)
+    rename_dict = {}
+    for vvar in dbv.data_vars:
+        new_name = vvar.split('_GR')[0]
+        rename_dict[vvar] = new_name
+        dbv[vvar].attrs['long_name'] = dbv[vvar].attrs['long_name'].split(' (GR)')[0]
+    dbv = dbv.rename(rename_dict)
+
+    return dbv
 
 
 def dbv_to_new_grid(opts, dbv, cell, dbv_ds):
@@ -106,7 +137,7 @@ def dbv_to_new_grid(opts, dbv, cell, dbv_ds):
     # GR vars of 0.5° sub-cells are used as new grid values
     # --> drop grid values on native 0.25° grid
     dvars = [vvar for vvar in dbv.data_vars if 'GR' not in vvar]
-    dbv = dbv.drop(dvars)
+    dbv = dbv.drop_vars(dvars)
 
     # rename vars (remove 'GR' from var name and attrs)
     rename_dict = {}
@@ -128,7 +159,7 @@ def dbv_to_new_grid(opts, dbv, cell, dbv_ds):
         dbv_ds = xr.concat([dbv_ds, tmp_ds], dim='lon')
 
     # drop time (no idea where this is coming from in the first place...)
-    dbv_ds = dbv_ds.drop('time')
+    dbv_ds = dbv_ds.drop_vars('time')
 
     dbv_ds = create_history(cli_params=sys.argv, ds=dbv_ds)
 
@@ -179,8 +210,8 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
     # --> drop grid values on native 0.25° grid
     dvars = [vvar for vvar in ds_out.data_vars if 'GR' not in vvar]
     dvars_suppl = [vvar for vvar in ds_out_suppl.data_vars if 'GR' not in vvar]
-    ds_out = ds_out.drop(dvars)
-    ds_out_suppl = ds_out_suppl.drop(dvars_suppl)
+    ds_out = ds_out.drop_vars(dvars)
+    ds_out_suppl = ds_out_suppl.drop_vars(dvars_suppl)
 
     # rename vars (remove 'GR' from var name and attrs)
     rename_dict = {}
@@ -222,27 +253,17 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
         ds_suppl = xr.concat([ds_suppl, tmp_ds_suppl], dim='lon')
 
     # drop time (no idea where this is coming from in the first place...)
-    ds = ds.drop('time')
-    ds_suppl = ds_suppl.drop('time')
+    ds = ds.drop_vars('time')
+    ds_suppl = ds_suppl.drop_vars('time')
 
     ds = create_history(cli_params=sys.argv, ds=ds)
     ds_suppl = create_history(cli_params=sys.argv, ds=ds_suppl)
-
-    # save tmp files
-    path = Path(f'{opts.tmppath}ctp_indicator_variables/supplementary/')
-    path.mkdir(parents=True, exist_ok=True)
-    ds.to_netcdf(f'{opts.tmppath}ctp_indicator_variables/'
-                 f'CTP_lat{cell[0]}_lon{cell[1]}_{opts.param_str}_{opts.region}_{opts.period}'
-                 f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-    ds_suppl.to_netcdf(f'{opts.tmppath}ctp_indicator_variables/supplementary/'
-                       f'CTPsuppl_lat{cell[0]}_lon{cell[1]}_{opts.param_str}_{opts.region}'
-                       f'_{opts.period}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
     return ds, ds_suppl
 
 
 def calc_tea_lat(opts, data, static, masks, lat):
-    logging.info(f'Processing lat {lat}')
+    logger.info(f'Processing lat {lat}')
 
     if opts.dataset == 'ERA5':
         lons = np.arange(-12, 40.5, 0.5)
@@ -255,6 +276,8 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
     # step through all longitudes
     for ilon, lon in enumerate(lons):
+        # this comment is necessary to suppress an unnecessary PyCharm warning of lon
+        # noinspection PyTypeChecker
         cell_data, land_frac, cell_static = select_cell(opts=opts, lat=lat, lon=lon, data=data,
                                                         static=static, masks=masks)
 
@@ -280,6 +303,7 @@ def calc_tea_lat(opts, data, static, masks, lat):
                                                   cstr=f'_lat{lat}_lon{lon}')
             elif 'GR' in vvar:
                 dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
+
 
         # get dates for climatic time periods (CTP) and assign coords to dbv
         dbv, dbv_per = assign_ctp_coords(opts, data=dbv)
@@ -307,7 +331,7 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
     # save output files
     if dbv_ds is not None:
-        dbv_ds = dbv_ds.drop(['ctp', 'doy'])
+        dbv_ds = dbv_ds.drop_vars(['ctp', 'doy'])
         dbv_ds.to_netcdf(f'{opts.tmppath}daily_basis_variables/'
                          f'DBV_lat{lat}_{opts.param_str}_{opts.region}_{opts.period}'
                          f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
@@ -318,24 +342,18 @@ def calc_tea_lat(opts, data, static, masks, lat):
                            f'CTPsuppl_lat{lat}_{opts.param_str}_{opts.region}'
                            f'_{opts.period}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
-        # remove individual cell files
-        cell_files_ctp = sorted(glob.glob(f'{opts.tmppath}ctp_indicator_variables/'
-                                          f'CTP_lat{lat}_lon*_{opts.param_str}_{opts.region}'
-                                          f'_{opts.period}_{opts.dataset}'
-                                          f'_{opts.start}to{opts.end}.nc'))
-        cell_files_suppl = sorted(glob.glob(f'{opts.tmppath}ctp_indicator_variables/supplementary/'
-                                            f'CTPsuppl_lat{lat}_lon*_{opts.param_str}_{opts.region}'
-                                            f'_{opts.period}_{opts.dataset}'
-                                            f'_{opts.start}to{opts.end}.nc'))
+        # remove individual dbv cell files
         cell_files_dbv = sorted(glob.glob(f'{opts.tmppath}daily_basis_variables/'
                                           f'DBV_lat{lat}_lon*_{opts.param_str}_{opts.region}'
                                           f'_{opts.period}_{opts.dataset}'
                                           f'_{opts.start}to{opts.end}.nc'))
 
-        for ifile, file in enumerate(cell_files_ctp):
-            os.system(f'rm {file}')
-            os.system(f'rm {cell_files_suppl[ifile]}')
+        for ifile, file in enumerate(cell_files_dbv):
             os.system(f'rm {cell_files_dbv[ifile]}')
+
+        ds.close()
+        ds_suppl.close()
+        dbv_ds.close()
 
 
 def filter_filenames(filenames, lat_range):
@@ -346,35 +364,6 @@ def filter_filenames(filenames, lat_range):
             filtered_filenames.append(file)
 
     return filtered_filenames
-
-
-def area_grid(opts, da):
-    if opts.dataset == 'ERA5':
-        delta_fac = 4  # to get 0.25° resolution
-    else:
-        delta_fac = 10  # to get 0.1°
-
-    lat = da.lat.values
-    r_mean = 6371
-    u_mean = 2 * np.pi * r_mean
-
-    # calculate earth radius at different latitudes
-    r_lat = np.cos(np.deg2rad(lat)) * r_mean
-
-    # calculate earth circumference at latitude
-    u_lat = 2 * np.pi * r_lat
-
-    # calculate length of 0.25°/0.1° in m for x and y dimension
-    x_len = (u_lat / 360) / delta_fac
-    y_len = (u_mean / 360) / delta_fac
-
-    # calculate size of cells in areals
-    x_len_da = xr.DataArray(data=x_len, coords={'lat': (['lat'], lat)})
-    agrid = xr.DataArray(data=np.ones((len(da.lat), len(da.lon))),
-                         coords={'lat': (['lat'], da.lat.values), 'lon': (['lon'], da.lon.values)})
-    agrid = (agrid * y_len * x_len_da) / 100
-
-    return agrid
 
 
 def combine_to_eur(opts, lat_lims, mask):
@@ -416,11 +405,6 @@ def combine_to_eur(opts, lat_lims, mask):
                             f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                             f'_{opts.start}to{opts.end}.nc'}
 
-    # list of variables for which a GR version should be calculated
-    gr_vars = ['DTEC', 'DTEEC', 'DTEM', 'DTEM', 'DTEA', 'EF', 'ED', 'EDavg', 'EM', 'EMavg',
-               'EM_Md', 'EMavg_Md', 'EM_Max', 'EMavg_Max', 'ESavg', 'TEX', 'delta_y',
-               'doy_first', 'doy_last']
-
     # load files
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
@@ -434,6 +418,7 @@ def combine_to_eur(opts, lat_lims, mask):
         for tfile in files[vvars]:
             os.system(f'rm {tfile}')
 
+    # TODO: apply mask
 
 def check_tmp_dirs(opts):
     """
@@ -465,7 +450,7 @@ def check_tmp_dirs(opts):
             break
 
     if non_empty > 0:
-        logging.info(f'At least one tmp directory is not empty. tmp files will be deleted first.')
+        logger.info(f'At least one tmp directory is not empty. tmp files will be deleted first.')
         for ddir in tmp_dirs:
             delete_files_in_directory(ddir)
         # ctp dir is always non-empty because of the sub-dir supplementary --> not checked before
@@ -473,14 +458,11 @@ def check_tmp_dirs(opts):
         delete_files_in_directory(directory=f'{opts.tmppath}ctp_indicator_variables/')
 
 
-def calc_tea_lat_wrapper(args):
-    return calc_tea_lat(*args)
-
-
 def calc_tea_large_gr(opts, data, masks, static):
-    logging.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
+    logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
 
     # check if tmp directories are empty
+    # TODO: uncomment after debugging
     check_tmp_dirs(opts)
 
     # preselect region to reduce computation time
@@ -492,9 +474,8 @@ def calc_tea_large_gr(opts, data, masks, static):
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
 
-    # with get_context('spawn').Pool(processes=5) as pool:
-    #     pool.starmap(calc_tea_lat, zip(repeat(opts), repeat(data), repeat(static), repeat(masks),
-    #                                    lats))
+    # TODO: remove after debugging
+    lats = lats[25:30]
 
     # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
@@ -509,5 +490,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     ngrid_mask = masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat))
     ngrid_mask = ngrid_mask.interp(lat=lats, lon=lons)
 
-    logging.info(f'Combining individual latitudes to single file.')
+    logger.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)
+
+    # TODO: find stupid bug!!! (stripes in EUR)

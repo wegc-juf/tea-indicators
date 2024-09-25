@@ -8,7 +8,6 @@ import argparse
 from datetime import timedelta
 import gc
 import glob
-import logging
 import numpy as np
 import os
 import pandas as pd
@@ -20,20 +19,13 @@ import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
+from TEA_logger import logger
 from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
                                           calc_event_duration, calc_exceedance_magnitude,
                                           calc_exceedance_area_tex_sev)
 from calc_decadal_indicators import calc_decadal_indicators
 import calc_TEA_largeGR
-
-logging.basicConfig(
-    filename='LOGFILE_calc_TEA.log',
-    encoding='utf-8',
-    filemode='a',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -464,10 +456,8 @@ def run():
     # add necessary strings to opts
     opts = extend_opts(opts)
 
-    # raise warning if large GR and ERA5 data were passed
-    if opts.dataset in ['ERA5', 'ERA5Land'] and opts.region not in ['FBR', 'SEA']:
-        logging.warning(f'A large GR and a scarce dataset were passed. Multiprocessing might cause '
-                        f'problems when script is called from an interactive interpreter.')
+    # set up logger
+    set_up_logger(opts=opts)
 
     # check length of input time span
     start = opts.start
@@ -482,7 +472,7 @@ def run():
             for pstart, pend in zip(starts, ends):
                 opts.start = pstart
                 opts.end = pend
-                logging.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
+                logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
                 calc_indicators(opts=opts)
                 gc.collect()
         else:
@@ -490,9 +480,9 @@ def run():
 
     if opts.decadal or opts.decadal_only:
         opts.start, opts.end = start, end
-        logging.info(f'Calculating decadal-mean primary variables.')
+        logger.info(f'Calculating decadal-mean primary variables.')
         calc_decadal_indicators(opts=opts, suppl=False)
-        logging.info(f'Calculating decadal-mean supplementary variables.')
+        logger.info(f'Calculating decadal-mean supplementary variables.')
         calc_decadal_indicators(opts=opts, suppl=True)
 
     # TODO: figure out where LOG is saved (if it is even saved at all)
