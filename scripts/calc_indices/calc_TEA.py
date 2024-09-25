@@ -456,9 +456,6 @@ def run():
     # add necessary strings to opts
     opts = extend_opts(opts)
 
-    # set up logger
-    set_up_logger(opts=opts)
-
     # check length of input time span
     start = opts.start
     end = opts.end
@@ -485,7 +482,6 @@ def run():
         logger.info(f'Calculating decadal-mean supplementary variables.')
         calc_decadal_indicators(opts=opts, suppl=True)
 
-    # TODO: figure out where LOG is saved (if it is even saved at all)
 
 if __name__ == '__main__':
     run()

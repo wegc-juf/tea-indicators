@@ -92,6 +92,9 @@ def select_cell(opts, lat, lon, data, static, masks):
 
     cell_static['GR_size'] = cell_static['area_grid'].sum().values
 
+    # apply weights to cell_data
+    cell_data = cell_data * frac_da
+
     return cell_data, land_frac, cell_static
 
 
@@ -276,7 +279,7 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
     # step through all longitudes
     for ilon, lon in enumerate(lons):
-        # this comment is necessary to suppress an unnecessary PyCharm warning of lon
+        # this comment is necessary to suppress an unnecessary PyCharm warning for lon
         # noinspection PyTypeChecker
         cell_data, land_frac, cell_static = select_cell(opts=opts, lat=lat, lon=lon, data=data,
                                                         static=static, masks=masks)
@@ -411,6 +414,8 @@ def combine_to_eur(opts, lat_lims, mask):
         ds.attrs['info'] = (f'Grid values correspond to GR values of subcells. '
                             f'GR values for whole region {opts.region} can be calculated after '
                             f'decadal-mean indicator calculation with aggregate_to_AGR.py.')
+        # apply EUR mask on 0.5° grid
+        ds = ds.where(mask == 1)
         ds.to_netcdf(outpaths[vvars])
         ds.close()
 
@@ -418,7 +423,6 @@ def combine_to_eur(opts, lat_lims, mask):
         for tfile in files[vvars]:
             os.system(f'rm {tfile}')
 
-    # TODO: apply mask
 
 def check_tmp_dirs(opts):
     """
@@ -462,7 +466,6 @@ def calc_tea_large_gr(opts, data, masks, static):
     logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
 
     # check if tmp directories are empty
-    # TODO: uncomment after debugging
     check_tmp_dirs(opts)
 
     # preselect region to reduce computation time
@@ -473,9 +476,6 @@ def calc_tea_large_gr(opts, data, masks, static):
 
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
-
-    # TODO: remove after debugging
-    lats = lats[25:30]
 
     # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
@@ -492,5 +492,3 @@ def calc_tea_large_gr(opts, data, masks, static):
 
     logger.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)
-
-    # TODO: find stupid bug!!! (stripes in EUR)
