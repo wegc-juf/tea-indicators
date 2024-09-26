@@ -416,6 +416,12 @@ def combine_to_eur(opts, lat_lims, mask):
                             f'decadal-mean indicator calculation with aggregate_to_AGR.py.')
         # apply EUR mask on 0.5° grid
         ds = ds.where(mask == 1)
+
+        # clear history of combined dataset and create new one (otherwise, history is added 10 times)
+        ds.history = ''
+        ds = create_history(cli_params=sys.argv, ds=ds)
+
+        # save ds to netcdf
         ds.to_netcdf(outpaths[vvars])
         ds.close()
 
