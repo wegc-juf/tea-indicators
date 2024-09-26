@@ -18,13 +18,15 @@ import warnings
 import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history, extend_tea_opts
+from general_functions import create_history, extend_tea_opts, ref_cc_params
+from calc_amplification_factors import calc_ref_cc_mean
 from TEA_AGR_logger import logger
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
              'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
 
+PARAMS = ref_cc_params()
 
 def getopts():
     """
@@ -105,12 +107,17 @@ def getopts():
                         default='/data/users/hst/TEA-clean/TEA/dec_indicator_variables/',
                         help='Path of folder where output data should be saved.')
 
+    parser.add_argument('--statpath',
+                        type=dir_path,
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
+                        help='Path of folder where static file is located.')
+
     parser.add_argument('--dataset',
                         dest='dataset',
-                        default='SPARTACUS',
+                        default='ERA5',
                         type=str,
-                        choices=['SPARTACUS', 'ERA5', 'ERA5Land'],
-                        help='Input dataset. Options: SPARTACUS (default), ERA5, ERA5Land.')
+                        choices=['ERA5', 'ERA5Land'],
+                        help='Input dataset. Options: ERA5 (default) or ERA5Land.')
 
     parser.add_argument('--spreads',
                         dest='spreads',
@@ -132,17 +139,69 @@ def load_data(opts):
 
     Returns:
         ds: decadal data of AGR
+        lat_lims: latitude limits of AGR
     """
 
-    file = (f'{opts.inpath}DEC_{opts.paramstr}_EUR_{opts.period}_{opts.dataset}'
+    file = (f'{opts.inpath}DEC_{opts.param_str}_EUR_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     ds = xr.open_dataset(file)
 
     agr_lims = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
 
-    ds = ds.sel(lat=slice(agr_lims[opts.agr][1], agr_lims[opts.agr][0]))
+    ds = ds.sel(lat=slice(agr_lims[opts.agr][0], agr_lims[opts.agr][1]))
 
-    return ds
+    return ds, agr_lims[opts.agr]
+
+
+def add_attrs(nvar, da):
+    """
+    add attributes to data array
+    Args:
+        nvar: name of variable
+        da: data array
+
+    Returns:
+        da: data array with attributes
+
+    """
+
+    attrs = {'EF': {'long_name': 'event frequency AGR', 'units': '1'},
+             'EDavg': {'long_name': 'average event duration AGR', 'units': '1'},
+             'EMavg': {'long_name': 'average event magnitude AGR', 'units': '1'},
+             'EAavg': {'long_name': 'average event area AGR', 'units': '1'}}
+
+    da = da.rename(f'{nvar}_AGR')
+    da.attrs = attrs[nvar]
+
+    return da
+
+
+def calc_agr(vdata, awgts):
+
+    # calc mean of ref period (Eq. 26)
+    ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
+    vdata_ref = 10 ** ref_db
+
+    # calc X_Ref^AGR and X_s^AGR (Eq. 34_1 and 34_2)
+    x_ref_agr = (awgts * vdata_ref).sum()
+    xt_s_agr = (awgts * vdata).sum(dim=('lat', 'lon'))
+
+    # calc Xt_ref_db and Xt_ref_agr (Eq. 34_3)
+    # TODO: when data for full ref period available, check if there are any time steps in ref
+    #  period with 0 entries that lead to -inf in log
+    x_s_agr_ref = xt_s_agr.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    x_s_agr_ref = x_s_agr_ref.where((x_s_agr_ref > 0).compute(), drop=True)
+    xt_ref_db = (10/21) * np.log10(x_s_agr_ref).sum()
+    xt_ref_agr = 10 ** (xt_ref_db / 10)
+
+    # calculate X_s_AGR (Eq. 34_4)
+    x_s_agr = (x_ref_agr / xt_ref_agr) * xt_s_agr
+
+    # add attributes
+    x_s_agr = add_attrs(nvar=vdata.name, da=x_s_agr)
+
+    return x_s_agr
 
 
 def run():
@@ -151,7 +210,24 @@ def run():
     # add necessary strings to opts
     opts = extend_tea_opts(opts)
 
-    data = load_data(opts=opts)
+    # load area grid (0.5°)
+    areas = xr.open_dataarray(f'{opts.statpath}area_grid_0p5_EUR_{opts.dataset}.nc')
+
+    # load TEA data
+    data, lat_lims = load_data(opts=opts)
+
+    # slice area grid
+    areas = areas.sel(lat=slice(lat_lims[0], lat_lims[1]))
+
+    # calc area weights
+    wgts = areas / areas.sum()
+
+    biv = ['EF', 'EDavg', 'EMavg', 'EAavg'] # TODO: other 3 vars --> load suppl data
+    agrs = xr.Dataset(coords=data.coords)
+    for vvar in biv:
+        var_agr = calc_agr(vdata=data[vvar], awgts=wgts)
+        agrs[vvar] = var_agr
+
     print()
 
 
