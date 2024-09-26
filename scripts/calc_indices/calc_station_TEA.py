@@ -22,8 +22,8 @@ logging.basicConfig(
 )
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history, ref_cc_params
-from calc_TEA import extend_opts, assign_ctp_coords
+from general_functions import create_history, ref_cc_params, extend_tea_opts
+from calc_TEA import assign_ctp_coords
 from calc_daily_basis_vars import calc_dteec_1d
 
 PARAMS = ref_cc_params()
@@ -254,7 +254,7 @@ def run():
     opts = getopts()
     if opts.parameter == 'P':
         opts.precip_var = 'P24h_7to7'
-    opts = extend_opts(opts=opts)
+    opts = extend_tea_opts(opts=opts)
 
     data = load_data(opts=opts)
 

@@ -17,8 +17,7 @@ import warnings
 import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history, ref_cc_params
-from calc_TEA import extend_opts
+from general_functions import create_history, ref_cc_params, extend_tea_opts
 
 logging.basicConfig(
     level=logging.INFO,
@@ -284,7 +283,7 @@ def save_output(opts, af, af_cc):
 
 def run():
     opts = getopts()
-    opts = extend_opts(opts)
+    opts = extend_tea_opts(opts)
 
     # load DEC TEA data
     ds = load_data(opts=opts)

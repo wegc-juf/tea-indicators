@@ -18,7 +18,7 @@ import warnings
 import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
+from general_functions import create_history, extend_tea_opts
 from TEA_logger import logger
 from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
@@ -159,34 +159,6 @@ def getopts():
     myopts = parser.parse_args()
 
     return myopts
-
-
-def extend_opts(opts):
-    """
-    add strings that are often needed to opts
-    Args:
-        opts: CLI parameter
-
-    Returns:
-
-    """
-    unit, unit_str = '°C', 'degC'
-    if opts.parameter == 'P':
-        unit, unit_str = 'mm', 'mm'
-
-    pstr = opts.parameter
-    if opts.parameter == 'P':
-        pstr = f'{opts.precip_var}_'
-
-    param_str = f'{pstr}{opts.threshold:.1f}p'
-    if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
-
-    opts.unit = unit
-    opts.unit_str = unit_str
-    opts.param_str = param_str
-
-    return opts
 
 
 def validate_period(opts):

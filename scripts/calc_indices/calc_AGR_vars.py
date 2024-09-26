@@ -8,7 +8,6 @@ import argparse
 from datetime import timedelta
 import gc
 import glob
-import logging
 import numpy as np
 import os
 import pandas as pd
@@ -19,16 +18,8 @@ import warnings
 import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
-from calc_TEA import extend_opts
-
-logging.basicConfig(
-    filename='LOGFILE_calc_TEA.log',
-    encoding='utf-8',
-    filemode='a',
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from general_functions import create_history, extend_tea_opts
+from TEA_AGR_logger import logger
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -158,9 +149,10 @@ def run():
     opts = getopts()
 
     # add necessary strings to opts
-    opts = extend_opts(opts)
+    opts = extend_tea_opts(opts)
 
     data = load_data(opts=opts)
+    print()
 
 
 if __name__ == '__main__':

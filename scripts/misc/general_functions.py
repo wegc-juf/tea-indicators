@@ -32,3 +32,31 @@ def ref_cc_params():
               'CC': {'start': '2008-01-01', 'end': '2022-12-31',
                      'start_cy': '2013-01-01', 'end_cy': '2018-12-31'}}
     return params
+
+
+def extend_tea_opts(opts):
+    """
+    add strings that are often needed to opts
+    Args:
+        opts: CLI parameter
+
+    Returns:
+
+    """
+    unit, unit_str = '°C', 'degC'
+    if opts.parameter == 'P':
+        unit, unit_str = 'mm', 'mm'
+
+    pstr = opts.parameter
+    if opts.parameter == 'P':
+        pstr = f'{opts.precip_var}_'
+
+    param_str = f'{pstr}{opts.threshold:.1f}p'
+    if opts.threshold_type == 'abs':
+        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
+
+    opts.unit = unit
+    opts.unit_str = unit_str
+    opts.param_str = param_str
+
+    return opts
