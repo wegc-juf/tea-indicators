@@ -131,20 +131,34 @@ def getopts():
     return myopts
 
 
-def load_data(opts):
+def load_data(opts, suppl=False):
     """
     load dec data and select AGR lats
     Args:
         opts: CLI parameter
+        suppl: set to true if supplementary data should be loaded
 
     Returns:
         ds: decadal data of AGR
         lat_lims: latitude limits of AGR
     """
 
-    file = (f'{opts.inpath}DEC_{opts.param_str}_EUR_{opts.period}_{opts.dataset}'
+    sdir = ''
+    sstr = ''
+    biv = ['EF', 'EDavg', 'EMavg', 'EAavg']
+    if suppl:
+        sdir = 'supplementary/'
+        sstr = 'suppl'
+        biv = ['delta_y']
+
+    file = (f'{opts.inpath}{sdir}DEC{sstr}_{opts.param_str}_EUR_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     ds = xr.open_dataset(file)
+
+    # select relevant vars
+    if 'EMavg_Md' in ds.data_vars:
+        biv.append('EMavg_Md')
+    ds = ds[biv]
 
     agr_lims = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
 
@@ -153,10 +167,11 @@ def load_data(opts):
     return ds, agr_lims[opts.agr]
 
 
-def add_attrs(nvar, da):
+def add_attrs(opts, nvar, da):
     """
     add attributes to data array
     Args:
+        opts: CLI parameter
         nvar: name of variable
         da: data array
 
@@ -165,10 +180,13 @@ def add_attrs(nvar, da):
 
     """
 
-    attrs = {'EF': {'long_name': 'event frequency AGR', 'units': '1'},
-             'EDavg': {'long_name': 'average event duration AGR', 'units': '1'},
-             'EMavg': {'long_name': 'average event magnitude AGR', 'units': '1'},
-             'EAavg': {'long_name': 'average event area AGR', 'units': '1'}}
+    attrs = {'EF': {'long_name': 'event frequency (AGR)', 'units': '1'},
+             'EDavg': {'long_name': 'average event duration (AGR)', 'units': 'dys'},
+             'EMavg': {'long_name': 'average event magnitude (AGR)', 'units': opts.unit},
+             'EMavg_Md': {'long_name': 'average daily-median exceedance magnitude (AGR)',
+                          'units': opts.unit},
+             'EAavg': {'long_name': 'average event area (AGR)', 'units': 'areals'},
+             'delta_y': {'long_name': 'annual exposure period (AGR)', 'units': 'dys'}}
 
     da = da.rename(f'{nvar}_AGR')
     da.attrs = attrs[nvar]
@@ -176,7 +194,7 @@ def add_attrs(nvar, da):
     return da
 
 
-def calc_agr(vdata, awgts):
+def calc_agr(opts, vdata, awgts):
 
     # calc mean of ref period (Eq. 26)
     ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
@@ -199,9 +217,90 @@ def calc_agr(vdata, awgts):
     x_s_agr = (x_ref_agr / xt_ref_agr) * xt_s_agr
 
     # add attributes
-    x_s_agr = add_attrs(nvar=vdata.name, da=x_s_agr)
+    x_s_agr = add_attrs(opts=opts, nvar=vdata.name, da=x_s_agr)
 
-    return x_s_agr
+    return x_ref_agr, x_s_agr
+
+
+def add_compound_attrs(opts, da):
+    """
+    add attributes to da of compound metrics
+    Args:
+        opts: CLI parameter
+        da: da of variable
+
+    Returns:
+        da: da with attributes
+
+    """
+    attrs = {'EM_AGR': {'long_name': 'cumulative event magnitude (AGR)', 'units': opts.unit},
+             'ESavg_AGR': {'long_name': 'average event severity (AGR)',
+                           'units': f'areal {opts.unit} dys'},
+             'TEX_AGR': {'long_name': 'total events extremity (AGR)',
+                         'units': f'areal {opts.unit} dys'},
+             'EM_Md_AGR': {'long_name': 'cumulative daily-median exceedance magnitude (AGR)',
+                          'units': opts.unit},
+             'H_AEHC_AGR': {'long_name': 'cumulative atmospheric boundary layer exceedance '
+                                         'heat content (AGR)', 'units': 'PJ'}}
+
+    da.attrs = attrs[da.name]
+
+    return da
+
+def calc_compound_vars(opts, agr, suppl, refs):
+    """
+    calc compound AGR variables (Eq. 35)
+    Args:
+        opts: CLI parameter
+        agr: AGR vars
+        suppl: supplementary AGR vars
+        refs: AGR ref vals (from Eq. 34_1)
+
+    Returns:
+
+    """
+
+    # approximate atmospheric boundary layer daily exceedance heat energy uptake capacity
+    # [PJ/(areal °C day)]
+    ct_abl = 0.1507
+
+    # REF variables
+    m_ref_agr = refs['EF_AGR'] * refs['EDavg_AGR'] * refs['EMavg_AGR']
+    savg_ref_agr = refs['EDavg_AGR'] * refs['EMavg_AGR'] * refs['EAavg_AGR']
+    tex_ref_agr = refs['EF_AGR'] * savg_ref_agr
+    mmd_ref_agr = refs['EF_AGR'] * refs['EDavg_AGR'] * refs['EMavg_Md_AGR']
+    haehc_ref_agr = ct_abl * tex_ref_agr
+
+    # Time series
+    m_s_agr = agr['EF_AGR'] * agr['EDavg_AGR'] * agr['EMavg_AGR']
+    savg_s_agr = agr['EDavg_AGR'] * agr['EMavg_AGR'] * agr['EAavg_AGR']
+    tex_s_agr = agr['EF_AGR'] * savg_s_agr
+    haehc_s_agr = ct_abl * tex_s_agr
+    if 'EMavg_Md_GR' in agr:
+        mmd_s_agr = agr['EF_AGR'] * agr['EDavg_AGR'] * agr['EMavg_Md_AGR']
+    else:
+        mmd_s_agr = agr['EF_AGR'] * agr['EDavg_AGR'] * suppl['EMavg_Md_AGR']
+
+    # add vars to ds
+    refs['EM_AGR'] = m_ref_agr
+    refs['ESavg_AGR'] = savg_ref_agr
+    refs['TEX_AGR'] = tex_ref_agr
+    refs['EM_Md_AGR'] = mmd_ref_agr
+    refs['H_AEHC_AGR'] = haehc_ref_agr
+
+    suppl['EM_AGR'] = m_s_agr
+    agr['ESavg_AGR'] = savg_s_agr
+    agr['TEX_AGR'] = tex_s_agr
+    suppl['EM_Md_AGR'] = mmd_s_agr
+    suppl['H_AEHC_AGR'] = haehc_s_agr
+
+    for vvar in ['ESavg_AGR', 'TEX_AGR']:
+        agr[vvar] = add_compound_attrs(opts=opts, da=agr[vvar])
+
+    for vvar in ['EM_AGR', 'EM_Md_AGR', 'H_AEHC_AGR']:
+        agr[vvar] = add_compound_attrs(opts=opts, da=suppl[vvar])
+
+    return refs, agr, suppl
 
 
 def run():
@@ -215,6 +314,7 @@ def run():
 
     # load TEA data
     data, lat_lims = load_data(opts=opts)
+    data_suppl, _ = load_data(opts=opts, suppl=True)
 
     # slice area grid
     areas = areas.sel(lat=slice(lat_lims[0], lat_lims[1]))
@@ -222,11 +322,23 @@ def run():
     # calc area weights
     wgts = areas / areas.sum()
 
-    biv = ['EF', 'EDavg', 'EMavg', 'EAavg'] # TODO: other 3 vars --> load suppl data
+    # calc AGR vars
+    refs = xr.Dataset()
     agrs = xr.Dataset(coords=data.coords)
-    for vvar in biv:
-        var_agr = calc_agr(vdata=data[vvar], awgts=wgts)
-        agrs[vvar] = var_agr
+    for vvar in data.data_vars:
+        ref_agr, var_agr = calc_agr(opts=opts, vdata=data[vvar], awgts=wgts)
+        agrs[f'{vvar}_AGR'] = var_agr
+        refs[f'{vvar}_AGR'] = ref_agr
+
+    # calc AGR supplementary vars
+    agrs_suppl = xr.Dataset(coords=data.coords)
+    for vvar in data_suppl.data_vars:
+        ref_agr, var_agr = calc_agr(opts=opts, vdata=data_suppl[vvar], awgts=wgts)
+        agrs_suppl[f'{vvar}_AGR'] = var_agr
+        refs[f'{vvar}_AGR'] = ref_agr
+
+    # calc compound AGR vars
+    refs, agrs, agrs_suppl = calc_compound_vars(opts=opts, agr=agrs, suppl=agrs_suppl, refs=refs)
 
     print()
 
