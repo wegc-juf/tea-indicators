@@ -408,7 +408,7 @@ def combine_to_eur(opts, lat_lims, mask):
                             f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                             f'_{opts.start}to{opts.end}.nc'}
 
-    # load files
+    # load files and combine them to EUR
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
         ds.attrs['info'] = (f'Grid values correspond to GR values of subcells. '
@@ -422,6 +422,10 @@ def combine_to_eur(opts, lat_lims, mask):
         # remove tmp_files
         for tfile in files[vvars]:
             os.system(f'rm {tfile}')
+
+    # save 0.5° mask
+    mask = create_history(cli_params=sys.argv, ds=mask)
+    mask.to_netcdf(f'{opts.maskpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
 
 
 def check_tmp_dirs(opts):
@@ -462,6 +466,53 @@ def check_tmp_dirs(opts):
         delete_files_in_directory(directory=f'{opts.tmppath}ctp_indicator_variables/')
 
 
+def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
+    """
+    create mask of valid grid points (land < 1500 m) on output grid (Methods p.34, 3rd paragraph)
+    Args:
+        opts: CLI parameter
+        mask_0p25: mask on 0.25° grid
+        area_0p25: area on 0.25° grid
+        lats: latitude coords of output grid
+
+    Returns:
+        mask_0p5: mask on 0.5° output grid
+
+    """
+    if opts.dataset == 'ERA5':
+        lons = np.arange(-12, 40.5, 0.5)
+    else:
+        lons = np.arange(9, 18, 0.5)
+
+    mask_0p5 = xr.DataArray(data=np.ones((len(lats), len(lons)))*np.nan,
+                            coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
+                            dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
+    mask_0p5 = mask_0p5.rename('mask_lt1500')
+
+    area_0p5 = xr.DataArray(data=np.ones((len(lats), len(lons)))*np.nan,
+                            coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
+                            dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
+    area_0p5 = area_0p5.rename('area_grid')
+
+    for llat in mask_0p5.lat:
+        for llon in mask_0p5.lon:
+            cell_0p25 = mask_0p25.sel(lat=slice(llat + 0.25, llat - 0.25),
+                                      lon=slice(llon - 0.25, llon + 0.25))
+            cell_area = area_0p25.sel(lat=slice(llat + 0.25, llat - 0.25),
+                                      lon=slice(llon - 0.25, llon + 0.25))
+            valid_cells = cell_0p25.sum()
+            if valid_cells == 0:
+                continue
+            vcell_frac = valid_cells / cell_0p25.size
+            mask_0p5.loc[llat, llon] = vcell_frac.values
+            area_0p5.loc[llat, llon] = cell_area.sum().values
+
+    area_0p5 = create_history(cli_params=sys.argv, ds=area_0p5)
+    area_0p5.to_netcdf(f'{opts.statpath}area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+
+    return mask_0p5
+
+
 def calc_tea_large_gr(opts, data, masks, static):
     logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
 
@@ -483,12 +534,10 @@ def calc_tea_large_gr(opts, data, masks, static):
         calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
 
     # create region mask on new grid
-    if opts.dataset == 'ERA5':
-        lons = np.arange(-12, 40.5, 0.5)
-    else:
-        lons = np.arange(9, 18, 0.5)
-    ngrid_mask = masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat))
-    ngrid_mask = ngrid_mask.interp(lat=lats, lon=lons)
+    ngrid_mask = create_0p5_mask(opts=opts,
+                                 mask_0p25=masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat)),
+                                 area_0p25=static['area_grid'].sel(lat=slice(max_lat, min_lat)),
+                                 lats=lats)
 
     logger.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)

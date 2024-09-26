@@ -426,7 +426,7 @@ def run():
     opts = getopts()
 
     # add necessary strings to opts
-    opts = extend_opts(opts)
+    opts = extend_tea_opts(opts)
 
     # check length of input time span
     start = opts.start
