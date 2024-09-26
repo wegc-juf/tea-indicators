@@ -303,6 +303,53 @@ def calc_compound_vars(opts, agr, suppl, refs):
     return refs, agr, suppl
 
 
+def calc_cc_mean(da):
+    """
+    calculate mean of recent climate period (Eq. 36)
+    Args:
+        da: AGR data array
+
+    Returns:
+
+    """
+    cc_da = da.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
+    cc_db = (1 / len(cc_da.ctp)) * (np.log10(cc_da)).sum(dim='ctp')
+    da_cc = 10 ** cc_db
+
+    return da_cc
+
+
+def calc_ampl_facs(ref, cc, data, data_suppl):
+    """
+    Calculate amplification factors (Eq. 37)
+    Args:
+        ref: AGR REF vals
+        cc: AGR CC vals
+        data: AGR time series
+        data_suppl: AGR suppl time series
+
+    Returns:
+        af: ds with amplification factor time series and A_CC
+
+    """
+
+    ampl_facs = xr.Dataset()
+
+    for vvar in data.data_vars:
+        a_cc = cc[vvar] / ref[vvar]
+        a_s = data[vvar] / ref[vvar]
+        ampl_facs[f'{vvar}_AF'] = a_s
+        ampl_facs[f'{vvar}_AF_CC'] = a_cc
+
+    for vvar in data_suppl.data_vars:
+        a_cc = cc[vvar] / ref[vvar]
+        a_s = data_suppl[vvar] / ref[vvar]
+        ampl_facs[f'{vvar}_AF'] = a_s
+        ampl_facs[f'{vvar}_AF_CC'] = a_cc
+
+    return ampl_facs
+
+
 def run():
     opts = getopts()
 
@@ -340,8 +387,23 @@ def run():
     # calc compound AGR vars
     refs, agrs, agrs_suppl = calc_compound_vars(opts=opts, agr=agrs, suppl=agrs_suppl, refs=refs)
 
-    print()
+    # calc CC mean
+    ccs = xr.Dataset()
+    for vvar in agrs.data_vars:
+        cc = calc_cc_mean(da=agrs[vvar])
+        ccs[vvar] = cc
 
+    for vvar in agrs_suppl.data_vars:
+        cc = calc_cc_mean(da=agrs_suppl[vvar])
+        ccs[vvar] = cc
+
+    # calc amplification factors
+    af = calc_ampl_facs(ref=refs, cc=ccs, data=agrs, data_suppl=agrs_suppl)
+
+    # TODO: check how everything should be stored in nc files
+    #  (AF in different files? Which vars in AGR, which in suppl?)
+
+    # TODO: implement spread estimate stuff (Eq. 38 - 40)
 
 if __name__ == '__main__':
     run()
