@@ -418,7 +418,7 @@ def combine_to_eur(opts, lat_lims, mask):
         ds = ds.where(mask == 1)
 
         # clear history of combined dataset and create new one (otherwise, history is added 10 times)
-        ds.history = ''
+        ds.attrs['history'] = ''
         ds = create_history(cli_params=sys.argv, ds=ds)
 
         # save ds to netcdf
