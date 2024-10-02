@@ -415,7 +415,7 @@ def combine_to_eur(opts, lat_lims, mask):
                             f'GR values for whole region {opts.region} can be calculated after '
                             f'decadal-mean indicator calculation with aggregate_to_AGR.py.')
         # apply EUR mask on 0.5° grid
-        ds = ds.where(mask == 1)
+        ds = ds.where(mask > 0)
 
         # clear history of combined dataset and create new one (otherwise, history is added 10 times)
         ds.attrs['history'] = ''
@@ -485,6 +485,9 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
         mask_0p5: mask on 0.5° output grid
 
     """
+    # flip lats to be consistent with other datasets
+    lats = lats[::-1]
+
     if opts.dataset == 'ERA5':
         lons = np.arange(-12, 40.5, 0.5)
     else:
@@ -545,5 +548,5 @@ def calc_tea_large_gr(opts, data, masks, static):
                                  area_0p25=static['area_grid'].sel(lat=slice(max_lat, min_lat)),
                                  lats=lats)
 
-    logger.info(f'Combining individual latitudes to single file.')
+    # logger.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)
