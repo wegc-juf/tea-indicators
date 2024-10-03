@@ -28,6 +28,7 @@ DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
 
 PARAMS = ref_cc_params()
 
+
 def getopts():
     """
     get arguments
@@ -104,7 +105,7 @@ def getopts():
                         help='Path of folder where data is located.')
 
     parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/TEA/dec_indicator_variables/',
+                        default='/data/users/hst/TEA-clean/TEA/',
                         help='Path of folder where output data should be saved.')
 
     parser.add_argument('--statpath',
@@ -145,20 +146,14 @@ def load_data(opts, suppl=False):
 
     sdir = ''
     sstr = ''
-    biv = ['EF', 'EDavg', 'EMavg', 'EAavg']
     if suppl:
         sdir = 'supplementary/'
         sstr = 'suppl'
-        biv = ['delta_y']
+
 
     file = (f'{opts.inpath}{sdir}DEC{sstr}_{opts.param_str}_EUR_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     ds = xr.open_dataset(file)
-
-    # select relevant vars
-    if 'EMavg_Md' in ds.data_vars:
-        biv.append('EMavg_Md')
-    ds = ds[biv]
 
     agr_lims = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
 
@@ -195,6 +190,18 @@ def add_attrs(opts, nvar, da):
 
 
 def calc_agr(opts, vdata, awgts):
+    """
+    calculate AGR variables
+    Args:
+        opts: CLI parameter
+        vdata: data of variable
+        awgts: area weights
+
+    Returns:
+        x_ref_agr: Ref value of AGR
+        x_s_agr: time series of AGR
+
+    """
 
     # calc mean of ref period (Eq. 26)
     ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
@@ -210,7 +217,7 @@ def calc_agr(opts, vdata, awgts):
     #  period with 0 entries that lead to -inf in log
     x_s_agr_ref = xt_s_agr.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
     x_s_agr_ref = x_s_agr_ref.where((x_s_agr_ref > 0).compute(), drop=True)
-    xt_ref_db = (10/21) * np.log10(x_s_agr_ref).sum()
+    xt_ref_db = (10 / 21) * np.log10(x_s_agr_ref).sum()
     xt_ref_agr = 10 ** (xt_ref_db / 10)
 
     # calculate X_s_AGR (Eq. 34_4)
@@ -239,13 +246,14 @@ def add_compound_attrs(opts, da):
              'TEX_AGR': {'long_name': 'total events extremity (AGR)',
                          'units': f'areal {opts.unit} dys'},
              'EM_Md_AGR': {'long_name': 'cumulative daily-median exceedance magnitude (AGR)',
-                          'units': opts.unit},
+                           'units': opts.unit},
              'H_AEHC_AGR': {'long_name': 'cumulative atmospheric boundary layer exceedance '
                                          'heat content (AGR)', 'units': 'PJ'}}
 
     da.attrs = attrs[da.name]
 
     return da
+
 
 def calc_compound_vars(opts, agr, suppl, refs):
     """
@@ -298,7 +306,7 @@ def calc_compound_vars(opts, agr, suppl, refs):
         agr[vvar] = add_compound_attrs(opts=opts, da=agr[vvar])
 
     for vvar in ['EM_AGR', 'EM_Md_AGR', 'H_AEHC_AGR']:
-        agr[vvar] = add_compound_attrs(opts=opts, da=suppl[vvar])
+        suppl[vvar] = add_compound_attrs(opts=opts, da=suppl[vvar])
 
     return refs, agr, suppl
 
@@ -350,6 +358,41 @@ def calc_ampl_facs(ref, cc, data, data_suppl):
     return ampl_facs
 
 
+def save_output(opts, agr, agr_suppl, af):
+    # save AGR variables
+    agr = create_history(cli_params=sys.argv, ds=agr)
+    agr_suppl = create_history(cli_params=sys.argv, ds=agr_suppl)
+    agr.to_netcdf(f'{opts.outpath}dec_indicator_variables/'
+                  f'DEC_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                  f'_{opts.start}to{opts.end}')
+    agr_suppl.to_netcdf(f'{opts.outpath}dec_indicator_variables/supplementary/'
+                        f'DECsuppl_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                        f'_{opts.start}to{opts.end}')
+
+    # save AF ds
+    af = create_history(cli_params=sys.argv, ds=af)
+    af.to_netcdf(f'{opts.outpath}amplification/'
+                 f'AF_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                 f'_{opts.start}to{opts.end}')
+
+
+def calc_spread_estimates(data, areas):
+    """
+    calculate spread estimates of AGR variables and AFs (Eq. 38)
+    Args:
+        data: ds
+        areas: area grid
+
+    Returns:
+        su: upper spread ds
+        sl: lower spread ds
+    """
+
+
+
+    print()
+
+
 def run():
     opts = getopts()
 
@@ -364,7 +407,8 @@ def run():
     data_suppl, _ = load_data(opts=opts, suppl=True)
 
     # slice area grid
-    areas = areas.sel(lat=slice(lat_lims[0], lat_lims[1]))
+    areas = areas.sel(lat=slice(lat_lims[0], lat_lims[1]),
+                      lon=slice(data.lon[0].values, data.lon[-1].values))
 
     # calc area weights
     wgts = areas / areas.sum()
@@ -372,14 +416,20 @@ def run():
     # calc AGR vars
     refs = xr.Dataset()
     agrs = xr.Dataset(coords=data.coords)
-    for vvar in data.data_vars:
+
+    # define basis vars for which AGR vars should be calculated
+    biv = ['EF', 'EDavg', 'EMavg', 'EAavg']
+    if 'EMavg_Md' in data.data_vars:
+        biv.append('EMavg_Md')
+
+    for vvar in biv:
         ref_agr, var_agr = calc_agr(opts=opts, vdata=data[vvar], awgts=wgts)
         agrs[f'{vvar}_AGR'] = var_agr
         refs[f'{vvar}_AGR'] = ref_agr
 
     # calc AGR supplementary vars
     agrs_suppl = xr.Dataset(coords=data.coords)
-    for vvar in data_suppl.data_vars:
+    for vvar in ['delta_y']:
         ref_agr, var_agr = calc_agr(opts=opts, vdata=data_suppl[vvar], awgts=wgts)
         agrs_suppl[f'{vvar}_AGR'] = var_agr
         refs[f'{vvar}_AGR'] = ref_agr
@@ -400,10 +450,15 @@ def run():
     # calc amplification factors
     af = calc_ampl_facs(ref=refs, cc=ccs, data=agrs, data_suppl=agrs_suppl)
 
-    # TODO: check how everything should be stored in nc files
-    #  (AF in different files? Which vars in AGR, which in suppl?)
+    # set 0 values to nan
+    agrs = agrs.where(agrs > 0)
+    agrs_suppl = agrs_suppl.where(agrs_suppl > 0)
+    af = af.where(af > 0)
 
-    # TODO: implement spread estimate stuff (Eq. 38 - 40)
+    agrs_us, agrs_ls = calc_spread_estimates(data=agrs, areas=areas)
+
+    save_output(opts=opts, agr=agrs, agr_suppl=agrs_suppl, af=af)
+
 
 if __name__ == '__main__':
     run()
