@@ -150,7 +150,6 @@ def load_data(opts, suppl=False):
         sdir = 'supplementary/'
         sstr = 'suppl'
 
-
     file = (f'{opts.inpath}{sdir}DEC{sstr}_{opts.param_str}_EUR_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     ds = xr.open_dataset(file)
@@ -358,39 +357,78 @@ def calc_ampl_facs(ref, cc, data, data_suppl):
     return ampl_facs
 
 
-def save_output(opts, agr, agr_suppl, af):
-    # save AGR variables
-    agr = create_history(cli_params=sys.argv, ds=agr)
-    agr_suppl = create_history(cli_params=sys.argv, ds=agr_suppl)
-    agr.to_netcdf(f'{opts.outpath}dec_indicator_variables/'
-                  f'DEC_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
-                  f'_{opts.start}to{opts.end}')
-    agr_suppl.to_netcdf(f'{opts.outpath}dec_indicator_variables/supplementary/'
-                        f'DECsuppl_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
-                        f'_{opts.start}to{opts.end}')
+def save_output(opts, data):
+    outpaths = {'AGR': f'{opts.outpath}dec_indicator_variables/'
+                       f'DEC_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                       f'_{opts.start}to{opts.end}',
+                'AGRsuppl': f'{opts.outpath}dec_indicator_variables/supplementary/'
+                            f'DECsuppl_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                            f'_{opts.start}to{opts.end}',
+                'AF': f'{opts.outpath}amplification/'
+                      f'AF_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                      f'_{opts.start}to{opts.end}',
+                'AGR_us': f'{opts.outpath}dec_indicator_variables/'
+                          f'DEC_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
+                          f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
+                'AGR_ls': f'{opts.outpath}dec_indicator_variables/'
+                          f'DEC_sLOW_{opts.param_str}_{opts.agr}_{opts.period}'
+                          f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
+                'AGRsuppl_us': f'{opts.outpath}dec_indicator_variables/supplementary/'
+                               f'DECsupp_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
+                'AGRsuppl_ls': f'{opts.outpath}dec_indicator_variables/supplementary/'
+                               f'DECsupp_sLOW_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'_{opts.dataset}_{opts.start}to{opts.end}.nc'}
 
-    # save AF ds
-    af = create_history(cli_params=sys.argv, ds=af)
-    af.to_netcdf(f'{opts.outpath}amplification/'
-                 f'AF_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
-                 f'_{opts.start}to{opts.end}')
+    for vvars in data.keys():
+        ds = data[vvars]
+        ds = create_history(cli_params=sys.argv, ds=ds)
+        ds.to_netcdf(outpaths[vvars])
 
 
-def calc_spread_estimates(data, areas):
+def calc_spread_estimates(gdata, data, areas):
     """
     calculate spread estimates of AGR variables and AFs (Eq. 38)
     Args:
+        gdata: grid data
         data: ds
         areas: area grid
 
     Returns:
-        su: upper spread ds
-        sl: lower spread ds
+        s_upp: upper spread ds
+        s_low: lower spread ds
     """
 
+    su = xr.Dataset(coords={'ctp': (['ctp'], data.ctp.values)})
+    sl = xr.Dataset(coords={'ctp': (['ctp'], data.ctp.values)})
 
+    for vvar in gdata.data_vars:
+        if f'{vvar}_AGR' not in data.data_vars:
+            continue
+        c_upp = xr.full_like(gdata[vvar], 1)
+        c_upp = c_upp.where(gdata[vvar] >= data[f'{vvar}_AGR'], 0)
 
-    print()
+        # calc upper spread (Eq. 38_2, 38_5)
+        wgt_fac_u = 1 / (c_upp * areas).sum(dim=('lat', 'lon'))
+        sum_term_u = ((c_upp * areas) * (gdata[vvar] - data[f'{vvar}_AGR']) ** 2).sum(dim=('lat',
+                                                                                           'lon'))
+        s_upp = np.sqrt(wgt_fac_u * sum_term_u)
+        s_upp = s_upp.rename(f'{vvar}_AGR_supp')
+
+        # calc lower spread (Eq. 38_3, 38_6)
+        wgt_fac_l = 1 / ((1 - c_upp) * areas).sum(dim=('lat', 'lon'))
+        sum_term_l = (((1 - c_upp) * areas) * (gdata[vvar] - data[f'{vvar}_AGR']) ** 2).sum(
+            dim=('lat', 'lon'))
+        s_low = np.sqrt(wgt_fac_l * sum_term_l)
+        s_low = s_low.rename(f'{vvar}_AGR_slow')
+
+        # save to ds
+        su[f'{s_upp.name}'] = s_upp
+        sl[f'{s_low.name}'] = s_low
+
+        # TODO: add attrs
+
+    return su, sl
 
 
 def run():
@@ -419,8 +457,11 @@ def run():
 
     # define basis vars for which AGR vars should be calculated
     biv = ['EF', 'EDavg', 'EMavg', 'EAavg']
+    biv_suppl = ['delta_y']
     if 'EMavg_Md' in data.data_vars:
         biv.append('EMavg_Md')
+    else:
+        biv_suppl.append('EMavg_Md')
 
     for vvar in biv:
         ref_agr, var_agr = calc_agr(opts=opts, vdata=data[vvar], awgts=wgts)
@@ -429,7 +470,7 @@ def run():
 
     # calc AGR supplementary vars
     agrs_suppl = xr.Dataset(coords=data.coords)
-    for vvar in ['delta_y']:
+    for vvar in biv_suppl:
         ref_agr, var_agr = calc_agr(opts=opts, vdata=data_suppl[vvar], awgts=wgts)
         agrs_suppl[f'{vvar}_AGR'] = var_agr
         refs[f'{vvar}_AGR'] = ref_agr
@@ -455,9 +496,15 @@ def run():
     agrs_suppl = agrs_suppl.where(agrs_suppl > 0)
     af = af.where(af > 0)
 
-    agrs_us, agrs_ls = calc_spread_estimates(data=agrs, areas=areas)
+    agrs_us, agrs_ls = calc_spread_estimates(gdata=data, data=agrs, areas=areas)
+    agrs_suppl_us, agrs_suppl_ls = calc_spread_estimates(gdata=data_suppl, data=agrs_suppl,
+                                                         areas=areas)
 
-    save_output(opts=opts, agr=agrs, agr_suppl=agrs_suppl, af=af)
+    datasets = {'AGR': agrs, 'AGRsuppl': agrs_suppl,
+                'AF': af,
+                'AGR_us': agrs_us, 'AGR_ls': agrs_ls,
+                'AGRsuppl_us': agrs_suppl_us, 'AGRsuppl_ls': agrs_suppl_ls}
+    save_output(opts=opts, data=datasets)
 
 
 if __name__ == '__main__':
