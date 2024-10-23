@@ -19,7 +19,7 @@ import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history, extend_tea_opts, ref_cc_params
-from calc_amplification_factors import calc_ref_cc_mean
+from calc_amplification_factors import calc_ref_cc_mean, calc_basis_amplification_factors
 from TEA_AGR_logger import logger
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
@@ -357,6 +357,72 @@ def calc_ampl_facs(ref, cc, data, data_suppl):
     return ampl_facs
 
 
+def calc_compound_amplification_factors_grid(opts, af, af_cc):
+    """
+    calculate amplification factors of compound variables (Eq. 30)
+    Args:
+        opts: CLI parameter
+        af: amplification factor time series
+        af_cc: CC amplification factors
+
+    Returns:
+        af: amplification factor time series with compound AF added
+        af_cc: CC amplification factors with compound AF added
+
+    """
+
+    em_var = 'EMavg_AF'
+    if opts.parameter == 'P':
+        em_var = 'EMavg_Md_AF'
+
+    # tEX
+    af_tEX = af['EF_AF'] * af['EDavg_AF'] * af[em_var]
+    af_tEX = af_tEX.rename('tEX_AF')
+    af_tEX = af_tEX.assign_attrs(
+        {'long_name': 'decadal-mean temporal events extremity amplification', 'units': '1'})
+    af_cc_tEX = af_cc['EF_AF_CC'] * af_cc['EDavg_AF_CC'] * af_cc[f'{em_var}_CC']
+    af_cc_tEX = af_cc_tEX.rename('tEX_AF_CC')
+    af_cc_tEX = af_cc_tEX.assign_attrs(
+        {'long_name': 'decadal-mean temporal events extremity CC amplification', 'units': '1'})
+
+    # ES
+    af_es = af['EDavg_AF'] * af[em_var] * af['EAavg_AF']
+    af_es = af_es.rename('ES_AF')
+    af_es = af_es.assign_attrs(
+        {'long_name': 'decadal-mean event severity amplification', 'units': '1'})
+    af_cc_es = af_cc['EDavg_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_AF_CC']
+    af_cc_es = af_cc_es.rename('ES_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(
+        {'long_name': 'decadal-mean event severity CC amplification', 'units': '1'})
+
+    # TEX
+    af_TEX = af['EF_AF'] * af_es
+    af_TEX = af_TEX.rename('TEX_AF')
+    af_TEX = af_TEX.assign_attrs(
+        {'long_name': 'decadal-mean total events extremity amplification', 'units': '1'})
+    af_cc_TEX = af_cc['EF_AF_CC'] * af_cc_es
+    af_cc_TEX = af_cc_TEX.rename('TEX_AF_CC')
+    af_cc_TEX = af_cc_TEX.assign_attrs(
+        {'long_name': 'decadal-mean total events extremity CC amplification', 'units': '1'})
+
+    af = xr.merge([af, af_tEX, af_es, af_TEX])
+    af_cc = xr.merge([af_cc, af_cc_tEX, af_cc_es, af_cc_TEX])
+
+    return af, af_cc
+
+
+def calc_ampl_facs_grid(opts, data, suppl=False):
+    ref_avg, cc_avg = calc_ref_cc_mean(data=data)
+
+    bvars = [vvar for vvar in data.data_vars if vvar not in ['TEX', 'ESavg']]
+    af, af_cc = calc_basis_amplification_factors(data=data[bvars], ref=ref_avg[bvars],
+                                                 cc=cc_avg[bvars])
+    if not suppl:
+        af, af_cc = calc_compound_amplification_factors_grid(opts=opts, af=af, af_cc=af_cc)
+
+    return af
+
+
 def save_output(opts, data):
     outpaths = {'AGR': f'{opts.outpath}dec_indicator_variables/'
                        f'DEC_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
@@ -367,6 +433,21 @@ def save_output(opts, data):
                 'AF': f'{opts.outpath}amplification/'
                       f'AF_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
                       f'_{opts.start}to{opts.end}',
+                'AF_us': f'{opts.outpath}amplification/'
+                         f'AF_sUPP_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                         f'_{opts.start}to{opts.end}',
+                'AF_ls': f'{opts.outpath}amplification/'
+                         f'AF_sLOW_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                         f'_{opts.start}to{opts.end}',
+                'AF_suppl': f'{opts.outpath}amplification/supplementary/'
+                            f'AFsuppl_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                            f'_{opts.start}to{opts.end}',
+                'AF_suppl_us': f'{opts.outpath}amplification/supplementary/'
+                               f'AFsuppl_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'_{opts.dataset}_{opts.start}to{opts.end}',
+                'AF_suppl_ls': f'{opts.outpath}amplification/supplementary/'
+                               f'AFsuppl_sLOW_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'_{opts.dataset}_{opts.start}to{opts.end}',
                 'AGR_us': f'{opts.outpath}dec_indicator_variables/'
                           f'DEC_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
                           f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
@@ -431,6 +512,25 @@ def calc_spread_estimates(gdata, data, areas):
     return su, sl
 
 
+def split_into_2_ds(data, svars):
+    dvars = list(data.data_vars)
+
+    suppl_af_vars = []
+    for vvar in dvars:
+        if 'CC' in vvar:
+            vname = vvar[:-6]
+        else:
+            vname = vvar[:-3]
+
+        if vname in svars:
+            suppl_af_vars.append(vvar)
+
+    af_suppl = data[suppl_af_vars]
+    af = data.drop_vars(suppl_af_vars)
+
+    return af, af_suppl
+
+
 def run():
     opts = getopts()
 
@@ -448,7 +548,7 @@ def run():
     areas = areas.sel(lat=slice(lat_lims[0], lat_lims[1]),
                       lon=slice(data.lon[0].values, data.lon[-1].values))
 
-    # calc area weights
+    # calc area weights (w_l)
     wgts = areas / areas.sum()
 
     # calc AGR vars
@@ -491,17 +591,33 @@ def run():
     # calc amplification factors
     af = calc_ampl_facs(ref=refs, cc=ccs, data=agrs, data_suppl=agrs_suppl)
 
+    # split af in af and af_suppl
+    af, af_suppl = split_into_2_ds(data=af, svars=list(agrs_suppl.data_vars))
+
+    # calc AF_sl^X,GR
+    data['H_AEHC'] = 0.1507 * data['TEX']
+    af_sl = calc_ampl_facs_grid(opts=opts, data=data, suppl=False)
+    af_sl_suppl = calc_ampl_facs_grid(opts=opts, data=data_suppl, suppl=True)
+    # add H_AEHC to af_sl_suppl and remove it from af_sl
+    af_sl_suppl['H_AEHC_AF'] = af_sl['H_AEHC_AF']
+    af_sl = af_sl.drop_vars('H_AEHC_AF')
+
     # set 0 values to nan
     agrs = agrs.where(agrs > 0)
     agrs_suppl = agrs_suppl.where(agrs_suppl > 0)
     af = af.where(af > 0)
 
+    # calc spreads
     agrs_us, agrs_ls = calc_spread_estimates(gdata=data, data=agrs, areas=areas)
     agrs_suppl_us, agrs_suppl_ls = calc_spread_estimates(gdata=data_suppl, data=agrs_suppl,
                                                          areas=areas)
+    af_us, af_ls = calc_spread_estimates(gdata=af, data=af_sl, areas=areas)
+    af_suppl_us, af_suppl_ls = calc_spread_estimates(gdata=af_suppl, data=af_sl_suppl,
+                                                     areas=areas)
 
     datasets = {'AGR': agrs, 'AGRsuppl': agrs_suppl,
-                'AF': af,
+                'AF': af, 'AF_us': af_us, 'AF_ls': af_ls,
+                'AF_suppl': af_suppl, 'AF_suppl_us': af_suppl_us, 'AF_suppl_ls': af_suppl_ls,
                 'AGR_us': agrs_us, 'AGR_ls': agrs_ls,
                 'AGRsuppl_us': agrs_suppl_us, 'AGRsuppl_ls': agrs_suppl_ls}
     save_output(opts=opts, data=datasets)

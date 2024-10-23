@@ -201,15 +201,15 @@ def calc_basis_amplification_factors(data, ref, cc):
 
 def calc_compound_amplification_factors(opts, af, af_cc):
     """
-    calculate amplification factors of compund variables (Eq. 30)
+    calculate amplification factors of compound variables (Eq. 30)
     Args:
         opts: CLI parameter
         af: amplification factor time series
         af_cc: CC amplification factors
 
     Returns:
-        af: amplification factor time series with compund AF added
-        af_cc: CC amplification factors with compund AF adde
+        af: amplification factor time series with compound AF added
+        af_cc: CC amplification factors with compound AF added
 
     """
 
