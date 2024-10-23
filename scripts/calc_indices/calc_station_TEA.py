@@ -1,4 +1,4 @@
-#!/opt/virtualenv3.11/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: hst
@@ -21,9 +21,8 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history, ref_cc_params, extend_tea_opts
-from var_attrs import get_attrs
+from scripts.general_stuff.general_functions import create_history, ref_cc_params, extend_tea_opts
+from scripts.general_stuff.var_attrs import get_attrs
 from calc_TEA import assign_ctp_coords
 from calc_daily_basis_vars import calc_dteec_1d
 

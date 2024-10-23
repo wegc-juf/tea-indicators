@@ -1,4 +1,4 @@
-#!/opt/virtualenv3.7/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: hst
@@ -16,7 +16,7 @@ import sys
 import warnings
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+sys.path.append('/scripts/general_stuff/')
 from general_functions import create_history, ref_cc_params, extend_tea_opts
 from var_attrs import get_attrs
 

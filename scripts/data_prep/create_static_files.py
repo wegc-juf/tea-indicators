@@ -1,4 +1,4 @@
-#!/opt/virtualenv3.11/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: hst
@@ -12,8 +12,7 @@ import sys
 import warnings
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
+from scripts.general_stuff.general_functions import create_history
 
 
 def get_opts():

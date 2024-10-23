@@ -1,4 +1,4 @@
-#!/opt/virtualenv3.11/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: hst
@@ -17,7 +17,7 @@ sys.path.append('/home/hst/tea-indicators/scripts/calc_indices/')
 from calc_amplification_factors import calc_ref_cc_mean, calc_basis_amplification_factors
 from calc_decadal_indicators import rolling_decadal_mean
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+sys.path.append('/scripts/general_stuff/')
 from general_functions import create_history, ref_cc_params
 
 PARAMS = ref_cc_params()

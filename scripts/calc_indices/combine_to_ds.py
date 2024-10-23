@@ -1,8 +1,6 @@
-import sys
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from var_attrs import get_attrs
+from scripts.general_stuff.var_attrs import get_attrs
 
 
 def create_ef_ds(ef, ef_gr):

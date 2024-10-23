@@ -6,10 +6,8 @@ import re
 import sys
 import xarray as xr
 
-from scripts.misc.var_attrs import get_attrs
-
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
+from scripts.general_stuff.var_attrs import get_attrs
+from scripts.general_stuff.general_functions import create_history
 
 logging.basicConfig(
     level=logging.INFO,

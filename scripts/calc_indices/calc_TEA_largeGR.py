@@ -10,10 +10,9 @@ import xarray as xr
 warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
 warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
-from var_attrs import get_attrs
-from TEA_logger import logger
+from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.var_attrs import get_attrs
+from scripts.general_stuff.TEA_logger import logger
 from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_TEA import (assign_ctp_coords, calc_event_frequency, calc_supplementary_event_vars,
                       calc_event_duration, calc_exceedance_magnitude, calc_exceedance_area_tex_sev)

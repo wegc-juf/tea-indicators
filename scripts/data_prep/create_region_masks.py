@@ -13,8 +13,7 @@ import sys
 from tqdm import trange
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
-from general_functions import create_history
+from scripts.general_stuff.general_functions import create_history
 
 
 def get_opts():
