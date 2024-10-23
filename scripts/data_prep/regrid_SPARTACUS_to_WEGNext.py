@@ -1,4 +1,4 @@
-#!/opt/virtualenv3.7/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 @author: hst
@@ -15,7 +15,7 @@ import sys
 from tqdm import trange
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+sys.path.append('../misc/')
 from general_functions import create_history
 
 
