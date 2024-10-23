@@ -17,8 +17,9 @@ import sys
 import warnings
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+sys.path.append('../misc/')
 from general_functions import create_history, extend_tea_opts
+from var_attrs import get_attrs
 from TEA_logger import logger
 from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
@@ -332,10 +333,10 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
     ds_out = xr.merge([ef, ed, em, ea])
     ds_out_suppl = xr.merge([svars, em_suppl])
 
-    ds_out['ctp'] = ds_out['ctp'].assign_attrs(
-        {'long_name': f'climatic time period ({opts.period})'})
-    ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(
-        {'long_name': f'climatic time period ({opts.period})'})
+    ctp_attrs = get_attrs(opts=opts, vname='ctp')
+
+    ds_out['ctp'] = ds_out['ctp'].assign_attrs(ctp_attrs)
+    ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(ctp_attrs)
 
     mask = masks['lt1500_mask'] * masks['mask']
     # apply masks to grid data again (sum etc. result in 0 outside of region)

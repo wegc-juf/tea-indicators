@@ -1,4 +1,8 @@
+import sys
 import xarray as xr
+
+sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+from var_attrs import get_attrs
 
 
 def create_ef_ds(ef, ef_gr):
@@ -12,10 +16,10 @@ def create_ef_ds(ef, ef_gr):
         ef_ds: EF ds
     """
     ef = ef.rename('EF')
-    ef = ef.assign_attrs({'long_name': 'event frequency', 'units': '1'})
+    ef = ef.assign_attrs(get_attrs(vname='EF'))
 
     ef_gr = ef_gr.rename('EF_GR')
-    ef_gr.attrs = {'long_name': 'event frequency (GR)', 'units': '1'}
+    ef_gr.attrs = get_attrs(vname='EF_GR')
 
     ef_ds = xr.merge([ef, ef_gr])
 
@@ -37,22 +41,19 @@ def create_svars_ds(doy_first, doy_first_gr, doy_last, doy_last_gr, delta_y, del
         svars_ds: ds with supplementary variables
     """
     doy_first = doy_first.rename(f'doy_first')
-    doy_first = doy_first.assign_attrs({'long_name': 'day of first event occurrence', 'units': '1'})
+    doy_first = doy_first.assign_attrs(get_attrs(vname='doy_first'))
     doy_first_gr = doy_first_gr.rename(f'doy_first_GR')
-    doy_first_gr = doy_first_gr.assign_attrs({'long_name': 'day of first event occurrence (GR)',
-                                              'units': '1'})
+    doy_first_gr = doy_first_gr.assign_attrs(get_attrs(vname='doy_first_GR'))
 
     doy_last = doy_last.rename(f'doy_last')
-    doy_last = doy_last.assign_attrs({'long_name': 'day of last event occurrence', 'units': '1'})
+    doy_last = doy_last.assign_attrs(get_attrs(vname='doy_last'))
     doy_last_gr = doy_last_gr.rename(f'doy_last_GR')
-    doy_last_gr = doy_last_gr.assign_attrs({'long_name': 'day of last event occurrence (GR)',
-                                            'units': '1'})
+    doy_last_gr = doy_last_gr.assign_attrs(get_attrs(vname='doy_last_GR'))
 
     delta_y = delta_y.rename(f'delta_y')
-    delta_y = delta_y.assign_attrs({'long_name': 'annual exposure period', 'units': 'dys'})
+    delta_y = delta_y.assign_attrs(get_attrs(vname='delta_y'))
     delta_y_gr = delta_y_gr.rename(f'delta_y_GR')
-    delta_y_gr = delta_y_gr.assign_attrs({'long_name': 'annual exposure period (GR)',
-                                          'units': 'dys'})
+    delta_y_gr = delta_y_gr.assign_attrs(get_attrs(vname='delta_y_GR'))
 
     svars_ds = xr.merge([doy_first, doy_last, delta_y, doy_first_gr, doy_last_gr, delta_y_gr])
 
@@ -74,13 +75,13 @@ def create_ed_ds(ed, ed_gr, ed_avg, ed_avg_gr):
     """
 
     ed = ed.rename('ED')
-    ed = ed.assign_attrs({'long_name': 'cumulative events duration', 'units': 'dys'})
+    ed = ed.assign_attrs(get_attrs(vname='ED'))
     ed_gr = ed_gr.rename('ED_GR')
-    ed_gr.attrs = {'long_name': 'cumulative events duration (GR)', 'units': 'dys'}
+    ed_gr.attrs = get_attrs(vname='ED_GR')
     ed_avg = ed_avg.rename('EDavg')
-    ed_avg.attrs = {'long_name': 'average events duration', 'units': 'dys'}
+    ed_avg.attrs = get_attrs(vname='EDavg')
     ed_avg_gr = ed_avg_gr.rename('EDavg_GR')
-    ed_avg_gr.attrs = {'long_name': 'average events duration (GR)', 'units': 'dys'}
+    ed_avg_gr.attrs = get_attrs(vname='EDavg_GR')
 
     ed_ds = xr.merge([ed, ed_gr, ed_avg, ed_avg_gr])
 
@@ -111,41 +112,34 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     """
 
     em = em.rename('EM')
-    em.attrs = {'long_name': 'cumulative exceedance magnitude', 'units': opts.unit,
-                'description': 'expresses the temporal events extremity (tEX)'}
+    em.attrs = get_attrs(opts=opts, vname='EM')
 
     em_gr = em_gr.rename('EM_GR')
-    em_gr.attrs = {'long_name': 'cumulative exceedance magnitude (GR)', 'units': opts.unit,
-                   'description': 'expresses the temporal events extremity (tEX_GR)'}
+    em_gr.attrs = get_attrs(opts=opts, vname='EM_GR')
 
     em_avg = em_avg.rename('EMavg')
-    em_avg.attrs = {'long_name': 'average exceedance magnitude', 'units': opts.unit}
+    em_avg.attrs = get_attrs(opts=opts, vname='EMavg')
 
     em_avg_gr = em_avg_gr.rename('EMavg_GR')
-    em_avg_gr.attrs = {'long_name': 'average exceedance magnitude (GR)', 'units': opts.unit}
+    em_avg_gr.attrs = get_attrs(opts=opts, vname='Emavg_GR')
 
     em_avg_med = em_avg_med.rename('EMavg_Md')
-    em_avg_med.attrs = {'long_name': 'average daily-median  exceedance magnitude',
-                        'units': opts.unit}
+    em_avg_med.attrs = get_attrs(opts=opts, vname='EMavg_Md')
 
     em_avg_gr_med = em_avg_gr_med.rename('EMavg_Md_GR')
-    em_avg_gr_med.attrs = {'long_name': 'average daily-median exceedance magnitude (GR)',
-                           'units': opts.unit}
+    em_avg_gr_med.attrs = get_attrs(opts=opts, vname='EMavg_Md_GR')
 
     em_med = em_med.rename('EM_Md')
-    em_med.attrs = {'long_name': 'cumulative daily-median exceedance magnitude', 'units': opts.unit}
+    em_med.attrs = get_attrs(opts=opts, vname='EM_Md')
 
     em_gr_med = em_gr_med.rename('EM_Md_GR')
-    em_gr_med.attrs = {'long_name': 'cumulative daily-median exceedance magnitude (GR)',
-                       'units': opts.unit}
+    em_gr_med.attrs = get_attrs(opts=opts, vname='EM_Md_GR')
 
     em_gr_max = em_gr_max.rename('EM_Max_GR')
-    em_gr_max.attrs = {'long_name': 'cumulative maximum exceedance magnitude (GR)',
-                       'units': opts.unit}
+    em_gr_max.attrs = get_attrs(opts=opts, vname='EM_Max_GR')
 
     em_gr_avg_max = em_gr_avg_max.rename('EMavg_Max_GR')
-    em_gr_avg_max.attrs = {'long_name': 'average maximum exceedance magnitude (GR)',
-                           'units': opts.unit}
+    em_gr_avg_max.attrs = get_attrs(opts=opts, vname='EMavg_Max_GR')
 
 
     if opts.parameter == 'T':
@@ -172,19 +166,14 @@ def create_ea_ds(opts, ea_gr, tex, es_gr):
         ea_ds: ds
     """
 
-    if opts.parameter:
-        unit = 'areal °C dys'
-    else:
-        unit = 'areal mm dys'
-
     ea_gr = ea_gr.rename('EAavg_GR')
-    ea_gr.attrs = {'long_name': 'average exceedance area (GR)', 'units': 'areals'}
+    ea_gr.attrs = get_attrs(opts=opts, vname='EAavg_GR')
 
     tex = tex.rename('TEX_GR')
-    tex.attrs = {'long_name': 'total events extremity (GR)', 'units': unit}
+    tex.attrs = get_attrs(opts=opts, vname='TEX_GR')
 
     es_gr = es_gr.rename('ESavg_GR')
-    es_gr.attrs = {'long_name': 'average event severity (GR)', 'units': unit}
+    es_gr.attrs = get_attrs(opts=opts, vname='ESavg_GR')
 
     ea_ds = xr.merge([ea_gr, tex, es_gr])
 

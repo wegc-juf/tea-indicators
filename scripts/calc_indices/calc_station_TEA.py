@@ -23,6 +23,7 @@ logging.basicConfig(
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history, ref_cc_params, extend_tea_opts
+from var_attrs import get_attrs
 from calc_TEA import assign_ctp_coords
 from calc_daily_basis_vars import calc_dteec_1d
 
@@ -237,13 +238,13 @@ def calc_ctp_indicators(opts, data):
 
     # add attributes and combine to one dataset
     ef = ef.rename('EF')
-    ef = ef.assign_attrs({'long_name': 'event frequency', 'units': '1'})
+    ef = ef.assign_attrs(get_attrs(vname='EF'))
 
     ed_avg = ed_avg.rename('EDavg')
-    ed_avg.attrs = {'long_name': 'average events duration', 'units': 'dys'}
+    ed_avg.attrs = get_attrs(vname='EDavg')
 
     em_avg = em_avg.rename('EMavg')
-    em_avg.attrs = {'long_name': 'average exceedance magnitude', 'units': data_unit}
+    em_avg.attrs = get_attrs(vname='EMavg')
 
     ctp = xr.merge([ef, ed_avg, em_avg])
 

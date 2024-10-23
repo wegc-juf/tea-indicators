@@ -6,6 +6,8 @@ import re
 import sys
 import xarray as xr
 
+from scripts.misc.var_attrs import get_attrs
+
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
 
@@ -149,11 +151,9 @@ def calc_spread_estimators(data, dec_data):
         slow.loc[{'ctp': cy}] = slow_per
 
     for vvar in supp.data_vars:
-        if 'long_name' in supp[vvar].attrs:
-            supp[vvar].attrs['long_name'] += ' upper spread estimator'
+        supp[vvar].attrs = get_attrs(vname=vvar, spread='upper')
     for vvar in slow.data_vars:
-        if 'long_name' in slow[vvar].attrs:
-            slow[vvar].attrs['long_name'] += ' lower spread estimator'
+        supp[vvar].attrs = get_attrs(vname=vvar, spread='lower')
 
     rename_dict_supp = {vvar: f'{vvar}_supp' for vvar in supp.data_vars}
     rename_dict_slow = {vvar: f'{vvar}_slow' for vvar in slow.data_vars}
@@ -175,15 +175,10 @@ def rolling_decadal_mean(data):
 
     # equation 23 (decadal averaging)
     weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
-    for ivar in data.data_vars:
-        data[ivar] = data.rolling(ctp=10, center=True).construct('window')[ivar].dot(
+    for vvar in data.data_vars:
+        data[vvar] = data.rolling(ctp=10, center=True).construct('window')[vvar].dot(
             weights)
-        attrs = data[ivar].attrs
-        if 'long_name' in attrs:
-            attrs['long_name'] = f'decadal-mean {attrs["long_name"]}'
-        else:
-            attrs['long_name'] = f'decadal-mean {ivar}'
-        data[ivar].attrs = attrs
+        data[vvar].attrs = get_attrs(vname=vvar, dec=True)
 
     return data
 

@@ -12,6 +12,7 @@ warnings.filterwarnings(action='ignore', message='divide by zero encountered in 
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history
+from var_attrs import get_attrs
 from TEA_logger import logger
 from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from calc_TEA import (assign_ctp_coords, calc_event_frequency, calc_supplementary_event_vars,
@@ -204,10 +205,8 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
     ds_out = xr.merge([ef, ed, em, ea])
     ds_out_suppl = xr.merge([svars, em_suppl])
 
-    ds_out['ctp'] = ds_out['ctp'].assign_attrs(
-        {'long_name': f'climatic time period ({opts.period})'})
-    ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(
-        {'long_name': f'climatic time period ({opts.period})'})
+    ds_out['ctp'] = ds_out['ctp'].assign_attrs(get_attrs(opts=opts, vname='ctp'))
+    ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(get_attrs(opts=opts, vname='ctp'))
 
     # GR vars of 0.5° sub-cells are used as new grid values
     # --> drop grid values on native 0.25° grid

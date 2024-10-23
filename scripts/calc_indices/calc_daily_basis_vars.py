@@ -3,7 +3,11 @@ import logging
 import numpy as np
 import os
 from pathlib import Path
+import sys
 import xarray as xr
+
+sys.path.append('/home/hst/tea-indicators/scripts/misc/')
+from var_attrs import get_attrs
 
 
 def calc_dtec_dtea(opts, dtem, static, cstr):
@@ -100,7 +104,7 @@ def calculate_event_count(opts, dtec, cstr, da_out=False):
     if 'GR' in dtec.name:
         dteec_np = calc_dteec_1d(dtec_cell=dtec.values)
         dteec = xr.DataArray(dteec_np, coords=dtec.coords, dims=dtec.dims)
-        gr_str, gr_var_str = ' (GR)', '_GR'
+        gr_var_str = '_GR'
     else:
         dteec = xr.full_like(dtec, np.nan)
         dtec_3d = dtec.values
@@ -112,10 +116,10 @@ def calculate_event_count(opts, dtec, cstr, da_out=False):
                 continue
             dteec_row = np.apply_along_axis(calc_dteec_1d, axis=0, arr=dtec_row)
             dteec[:, iy, :] = dteec_row
-        gr_str, gr_var_str = '', ''
+        gr_var_str = ''
 
     dteec = dteec.rename(f'DTEEC{gr_var_str}')
-    dteec.attrs = {'long_name': f'daily threshold exceedance event count{gr_str}', 'units': '1'}
+    dteec.attrs = get_attrs(opts=opts, vname=f'DTEEC{gr_var_str}')
 
     if not da_out:
         outname = (f'{opts.outpath}daily_basis_variables/tmp/'
@@ -168,11 +172,6 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     """
 
-    if opts.parameter == 'T':
-        data_unit = '°C'
-    else:
-        data_unit = 'mm'
-
     cell_str = ''
     if large_gr:
         cell_str = f'_lat{cell[0]}_lon{cell[1]}'
@@ -189,7 +188,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     dtem = data - static['threshold']
     dtem = dtem.where(dtem > 0).astype('float32')
     dtem = dtem.rename('DTEM')
-    dtem.attrs = {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit}
+    dtem.attrs = get_attrs(opts=opts, vname='DTEM')
 
     dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=dtem, static=static, cstr=cell_str)
 
@@ -198,15 +197,13 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     area_fac = static['area_grid'] / dtea_gr.T
     dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
     dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
-    dtem_gr = dtem_gr.assign_attrs({'long_name': 'daily threshold exceedance magnitude (GR)',
-                                    'units': data_unit})
+    dtem_gr = dtem_gr.assign_attrs(get_attrs(opts=opts, vname='DTEM_GR'))
 
     # equation 09
     # save maximum DTEM
     dtem_max = dtem.max(dim=static['threshold'].dims)
     dtem_max = dtem_max.rename('DTEM_Max')
-    dtem_max = dtem_max.assign_attrs({'long_name': 'daily maximum grid cell exceedance magnitude',
-                                      'units': data_unit})
+    dtem_max = dtem_max.assign_attrs(get_attrs(opts=opts, vname='DTEM_Max'))
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
     outname = (f'{opts.outpath}daily_basis_variables/tmp/'

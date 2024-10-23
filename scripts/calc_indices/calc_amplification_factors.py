@@ -18,6 +18,7 @@ import xarray as xr
 
 sys.path.append('/home/hst/tea-indicators/scripts/misc/')
 from general_functions import create_history, ref_cc_params, extend_tea_opts
+from var_attrs import get_attrs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -183,12 +184,8 @@ def calc_basis_amplification_factors(data, ref, cc):
     for vvar in af_ds.data_vars:
         af_ds[vvar].attrs = data[vvar].attrs
         af_cc_ds[vvar].attrs = data[vvar].attrs
-        if 'long_name' in af_ds[vvar].attrs:
-            af_ds[vvar].attrs['long_name'] += ' amplification'
-            af_cc_ds[vvar].attrs['long_name'] += ' CC amplification'
-        if 'units' in af_ds[vvar].attrs:
-            af_ds[vvar].attrs['units'] = '1'
-            af_cc_ds[vvar].attrs['units'] = '1'
+        af_ds[vvar].attrs = get_attrs(vname=f'{vvar}_AF')
+        af_cc_ds[vvar].attrs = get_attrs(vname=f'{vvar}_AF_CC')
 
     # rename vars
     rename_dict_af_ds = {vvar: f'{vvar}_AF' for vvar in af_ds.data_vars}
@@ -220,32 +217,26 @@ def calc_compound_amplification_factors(opts, af, af_cc):
     # tEX
     af_tEX = af['EF_GR_AF'] * af['EDavg_GR_AF'] * af[em_var]
     af_tEX = af_tEX.rename('tEX_GR_AF')
-    af_tEX = af_tEX.assign_attrs(
-        {'long_name': 'decadal-mean temporal events extremity (GR) amplification', 'units': '1'})
+    af_tEX = af_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF'))
     af_cc_tEX = af_cc['EF_GR_AF_CC'] * af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
     af_cc_tEX = af_cc_tEX.rename('tEX_GR_AF_CC')
-    af_cc_tEX = af_cc_tEX.assign_attrs(
-        {'long_name': 'decadal-mean temporal events extremity (GR) CC amplification', 'units': '1'})
+    af_cc_tEX = af_cc_tEX.assign_attrs('tEX_GR_AF_CC')
 
     # ES
     af_es = af['EDavg_GR_AF'] * af[em_var] * af['EAavg_GR_AF']
     af_es = af_es.rename('ES_GR_AF')
-    af_es = af_es.assign_attrs(
-        {'long_name': 'decadal-mean event severity (GR) amplification', 'units': '1'})
+    af_es = af_es.assign_attrs(get_attrs(vname='ES_GR_AF'))
     af_cc_es = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_GR_AF_CC']
     af_cc_es = af_cc_es.rename('ES_GR_AF_CC')
-    af_cc_es = af_cc_es.assign_attrs(
-        {'long_name': 'decadal-mean event severity (GR) CC amplification', 'units': '1'})
+    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname='ES_GR_AF_CC'))
 
     # TEX
     af_TEX = af['EF_GR_AF'] * af_es
     af_TEX = af_TEX.rename('TEX_GR_AF')
-    af_TEX = af_TEX.assign_attrs(
-        {'long_name': 'decadal-mean total events extremity (GR) amplification', 'units': '1'})
+    af_TEX = af_TEX.assign_attrs(get_attrs(vname='TEX_GR_AF'))
     af_cc_TEX = af_cc['EF_GR_AF_CC'] * af_cc_es
     af_cc_TEX = af_cc_TEX.rename('TEX_GR_AF_CC')
-    af_cc_TEX = af_cc_TEX.assign_attrs(
-        {'long_name': 'decadal-mean total events extremity (GR) CC amplification', 'units': '1'})
+    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(vname='TEX_GR_AF_CC'))
 
     af = xr.merge([af, af_tEX, af_es, af_TEX])
     af_cc = xr.merge([af_cc, af_cc_tEX, af_cc_es, af_cc_TEX])
