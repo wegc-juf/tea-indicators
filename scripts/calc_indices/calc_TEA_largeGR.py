@@ -13,9 +13,11 @@ warnings.filterwarnings(action='ignore', message='divide by zero encountered in 
 from scripts.general_stuff.general_functions import create_history
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
-from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
-from calc_TEA import (assign_ctp_coords, calc_event_frequency, calc_supplementary_event_vars,
-                      calc_event_duration, calc_exceedance_magnitude, calc_exceedance_area_tex_sev)
+from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
+from scripts.calc_indices.calc_TEA import (assign_ctp_coords, calc_event_frequency,
+                                           calc_supplementary_event_vars,
+                                           calc_event_duration, calc_exceedance_magnitude,
+                                           calc_exceedance_area_tex_sev)
 
 
 def select_cell(opts, lat, lon, data, static, masks):
@@ -305,7 +307,6 @@ def calc_tea_lat(opts, data, static, masks, lat):
             elif 'GR' in vvar:
                 dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
-
         # get dates for climatic time periods (CTP) and assign coords to dbv
         dbv, dbv_per = assign_ctp_coords(opts, data=dbv)
 
@@ -491,12 +492,12 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
     else:
         lons = np.arange(9, 18, 0.5)
 
-    mask_0p5 = xr.DataArray(data=np.ones((len(lats), len(lons)))*np.nan,
+    mask_0p5 = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
                             coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
                             dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
     mask_0p5 = mask_0p5.rename('mask_lt1500')
 
-    area_0p5 = xr.DataArray(data=np.ones((len(lats), len(lons)))*np.nan,
+    area_0p5 = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
                             coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
                             dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
     area_0p5 = area_0p5.rename('area_grid')

@@ -12,10 +12,10 @@ import re
 import sys
 import xarray as xr
 
-sys.path.append('/scripts/general_stuff/')
-from general_functions import create_history, extend_tea_opts, ref_cc_params
-from var_attrs import get_attrs
-from calc_amplification_factors import calc_ref_cc_mean, calc_basis_amplification_factors
+from scripts.general_stuff.general_functions import create_history, extend_tea_opts, ref_cc_params
+from scripts.general_stuff.var_attrs import get_attrs
+from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
+                                                             calc_basis_amplification_factors)
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},

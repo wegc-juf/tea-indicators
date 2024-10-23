@@ -61,6 +61,11 @@ def get_opts():
                         type=file,
                         help='Orography file only necessary if "orography" is set to true.')
 
+    parser.add_argument('--wegnfile',
+                        default='/data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc',
+                        type=file,
+                        help='Dummy WEGN file to extract grid.')
+
     parser.add_argument('--outpath',
                         default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
                         help='Path of folder where output data should be saved.')
@@ -87,9 +92,7 @@ def define_wegn_grid_1000x1000(opts):
         os.path.join(f'{opts.inpath}', f'SPARTACUS-DAILY_{opts.parameter}_2000.nc'))
 
     # Open WEGN sample data
-    wegnet = xr.open_mfdataset(os.path.join('/data/users/hst/cdrDPS/wegnet/',
-                                            'WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc'),
-                               combine='by_coords')
+    wegnet = xr.open_dataset(opts.wegnfile)
     # Select 2020-08-15 (just a random date)
     wegnet_first = wegnet.isel(time=14)
 

@@ -20,12 +20,13 @@ import xarray as xr
 from scripts.general_stuff.general_functions import create_history, extend_tea_opts
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
-from calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
-from calc_ctp_indicator_variables import (calc_event_frequency, calc_supplementary_event_vars,
+from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
+from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_frequency,
+                                                               calc_supplementary_event_vars,
                                           calc_event_duration, calc_exceedance_magnitude,
                                           calc_exceedance_area_tex_sev)
-from calc_decadal_indicators import calc_decadal_indicators
-import calc_TEA_largeGR
+from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators
+import scripts.calc_indices.calc_TEA_largeGR
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},

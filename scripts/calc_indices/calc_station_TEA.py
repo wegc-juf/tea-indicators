@@ -23,8 +23,8 @@ logging.basicConfig(
 
 from scripts.general_stuff.general_functions import create_history, ref_cc_params, extend_tea_opts
 from scripts.general_stuff.var_attrs import get_attrs
-from calc_TEA import assign_ctp_coords
-from calc_daily_basis_vars import calc_dteec_1d
+from scripts.calc_indices.calc_TEA import assign_ctp_coords
+from scripts.calc_indices.calc_daily_basis_vars import calc_dteec_1d
 
 PARAMS = ref_cc_params()
 

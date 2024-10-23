@@ -10,15 +10,13 @@ import glob
 import numpy as np
 import pandas as pd
 from pathlib import Path
-import sys
 import xarray as xr
 
-sys.path.append('/home/hst/tea-indicators/scripts/calc_indices/')
-from calc_amplification_factors import calc_ref_cc_mean, calc_basis_amplification_factors
-from calc_decadal_indicators import rolling_decadal_mean
+from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
+                                                             calc_basis_amplification_factors)
+from scripts.calc_indices.calc_decadal_indicators import rolling_decadal_mean
 
-sys.path.append('/scripts/general_stuff/')
-from general_functions import create_history, ref_cc_params
+from scripts.general_stuff.general_functions import ref_cc_params
 
 PARAMS = ref_cc_params()
 
