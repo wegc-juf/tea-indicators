@@ -180,12 +180,13 @@ def calc_agr(opts, vdata, awgts):
     xt_s_agr = (awgts * vdata).sum(dim=('lat', 'lon'))
 
     # calc Xt_ref_db and Xt_ref_agr (Eq. 34_3)
-    # TODO: when data for full ref period available, check if there are any time steps in ref
-    #  period with 0 entries that lead to -inf in log
     x_s_agr_ref = xt_s_agr.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
     x_s_agr_ref = x_s_agr_ref.where((x_s_agr_ref > 0).compute(), drop=True)
     xt_ref_db = (10 / 21) * np.log10(x_s_agr_ref).sum()
     xt_ref_agr = 10 ** (xt_ref_db / 10)
+
+    if len(x_s_agr_ref) < 21:
+        raise Warning('There are 0-values in the ref period that lead to -inf in the logarithm!')
 
     # calculate X_s_AGR (Eq. 34_4)
     x_s_agr = (x_ref_agr / xt_ref_agr) * xt_s_agr
