@@ -194,7 +194,7 @@ def load_ref_data(opts, masks, ds_params):
         data_yr = xr.open_dataset(file)
         data_param = data_yr[var]
 
-        # in case of European wide data set all cells outside of region to nan (ERA5 data is not
+        # in case of European wide data, set all cells outside of region to nan (ERA5 data are not
         # smoothed --> we don't need data outside the GR and can apply mask here to reduce
         # memory usage)
         if opts.dataset == 'ERA5':

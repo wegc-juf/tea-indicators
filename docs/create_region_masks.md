@@ -17,7 +17,7 @@ ERA5: 4326 \
 ERA5-Land: 4326 \
 EOBS: 4326
 
-*Note: all data that is regridded to the extended WEGN grid has the same coordinate system as the 
+*Note: to regrid to the extended WEGN grid, pass the same coordinate system as the 
 WEGN data (EPSG:32633).
 
 ### Orography files

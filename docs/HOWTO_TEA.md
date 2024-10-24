@@ -1,4 +1,4 @@
-# HOW TO: TEA Indicators
+# HOW TO: TEA-Indicators
 
 ## 1) Preparation of input datasets
 To prepare the input datasets (SPARTACUS, ERA5, and ERA5-Land) run the following data prep scripts  
@@ -12,7 +12,8 @@ and once for orography data.
 
 ## 2) Creation of background files
 To create the necessary background files run the following scripts:
-1. `create_region_masks.py`
+1. `create_region_masks.py`\
+   (For WEGC users: input data filepaths are listed in `create_region_masks.md`) 
 2. `create_static_files.py`
 
 ## 3) TEA Indicators
