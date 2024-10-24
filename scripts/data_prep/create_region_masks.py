@@ -132,6 +132,7 @@ def create_cell_polygons(opts, xvals, yvals, offset):
         offset: half of grid spacing
 
     Returns:
+        cells: list of cell polygons
 
     """
 

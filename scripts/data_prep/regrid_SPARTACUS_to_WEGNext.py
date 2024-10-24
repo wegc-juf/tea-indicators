@@ -20,8 +20,10 @@ from scripts.general_stuff.general_functions import create_history
 
 def get_opts():
     """
-    loads input parameter
-    :return: opts
+    loads CLI parameter
+    Returns:
+        myopts: CLI parameter
+
     """
 
     def dir_path(path):
@@ -130,9 +132,15 @@ def define_wegn_grid_1000x1000(opts):
 
 def utm_to_epsg3416_grid(x, y):
     """
-     x ... 1d array
-     y ... 1d array
-     newx, newy ... meshgrid
+    transform UTM33N coords to EPSG:3416 grid
+    Args:
+        x: x-coordinates in UTM33N
+        y: y-coordinates in UTM33N
+
+    Returns:
+        newx: x-coordinates in EPSG:3416
+        newy: y-coordinates in EPSG:3416
+
      """
     transformer = pyproj.Transformer.from_crs('EPSG:32633', 'EPSG:3416')
     ny, nx = len(y), len(x)
@@ -145,9 +153,15 @@ def utm_to_epsg3416_grid(x, y):
 
 def epsg3416_to_utm_grid(x, y):
     """
-    x ... 1d array
-    y ... 1d array
-    newx, newy ... meshgrid
+    transform EPSG:3416 coords to UTM33N grid
+    Args:
+        x: x-coordinates in EPSG:3416
+        y: y-coordinates in EPSG:341
+
+    Returns:
+        newx: x-coordinates in UTM33N
+        newy: y-coordinates in UTM33N
+
     """
     transformer = pyproj.Transformer.from_crs('EPSG:3416', 'EPSG:32633')
     ny, nx = len(y), len(x)
@@ -193,7 +207,11 @@ def regrid_spartacus(opts, ds_in, method="linear"):
 def regrid_orog(opts):
     """
     regrid orography to new grid
-    :return:
+        Args:
+        opts: CLI parameter
+
+    Returns:
+
     """
 
     orog_file = xr.open_dataset(opts.orofile)

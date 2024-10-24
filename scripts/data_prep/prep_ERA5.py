@@ -18,6 +18,12 @@ from scripts.general_stuff.general_functions import create_history
 
 
 def get_opts():
+    """
+    get CLI parameter
+    Returns:
+        myopts: CLI parameter
+
+    """
     parser = argparse.ArgumentParser()
 
     def dir_path(path):

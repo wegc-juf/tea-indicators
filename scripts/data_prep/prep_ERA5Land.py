@@ -17,6 +17,11 @@ from scripts.general_stuff.general_functions import create_history
 
 
 def get_opts():
+    """
+    loads CLI parameter
+    Returns:
+        myopts: CLI parameter
+    """
     parser = argparse.ArgumentParser()
 
     def dir_path(path):
@@ -46,6 +51,16 @@ def get_opts():
 
 
 def calc_altitude(ds_in, orog):
+    """
+    calc altitude from geopotential
+    Args:
+        ds_in: input ds
+        orog: orography data
+
+    Returns:
+        altitude: altitude
+
+    """
     data = xr.open_dataset(ds_in)
 
     # altitude

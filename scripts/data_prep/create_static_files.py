@@ -19,7 +19,7 @@ def get_opts():
     """
     get CLI parameter
     Returns:
-        opts: CLI parameter
+        myopts: CLI parameter
     """
 
     def dir_path(path):
@@ -195,7 +195,7 @@ def load_ref_data(opts, masks, ds_params):
         data_param = data_yr[var]
 
         # in case of European wide data set all cells outside of region to nan (ERA5 data is not
-        # smoothed --> we don't need data outside of the GR and can apply mask here to reduce
+        # smoothed --> we don't need data outside the GR and can apply mask here to reduce
         # memory usage)
         if opts.dataset == 'ERA5':
             data_param = data_param.where(masks['lt1500_mask'] == 1)
