@@ -65,8 +65,8 @@ def getopts():
     parser.add_argument('--agr',
                         default='EUR',
                         type=str,
-                        choices=['EUR', 'S-EUR', 'C-EUR', 'N-EUR'],
-                        help='Aggregate GeoRegion. Options: EUR, S-EUR, C-EUR, and N-EUR.')
+                        help='Aggregate GeoRegion. Options: EUR, S-EUR, C-EUR, N-EUR, AUT, '
+                             'or ISO2-code of country.')
 
     parser.add_argument('--parameter',
                         default='T',
@@ -145,15 +145,49 @@ def load_data(opts, suppl=False):
         sdir = 'supplementary/'
         sstr = 'suppl'
 
-    file = (f'{opts.inpath}{sdir}DEC{sstr}_{opts.param_str}_EUR_{opts.period}_{opts.dataset}'
+    if 'EUR' in opts.agr:
+        ag_reg = 'EUR'
+    else:
+        ag_reg = opts.agr
+
+    file = (f'{opts.inpath}{sdir}DEC{sstr}_{opts.param_str}_{ag_reg}_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     ds = xr.open_dataset(file)
 
     agr_lims = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+    if opts.agr not in agr_lims.keys():
+        lat_min = ds.lat.min().values
+        lat_max = ds.lat.max().values
+    else:
+        lat_min = agr_lims[opts.agr][0]
+        lat_max = agr_lims[opts.agr][1]
+    ds = ds.sel(lat=slice(lat_min, lat_max))
 
-    ds = ds.sel(lat=slice(agr_lims[opts.agr][0], agr_lims[opts.agr][1]))
+    if opts.dataset == 'ERA5':
+        lims = [lat_min, lat_max]
+    else:
+        lims = [lat_max, lat_min]
 
-    return ds, agr_lims[opts.agr]
+    return ds, lims
+
+
+def substitute_null_vals(data, tex):
+    """
+    replace 0s in data with entry of min TEX core year
+    Args:
+        data: data of variable
+        tex: TEX data
+
+    Returns:
+        data_nonull: data without 0 values
+
+    """
+
+    null_yrs = data.where((data == 0), drop=True).ctp.values
+    if len(null_yrs) == 0:
+        return data
+
+    print()
 
 
 def calc_agr(opts, vdata, awgts):
@@ -163,12 +197,15 @@ def calc_agr(opts, vdata, awgts):
         opts: CLI parameter
         vdata: data of variable
         awgts: area weights
+        tex: TEX data
 
     Returns:
         x_ref_agr: Ref value of AGR
         x_s_agr: time series of AGR
 
     """
+
+    # vdata = substitute_null_vals(data=vdata, tex=tex)
 
     # calc mean of ref period (Eq. 26)
     ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
@@ -368,40 +405,40 @@ def calc_ampl_facs_grid(opts, data, suppl=False):
 
 def save_output(opts, data):
     outpaths = {'AGR': f'{opts.outpath}dec_indicator_variables/'
-                       f'DEC_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                       f'DEC_{opts.param_str}_AGR-{opts.agr}_{opts.period}_{opts.dataset}'
                        f'_{opts.start}to{opts.end}.nc',
                 'AGRsuppl': f'{opts.outpath}dec_indicator_variables/supplementary/'
-                            f'DECsuppl_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                            f'DECsuppl_{opts.param_str}_AGR-{opts.agr}_{opts.period}_{opts.dataset}'
                             f'_{opts.start}to{opts.end}.nc',
                 'AF': f'{opts.outpath}amplification/'
-                      f'AF_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                      f'AF_{opts.param_str}_AGR-{opts.agr}_{opts.period}_{opts.dataset}'
                       f'_{opts.start}to{opts.end}.nc',
                 'AF_us': f'{opts.outpath}amplification/'
-                         f'AF_sUPP_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                         f'AF_sUPP_{opts.param_str}_AGR-{opts.agr}_{opts.period}_{opts.dataset}'
                          f'_{opts.start}to{opts.end}.nc',
                 'AF_ls': f'{opts.outpath}amplification/'
-                         f'AF_sLOW_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                         f'AF_sLOW_{opts.param_str}_AGR-{opts.agr}_{opts.period}_{opts.dataset}'
                          f'_{opts.start}to{opts.end}.nc',
                 'AF_suppl': f'{opts.outpath}amplification/supplementary/'
-                            f'AFsuppl_{opts.param_str}_{opts.agr}_{opts.period}_{opts.dataset}'
+                            f'AFsuppl_{opts.param_str}_AGR-{opts.agr}_{opts.period}_{opts.dataset}'
                             f'_{opts.start}to{opts.end}.nc',
                 'AF_suppl_us': f'{opts.outpath}amplification/supplementary/'
-                               f'AFsuppl_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'AFsuppl_sUPP_{opts.param_str}_AGR-{opts.agr}_{opts.period}'
                                f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
                 'AF_suppl_ls': f'{opts.outpath}amplification/supplementary/'
-                               f'AFsuppl_sLOW_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'AFsuppl_sLOW_{opts.param_str}_AGR-{opts.agr}_{opts.period}'
                                f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
                 'AGR_us': f'{opts.outpath}dec_indicator_variables/'
-                          f'DEC_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
+                          f'DEC_sUPP_{opts.param_str}_AGR-{opts.agr}_{opts.period}'
                           f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
                 'AGR_ls': f'{opts.outpath}dec_indicator_variables/'
-                          f'DEC_sLOW_{opts.param_str}_{opts.agr}_{opts.period}'
+                          f'DEC_sLOW_{opts.param_str}_AGR-{opts.agr}_{opts.period}'
                           f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
                 'AGRsuppl_us': f'{opts.outpath}dec_indicator_variables/supplementary/'
-                               f'DECsupp_sUPP_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'DECsupp_sUPP_{opts.param_str}_AGR-{opts.agr}_{opts.period}'
                                f'_{opts.dataset}_{opts.start}to{opts.end}.nc',
                 'AGRsuppl_ls': f'{opts.outpath}dec_indicator_variables/supplementary/'
-                               f'DECsupp_sLOW_{opts.param_str}_{opts.agr}_{opts.period}'
+                               f'DECsupp_sLOW_{opts.param_str}_AGR-{opts.agr}_{opts.period}'
                                f'_{opts.dataset}_{opts.start}to{opts.end}.nc'}
 
     for vvars in data.keys():
@@ -471,7 +508,11 @@ def run():
     opts = extend_tea_opts(opts)
 
     # load area grid (0.5°)
-    areas = xr.open_dataarray(f'{opts.statpath}area_grid_0p5_EUR_{opts.dataset}.nc')
+    if 'EUR' in opts.agr:
+        ag_reg = 'EUR'
+    else:
+        ag_reg = opts.agr
+    areas = xr.open_dataarray(f'{opts.statpath}area_grid_0p5_{ag_reg}_{opts.dataset}.nc')
 
     # load TEA data
     data, lat_lims = load_data(opts=opts)

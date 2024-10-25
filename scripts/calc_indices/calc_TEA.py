@@ -23,10 +23,11 @@ from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
 from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_frequency,
                                                                calc_supplementary_event_vars,
-                                          calc_event_duration, calc_exceedance_magnitude,
-                                          calc_exceedance_area_tex_sev)
+                                                               calc_event_duration,
+                                                               calc_exceedance_magnitude,
+                                                               calc_exceedance_area_tex_sev)
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators
-import scripts.calc_indices.calc_TEA_largeGR
+import scripts.calc_indices.calc_TEA_largeGR as largeGR
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -377,7 +378,7 @@ def calc_indicators(opts):
 
     # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
-        calc_TEA_largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
+        largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
         return
 
     # apply mask to data
@@ -387,7 +388,8 @@ def calc_indicators(opts):
     calc_daily_basis_vars(opts=opts, static=static, data=data)
     dbv = xr.open_dataset(
         f'{opts.outpath}daily_basis_variables/'
-        f'DBV_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+        f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+        f'_{opts.start}to{opts.end}.nc')
 
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)

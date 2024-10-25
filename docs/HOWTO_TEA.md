@@ -17,4 +17,7 @@ To create the necessary background files run the following scripts:
 2. `create_static_files.py`
 
 ## 3) TEA Indicators
-After preparing all the necessary input and background data, run `calc_TEA.py`.
+After preparing all the necessary input and background data, run `calc_TEA.py`. \
+If TEA-Indicators are calculated for a large GR (size > 10.000km²) with ERA5(-Land) data, 
+`calc_TEA.py` only returns the gridded parameters. To obtain the GR variables, 
+run `calc_AGR_vars.py` after running `calc_TEA.py`.

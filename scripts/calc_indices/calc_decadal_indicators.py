@@ -2,6 +2,7 @@ import glob
 import logging
 import numpy as np
 from pathlib import Path
+import pandas as pd
 import re
 import sys
 import xarray as xr
@@ -48,7 +49,7 @@ def load_ctp_data(opts, suppl):
 
     data = xr.open_mfdataset(paths=files, data_vars='minimal')
 
-    # check is more data than chosen period is loaded and select correct period if so
+    # check if more data than chosen period is loaded and select correct period if so
     syr, eyr = int(files[0].split('_')[-1][:4]), int(files[-1].split('_')[-1][6:10])
     if opts.start != syr or opts.end != eyr:
         data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
@@ -161,24 +162,30 @@ def calc_spread_estimators(data, dec_data):
     return supp, slow
 
 
-def rolling_decadal_mean(data):
+def rolling_decadal_mean(data, ef):
     """
     apply rolling decadal mean
     Args:
         data: annual data
+        ef: EF data
 
     Returns:
         data: decadal-mean data
     """
 
-    # equation 23 (decadal averaging)
     weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
+
+    # replace nans of cells with EF == 0 with 0
+    data = data.where(ef != 0, 0)
+
+    # equation 23 (decadal averaging)
     for vvar in data.data_vars:
         data[vvar] = data.rolling(ctp=10, center=True).construct('window')[vvar].dot(
             weights)
         data[vvar].attrs = get_attrs(vname=vvar, dec=True)
 
     return data
+
 
 def calc_decadal_indicators(opts, suppl=False):
     """
@@ -192,9 +199,15 @@ def calc_decadal_indicators(opts, suppl=False):
     """
     data = load_ctp_data(opts=opts, suppl=suppl)
 
+    if suppl:
+        ef_data = load_ctp_data(opts=opts, suppl=False)
+        ef_data = ef_data.EF
+    else:
+        ef_data = data.EF
+
     dec_data = data.copy()
 
-    dec_data = rolling_decadal_mean(data=dec_data)
+    dec_data = rolling_decadal_mean(data=dec_data, ef=ef_data)
 
     # equation 24 (re-adjusting doy vars)
     if 'doy_first' in data.data_vars:

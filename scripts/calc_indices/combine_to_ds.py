@@ -119,7 +119,7 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     em_avg.attrs = get_attrs(opts=opts, vname='EMavg')
 
     em_avg_gr = em_avg_gr.rename('EMavg_GR')
-    em_avg_gr.attrs = get_attrs(opts=opts, vname='Emavg_GR')
+    em_avg_gr.attrs = get_attrs(opts=opts, vname='EMavg_GR')
 
     em_avg_med = em_avg_med.rename('EMavg_Md')
     em_avg_med.attrs = get_attrs(opts=opts, vname='EMavg_Md')
