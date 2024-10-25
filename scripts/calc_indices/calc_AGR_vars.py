@@ -12,6 +12,7 @@ import re
 import sys
 import xarray as xr
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history, extend_tea_opts, ref_cc_params
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
@@ -163,31 +164,9 @@ def load_data(opts, suppl=False):
         lat_max = agr_lims[opts.agr][1]
     ds = ds.sel(lat=slice(lat_min, lat_max))
 
-    if opts.dataset == 'ERA5':
-        lims = [lat_min, lat_max]
-    else:
-        lims = [lat_max, lat_min]
+    lims = [lat_max, lat_min]
 
     return ds, lims
-
-
-def substitute_null_vals(data, tex):
-    """
-    replace 0s in data with entry of min TEX core year
-    Args:
-        data: data of variable
-        tex: TEX data
-
-    Returns:
-        data_nonull: data without 0 values
-
-    """
-
-    null_yrs = data.where((data == 0), drop=True).ctp.values
-    if len(null_yrs) == 0:
-        return data
-
-    print()
 
 
 def calc_agr(opts, vdata, awgts):
@@ -204,8 +183,6 @@ def calc_agr(opts, vdata, awgts):
         x_s_agr: time series of AGR
 
     """
-
-    # vdata = substitute_null_vals(data=vdata, tex=tex)
 
     # calc mean of ref period (Eq. 26)
     ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))

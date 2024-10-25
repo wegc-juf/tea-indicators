@@ -44,7 +44,7 @@ def load_ctp_data(opts, suppl):
 
     files = sorted(glob.glob(
         f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}'
-        f'_{opts.dataset}*.nc'))
+        f'_{opts.dataset}_*.nc'))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
 
     data = xr.open_mfdataset(paths=files, data_vars='minimal')
@@ -162,21 +162,17 @@ def calc_spread_estimators(data, dec_data):
     return supp, slow
 
 
-def rolling_decadal_mean(data, ef):
+def rolling_decadal_mean(data):
     """
     apply rolling decadal mean
     Args:
         data: annual data
-        ef: EF data
 
     Returns:
         data: decadal-mean data
     """
 
     weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
-
-    # replace nans of cells with EF == 0 with 0
-    data = data.where(ef != 0, 0)
 
     # equation 23 (decadal averaging)
     for vvar in data.data_vars:
@@ -199,15 +195,9 @@ def calc_decadal_indicators(opts, suppl=False):
     """
     data = load_ctp_data(opts=opts, suppl=suppl)
 
-    if suppl:
-        ef_data = load_ctp_data(opts=opts, suppl=False)
-        ef_data = ef_data.EF
-    else:
-        ef_data = data.EF
-
     dec_data = data.copy()
 
-    dec_data = rolling_decadal_mean(data=dec_data, ef=ef_data)
+    dec_data = rolling_decadal_mean(data=dec_data)
 
     # equation 24 (re-adjusting doy vars)
     if 'doy_first' in data.data_vars:

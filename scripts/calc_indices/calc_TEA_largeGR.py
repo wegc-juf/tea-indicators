@@ -206,6 +206,18 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
     ds_out = xr.merge([ef, ed, em, ea])
     ds_out_suppl = xr.merge([svars, em_suppl])
 
+    # set all vars to 0 if EF is 0
+    for vvar in ds_out.data_vars:
+        if 'GR' in vvar:
+            ds_out[vvar] = ds_out[vvar].where(ef.EF_GR != 0, 0)
+        else:
+            ds_out[vvar] = ds_out[vvar].where(ef.EF != 0, 0)
+    for vvar in ds_out_suppl.data_vars:
+        if 'GR' in vvar:
+            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(ef.EF_GR != 0, 0)
+        else:
+            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(ef.EF != 0, 0)
+
     ds_out['ctp'] = ds_out['ctp'].assign_attrs(get_attrs(opts=opts, vname='ctp'))
     ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(get_attrs(opts=opts, vname='ctp'))
 
@@ -407,12 +419,12 @@ def combine_to_eur(opts, lat_lims, mask):
                             f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                             f'_{opts.start}to{opts.end}.nc'}
 
-    # load files and combine them to EUR
+    # load files and combine them to GR on 0.5 grid
     for vvars in files.keys():
         ds = xr.open_mfdataset(files[vvars], concat_dim='lat', combine='nested')
         ds.attrs['info'] = (f'Grid values correspond to GR values of subcells. '
                             f'GR values for whole region {opts.region} can be calculated after '
-                            f'decadal-mean indicator calculation with aggregate_to_AGR.py.')
+                            f'decadal-mean indicator calculation with calc_AGR_vars.py.')
         # apply EUR mask on 0.5° grid
         ds = ds.where(mask > 0)
 

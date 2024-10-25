@@ -17,6 +17,7 @@ import sys
 import warnings
 import xarray as xr
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history, extend_tea_opts
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
@@ -333,6 +334,10 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
     # combine to output dataset
     ds_out = xr.merge([ef, ed, em, ea])
     ds_out_suppl = xr.merge([svars, em_suppl])
+
+    # set all values to 0 if EF is 0
+    ds_out = ds_out.where(ef != 0, 0)
+    ds_out_suppl = ds_out_suppl.where(ef != 0, 0)
 
     ctp_attrs = get_attrs(opts=opts, vname='ctp')
 
