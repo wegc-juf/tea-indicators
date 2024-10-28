@@ -10,6 +10,7 @@ import xarray as xr
 warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
 warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
@@ -62,12 +63,12 @@ def select_cell(opts, lat, lon, data, static, masks):
     # calc fraction by which most left column is smaller in area than orig grid
     orig_col = fac * (fac * len(cell_data.lat))
     col_width_w = fac - ((lon - lon_off) - cell_data.lon[0])
-    small_col_w = col_width_w * (fac * len(cell_data.lat))
+    small_col_w = abs(col_width_w) * (fac * len(cell_data.lat))
     frac_w = small_col_w / orig_col
 
     # calc fraction by which most left column is smaller in area than orig grid
-    col_width_e = fac - (cell_data.lon[-1] - (lon + lon_off))
-    small_col_e = col_width_e * (fac * len(cell_data.lat))
+    col_width_e = fac - ((lon + lon_off) - cell_data.lon[-1])
+    small_col_e = abs(col_width_e) * (fac * len(cell_data.lat))
     frac_e = small_col_e / orig_col
 
     frac_da = xr.DataArray(data=np.ones((len(cell_lsm.lat), len(cell_lsm.lon))),
@@ -291,6 +292,7 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
     # step through all longitudes
     for ilon, lon in enumerate(lons):
+
         # this comment is necessary to suppress an unnecessary PyCharm warning for lon
         # noinspection PyTypeChecker
         cell_data, land_frac, cell_static = select_cell(opts=opts, lat=lat, lon=lon, data=data,
