@@ -336,8 +336,16 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
     ds_out_suppl = xr.merge([svars, em_suppl])
 
     # set all values to 0 if EF is 0
-    ds_out = ds_out.where(ef != 0, 0)
-    ds_out_suppl = ds_out_suppl.where(ef != 0, 0)
+    for vvar in ds_out.data_vars:
+        if 'GR' in vvar:
+            ds_out[vvar] = ds_out[vvar].where(ef.EF_GR != 0, 0)
+        else:
+            ds_out[vvar] = ds_out[vvar].where(ef.EF != 0, 0)
+    for vvar in ds_out_suppl.data_vars:
+        if 'GR' in vvar:
+            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(ef.EF_GR != 0, 0)
+        else:
+            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(ef.EF != 0, 0)
 
     ctp_attrs = get_attrs(opts=opts, vname='ctp')
 
