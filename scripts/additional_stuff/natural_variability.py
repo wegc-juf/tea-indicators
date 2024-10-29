@@ -238,7 +238,7 @@ def calc_factors(opts, st_am, gr_am):
     return factors
 
 
-def calc_nat_var(opts, st_data, st_acc, gr_acc, facs):
+def calc_nat_var(opts, st_data, st_acc, gr_acc):
     """
     calculate natural variability (Eq. 32)
     Args:
@@ -252,8 +252,7 @@ def calc_nat_var(opts, st_data, st_acc, gr_acc, facs):
         std: dataframe with std values
     """
 
-    if facs:
-        scaling = calc_factors(opts=opts, st_am=st_acc, gr_am=gr_acc)
+    scaling = calc_factors(opts=opts, st_am=st_acc, gr_am=gr_acc)
 
     std = pd.DataFrame(index=st_data.keys(), columns=['lower', 'upper'])
 
@@ -268,9 +267,8 @@ def calc_nat_var(opts, st_data, st_acc, gr_acc, facs):
         supp_nv = np.sqrt((supp ** 2).mean())
         slow_nv = np.sqrt((slow ** 2).mean())
 
-        if facs:
-            supp_nv = scaling.loc[0, vvar] * supp_nv
-            slow_nv = scaling.loc[0, vvar] * slow_nv
+        supp_nv = scaling.loc[0, vvar] * supp_nv
+        slow_nv = scaling.loc[0, vvar] * slow_nv
 
         std.loc[vvar, 'lower'] = slow_nv
         std.loc[vvar, 'upper'] = supp_nv
@@ -311,14 +309,9 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
 def run():
     opts = getopts()
 
-    # apply factors A_cc_GR/A_cc_station for all parameters
-    apply_facs = True
-    if opts.parameter == 'P':
-        apply_facs = False
-
     data, st_ampl = load_data(opts=opts)
     gr_ref, gr_cc, gr_ampl, gr_cc_ampl = get_gr_vals(opts=opts)
-    nv = calc_nat_var(opts=opts, st_data=data, st_acc=st_ampl, gr_acc=gr_cc_ampl, facs=apply_facs)
+    nv = calc_nat_var(opts=opts, st_data=data, st_acc=st_ampl, gr_acc=gr_cc_ampl)
     nv = calc_combined_indicators_natvar(opts=opts, gr_ampl=gr_ampl, natvar=nv)
 
     if opts.parameter == 'T':
