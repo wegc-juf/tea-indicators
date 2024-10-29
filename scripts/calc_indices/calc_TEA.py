@@ -87,7 +87,7 @@ def getopts():
                              'Options: T (= temperature, default), P (= precipitation).')
 
     parser.add_argument('--precip_var',
-                        default='Px1h_7to7',
+                        default='P24h_7to7',
                         type=str,
                         choices=['Px1h', 'P24h', 'Px1h_7to7', 'P24h_7to7'],
                         help='Precipitation variable used.'

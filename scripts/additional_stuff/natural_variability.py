@@ -321,9 +321,14 @@ def run():
     nv = calc_nat_var(opts=opts, st_data=data, st_acc=st_ampl, gr_acc=gr_cc_ampl, facs=apply_facs)
     nv = calc_combined_indicators_natvar(opts=opts, gr_ampl=gr_ampl, natvar=nv)
 
+    if opts.parameter == 'T':
+        pstr = 'T99.0p'
+    else:
+        pstr = 'P24h_7to7_95.0p'
+
     path = Path(f'{opts.outpath}natural_variability/')
     path.mkdir(parents=True, exist_ok=True)
-    nv.to_csv(f'{opts.outpath}natural_variability/NV_AF_{opts.parameter}_{opts.region}.nc')
+    nv.to_csv(f'{opts.outpath}natural_variability/NV_AF_{pstr}_{opts.region}.csv')
 
 
 if __name__ == '__main__':
