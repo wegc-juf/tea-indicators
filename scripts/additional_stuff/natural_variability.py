@@ -10,8 +10,10 @@ import glob
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import sys
 import xarray as xr
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
                                                              calc_basis_amplification_factors)
 from scripts.calc_indices.calc_decadal_indicators import rolling_decadal_mean

@@ -126,7 +126,8 @@ def load_data(opts):
     """
 
     file = (f'{opts.inpath}'
-            f'DEC_{opts.param_str}_{opts.region}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+            f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+            f'_{opts.start}to{opts.end}.nc')
     data = xr.open_dataset(file)
 
     return data
@@ -217,15 +218,15 @@ def calc_compound_amplification_factors(opts, af, af_cc):
     af_tEX = af_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF'))
     af_cc_tEX = af_cc['EF_GR_AF_CC'] * af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
     af_cc_tEX = af_cc_tEX.rename('tEX_GR_AF_CC')
-    af_cc_tEX = af_cc_tEX.assign_attrs('tEX_GR_AF_CC')
+    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF_CC'))
 
     # ES
     af_es = af['EDavg_GR_AF'] * af[em_var] * af['EAavg_GR_AF']
-    af_es = af_es.rename('ES_GR_AF')
-    af_es = af_es.assign_attrs(get_attrs(vname='ES_GR_AF'))
+    af_es = af_es.rename('ESavg_GR_AF')
+    af_es = af_es.assign_attrs(get_attrs(vname='ESavg_GR_AF'))
     af_cc_es = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_GR_AF_CC']
-    af_cc_es = af_cc_es.rename('ES_GR_AF_CC')
-    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname='ES_GR_AF_CC'))
+    af_cc_es = af_cc_es.rename('ESavg_GR_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname='ESavg_GR_AF_CC'))
 
     # TEX
     af_TEX = af['EF_GR_AF'] * af_es

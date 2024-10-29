@@ -288,6 +288,7 @@ def calc_percentiles(opts, masks):
 
     # apply GR mask
     percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
+    percent_smooth = percent_smooth * masks['mask']
     percent_smooth = percent_smooth.rename('threshold')
     percent_smooth.attrs = {'units': unit, 'methods_variable_name': vname,
                             'percentile': f'{opts.threshold}p'}
@@ -314,6 +315,7 @@ def run():
     if opts.threshold_type == 'abs':
         thr_grid = xr.full_like(masks['nw_mask'], opts.threshold)
         thr_grid = thr_grid.where(masks['lt1500_mask'] == 1)
+        thr_grid = thr_grid * masks['mask']
         thr_grid = thr_grid.rename('threshold')
         thr_grid.attrs = {'units': unit, 'abs_threshold': f'{opts.threshold}{unit}'}
     else:
