@@ -131,7 +131,7 @@ def calc_spread_estimators(data, dec_data):
     supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
     for icy, cy in enumerate(data.ctp):
         # skip first and last 5 years
-        if icy < 5 or icy > len(data.ctp) - 5:
+        if icy < 5 or icy > len(data.ctp) - 4:
             continue
         pdata = data.isel(ctp=slice(icy - 5, icy + 5))
         cupp = xr.where(pdata > dec_data.isel(ctp=icy), 1, 0)
@@ -141,7 +141,7 @@ def calc_spread_estimators(data, dec_data):
         supp_per = np.sqrt((1 / (cupp_sum.max()))
                            * ((cupp * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
 
-        clow_sum = (1 - cupp.sum(dim='ctp'))
+        clow_sum = (1 - cupp).sum(dim='ctp')
         clow_sum = clow_sum.where(clow_sum > 0, 1)
         slow_per = np.sqrt((1 / (clow_sum.max()))
                            * (((1 - cupp) * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
