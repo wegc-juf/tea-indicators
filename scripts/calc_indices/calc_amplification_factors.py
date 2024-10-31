@@ -125,12 +125,18 @@ def load_data(opts):
 
     """
 
+    agr_str = ''
+    agr = False
+    if opts.region != 'FBR' and 'ERA5' in opts.dataset:
+        agr_str = 'AGR-'
+        agr = True
+
     file = (f'{opts.inpath}'
-            f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+            f'DEC_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     data = xr.open_dataset(file)
 
-    return data
+    return data, agr
 
 
 def calc_ref_cc_mean(data):
@@ -194,7 +200,7 @@ def calc_basis_amplification_factors(data, ref, cc):
     return af_ds, af_cc_ds
 
 
-def calc_compound_amplification_factors(opts, af, af_cc):
+def calc_compound_amplification_factors(opts, af, af_cc, gr_str):
     """
     calculate amplification factors of compound variables (Eq. 30)
     Args:
@@ -208,33 +214,34 @@ def calc_compound_amplification_factors(opts, af, af_cc):
 
     """
 
-    em_var = 'EMavg_GR_AF'
+    em_var = f'EMavg_{gr_str}_AF'
     if opts.parameter == 'P':
-        em_var = 'EMavg_Md_GR_AF'
+        em_var = f'EMavg_Md_{gr_str}_AF'
 
     # tEX
-    af_tEX = af['EF_GR_AF'] * af['EDavg_GR_AF'] * af[em_var]
-    af_tEX = af_tEX.rename('tEX_GR_AF')
-    af_tEX = af_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF'))
-    af_cc_tEX = af_cc['EF_GR_AF_CC'] * af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
-    af_cc_tEX = af_cc_tEX.rename('tEX_GR_AF_CC')
-    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF_CC'))
+    af_tEX = af[f'EF_{gr_str}_AF'] * af[f'EDavg_{gr_str}_AF'] * af[em_var]
+    af_tEX = af_tEX.rename(f'tEX_{gr_str}_AF')
+    af_tEX = af_tEX.assign_attrs(get_attrs(vname=f'tEX_{gr_str}_AF'))
+    af_cc_tEX = af_cc[f'EF_{gr_str}_AF_CC'] * af_cc[f'EDavg_{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
+    af_cc_tEX = af_cc_tEX.rename(f'tEX_{gr_str}_AF_CC')
+    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname=f'tEX_{gr_str}_AF_CC'))
 
     # ES
-    af_es = af['EDavg_GR_AF'] * af[em_var] * af['EAavg_GR_AF']
-    af_es = af_es.rename('ESavg_GR_AF')
-    af_es = af_es.assign_attrs(get_attrs(vname='ESavg_GR_AF'))
-    af_cc_es = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_GR_AF_CC']
-    af_cc_es = af_cc_es.rename('ESavg_GR_AF_CC')
-    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname='ESavg_GR_AF_CC'))
+    af_es = af[f'EDavg_{gr_str}_AF'] * af[em_var] * af[f'EAavg_{gr_str}_AF']
+    af_es = af_es.rename(f'ESavg_{gr_str}_AF')
+    af_es = af_es.assign_attrs(get_attrs(vname=f'ESavg_{gr_str}_AF'))
+    af_cc_es = (af_cc[f'EDavg_{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
+                * af_cc[f'EAavg_{gr_str}_AF_CC'])
+    af_cc_es = af_cc_es.rename(f'ESavg_{gr_str}_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname=f'ESavg_{gr_str}_AF_CC'))
 
     # TEX
-    af_TEX = af['EF_GR_AF'] * af_es
-    af_TEX = af_TEX.rename('TEX_GR_AF')
-    af_TEX = af_TEX.assign_attrs(get_attrs(vname='TEX_GR_AF'))
-    af_cc_TEX = af_cc['EF_GR_AF_CC'] * af_cc_es
-    af_cc_TEX = af_cc_TEX.rename('TEX_GR_AF_CC')
-    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(vname='TEX_GR_AF_CC'))
+    af_TEX = af[f'EF_{gr_str}_AF'] * af_es
+    af_TEX = af_TEX.rename(f'TEX_{gr_str}_AF')
+    af_TEX = af_TEX.assign_attrs(get_attrs(vname=f'TEX_{gr_str}_AF'))
+    af_cc_TEX = af_cc[f'EF_{gr_str}_AF_CC'] * af_cc_es
+    af_cc_TEX = af_cc_TEX.rename(f'TEX_{gr_str}_AF_CC')
+    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(vname=f'TEX_{gr_str}_AF_CC'))
 
     af = xr.merge([af, af_tEX, af_es, af_TEX])
     af_cc = xr.merge([af_cc, af_cc_tEX, af_cc_es, af_cc_TEX])
@@ -274,18 +281,22 @@ def run():
     opts = extend_tea_opts(opts)
 
     # load DEC TEA data
-    ds = load_data(opts=opts)
+    ds, agr = load_data(opts=opts)
 
     # calc mean of REF and CC periods
     ref_avg, cc_avg = calc_ref_cc_mean(data=ds)
 
+    gr_str = 'GR'
+    if agr:
+        gr_str = f'A{gr_str}'
+
     # calc amplification factors of basis variables
-    bvars = [vvar for vvar in ds.data_vars if vvar not in ['TEX_GR', 'ESavg_GR']]
+    bvars = [vvar for vvar in ds.data_vars if vvar not in [f'TEX_{gr_str}', f'ESavg_{gr_str}']]
     af, af_cc = calc_basis_amplification_factors(data=ds[bvars], ref=ref_avg[bvars],
                                                  cc=cc_avg[bvars])
 
     # calc amplification factors of compound variables
-    af, af_cc = calc_compound_amplification_factors(opts=opts, af=af, af_cc=af_cc)
+    af, af_cc = calc_compound_amplification_factors(opts=opts, af=af, af_cc=af_cc, gr_str=gr_str)
 
     # save output
     save_output(opts=opts, af=af, af_cc=af_cc)
