@@ -21,6 +21,7 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None):
              'doy_last': {'long_name': 'day of last event occurrence', 'units': '1'},
              'delta_y': {'long_name': 'annual exposure period', 'units': 'dys'},
              'ED': {'long_name': 'cumulative events duration', 'units': 'dys'},
+             'DM': {'long_name': 'duration-magnitude indicator', 'units': f'{data_unit} dys'},
              'EDavg': {'long_name': 'average events duration', 'units': 'dys'},
              'EM': {'long_name': 'cumulative exceedance magnitude', 'units': data_unit,
                     'description': 'expresses the temporal events extremity (tEX)'},

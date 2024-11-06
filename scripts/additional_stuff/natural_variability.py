@@ -15,7 +15,8 @@ import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
-                                                             calc_basis_amplification_factors)
+                                                             calc_basis_amplification_factors,
+                                                             calc_compound_amplification_factors)
 from scripts.calc_indices.calc_decadal_indicators import rolling_decadal_mean
 
 from scripts.general_stuff.general_functions import ref_cc_params
@@ -184,6 +185,7 @@ def get_gr_vals(opts):
 
     ref_vals, cc_vals = calc_ref_cc_mean(data=ref_data)
     ampl, cc_ampl = calc_basis_amplification_factors(data=ref_data, ref=ref_vals, cc=cc_vals)
+    ampl, cc_ampl = calc_compound_amplification_factors(opts=opts, af=ampl, af_cc=cc_ampl, dm=True)
 
     # add combined indicator variables
     ref_vals['DM'] = ref_vals['EDavg_GR'] * ref_vals[em_var]
@@ -193,16 +195,19 @@ def get_gr_vals(opts):
     cc_ampl['DM'] = cc_ampl['EDavg_GR_AF_CC'] * cc_ampl[f'{em_var}_AF_CC']
     cc_ampl['tEX'] = cc_ampl['EF_GR_AF_CC'] * cc_ampl['EDavg_GR_AF_CC'] * cc_ampl[f'{em_var}_AF_CC']
 
-    return ref_vals, cc_vals, ampl, cc_ampl
+    # calc std of ref period
+    s_ref = ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
+
+    return ref_vals, cc_vals, ampl, cc_ampl, s_ref
 
 
-def calc_factors(opts, st_am, gr_am):
+def calc_factors(opts, st_data, s_ref_gr):
     """
-    calculate factor by which station amplification is larger than GR amplification
+    Eq. 32_4 and 32_5 first term
     Args:
         opts: CLI parameter
-        st_am: station amplification data
-        gr_am: GR amplification data
+        st_data: station data
+        s_ref_gr: stddevs of GR data in ref period
 
     Returns:
         factors: ds with factors
@@ -213,46 +218,33 @@ def calc_factors(opts, st_am, gr_am):
     else:
         em_var = 'EMavg_Md'
 
-    # calc mean station amplification
-    st_am = ((st_am ** 2).mean()) ** (1/2)
+    vnames = {'EF': 'EF_GR_AF', 'ED': 'EDavg_GR_AF', 'EM': f'{em_var}_GR_AF',
+              'DM': 'DM_GR_AF', 'tEX': 'tEX_GR_AF'}
 
-    # equation 32_4 and 32_5 left part
-    factors = pd.DataFrame(columns=['EF', 'EDavg', em_var])
-    factors.loc[0, 'EF'] = (gr_am['EF_GR_AF_CC'].values / st_am['EF'])
-    factors.loc[0, 'ED'] = (gr_am['EDavg_GR_AF_CC'].values / st_am['EDavg'])
-    factors.loc[0, 'EM'] = (gr_am[f'{em_var}_GR_AF_CC'].values / st_am[em_var])
+    factors = pd.DataFrame(columns=['EF', 'EDavg', em_var, 'DM', 'tEX'])
 
-    # calc DM factor
-    gr_dm = 10 ** (np.log10(gr_am['EDavg_GR_AF_CC'].values)
-                   + np.log10(gr_am[f'{em_var}_GR_AF_CC'].values))
-    st_dm = 10 ** (np.log10(st_am['EDavg']) + np.log10(st_am[em_var]))
-    factors.loc[0, 'DM'] = (gr_dm / st_dm)
-
-    # calc tEX factor
-    gr_tEX = 10 ** (np.log10(gr_am['EF_GR_AF_CC'].values)
-                    + np.log10(gr_am['EDavg_GR_AF_CC'].values)
-                    + np.log10(gr_am[f'{em_var}_GR_AF_CC'].values))
-    st_tEX = 10 ** (np.log10(st_am['EF']) + np.log10(st_am['EDavg']) + np.log10(st_am['EMavg']))
-    factors.loc[0, 'tEX'] = (gr_tEX / st_tEX)
+    for vvar in st_data.keys():
+        vdata = st_data[vvar].loc[PARAMS['REF']['start_cy']:PARAMS['REF']['end_cy']]
+        s_ref_k = vdata.std()
+        fac = s_ref_gr[vnames[vvar]] / np.sqrt((s_ref_k ** 2).sum()/len(s_ref_k.index))
+        factors.loc[0, vvar] = fac.values
 
     return factors
 
 
-def calc_nat_var(opts, st_data, st_acc, gr_acc):
+def calc_nat_var(opts, st_data, std_gr):
     """
     calculate natural variability (Eq. 32)
     Args:
         opts: CLI parameter
         st_data: station amplification data
-        st_acc: station CC amplification data
-        gr_acc: GR CC amplification data
-        facs: set if scaling factors should be applied
+        std_gr: stddevs of GR data in ref period
 
     Returns:
         std: dataframe with std values
     """
 
-    scaling = calc_factors(opts=opts, st_am=st_acc, gr_am=gr_acc)
+    scaling = calc_factors(opts=opts, st_data=st_data, s_ref_gr=std_gr)
 
     std = pd.DataFrame(index=st_data.keys(), columns=['lower', 'upper'])
 
@@ -277,6 +269,16 @@ def calc_nat_var(opts, st_data, st_acc, gr_acc):
 
 
 def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
+    """
+    calc natvar of combined indicators (EQ. 33)
+    Args:
+        opts: CLI parameter
+        gr_ampl: GR amplification
+        natvar: NV of basis indicators
+
+    Returns:
+
+    """
 
     if opts.parameter == 'T':
         em_var = 'EMavg_GR_AF'
@@ -291,14 +293,14 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
     # Eq. 33_1 and 33_2
     s_a_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
         dim='ctp'))
-    s_de_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(dim='ctp'))
+    s_dm_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(dim='ctp'))
 
     # Eq. 33_3 - 33_8
-    natvar.loc['EA', 'lower'] = ((s_a_ref/s_de_ref) * natvar.loc['DM', 'lower']).values
-    natvar.loc['EA', 'upper'] = ((s_a_ref/s_de_ref) * natvar.loc['DM', 'upper']).values
+    natvar.loc['EA', 'lower'] = ((s_a_ref/s_dm_ref) * natvar.loc['DM', 'lower']).values
+    natvar.loc['EA', 'upper'] = ((s_a_ref/s_dm_ref) * natvar.loc['DM', 'upper']).values
 
-    natvar.loc['ES', 'lower'] = np.sqrt((natvar.loc[['ED', 'EM', 'EA'], 'lower']**2).sum())
-    natvar.loc['ES', 'upper'] = np.sqrt((natvar.loc[['ED', 'EM', 'EA'], 'upper']**2).sum())
+    natvar.loc['ES', 'lower'] = np.sqrt((natvar.loc[['DM', 'EA'], 'lower']**2).sum())
+    natvar.loc['ES', 'upper'] = np.sqrt((natvar.loc[['DM', 'EA'], 'upper']**2).sum())
 
     natvar.loc['TEX', 'lower'] = np.sqrt((natvar.loc[['EF', 'ES'], 'lower']**2).sum())
     natvar.loc['TEX', 'upper'] = np.sqrt((natvar.loc[['EF', 'ES'], 'upper']**2).sum())
@@ -310,8 +312,8 @@ def run():
     opts = getopts()
 
     data, st_ampl = load_data(opts=opts)
-    gr_ref, gr_cc, gr_ampl, gr_cc_ampl = get_gr_vals(opts=opts)
-    nv = calc_nat_var(opts=opts, st_data=data, st_acc=st_ampl, gr_acc=gr_cc_ampl)
+    gr_ref, gr_cc, gr_ampl, gr_cc_ampl, std_ref_gr = get_gr_vals(opts=opts)
+    nv = calc_nat_var(opts=opts, st_data=data, std_gr=std_ref_gr)
     nv = calc_combined_indicators_natvar(opts=opts, gr_ampl=gr_ampl, natvar=nv)
 
     if opts.parameter == 'T':
