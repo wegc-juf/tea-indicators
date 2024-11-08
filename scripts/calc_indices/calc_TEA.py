@@ -390,9 +390,9 @@ def calc_indicators(opts):
     masks, static = load_static_files(opts=opts)
 
     # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
-    # if 'ERA' in opts.dataset and static['GR_size'] > 100:
-    #     largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
-    #     return
+    if 'ERA' in opts.dataset and static['GR_size'] > 100:
+        largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
+        return
 
     # apply mask to data
     data = data * (masks['lt1500_mask'] * masks['mask'])

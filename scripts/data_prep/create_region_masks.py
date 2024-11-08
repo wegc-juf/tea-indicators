@@ -198,7 +198,15 @@ def create_lt1500m_mask(opts, da_nwmask):
     lt1500_mask.attrs = {'long_name': 'below 1500m mask',
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
-    return lt1500_mask
+    lt1500_eur = None
+    if 'ERA5' in opts.target_ds:
+        lt1500_eur = orog.where(orog < 1500)
+        lt1500_eur = lt1500_eur.where(lt1500_eur.isnull(), 1)
+        lt1500_eur = lt1500_eur.rename('lt1500_mask_EUR')
+        lt1500_eur.attrs = {'long_name': 'below 1500m mask (EUR)',
+                             'coordinate_sys': f'EPSG:{opts.target_sys}'}
+
+    return lt1500_mask, lt1500_eur
 
 
 def run_sea(opts):
@@ -230,7 +238,12 @@ def run_sea(opts):
     lt1500_mask.attrs = {'long_name': 'below 1500m mask',
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
-    ds = xr.merge([mask, nwmask, lt1500_mask])
+    if 'ERA5' in opts.target_ds:
+        lsm = aut['LSM_EUR'].copy()
+        lt1500_eur = aut['lt1500_mask_EUR'].copy()
+        ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
+    else:
+        ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history(cli_params=sys.argv, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
@@ -386,9 +399,18 @@ def run():
                                  name='nw_mask')
 
         # Create below 1500m mask
-        lt1500_mask = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
+        lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
-        ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
+        # add EUR LSM if ERA5(Land) data is used
+        if 'ERA5' in opts.target_ds:
+            lsm = prep_lsm(opts=opts)
+            lsm = lsm.where(lsm > 0.5)
+            lsm = lsm.rename('LSM_EUR')
+            lsm.attrs = {'long_name': 'land sea mask (EUR)',
+                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
+            ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
+        else:
+            ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
         ds = create_history(cli_params=sys.argv, ds=ds)
 
         out_region = opts.region

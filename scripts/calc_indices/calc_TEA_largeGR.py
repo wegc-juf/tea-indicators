@@ -541,9 +541,9 @@ def calc_tea_large_gr(opts, data, masks, static):
     # check if tmp directories are empty
     check_tmp_dirs(opts)
 
-    # preselect region to reduce computation time
-    min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values
-    max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values
+    # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
+    min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - 2
+    max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + 2
     if min_lat < 35:
         min_lat = 35
 
@@ -552,6 +552,7 @@ def calc_tea_large_gr(opts, data, masks, static):
 
     # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])
+
     for llat in lats:
         calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=llat)
 
@@ -561,5 +562,4 @@ def calc_tea_large_gr(opts, data, masks, static):
                                  area_0p25=static['area_grid'].sel(lat=slice(max_lat, min_lat)),
                                  lats=lats)
 
-    # logger.info(f'Combining individual latitudes to single file.')
     combine_to_eur(opts=opts, lat_lims=[min_lat, max_lat], mask=ngrid_mask)
