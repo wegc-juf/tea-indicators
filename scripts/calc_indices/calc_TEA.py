@@ -251,6 +251,11 @@ def load_static_files(opts):
 
     masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
 
+    if 'LSM_EUR' in masks.data_vars:
+        valid_cells = masks['lt1500_mask_EUR'].where(masks['LSM_EUR'].notnull())
+        valid_cells = valid_cells.rename('valid_cells')
+        masks['valid_cells'] = valid_cells
+
     pstr = opts.parameter
     if opts.parameter == 'P':
         pstr = f'{opts.precip_var}_'
@@ -437,6 +442,7 @@ def calc_indicators(opts):
 def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
+    warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
 
     # load CLI parameter
     opts = getopts()

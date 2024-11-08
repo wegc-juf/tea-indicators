@@ -56,7 +56,9 @@ def select_cell(opts, lat, lon, data, static, masks):
     # select data for cell
     cell_data = data.sel(lat=slice(lat + lat_off, lat - lat_off),
                          lon=slice(lon_min, lon_max))
-    cell_lsm = masks['lt1500_mask'].sel(lat=slice(lat + lat_off, lat - lat_off),
+    # cell_lsm = masks['lt1500_mask'].sel(lat=slice(lat + lat_off, lat - lat_off),
+    #                                     lon=slice(lon_min, lon_max))
+    cell_lsm = masks['valid_cells'].sel(lat=slice(lat + lat_off, lat - lat_off),
                                         lon=slice(lon_min, lon_max))
     cell_data = cell_data.where(cell_lsm == 1)
 
@@ -292,7 +294,6 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
     # step through all longitudes
     for ilon, lon in enumerate(lons):
-
         # this comment is necessary to suppress an unnecessary PyCharm warning for lon
         # noinspection PyTypeChecker
         cell_data, land_frac, cell_static = select_cell(opts=opts, lat=lat, lon=lon, data=data,
