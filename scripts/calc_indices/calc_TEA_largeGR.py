@@ -15,10 +15,11 @@ from scripts.general_stuff.general_functions import create_history
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
-from scripts.calc_indices.calc_TEA import (assign_ctp_coords, calc_event_frequency,
+from scripts.calc_indices.calc_TEA import (calc_event_frequency,
                                            calc_supplementary_event_vars,
                                            calc_event_duration, calc_exceedance_magnitude,
                                            calc_exceedance_area_tex_sev)
+from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
 
 
 def select_cell(opts, lat, lon, data, static, masks):

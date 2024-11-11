@@ -265,7 +265,7 @@ def calc_nat_var(opts, st_data, std_gr):
         std.loc[vvar, 'lower'] = slow_nv
         std.loc[vvar, 'upper'] = supp_nv
 
-    return std
+    return std, scaling
 
 
 def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
@@ -305,6 +305,10 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
     natvar.loc['TEX', 'lower'] = np.sqrt((natvar.loc[['EF', 'ES'], 'lower']**2).sum())
     natvar.loc['TEX', 'upper'] = np.sqrt((natvar.loc[['EF', 'ES'], 'upper']**2).sum())
 
+    # add scaling factor to df
+    natvar.loc['SFAC', 'lower'] = (s_a_ref/s_dm_ref).values
+    natvar.loc['SFAC', 'upper'] = (s_a_ref/s_dm_ref).values
+
     return natvar
 
 
@@ -313,7 +317,7 @@ def run():
 
     data, st_ampl = load_data(opts=opts)
     gr_ref, gr_cc, gr_ampl, gr_cc_ampl, std_ref_gr = get_gr_vals(opts=opts)
-    nv = calc_nat_var(opts=opts, st_data=data, std_gr=std_ref_gr)
+    nv, facs = calc_nat_var(opts=opts, st_data=data, std_gr=std_ref_gr)
     nv = calc_combined_indicators_natvar(opts=opts, gr_ampl=gr_ampl, natvar=nv)
 
     if opts.parameter == 'T':
@@ -324,6 +328,7 @@ def run():
     path = Path(f'{opts.outpath}natural_variability/')
     path.mkdir(parents=True, exist_ok=True)
     nv.to_csv(f'{opts.outpath}natural_variability/NV_AF_{pstr}_{opts.region}.csv')
+    facs.to_csv(f'{opts.outpath}natural_variability/SFACS_{pstr}_{opts.region}.csv')
 
 
 if __name__ == '__main__':

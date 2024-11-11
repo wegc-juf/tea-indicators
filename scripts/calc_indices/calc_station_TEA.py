@@ -24,7 +24,7 @@ logging.basicConfig(
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history, ref_cc_params, extend_tea_opts
 from scripts.general_stuff.var_attrs import get_attrs
-from scripts.calc_indices.calc_TEA import assign_ctp_coords
+from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
 from scripts.calc_indices.calc_daily_basis_vars import calc_dteec_1d
 
 PARAMS = ref_cc_params()
@@ -265,6 +265,9 @@ def run():
 
     # calc CTP variables
     ctp = calc_ctp_indicators(opts=opts, data=dbv_per)
+
+    # set all other vars to 0 if EF is 0
+    ctp = ctp.where(ctp.EF != 0, 0)
 
     # save output
     ds_out = create_history(cli_params=sys.argv, ds=ctp)
