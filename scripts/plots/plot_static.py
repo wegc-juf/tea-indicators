@@ -131,9 +131,9 @@ def load_data(opts):
     if opts.parameter == 'P':
         unit, unit_str = 'mm', 'mm'
 
-    param_str = f'{pstr}{opts.threshold}p'
+    param_str = f'{pstr}{opts.threshold:.1f}p'
     if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold}{unit_str}'
+        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
 
     statname = f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc'
     stat = xr.open_dataset(statname)
@@ -159,11 +159,23 @@ def load_params(opts, mask):
         orig = 'lower'
         xn, xx = 0, len(mask['x'])
         yn, yx = 0, len(mask['y'])
-    else:
+    elif opts.region == 'AUT':
         x, y = 'lon', 'lat'
         orig = 'upper'
         xn, xx = 156, 190
         yx, yn = 91, 105
+    else:
+        x, y = 'lon', 'lat'
+        orig = 'upper'
+        masky = mask.nw_mask
+        xn_val = masky.where(masky.notnull(), drop=True).lon[0].values
+        xx_val = masky.where(masky.notnull(), drop=True).lon[-1].values
+        yn_val = masky.where(masky.notnull(), drop=True).lat[-1].values
+        yx_val = masky.where(masky.notnull(), drop=True).lat[0].values
+        xn = np.where(masky.lon == xn_val)[0][0]
+        xx = np.where(masky.lon == xx_val)[0][0]
+        yn = np.where(masky.lat == yn_val)[0][0]
+        yx = np.where(masky.lat == yx_val)[0][0]
 
     if opts.parameter == 'T':
         cmap = 'YlOrRd'
@@ -220,6 +232,7 @@ def plot_area(opts, fig, ax, static, params):
     cb = fig.colorbar(map_vals, cax=cax, orientation='vertical', label='cell area [areals]')
     cb.formatter = FormatStrFormatter('%.2f')
     cb.update_ticks()
+
 
 def plot_thresh(fig, ax, static, params):
     boundaries = np.arange(np.floor(static.threshold.min()), np.ceil(static.threshold.max()) + 1)
