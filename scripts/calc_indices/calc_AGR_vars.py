@@ -5,6 +5,8 @@
 """
 
 import argparse
+import copy
+
 import numpy as np
 import os
 import pandas as pd
@@ -16,7 +18,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from scripts.general_stuff.general_functions import create_history, extend_tea_opts, ref_cc_params
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
-                                                             calc_basis_amplification_factors)
+                                                             calc_basis_amplification_factors,
+                                                             calc_compound_amplification_factors)
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -167,6 +170,34 @@ def load_data(opts, suppl=False):
     lims = [lat_max, lat_min]
 
     return ds, lims
+
+
+def calc_grid_afacs(opts, data):
+    # adjust opts for calc_amplification_factors.py functions
+    af_opts = copy.deepcopy(opts)
+    af_opts.maskpath = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
+    af_opts.region = 'EUR'
+
+    # calc mean of REF and CC periods
+    ref_avg, cc_avg = calc_ref_cc_mean(data=data)
+
+    # calc amplification factors of basis variables
+    bvars = [vvar for vvar in data.data_vars if vvar not in ['TEX', 'ESavg']]
+    af, af_cc = calc_basis_amplification_factors(data=data[bvars], ref=ref_avg[bvars],
+                                                 cc=cc_avg[bvars])
+
+    # calc amplification factors of compound variables
+    af, af_cc = calc_compound_amplification_factors(opts=af_opts, af=af, af_cc=af_cc)
+
+    # combine ds into one
+    af_grid = xr.merge([af, af_cc])
+
+    # apply masks to grid data again (sum etc. result in 0 outside of region)
+    mask = xr.open_dataarray(f'{af_opts.maskpath}{af_opts.region}_mask_0p5_{af_opts.dataset}.nc')
+    for vvar in af_grid.data_vars:
+        af_grid[vvar] = af_grid[vvar].where(mask == 1)
+
+    return af_grid
 
 
 def calc_agr(opts, vdata, awgts):
@@ -495,6 +526,9 @@ def run():
     data, lat_lims = load_data(opts=opts)
     data_suppl, _ = load_data(opts=opts, suppl=True)
 
+    # calc AF on grid
+    af_grid = calc_grid_afacs(opts=opts, data=data)
+
     # slice area grid
     areas = areas.sel(lat=slice(lat_lims[0], lat_lims[1]),
                       lon=slice(data.lon[0].values, data.lon[-1].values))
@@ -564,6 +598,8 @@ def run():
     af_us, af_ls = calc_spread_estimates(gdata=af, data=af_sl, areas=areas, afacs=True)
     af_suppl_us, af_suppl_ls = calc_spread_estimates(gdata=af_suppl, data=af_sl_suppl,
                                                      areas=areas, afacs=True)
+
+    af = xr.merge([af, af_grid])
 
     datasets = {'AGR': agrs, 'AGRsuppl': agrs_suppl,
                 'AF': af, 'AF_us': af_us, 'AF_ls': af_ls,

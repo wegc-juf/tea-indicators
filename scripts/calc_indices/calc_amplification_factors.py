@@ -208,44 +208,48 @@ def calc_compound_amplification_factors(opts, af, af_cc, dm=False):
 
     """
 
-    em_var = 'EMavg_GR_AF'
+    gr_str = '_GR'
+    if 'agr' in opts:
+        gr_str = ''
+
+    em_var = f'EMavg{gr_str}_AF'
     if opts.parameter == 'P':
-        em_var = 'EMavg_Md_GR_AF'
+        em_var = f'EMavg_Md{gr_str}_AF'
 
     # tEX
-    af_tEX = af['EF_GR_AF'] * af['EDavg_GR_AF'] * af[em_var]
-    af_tEX = af_tEX.rename('tEX_GR_AF')
-    af_tEX = af_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF'))
-    af_cc_tEX = af_cc['EF_GR_AF_CC'] * af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
-    af_cc_tEX = af_cc_tEX.rename('tEX_GR_AF_CC')
-    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname='tEX_GR_AF_CC'))
+    af_tEX = af[f'EF{gr_str}_AF'] * af[f'EDavg{gr_str}_AF'] * af[em_var]
+    af_tEX = af_tEX.rename(f'tEX{gr_str}_AF')
+    af_tEX = af_tEX.assign_attrs(get_attrs(vname=f'tEX{gr_str}_AF'))
+    af_cc_tEX = af_cc[f'EF{gr_str}_AF_CC'] * af_cc[f'EDavg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
+    af_cc_tEX = af_cc_tEX.rename(f'tEX{gr_str}_AF_CC')
+    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname=f'tEX{gr_str}_AF_CC'))
 
     # ES
-    af_es = af['EDavg_GR_AF'] * af[em_var] * af['EAavg_GR_AF']
-    af_es = af_es.rename('ESavg_GR_AF')
-    af_es = af_es.assign_attrs(get_attrs(vname='ESavg_GR_AF'))
-    af_cc_es = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_GR_AF_CC']
-    af_cc_es = af_cc_es.rename('ESavg_GR_AF_CC')
-    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname='ESavg_GR_AF_CC'))
+    af_es = af[f'EDavg{gr_str}_AF'] * af[em_var] * af[f'EAavg{gr_str}_AF']
+    af_es = af_es.rename(f'ESavg{gr_str}_AF')
+    af_es = af_es.assign_attrs(get_attrs(vname=f'ESavg{gr_str}_AF'))
+    af_cc_es = af_cc[f'EDavg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc[f'EAavg{gr_str}_AF_CC']
+    af_cc_es = af_cc_es.rename(f'ESavg{gr_str}_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname=f'ESavg{gr_str}_AF_CC'))
 
     # TEX
-    af_TEX = af['EF_GR_AF'] * af_es
-    af_TEX = af_TEX.rename('TEX_GR_AF')
-    af_TEX = af_TEX.assign_attrs(get_attrs(vname='TEX_GR_AF'))
-    af_cc_TEX = af_cc['EF_GR_AF_CC'] * af_cc_es
-    af_cc_TEX = af_cc_TEX.rename('TEX_GR_AF_CC')
-    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(vname='TEX_GR_AF_CC'))
+    af_TEX = af[f'EF{gr_str}_AF'] * af_es
+    af_TEX = af_TEX.rename(f'TEX{gr_str}_AF')
+    af_TEX = af_TEX.assign_attrs(get_attrs(vname=f'TEX{gr_str}_AF'))
+    af_cc_TEX = af_cc[f'EF{gr_str}_AF_CC'] * af_cc_es
+    af_cc_TEX = af_cc_TEX.rename(f'TEX{gr_str}_AF_CC')
+    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(vname=f'TEX{gr_str}_AF_CC'))
 
     af_vars = [af, af_tEX, af_es, af_TEX]
     af_cc_vars = [af_cc, af_cc_tEX, af_cc_es, af_cc_TEX]
 
     if dm:
-        af_dm = af['EDavg_GR_AF'] * af[em_var]
-        af_dm = af_dm.rename('DM_GR_AF')
-        af_dm = af_dm.assign_attrs(get_attrs(vname='DM_GR_AF'))
-        af_cc_dm = af_cc['EDavg_GR_AF_CC'] * af_cc[f'{em_var}_CC']
-        af_cc_dm = af_cc_dm.rename('DM_GR_AF_CC')
-        af_cc_dm = af_cc_dm.assign_attrs(get_attrs(vname='DM_GR_AF_CC'))
+        af_dm = af[f'EDavg{gr_str}_AF'] * af[em_var]
+        af_dm = af_dm.rename(f'DM{gr_str}_AF')
+        af_dm = af_dm.assign_attrs(get_attrs(vname=f'DM{gr_str}_AF'))
+        af_cc_dm = af_cc[f'EDavg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
+        af_cc_dm = af_cc_dm.rename(f'DM{gr_str}_AF_CC')
+        af_cc_dm = af_cc_dm.assign_attrs(get_attrs(vname=f'DM{gr_str}_AF_CC'))
         af_vars = [af, af_tEX, af_es, af_TEX, af_dm]
         af_cc_vars = [af_cc, af_cc_tEX, af_cc_es, af_cc_TEX, af_cc_dm]
 
