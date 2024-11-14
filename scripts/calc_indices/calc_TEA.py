@@ -252,12 +252,12 @@ def load_static_files(opts):
     if opts.parameter == 'P':
         pstr = f'{opts.precip_var}_'
 
-    param_str = f'{pstr}{opts.threshold}p'
+    param_str = f'{pstr}{opts.threshold:.1f}p'
     if opts.threshold_type == 'abs':
         unit_str = 'degC'
         if opts.parameter == 'P':
             unit_str = 'mm'
-        param_str = f'{pstr}{opts.threshold}{unit_str}'
+        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
     static = xr.open_dataset(f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc')
 
     return masks, static

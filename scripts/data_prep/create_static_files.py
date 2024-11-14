@@ -225,7 +225,7 @@ def load_ref_data(opts, masks, ds_params):
     return data_ref
 
 
-def calc_percentiles(opts, masks):
+def calc_percentiles(opts, masks, gr_size):
     """
     caluclate percentile of reference period for each grid point
     Args:
@@ -288,7 +288,10 @@ def calc_percentiles(opts, masks):
 
     # apply GR mask
     percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
-    percent_smooth = percent_smooth * masks['mask']
+    if 'ERA' in opts.dataset and gr_size > 100:
+        percent_smooth = percent_smooth
+    else:
+        percent_smooth = percent_smooth * masks['mask']
     percent_smooth = percent_smooth.rename('threshold')
     percent_smooth.attrs = {'units': unit, 'methods_variable_name': vname,
                             'percentile': f'{opts.threshold}p'}
@@ -315,11 +318,14 @@ def run():
     if opts.threshold_type == 'abs':
         thr_grid = xr.full_like(masks['nw_mask'], opts.threshold)
         thr_grid = thr_grid.where(masks['lt1500_mask'] == 1)
-        thr_grid = thr_grid * masks['mask']
+        if 'ERA' in opts.dataset and gr_size > 100:
+            thr_grid = thr_grid
+        else:
+            thr_grid = thr_grid * masks['mask']
         thr_grid = thr_grid.rename('threshold')
         thr_grid.attrs = {'units': unit, 'abs_threshold': f'{opts.threshold}{unit}'}
     else:
-        thr_grid = calc_percentiles(opts=opts, masks=masks)
+        thr_grid = calc_percentiles(opts=opts, masks=masks, gr_size=gr_size)
 
     # combine to single dataset
     ds_out = xr.merge([area, gr_size, thr_grid])
