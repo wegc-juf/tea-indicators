@@ -43,9 +43,6 @@ def extend_tea_opts(opts):
     Returns:
 
     """
-    unit, unit_str = '°C', 'degC'
-    if opts.parameter == 'P':
-        unit, unit_str = 'mm', 'mm'
 
     pstr = opts.parameter
     if opts.parameter == 'P':
@@ -53,10 +50,8 @@ def extend_tea_opts(opts):
 
     param_str = f'{pstr}{opts.threshold:.1f}p'
     if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
+        param_str = f'{pstr}{opts.threshold:.1f}{opts.unit}'
 
-    opts.unit = unit
-    opts.unit_str = unit_str
     opts.param_str = param_str
 
     return opts

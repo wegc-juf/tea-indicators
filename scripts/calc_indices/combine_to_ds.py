@@ -140,7 +140,7 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     em_gr_avg_max.attrs = get_attrs(opts=opts, vname='EMavg_Max_GR')
 
 
-    if opts.parameter == 'T':
+    if not opts.precip:
         em_ds = xr.merge([em, em_gr, em_avg, em_avg_gr])
         em_ds_suppl = xr.merge([em_avg_med, em_avg_gr_med, em_med, em_gr_med, em_gr_max,
                                 em_gr_avg_max])

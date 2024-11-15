@@ -40,7 +40,7 @@ def select_cell(opts, lat, lon, data, static, masks):
 
     """
 
-    if opts.parameter == 'T':
+    if not opts.precip:
         lat_off = 1
         lon_off = 1 / np.cos(np.deg2rad(lat))
     else:
@@ -70,10 +70,6 @@ def select_cell(opts, lat, lon, data, static, masks):
     col_width_e = fac - (cell_data.lon[-1] - (lon + lon_off))
     small_col_e = col_width_e * (fac * len(cell_data.lat))
     frac_e = small_col_e / orig_col
-
-    if small_col_w < 0 or small_col_w < 0:
-        print(lat, lon)
-        print()
 
     frac_da = xr.DataArray(data=np.ones((len(cell_lsm.lat), len(cell_lsm.lon))),
                            coords={'lat': (['lat'], cell_lsm.lat.values),
@@ -552,7 +548,6 @@ def calc_tea_large_gr(opts, data, masks, static):
 
     # define latitudes with 0.5° resolution for output
     lats = np.arange(math.floor(min_lat), math.ceil(max_lat) + 0.5, 0.5)
-    # lats = np.arange(45, 50 + 0.5, 0.5)
 
     # for testing with only one latitude or debugging
     # calc_tea_lat(opts=opts, data=data, static=static, masks=masks, lat=lats[3])

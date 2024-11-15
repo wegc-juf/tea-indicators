@@ -80,18 +80,19 @@ def getopts():
                              'Austrian state, or ISO2 code of a european country.')
 
     parser.add_argument('--parameter',
-                        default='T',
+                        default='Tx',
                         type=str,
-                        choices=['T', 'P'],
-                        help='Parameter for which the TEA indices should be calculated '
-                             'Options: T (= temperature, default), P (= precipitation).')
+                        help='Parameter for which the TEA indices should be calculated'
+                             '[default: Tx].')
 
-    parser.add_argument('--precip_var',
-                        default='P24h_7to7',
+    parser.add_argument('--unit',
+                        default='degC',
                         type=str,
-                        choices=['Px1h', 'P24h', 'Px1h_7to7', 'P24h_7to7'],
-                        help='Precipitation variable used.'
-                             '[Px1h, P24h, Px1h_7to7 (default), P24h_7to7]')
+                        help='Physical unit of chosen parameter.')
+
+    parser.add_argument('--precip',
+                        action='store_true',
+                        help='Set if chosen parameter is a precipitation parameter.')
 
     parser.add_argument('--threshold',
                         default=99,
@@ -171,8 +172,9 @@ def get_data(opts):
     :return: dataset of daily maximum temperature or precipitation
     """
 
-    params = {'SPARTACUS': {'T': 'Tx', 'P': 'RR'}, 'ERA5': {'T': '', 'P': ''},
-              'ERA5Land': {'T': '', 'P': ''}}
+    param_str = ''
+    if opts.dataset == 'SPARTACUS':
+        param_str = f'{opts.parameter}'
 
     # select only files of interest, if chosen period is 'seasonal' append one year in the
     # beginning to have the first winter fully included
@@ -183,7 +185,7 @@ def get_data(opts):
         yrs = np.arange(opts.start, opts.end + 1)
     for iyrs in yrs:
         year_files = sorted(glob.glob(
-            f'{opts.inpath}*{params[opts.dataset][opts.parameter]}_{iyrs}*.nc'))
+            f'{opts.inpath}*{param_str}_{iyrs}*.nc'))
         filenames.extend(year_files)
 
     # load relevant years
@@ -209,14 +211,7 @@ def get_data(opts):
         ds = ds.sel(time=season)
 
     # select variable
-    if opts.parameter == 'T':
-        var = 'Tx'
-    else:
-        if opts.dataset == 'SPARTACUS':
-            var = 'RR'
-        else:
-            var = opts.precip_var
-    data = ds[var]
+    data = ds[opts.parameter]
     data = data.rename(time='days')
 
     if opts.dataset == 'SPARTACUS':
@@ -248,16 +243,9 @@ def load_static_files(opts):
         valid_cells = valid_cells.rename('valid_cells')
         masks['valid_cells'] = valid_cells
 
-    pstr = opts.parameter
-    if opts.parameter == 'P':
-        pstr = f'{opts.precip_var}_'
-
-    param_str = f'{pstr}{opts.threshold:.1f}p'
+    param_str = f'{opts.parameter}{opts.threshold:.1f}p'
     if opts.threshold_type == 'abs':
-        unit_str = 'degC'
-        if opts.parameter == 'P':
-            unit_str = 'mm'
-        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
+        param_str = f'{opts.parameter}{opts.threshold:.1f}{opts.unit}'
     static = xr.open_dataset(f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc')
 
     return masks, static
