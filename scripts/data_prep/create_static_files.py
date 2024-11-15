@@ -32,16 +32,30 @@ def get_opts():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--parameter',
-                        default='T',
-                        choices=['T', 'P'],
+                        default='Tx',
                         type=str,
                         help='Parameter for which the TEA indices should be calculated'
-                             '[default: T].')
+                             '[default: Tx].')
+
+    parser.add_argument('--precip',
+                        action='store_true',
+                        help='Set if chosen parameter is a precipitation parameter.')
+
+    parser.add_argument('--season_length',
+                        default=366,
+                        type=int,
+                        help='Number of days in season for threshold calculation. For whole year, '
+                             'use 366 [default], for WAS (Apr-Oct) 215.')
 
     parser.add_argument('--threshold',
                         default=99,
                         type=float,
                         help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
+
+    parser.add_argument('--smoothing',
+                        default=0,
+                        type=float,
+                        help='Radius for spatial smoothing of threshold grid in km [default: 0].')
 
     parser.add_argument('--threshold_type',
                         type=str,
@@ -50,11 +64,10 @@ def get_opts():
                         help='Pass "perc" (default) if percentiles should be used as thresholds or '
                              '"abs" for absolute thresholds.')
 
-    parser.add_argument('--precip_var',
-                        default='P24h_7to7',
+    parser.add_argument('--unit',
+                        default='degC',
                         type=str,
-                        choices=['Px1h', 'P24h', 'Px1h_7to7', 'P24h_7to7'],
-                        help='Precipitation variable used [default: P24h_7to7].')
+                        help='Physical unit of chosen parameter.')
 
     parser.add_argument('--region',
                         default='AUT',
@@ -159,12 +172,7 @@ def load_ref_data(opts, masks, ds_params):
         data: data of reference period
     """
 
-    if opts.parameter == 'T':
-        # whole year
-        dys = np.arange(1, 367)
-    else:
-        # length of WAS (Apr-Oct)
-        dys = np.arange(1, 215)
+    dys = np.arange(0, opts.season_length + 1)
 
     xn, yn = ds_params[opts.dataset]['xname'], ds_params[opts.dataset]['yname']
 
@@ -178,12 +186,9 @@ def load_ref_data(opts, masks, ds_params):
                                     xn: ([xn], masks[xn].values)})
 
     param_str = ''
-    param_names = {'T': 'Tx', 'P': opts.precip_var}
     if opts.dataset == 'SPARTACUS':
         param_names = {'T': 'Tx', 'P': 'RR'}
         param_str = param_names[opts.parameter]
-
-    var = param_names[opts.parameter]
 
     idx = 0
     for yr in ref_period:
@@ -193,7 +198,7 @@ def load_ref_data(opts, masks, ds_params):
                                     f'directory. Please check and rerun.')
         file = files[0]
         data_yr = xr.open_dataset(file)
-        data_param = data_yr[var]
+        data_param = data_yr[opts.parameter]
 
         # in case of European wide data, set all cells outside of region to nan (ERA5 data are not
         # smoothed --> we don't need data outside the GR and can apply mask here to reduce
@@ -202,7 +207,7 @@ def load_ref_data(opts, masks, ds_params):
             data_param = data_param.where(masks['lt1500_mask'] == 1)
 
         # only select WAS and wet days for precip
-        if opts.parameter == 'P':
+        if opts.precip:
             data_param = data_param.sel(time=slice(f'{yr}-04-01', f'{yr}-10-31'))
             data_param = data_param.where(data_param > 0.99)
             data = data_param.values
@@ -231,6 +236,7 @@ def calc_percentiles(opts, masks, gr_size):
     Args:
         opts: CLI parameter
         masks: GR masks
+        gr_size: size of GR in areals
 
     Returns:
         thresh: threshold (percentile) grid
@@ -249,10 +255,7 @@ def calc_percentiles(opts, masks, gr_size):
 
     # smooth SPARTACUS percentiles (for each grid point calculate the average of all grid points
     # within the given radius
-    if opts.dataset == 'SPARTACUS' and opts.parameter == 'P':
-        radius = 7
-    else:
-        radius = 0
+    radius = opts.smoothing
 
     if radius == 0:
         percent_smooth = percent.copy()
@@ -280,9 +283,9 @@ def calc_percentiles(opts, masks, gr_size):
         percent_smooth = xr.full_like(percent, np.nan)
         percent_smooth[:, :] = percent_smooth_arr
 
-    unit, vname = '°C', f'TMax-p{opts.threshold}ANN AllDOYs Ref1961-1990'
-    if opts.parameter == 'P':
-        unit, vname = 'mm', f'{opts.precip_var}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
+    vname = f'{opts.parameter}-p{opts.threshold}{opts.period} Ref1961-1990'
+    if opts.precip:
+        vname = f'{opts.parameter}-p{opts.threshold}{opts.period} WetDOYs > 1 mm Ref1961-1990'
 
     percent_smooth = percent_smooth.drop('quantile')
 
@@ -293,7 +296,7 @@ def calc_percentiles(opts, masks, gr_size):
     else:
         percent_smooth = percent_smooth * masks['mask']
     percent_smooth = percent_smooth.rename('threshold')
-    percent_smooth.attrs = {'units': unit, 'methods_variable_name': vname,
+    percent_smooth.attrs = {'units': opts.unit, 'methods_variable_name': vname,
                             'percentile': f'{opts.threshold}p'}
 
     return percent_smooth
@@ -304,9 +307,6 @@ def run():
     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
     opts = get_opts()
-    unit, unit_str = '°C', 'degC'
-    if opts.parameter == 'P':
-        unit, unit_str = 'mm', 'mm'
 
     # load GR masks
     masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
@@ -323,7 +323,7 @@ def run():
         else:
             thr_grid = thr_grid * masks['mask']
         thr_grid = thr_grid.rename('threshold')
-        thr_grid.attrs = {'units': unit, 'abs_threshold': f'{opts.threshold}{unit}'}
+        thr_grid.attrs = {'units': opts.unit, 'abs_threshold': f'{opts.threshold}{opts.unit}'}
     else:
         thr_grid = calc_percentiles(opts=opts, masks=masks, gr_size=gr_size)
 
@@ -338,13 +338,9 @@ def run():
     ds_out.attrs['coordinate_sys'] = masks.attrs['coordinate_sys']
 
     # save output
-    pstr = opts.parameter
-    if opts.parameter == 'P':
-        pstr = f'{opts.precip_var}_'
-
-    param_str = f'{pstr}{opts.threshold}p'
+    param_str = f'{opts.parameter}{opts.threshold}p'
     if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold}{unit_str}'
+        param_str = f'{opts.parameter}{opts.threshold}{opts.unit}'
 
     outname = f'{opts.outpath}static_{param_str}_{opts.region}_{opts.dataset}.nc'
 
