@@ -55,7 +55,8 @@ def get_opts():
     parser.add_argument('--smoothing',
                         default=0,
                         type=float,
-                        help='Radius for spatial smoothing of threshold grid in km [default: 0].')
+                        help='Radius for spatial smoothing of threshold grid in km [default: 0].'
+                             'Used for precipitation parameter from SPARTACUS data.')
 
     parser.add_argument('--threshold_type',
                         type=str,
@@ -172,7 +173,7 @@ def load_ref_data(opts, masks, ds_params):
         data: data of reference period
     """
 
-    dys = np.arange(0, opts.season_length + 1)
+    dys = np.arange(0, opts.season_length)
 
     xn, yn = ds_params[opts.dataset]['xname'], ds_params[opts.dataset]['yname']
 
@@ -283,9 +284,9 @@ def calc_percentiles(opts, masks, gr_size):
         percent_smooth = xr.full_like(percent, np.nan)
         percent_smooth[:, :] = percent_smooth_arr
 
-    vname = f'{opts.parameter}-p{opts.threshold}{opts.period} Ref1961-1990'
+    vname = f'{opts.parameter}-p{opts.threshold}ANN Ref1961-1990'
     if opts.precip:
-        vname = f'{opts.parameter}-p{opts.threshold}{opts.period} WetDOYs > 1 mm Ref1961-1990'
+        vname = f'{opts.parameter}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
 
     percent_smooth = percent_smooth.drop('quantile')
 
