@@ -133,7 +133,7 @@ def calc_exceedance_area_tex_sev(opts, data, ed, em):
 
     """
 
-    if opts.parameter == 'T':
+    if not opts.precip:
         em_var, em_avg_var = 'EM_GR', 'EMavg_GR'
     else:
         em_var, em_avg_var = 'EM_Md_GR', 'EMavg_Md_GR'
