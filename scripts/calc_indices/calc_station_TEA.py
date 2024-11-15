@@ -257,6 +257,9 @@ def run():
         opts.precip_var = 'P24h_7to7'
     opts = extend_tea_opts(opts=opts)
 
+    if opts.parameter == 'T':
+        opts.param_str = f'Tx{opts.threshold:.1f}p'
+
     data = load_data(opts=opts)
 
     # calc daily basis variables
