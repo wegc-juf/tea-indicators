@@ -45,12 +45,12 @@ def getopts():
         if os.path.isdir(path):
             return path
         else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path')
+            raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
 
     def float_1pcd(value):
         if not re.match(r'^\d+(\.\d{1})?$', value):
             raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
-                                             'the decimal point')
+                                             'the decimal point.')
         return float(value)
 
     parser = argparse.ArgumentParser()
