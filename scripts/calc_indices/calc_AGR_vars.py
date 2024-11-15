@@ -73,18 +73,18 @@ def getopts():
                              'or ISO2-code of country.')
 
     parser.add_argument('--parameter',
-                        default='T',
+                        default='Tx',
                         type=str,
-                        choices=['T', 'P'],
-                        help='Parameter for which the TEA indices should be calculated '
-                             'Options: T (= temperature, default), P (= precipitation).')
+                        help='Parameter for which the TEA indices should be calculated.')
 
-    parser.add_argument('--precip_var',
-                        default='Px1h_7to7',
+    parser.add_argument('--unit',
+                        default='degC',
                         type=str,
-                        choices=['Px1h', 'P24h', 'Px1h_7to7', 'P24h_7to7'],
-                        help='Precipitation variable used.'
-                             '[Px1h, P24h, Px1h_7to7 (default), P24h_7to7]')
+                        help='Physical unit of chosen parameter.')
+
+    parser.add_argument('--precip',
+                        action='store_true',
+                        help='Set if chosen parameter is a precipitation parameter.')
 
     parser.add_argument('--threshold',
                         default=99,
@@ -366,7 +366,7 @@ def calc_compound_amplification_factors_grid(opts, af, af_cc):
     """
 
     em_var = 'EMavg_AF'
-    if opts.parameter == 'P':
+    if opts.precip:
         em_var = 'EMavg_Md_AF'
 
     # tEX
