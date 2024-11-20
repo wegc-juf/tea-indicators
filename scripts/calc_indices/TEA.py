@@ -49,15 +49,19 @@ class TEAIndicators:
         dtec.attrs = get_attrs(vname='DTEC')
         self.results['DTEC'] = dtec
     
-    def calc_DTEM(self):
+    def calc_DTEC_GR(self, min_area=1):
         """
-        calculate Daily Threshold Exceedance Magnitude (equation 07)
+        calculate Daily Threshold Exceedance Count (GR) (equation 03)
         note that 0 values are stored as NaN for optimization
+
+        @param min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
         """
-        dtem = self.input_data_grid - self.threshold_grid
-        dtem = dtem.where(dtem > 0).astype('float32')
-        dtem.attrs = get_attrs(vname='DTEM')
-        self.results['DTEM'] = dtem
+        if self.results['DTEA_GR'] is None:
+            self.calc_DTEA_GR()
+        dtea_gr = self.results.DTEA_GR
+        dtec_gr = xr.where(dtea_gr >= min_area, 1, np.nan)
+        dtec_gr.attrs = get_attrs(vname='DTEC_GR')
+        self.results['DTEC_GR'] = dtec_gr
     
     def calc_DTEA(self):
         """
@@ -85,19 +89,13 @@ class TEAIndicators:
         dtea_gr.attrs = get_attrs(vname='DTEA_GR')
         self.results['DTEA_GR'] = dtea_gr
     
-    def calc_DTEC_GR(self, min_area=1):
+    def calc_DTEM(self):
         """
-        calculate Daily Threshold Exceedance Count (GR) (equation 03)
+        calculate Daily Threshold Exceedance Magnitude (equation 07)
         note that 0 values are stored as NaN for optimization
-        
-        @param min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
         """
-        if self.results['DTEA_GR'] is None:
-            self.calc_DTEA_GR()
-        dtea_gr = self.results.DTEA_GR
-        dtec_gr = xr.where(dtea_gr >= min_area, 1, np.nan)
-        dtec_gr.attrs = get_attrs(vname='DTEC_GR')
-        self.results['DTEC_GR'] = dtec_gr
-    
-
+        dtem = self.input_data_grid - self.threshold_grid
+        dtem = dtem.where(dtem > 0).astype('float32')
+        dtem.attrs = get_attrs(vname='DTEM')
+        self.results['DTEM'] = dtem
 
