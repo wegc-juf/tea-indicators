@@ -183,7 +183,10 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     # calculate DTEM
     # equation 07
-    dtem = data - static['threshold']
+    if not opts.low_extreme:
+        dtem = data - static['threshold']
+    else:
+        dtem = static['threshold'] - data
     dtem = dtem.where(dtem > 0).astype('float32')
     dtem = dtem.rename('DTEM')
     dtem.attrs = get_attrs(opts=opts, vname='DTEM')

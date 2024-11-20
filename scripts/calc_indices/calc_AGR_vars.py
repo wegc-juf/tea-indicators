@@ -217,7 +217,10 @@ def calc_agr(opts, vdata, awgts):
 
     # calc mean of ref period (Eq. 26)
     ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
-    ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
+    try:
+        ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
+    except:
+        print()
     vdata_ref = 10 ** ref_db
 
     # calc X_Ref^AGR and X_s^AGR (Eq. 34_1 and 34_2)
