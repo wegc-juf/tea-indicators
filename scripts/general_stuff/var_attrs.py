@@ -12,6 +12,7 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None):
         period = opts.period
 
     attrs = {'ctp': {'long_name': f'climatic time period ({period})'},
+             'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
              'DTEM_Max': {'long_name': 'daily maximum grid cell exceedance magnitude',
                           'units': data_unit},

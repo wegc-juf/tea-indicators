@@ -4,8 +4,10 @@ import numpy as np
 import os
 from pathlib import Path
 import xarray as xr
+import numpy as np
 
 from scripts.general_stuff.var_attrs import get_attrs
+from TEA import TEAIndicators
 
 
 def calc_dtec_dtea(opts, dtem, static, cstr):
@@ -22,7 +24,10 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
         dtec_gr: Daily Threshold Exceedance Count (GR)
         dtea_gr: Daily Threshold Exceedance AREA (GR)
     """
-    outpath = f'{opts.outpath}daily_basis_variables/tmp/'
+    outpath = f'{opts.outpath}/daily_basis_variables/tmp/'
+    
+    # check if outpath exists and create it if not
+    Path(outpath).mkdir(parents=True, exist_ok=True)
 
     # equation 01
     # store DTEM for all DTEC == 1
@@ -181,14 +186,19 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     if not large_gr:
         check_tmp_dir(opts)
 
-    # calculate DTEM
-    # equation 07
-    dtem = data - static['threshold']
-    dtem = dtem.where(dtem > 0).astype('float32')
-    dtem = dtem.rename('DTEM')
-    dtem.attrs = get_attrs(opts=opts, vname='DTEM')
-
-    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=dtem, static=static, cstr=cell_str)
+    TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'])
+    TEA.calc_DTEM()
+    TEA.calc_DTEC()
+    # get custom attributes
+    TEA.grid.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
+    TEA.grid.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
+    
+    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=TEA.grid.DTEM, static=static, cstr=cell_str)
+    # test if dtec is equal to TEA.DTEC
+    eq = np.array_equal(dtec.values, TEA.grid.DTEC.values, equal_nan=True)
+    print(eq)
+    pass
+    
 
     # equation 08
     # calculate dtem_gr (area weighted DTEM)
