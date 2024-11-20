@@ -10,34 +10,26 @@ from scripts.general_stuff.var_attrs import get_attrs
 from TEA import TEAIndicators
 
 
-def calc_dtec_dtea(opts, tea, static, cstr):
+def save_dtec_dtea(opts, tea, static, cstr):
     """
-    calculate DTEC, DTEC_GR, and DTEA_GR and save it to tmp files
+    save DTEC, DTEC_GR, and DTEA_GR to tmp files
     Args:
         opts: CLI parameter
         tea: TEA object
         static: static files
         cstr: cell string to add to filename (only if called from calc_TEA_largeGR)
-
-    Returns:
-        dtec: Daily Threshold Exceedance Count
-        dtec_gr: Daily Threshold Exceedance Count (GR)
-        dtea_gr: Daily Threshold Exceedance AREA (GR)
     """
     dtem = tea.results.DTEM
     dtec = tea.results.DTEC
     dtea = tea.results.DTEA
     dtea_gr = tea.results.DTEA_GR
+    dtec_gr = tea.results.DTEC_GR
+    
     outpath = f'{opts.outpath}/daily_basis_variables/tmp/'
     
     # check if outpath exists and create it if not
     Path(outpath).mkdir(parents=True, exist_ok=True)
 
-    # test if dtea is equal to TEA.DTEA
-    eq = np.array_equal(dtea_gr.values, tea.results.DTEA_GR.values, equal_nan=True)
-    print(eq)
-    pass
-    
     # calc area fraction
     area_frac = (dtea_gr / static['GR_size']) * 100
     area_frac = area_frac.rename('DTEA_frac')
@@ -46,18 +38,9 @@ def calc_dtec_dtea(opts, tea, static, cstr):
     areas.to_netcdf(f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                     f'_{opts.start}to{opts.end}.nc')
 
-    # calculate dtec_gr (continues equation 03)
-    dtec_gr = dtec.notnull().any(dim=static['threshold'].dims)
-    dtec_gr = dtec_gr.where(dtec_gr == True)
-    dtec_gr = dtec_gr.rename(f'{dtec.name}_GR')
-    dtec_gr = dtec_gr.assign_attrs({'long_name': 'daily threshold exceedance count (GR)',
-                                    'units': '1'})
-
     dtecs = xr.merge([dtec, dtec_gr])
     dtecs.to_netcdf(f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                     f'_{opts.start}to{opts.end}.nc')
-
-    return dtec, dtec_gr, dtea_gr
 
 
 def calc_dteec_1d(dtec_cell):
@@ -183,11 +166,15 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     TEA.calc_DTEC()
     TEA.calc_DTEA()
     TEA.calc_DTEA_GR()
+    
+    # set min area to < 1 grid cell area so that all exceedance days are considered
+    TEA.calc_DTEC_GR(min_area=0.0001)
+    
     # get custom attributes
     TEA.results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
     TEA.results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
-    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
+    save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
     # equation 08
     # calculate dtem_gr (area weighted DTEM)

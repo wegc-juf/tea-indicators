@@ -5,6 +5,7 @@ TODO: add reference to the paper
 Equation numbers refer to Supplementary Notes
 """
 import xarray as xr
+import numpy as np
 
 from scripts.general_stuff.var_attrs import get_attrs
 
@@ -39,6 +40,7 @@ class TEAIndicators:
     def calc_DTEC(self):
         """
         calculate Daily Threshold Exceedance Count (equation 01)
+        note that 0 values are stored as NaN for optimization
         """
         if self.results['DTEM'] is None:
             self.calc_DTEM()
@@ -60,6 +62,7 @@ class TEAIndicators:
     def calc_DTEA(self):
         """
         calculate Daily Threshold Exceedance Area (equation 02)
+        note that 0 values are stored as NaN for optimization
         """
         if self.results['DTEC'] is None:
             self.calc_DTEC()
@@ -81,6 +84,20 @@ class TEAIndicators:
         dtea_gr = dtea_gr.rename('DTEA_GR')
         dtea_gr.attrs = get_attrs(vname='DTEA_GR')
         self.results['DTEA_GR'] = dtea_gr
+    
+    def calc_DTEC_GR(self, min_area=1):
+        """
+        calculate Daily Threshold Exceedance Count (GR) (equation 03)
+        note that 0 values are stored as NaN for optimization
+        
+        @param min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
+        """
+        if self.results['DTEA_GR'] is None:
+            self.calc_DTEA_GR()
+        dtea_gr = self.results.DTEA_GR
+        dtec_gr = xr.where(dtea_gr >= min_area, 1, np.nan)
+        dtec_gr.attrs = get_attrs(vname='DTEC_GR')
+        self.results['DTEC_GR'] = dtec_gr
     
 
 
