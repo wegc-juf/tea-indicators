@@ -20,32 +20,32 @@ class TEAIndicators:
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
             threshold_grid: gridded threshold values
-            area_grid: grid containing the area of each grid cell, if None, area is assumed to be 1 for each cell
-                       nan values mask out the corresponding grid cells
+            area_grid: results containing the area of each results cell, if None, area is assumed to be 1 for each cell
+                       nan values mask out the corresponding results cells
         """
         self.threshold_grid = threshold_grid
         if area_grid is None:
             area_grid = xr.ones_like(threshold_grid)
         self.area_grid = area_grid
         self.input_data_grid = input_data_grid
-        self.grid = xr.Dataset()
+        self.results = xr.Dataset()
         self.gr_vars = None
         
         if input_data_grid.shape[-2:] != threshold_grid.shape:
-            raise ValueError("Input data and threshold grid must have the same area")
+            raise ValueError("Input data and threshold results must have the same area")
         if input_data_grid.shape[-2:] != area_grid.shape:
-            raise ValueError("Input data and area grid must have the same shape")
+            raise ValueError("Input data and area results must have the same shape")
         
     def calc_DTEC(self):
         """
         calculate Daily Threshold Exceedance Count (equation 01)
         """
-        if self.grid['DTEM'] is None:
+        if self.results['DTEM'] is None:
             self.calc_DTEM()
-        dtem = self.grid.DTEM
+        dtem = self.results.DTEM
         dtec = dtem.where(dtem.isnull(), 1)
         dtec.attrs = get_attrs(vname='DTEC')
-        self.grid['DTEC'] = dtec
+        self.results['DTEC'] = dtec
     
     def calc_DTEM(self):
         """
@@ -55,32 +55,32 @@ class TEAIndicators:
         dtem = self.input_data_grid - self.threshold_grid
         dtem = dtem.where(dtem > 0).astype('float32')
         dtem.attrs = get_attrs(vname='DTEM')
-        self.grid['DTEM'] = dtem
+        self.results['DTEM'] = dtem
     
     def calc_DTEA(self):
         """
         calculate Daily Threshold Exceedance Area (equation 02)
         """
-        if self.grid['DTEC'] is None:
+        if self.results['DTEC'] is None:
             self.calc_DTEC()
-        dtec = self.grid.DTEC
+        dtec = self.results.DTEC
         # equation 02_1 not needed (cells with TEC == 0 are already nan)
         # equation 02_2
         dtea = dtec * self.area_grid
         dtea.attrs = get_attrs(vname='DTEA')
-        self.grid['DTEA'] = dtea
+        self.results['DTEA'] = dtea
         
     def calc_DTEA_GR(self):
         """
         calculate Daily Threshold Exceedance Area (GR) (equation 06)
         """
-        if self.grid['DTEA'] is None:
+        if self.results['DTEA'] is None:
             self.calc_DTEA()
-        dtea = self.grid.DTEA
+        dtea = self.results.DTEA
         dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
         dtea_gr = dtea_gr.rename('DTEA_GR')
         dtea_gr.attrs = get_attrs(vname='DTEA_GR')
-        self.grid['DTEA_GR'] = dtea_gr
+        self.results['DTEA_GR'] = dtea_gr
     
 
 

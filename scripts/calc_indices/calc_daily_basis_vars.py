@@ -24,17 +24,17 @@ def calc_dtec_dtea(opts, tea, static, cstr):
         dtec_gr: Daily Threshold Exceedance Count (GR)
         dtea_gr: Daily Threshold Exceedance AREA (GR)
     """
-    dtem = tea.grid.DTEM
-    dtec = tea.grid.DTEC
-    dtea = tea.grid.DTEA
-    dtea_gr = tea.grid.DTEA_GR
+    dtem = tea.results.DTEM
+    dtec = tea.results.DTEC
+    dtea = tea.results.DTEA
+    dtea_gr = tea.results.DTEA_GR
     outpath = f'{opts.outpath}/daily_basis_variables/tmp/'
     
     # check if outpath exists and create it if not
     Path(outpath).mkdir(parents=True, exist_ok=True)
 
     # test if dtea is equal to TEA.DTEA
-    eq = np.array_equal(dtea_gr.values, tea.grid.DTEA_GR.values, equal_nan=True)
+    eq = np.array_equal(dtea_gr.values, tea.results.DTEA_GR.values, equal_nan=True)
     print(eq)
     pass
     
@@ -184,8 +184,8 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     TEA.calc_DTEA()
     TEA.calc_DTEA_GR()
     # get custom attributes
-    TEA.grid.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
-    TEA.grid.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
+    TEA.results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
+    TEA.results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
     dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
