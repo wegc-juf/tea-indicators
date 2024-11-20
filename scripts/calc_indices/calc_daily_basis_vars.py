@@ -10,12 +10,12 @@ from scripts.general_stuff.var_attrs import get_attrs
 from TEA import TEAIndicators
 
 
-def calc_dtec_dtea(opts, dtem, static, cstr):
+def calc_dtec_dtea(opts, tea, static, cstr):
     """
     calculate DTEC, DTEC_GR, and DTEA_GR and save it to tmp files
     Args:
         opts: CLI parameter
-        dtem: Daily Threshold Exceedance Magnitude
+        tea: TEA object
         static: static files
         cstr: cell string to add to filename (only if called from calc_TEA_largeGR)
 
@@ -24,21 +24,19 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
         dtec_gr: Daily Threshold Exceedance Count (GR)
         dtea_gr: Daily Threshold Exceedance AREA (GR)
     """
+    dtem = tea.grid.DTEM
+    dtec = tea.grid.DTEC
+    dtea = tea.grid.DTEA
     outpath = f'{opts.outpath}/daily_basis_variables/tmp/'
     
     # check if outpath exists and create it if not
     Path(outpath).mkdir(parents=True, exist_ok=True)
 
-    # equation 01
-    # store DTEM for all DTEC == 1
-    dtec = dtem.where(dtem.isnull(), 1)
-    dtec = dtec.rename('DTEC')
-    dtec.attrs = {'long_name': 'daily threshold exceedance count', 'units': '1'}
-
-    # equation 02_1 not needed (cells with TEC == 0 are already nan in tem)
-    # equation 02_2
-    dtea = dtec * static['area_grid']
-
+    # test if dtea is equal to TEA.DTEA
+    eq = np.array_equal(dtea.values, tea.grid.DTEA.values, equal_nan=True)
+    print(eq)
+    pass
+    
     # equation 06
     # calculate DTEA_GR
     dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
@@ -186,19 +184,15 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     if not large_gr:
         check_tmp_dir(opts)
 
-    TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'])
+    TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
     TEA.calc_DTEM()
     TEA.calc_DTEC()
+    TEA.calc_DTEA()
     # get custom attributes
     TEA.grid.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
     TEA.grid.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
-    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, dtem=TEA.grid.DTEM, static=static, cstr=cell_str)
-    # test if dtec is equal to TEA.DTEC
-    eq = np.array_equal(dtec.values, TEA.grid.DTEC.values, equal_nan=True)
-    print(eq)
-    pass
-    
+    dtec, dtec_gr, dtea_gr = calc_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
     # equation 08
     # calculate dtem_gr (area weighted DTEM)
