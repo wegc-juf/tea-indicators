@@ -69,6 +69,18 @@ class TEAIndicators:
         dtea = dtec * self.area_grid
         dtea.attrs = get_attrs(vname='DTEA')
         self.grid['DTEA'] = dtea
+        
+    def calc_DTEA_GR(self):
+        """
+        calculate Daily Threshold Exceedance Area (GR) (equation 06)
+        """
+        if self.grid['DTEA'] is None:
+            self.calc_DTEA()
+        dtea = self.grid.DTEA
+        dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
+        dtea_gr = dtea_gr.rename('DTEA_GR')
+        dtea_gr.attrs = get_attrs(vname='DTEA_GR')
+        self.grid['DTEA_GR'] = dtea_gr
     
 
 
