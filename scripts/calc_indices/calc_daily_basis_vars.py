@@ -180,12 +180,11 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
     dtem_gr = TEA.results.DTEM_GR
+    dtem = TEA.results.DTEM
 
     # equation 09
-    # save maximum DTEM
-    dtem_max = dtem.max(dim=static['threshold'].dims)
-    dtem_max = dtem_max.rename('DTEM_Max')
-    dtem_max = dtem_max.assign_attrs(get_attrs(opts=opts, vname='DTEM_Max'))
+    TEA.calc_DTEM_max_gr()
+    dtem_max = TEA.results.DTEM_max_gr
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
     outname = (f'{opts.outpath}daily_basis_variables/tmp/'
