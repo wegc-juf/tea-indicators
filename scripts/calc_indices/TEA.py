@@ -99,3 +99,21 @@ class TEAIndicators:
         dtem.attrs = get_attrs(vname='DTEM')
         self.results['DTEM'] = dtem
 
+    def calc_DTEM_GR(self):
+        """
+        calculate Daily Threshold Exceedance Magnitude (GR) (equation 08)
+        """
+        if self.results['DTEA_GR'] is None:
+            self.calc_DTEA_GR()
+        if self.results['DTEM'] is None:
+            self.calc_DTEM()
+        if self.results['DTEC_GR'] is None:
+            self.calc_DTEC_GR()
+        dtea_gr = self.results.DTEA_GR
+        dtem = self.results.DTEM
+        dtec_gr = self.results.DTEC_GR
+        area_fac = self.area_grid / dtea_gr
+        dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True) * dtec_gr
+        dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
+        dtem_gr.attrs = get_attrs(vname='DTEM_GR')
+        self.results['DTEM_GR'] = dtem_gr

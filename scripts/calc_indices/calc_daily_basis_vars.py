@@ -170,18 +170,16 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     # set min area to < 1 grid cell area so that all exceedance days are considered
     TEA.calc_DTEC_GR(min_area=0.0001)
     
+    # calculate dtem_gr (area weighted DTEM)
+    TEA.calc_DTEM_GR()
+    
     # get custom attributes
     TEA.results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
     TEA.results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
     save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
-    # equation 08
-    # calculate dtem_gr (area weighted DTEM)
-    area_fac = static['area_grid'] / dtea_gr.T
-    dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
-    dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
-    dtem_gr = dtem_gr.assign_attrs(get_attrs(opts=opts, vname='DTEM_GR'))
+    dtem_gr = TEA.results.DTEM_GR
 
     # equation 09
     # save maximum DTEM
