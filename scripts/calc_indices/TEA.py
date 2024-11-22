@@ -63,6 +63,41 @@ class TEAIndicators:
         dtec_gr.attrs = get_attrs(vname='DTEC_GR')
         self.results['DTEC_GR'] = dtec_gr
     
+    def calc_DTEEC(self):
+        """
+        calculate Daily Threshold Exceedance Event Count (equation 04)
+        """
+        if self.results['DTEC'] is None:
+            self.calc_DTEC()
+        dtec = self.results.DTEC
+        
+        dteec = xr.full_like(dtec, np.nan)
+        dtec_3d = dtec.values
+        # loop through all rows and calculate DTEEC
+        for iy in range(len(dtec_3d[0, :, 0])):
+            dtec_row = dtec_3d[:, iy, :]
+            # skip all nan rows
+            if np.isnan(dtec_row).all():
+                continue
+            dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
+            dteec[:, iy, :] = dteec_row
+        dteec.attrs = get_attrs(vname='DTEEC')
+        self.results['DTEEC'] = dteec
+    
+    def calc_DTEEC_GR(self):
+        """
+        calculate Daily Threshold Exceedance Event Count (GR) (equation 05)
+        """
+        if self.results['DTEC_GR'] is None:
+            self.calc_DTEC_GR()
+            
+        dtec_gr = self.results.DTEC_GR
+        dteec_np = self._calc_dteec_1d(dtec_cell=dtec_gr.values)
+        dteec_gr = xr.DataArray(dteec_np, coords=dtec_gr.coords, dims=dtec_gr.dims)
+
+        dteec_gr.attrs = get_attrs(vname='DTEEC_GR')
+        self.results['DTEEC_GR'] = dteec_gr
+
     def calc_DTEA(self):
         """
         calculate Daily Threshold Exceedance Area (equation 02)
@@ -133,3 +168,32 @@ class TEAIndicators:
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR')
         self.results['DTEM_GR'] = dtem_gr
+        
+    @staticmethod
+    def _calc_dteec_1d(dtec_cell):
+        """
+        calculate DTEEC according to equation 04 and equation 05
+        Args:
+            dtec_cell: 1D array with daily threshold exceedance count
+        """
+        # Convert to a NumPy array and change NaN to 0
+        dtec_np = np.nan_to_num(dtec_cell, nan=0)
+        
+        # Find the starts and ends of sequences (change NaNs to 0 before the diff operation)
+        change = np.diff(np.concatenate(
+            ([np.zeros((1,) + dtec_np.shape[1:]), dtec_np, np.zeros((1,) + dtec_np.shape[1:])]), axis=0), axis=0)
+        starts = np.where(change == 1)
+        ends = np.where(change == -1)
+        
+        # Calculate the middle points (as flat indices)
+        middle_indices = (starts[0] + ends[0] - 1) // 2
+        
+        # Create an output array filled with NaNs
+        events_np = np.full(dtec_cell.shape, np.nan)
+        
+        # Set the middle points to 1 (use flat indices to index into the 3D array)
+        events_np[middle_indices] = 1
+        
+        return events_np
+
+

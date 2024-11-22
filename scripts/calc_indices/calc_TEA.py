@@ -20,7 +20,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from scripts.general_stuff.general_functions import create_history, extend_tea_opts
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
-from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
+from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, save_event_count
 from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_frequency,
                                                                calc_supplementary_event_vars,
                                                                calc_event_duration,

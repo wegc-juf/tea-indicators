@@ -43,69 +43,30 @@ def save_dtec_dtea(opts, tea, static, cstr):
                     f'_{opts.start}to{opts.end}.nc')
 
 
-def calc_dteec_1d(dtec_cell):
-    # Convert to a NumPy array and change NaN to 0
-    dtec_np = np.nan_to_num(dtec_cell, nan=0)
-
-    # Find the starts and ends of sequences (change NaNs to 0 before the diff operation)
-    change = np.diff(np.concatenate(
-        ([np.zeros((1,) + dtec_np.shape[1:]), dtec_np, np.zeros((1,) + dtec_np.shape[1:])]),
-        axis=0), axis=0)
-    starts = np.where(change == 1)
-    ends = np.where(change == -1)
-
-    # Calculate the middle points (as flat indices)
-    middle_indices = (starts[0] + ends[0] - 1) // 2
-
-    # Create an output array filled with NaNs
-    events_np = np.full(dtec_cell.shape, np.nan)
-
-    # Set the middle points to 1 (use flat indices to index into the 3D array)
-    events_np[middle_indices] = 1
-
-    return events_np
-
-
-def calculate_event_count(opts, dtec, cstr, da_out=False):
+def save_event_count(opts, tea, cstr):
     """
-    calculate DTEEC(_GR) according to equations 4 and 5
+    save DTEEC(_GR) to netcdf file
     Args:
         opts: CLI parameter
-        dtec: daily threshold exceedance count
+        tea: TEA object
         cstr: string for subcell
-        da_out: set to true if da is written to output
-
-    Returns:
-
     """
-
-    if 'GR' in dtec.name:
-        dteec_np = calc_dteec_1d(dtec_cell=dtec.values)
-        dteec = xr.DataArray(dteec_np, coords=dtec.coords, dims=dtec.dims)
-        gr_var_str = '_GR'
-    else:
-        dteec = xr.full_like(dtec, np.nan)
-        dtec_3d = dtec.values
-        # loop through all rows and calculate DTEEC
-        for iy in range(len(dtec_3d[0, :, 0])):
-            dtec_row = dtec_3d[:, iy, :]
-            # skip all nan rows
-            if np.isnan(dtec_row).all():
-                continue
-            dteec_row = np.apply_along_axis(calc_dteec_1d, axis=0, arr=dtec_row)
-            dteec[:, iy, :] = dteec_row
-        gr_var_str = ''
+    vars = ['DTEEC', 'DTEEC_GR']
+    for var in vars:
+        if 'GR' in var:
+            dteec = tea.results.DTEEC_GR
+            gr_var_str = '_GR'
+        else:
+            dteec = tea.results.DTEEC
+            gr_var_str = ''
 
     dteec = dteec.rename(f'DTEEC{gr_var_str}')
     dteec.attrs = get_attrs(opts=opts, vname=f'DTEEC{gr_var_str}')
 
-    if not da_out:
-        outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-                   f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
-        dteec.to_netcdf(outname)
-    else:
-        return dteec
+    outname = (f'{opts.outpath}daily_basis_variables/tmp/'
+               f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
+    dteec.to_netcdf(outname)
 
 
 def check_tmp_dir(opts):
@@ -187,15 +148,16 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     dtem_max = TEA.results.DTEM_max_gr
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
-    outname = (f'{opts.outpath}daily_basis_variables/tmp/'
+    outname = (f'{opts.outpath}/daily_basis_variables/tmp/'
                f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                f'_{opts.start}to{opts.end}.nc')
     dtems.to_netcdf(outname)
 
     # equations 4 and 5
     # calculate DTEEC(_GR)
-    calculate_event_count(opts=opts, dtec=dtec, cstr=cell_str)
-    calculate_event_count(opts=opts, dtec=dtec_gr, cstr=cell_str)
+    TEA.calc_DTEEC()
+    TEA.calc_DTEEC_GR()
+    save_event_count(opts=opts, tea=TEA, cstr=cell_str)
 
     # combine all basic variables into one ds
     bv_files = sorted(glob.glob(
