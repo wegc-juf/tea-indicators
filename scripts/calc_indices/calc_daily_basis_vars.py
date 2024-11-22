@@ -161,16 +161,16 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     # combine all basic variables into one ds
     bv_files = sorted(glob.glob(
-        f'{opts.outpath}daily_basis_variables/tmp/'
+        f'{opts.outpath}/daily_basis_variables/tmp/'
         f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
         f'_{opts.start}to{opts.end}.nc'))
     bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
 
-    bv_outpath = (f'{opts.outpath}daily_basis_variables/'
+    bv_outpath = (f'{opts.outpath}/daily_basis_variables/'
                   f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                   f'_{opts.start}to{opts.end}.nc')
     if large_gr:
-        large_gr_path = Path(f'{opts.tmppath}daily_basis_variables/')
+        large_gr_path = Path(f'{opts.tmppath}/daily_basis_variables/')
         large_gr_path.mkdir(parents=True, exist_ok=True)
         bv_outpath = (f'{opts.tmppath}daily_basis_variables/'
                       f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
