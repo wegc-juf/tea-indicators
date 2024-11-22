@@ -55,18 +55,13 @@ def save_event_count(opts, tea, cstr):
     for var in vars:
         if 'GR' in var:
             dteec = tea.results.DTEEC_GR
-            gr_var_str = '_GR'
         else:
             dteec = tea.results.DTEEC
-            gr_var_str = ''
 
-    dteec = dteec.rename(f'DTEEC{gr_var_str}')
-    dteec.attrs = get_attrs(opts=opts, vname=f'DTEEC{gr_var_str}')
-
-    outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-               f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-               f'_{opts.start}to{opts.end}.nc')
-    dteec.to_netcdf(outname)
+        outname = (f'{opts.outpath}daily_basis_variables/tmp/'
+                   f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                   f'_{opts.start}to{opts.end}.nc')
+        dteec.to_netcdf(outname)
 
 
 def check_tmp_dir(opts):
@@ -122,17 +117,10 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     if not large_gr:
         check_tmp_dir(opts)
 
-    TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
-    TEA.calc_DTEM()
-    TEA.calc_DTEC()
-    TEA.calc_DTEA()
-    TEA.calc_DTEA_GR()
-    
-    # set min area to < 1 grid cell area so that all exceedance days are considered
-    TEA.calc_DTEC_GR(min_area=0.0001)
-    
-    # calculate dtem_gr (area weighted DTEM)
-    TEA.calc_DTEM_GR()
+    TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
+                        # set min area to < 1 grid cell area so that all exceedance days are considered
+                        min_area=0.0001)
+    TEA.calc_daily_basis_vars()
     
     # get custom attributes
     TEA.results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
@@ -142,9 +130,6 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     dtem_gr = TEA.results.DTEM_GR
     dtem = TEA.results.DTEM
-
-    # equation 09
-    TEA.calc_DTEM_max_gr()
     dtem_max = TEA.results.DTEM_max_gr
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
@@ -153,10 +138,6 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
                f'_{opts.start}to{opts.end}.nc')
     dtems.to_netcdf(outname)
 
-    # equations 4 and 5
-    # calculate DTEEC(_GR)
-    TEA.calc_DTEEC()
-    TEA.calc_DTEEC_GR()
     save_event_count(opts=opts, tea=TEA, cstr=cell_str)
 
     # combine all basic variables into one ds

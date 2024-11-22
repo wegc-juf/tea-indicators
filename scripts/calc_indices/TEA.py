@@ -15,7 +15,7 @@ class TEAIndicators:
     Class to calculate TEA indicators
     """
     
-    def __init__(self, input_data_grid, threshold_grid, area_grid=None):
+    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=None, area_grid=None):
         """
         Initialize TEAIndicators object
         Args:
@@ -23,19 +23,22 @@ class TEAIndicators:
             threshold_grid: gridded threshold values
             area_grid: results containing the area of each results cell, if None, area is assumed to be 1 for each cell
                        nan values mask out the corresponding results cells
+            min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
         """
         self.threshold_grid = threshold_grid
-        if area_grid is None:
+        if area_grid is None and threshold_grid is not None:
             area_grid = xr.ones_like(threshold_grid)
         self.area_grid = area_grid
         self.input_data_grid = input_data_grid
         self.results = xr.Dataset()
+        self.min_area = min_area
         self.gr_vars = None
         
-        if input_data_grid.shape[-2:] != threshold_grid.shape:
-            raise ValueError("Input data and threshold results must have the same area")
-        if input_data_grid.shape[-2:] != area_grid.shape:
-            raise ValueError("Input data and area results must have the same shape")
+        if input_data_grid is not None:
+            if input_data_grid.shape[-2:] != threshold_grid.shape:
+                raise ValueError("Input data and threshold results must have the same area")
+            if input_data_grid.shape[-2:] != area_grid.shape:
+                raise ValueError("Input data and area results must have the same shape")
         
     def calc_DTEC(self):
         """
@@ -49,13 +52,15 @@ class TEAIndicators:
         dtec.attrs = get_attrs(vname='DTEC')
         self.results['DTEC'] = dtec
     
-    def calc_DTEC_GR(self, min_area=1):
+    def calc_DTEC_GR(self, min_area=None):
         """
         calculate Daily Threshold Exceedance Count (GR) (equation 03)
         note that 0 values are stored as NaN for optimization
 
         @param min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
         """
+        if min_area is None:
+            min_area = self.min_area
         if self.results['DTEA_GR'] is None:
             self.calc_DTEA_GR()
         dtea_gr = self.results.DTEA_GR
@@ -168,6 +173,20 @@ class TEAIndicators:
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR')
         self.results['DTEM_GR'] = dtem_gr
+    
+    def calc_daily_basis_vars(self):
+        """
+        calculate all daily basis variables
+        """
+        self.calc_DTEM()
+        self.calc_DTEC()
+        self.calc_DTEA()
+        self.calc_DTEA_GR()
+        self.calc_DTEC_GR()
+        self.calc_DTEM_GR()
+        self.calc_DTEM_max_gr()
+        self.calc_DTEEC()
+        self.calc_DTEEC_GR()
         
     @staticmethod
     def _calc_dteec_1d(dtec_cell):

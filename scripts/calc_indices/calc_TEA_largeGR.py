@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from scripts.general_stuff.general_functions import create_history
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
-from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
+from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, save_event_count
 from scripts.calc_indices.calc_TEA import (calc_event_frequency,
                                            calc_supplementary_event_vars,
                                            calc_event_duration, calc_exceedance_magnitude,
@@ -315,8 +315,11 @@ def calc_tea_lat(opts, data, static, masks, lat):
         for vvar in dbv.data_vars:
             if vvar == 'DTEEC_GR':
                 # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
-                dbv[vvar] = calculate_event_count(opts=opts, dtec=dbv['DTEC_GR'], da_out=True,
-                                                  cstr=f'_lat{lat}_lon{lon}')
+                tea_object = TEAIndicators(min_area=dtea_min)
+                tea_object.results['DTEC_GR'] = dbv['DTEC_GR']
+                tea_object.calc_DTEEC_GR()
+                dteec_gr = tea_object.results.DTEEC_GR
+                dbv[vvar] = dteec_gr
             elif 'GR' in vvar:
                 dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 

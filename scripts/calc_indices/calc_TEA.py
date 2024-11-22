@@ -29,6 +29,7 @@ from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_freque
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators
 from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords, validate_period
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
+from scripts.calc_indices.TEA import TEAIndicators
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -346,7 +347,11 @@ def calc_indicators(opts):
     for vvar in dbv.data_vars:
         if vvar == 'DTEEC_GR':
             # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
-            dbv[vvar] = calculate_event_count(opts=opts, dtec=dbv['DTEC_GR'], da_out=True, cstr='')
+            tea_object = TEAIndicators(min_area=dtea_min)
+            tea_object.results['DTEC_GR'] = dbv['DTEC_GR']
+            tea_object.calc_DTEEC_GR()
+            dteec_gr = tea_object.results.DTEEC_GR
+            dbv[vvar] = dteec_gr
         elif 'GR' in vvar:
             dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
