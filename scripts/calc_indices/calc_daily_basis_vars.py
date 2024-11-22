@@ -169,3 +169,5 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     for file in bv_files:
         os.system(f'rm {file}')
+    
+    return TEA

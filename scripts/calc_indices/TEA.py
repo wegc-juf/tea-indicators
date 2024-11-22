@@ -208,6 +208,17 @@ class TEAIndicators:
         load all variables from filepath
         """
         self.daily_results = xr.open_dataset(filepath)
+    
+    def update_min_area(self, min_area):
+        """
+        update the minimum area for a timestep to be considered as exceedance
+        """
+        self.min_area = min_area
+        self.calc_DTEC_GR()
+        self.calc_DTEM_GR()
+        self.calc_DTEM_max_gr()
+        self.calc_DTEEC_GR()
+
         
     @staticmethod
     def _calc_dteec_1d(dtec_cell):

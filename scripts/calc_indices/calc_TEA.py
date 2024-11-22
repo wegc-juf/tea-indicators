@@ -342,7 +342,9 @@ def calc_indicators(opts):
     data = data * (masks['lt1500_mask'] * masks['mask'])
 
     # computation of daily basis variables (Methods chapter 3)
-    calc_daily_basis_vars(opts=opts, static=static, data=data)
+    tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
+    
+    # TODO remove old dbv stuff
     dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_{opts.period}'
                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
     dbv_filename_new = dbv_filename.replace('.nc', '_new.nc')
@@ -352,16 +354,7 @@ def calc_indicators(opts):
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
-    tea_object = TEAIndicators(min_area=dtea_min)
-    tea_object.load_daily_results(dbv_filename_new)
-    for vvar in dbv.data_vars:
-        if vvar == 'DTEEC_GR':
-            # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
-            tea_object.calc_DTEEC_GR()
-            dteec_gr = tea_object.daily_results.DTEEC_GR
-            dbv[vvar] = dteec_gr
-        elif 'GR' in vvar:
-            dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
+    tea.update_min_area(dtea_min)
 
     # get dates for climatic time periods (CTP) and assign coords to dbv
     dbv, dbv_per = assign_ctp_coords(opts, data=dbv)
