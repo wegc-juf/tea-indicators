@@ -316,9 +316,9 @@ def calc_tea_lat(opts, data, static, masks, lat):
             if vvar == 'DTEEC_GR':
                 # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
                 tea_object = TEAIndicators(min_area=dtea_min)
-                tea_object.results['DTEC_GR'] = dbv['DTEC_GR']
+                tea_object.daily_results['DTEC_GR'] = dbv['DTEC_GR']
                 tea_object.calc_DTEEC_GR()
-                dteec_gr = tea_object.results.DTEEC_GR
+                dteec_gr = tea_object.daily_results.DTEEC_GR
                 dbv[vvar] = dteec_gr
             elif 'GR' in vvar:
                 dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)

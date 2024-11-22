@@ -20,11 +20,11 @@ def save_dtec_dtea(opts, tea, static, cstr):
         static: static files
         cstr: cell string to add to filename (only if called from calc_TEA_largeGR)
     """
-    dtem = tea.results.DTEM
-    dtec = tea.results.DTEC
-    dtea = tea.results.DTEA
-    dtea_gr = tea.results.DTEA_GR
-    dtec_gr = tea.results.DTEC_GR
+    dtem = tea.daily_results.DTEM
+    dtec = tea.daily_results.DTEC
+    dtea = tea.daily_results.DTEA
+    dtea_gr = tea.daily_results.DTEA_GR
+    dtec_gr = tea.daily_results.DTEC_GR
     
     outpath = f'{opts.outpath}/daily_basis_variables/tmp/'
     
@@ -55,9 +55,9 @@ def save_event_count(opts, tea, cstr):
     vars = ['DTEEC', 'DTEEC_GR']
     for var in vars:
         if 'GR' in var:
-            dteec = tea.results.DTEEC_GR
+            dteec = tea.daily_results.DTEEC_GR
         else:
-            dteec = tea.results.DTEEC
+            dteec = tea.daily_results.DTEEC
 
         outname = (f'{opts.outpath}daily_basis_variables/tmp/'
                    f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
@@ -120,20 +120,20 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
                         # set min area to < 1 grid cell area so that all exceedance days are considered
-                        min_area=0.0001, low_extreme=opts.low_extreme, testing=True)
+                        min_area=0.0001, low_extreme=opts.low_extreme, testing=False)
     logger.info('Calculating daily basis variables')
     TEA.calc_daily_basis_vars()
     
     # get custom attributes
-    TEA.results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
-    TEA.results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
+    TEA.daily_results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
+    TEA.daily_results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
     logger.info('Saving DTEC and DTEA')
     save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
-    dtem_gr = TEA.results.DTEM_GR
-    dtem = TEA.results.DTEM
-    dtem_max = TEA.results.DTEM_max_gr
+    dtem_gr = TEA.daily_results.DTEM_GR
+    dtem = TEA.daily_results.DTEM
+    dtem_max = TEA.daily_results.DTEM_max_gr
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
     outname = (f'{opts.outpath}/daily_basis_variables/tmp/'
@@ -165,7 +165,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     bv_ds.to_netcdf(bv_outpath)
     bv_outpath_new = bv_outpath.replace('.nc', '_new.nc')
     logger.info(f'Saving daily basis variables to {bv_outpath_new}')
-    TEA.save_results(bv_outpath_new)
+    TEA.save_daily_results(bv_outpath_new)
 
     for file in bv_files:
         os.system(f'rm {file}')

@@ -31,7 +31,7 @@ class TEAIndicators:
             area_grid = xr.ones_like(threshold_grid)
         self.area_grid = area_grid
         self.input_data_grid = input_data_grid
-        self.results = xr.Dataset()
+        self.daily_results = xr.Dataset()
         self.min_area = min_area
         self.gr_vars = None
         self.low_extreme = low_extreme
@@ -48,12 +48,12 @@ class TEAIndicators:
         calculate Daily Threshold Exceedance Count (equation 01)
         note that 0 values are stored as NaN for optimization
         """
-        if self.results['DTEM'] is None:
+        if self.daily_results['DTEM'] is None:
             self.calc_DTEM()
-        dtem = self.results.DTEM
+        dtem = self.daily_results.DTEM
         dtec = dtem.where(dtem.isnull(), 1)
         dtec.attrs = get_attrs(vname='DTEC')
-        self.results['DTEC'] = dtec
+        self.daily_results['DTEC'] = dtec
     
     def calc_DTEC_GR(self, min_area=None):
         """
@@ -64,20 +64,20 @@ class TEAIndicators:
         """
         if min_area is None:
             min_area = self.min_area
-        if self.results['DTEA_GR'] is None:
+        if self.daily_results['DTEA_GR'] is None:
             self.calc_DTEA_GR()
-        dtea_gr = self.results.DTEA_GR
+        dtea_gr = self.daily_results.DTEA_GR
         dtec_gr = xr.where(dtea_gr >= min_area, 1, np.nan)
         dtec_gr.attrs = get_attrs(vname='DTEC_GR')
-        self.results['DTEC_GR'] = dtec_gr
+        self.daily_results['DTEC_GR'] = dtec_gr
     
     def calc_DTEEC(self):
         """
         calculate Daily Threshold Exceedance Event Count (equation 04)
         """
-        if self.results['DTEC'] is None:
+        if self.daily_results['DTEC'] is None:
             self.calc_DTEC()
-        dtec = self.results.DTEC
+        dtec = self.daily_results.DTEC
         
         dteec = xr.full_like(dtec, np.nan)
         
@@ -93,47 +93,47 @@ class TEAIndicators:
                 dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
                 dteec[:, iy, :] = dteec_row
         dteec.attrs = get_attrs(vname='DTEEC')
-        self.results['DTEEC'] = dteec
+        self.daily_results['DTEEC'] = dteec
     
     def calc_DTEEC_GR(self):
         """
         calculate Daily Threshold Exceedance Event Count (GR) (equation 05)
         """
-        if self.results['DTEC_GR'] is None:
+        if self.daily_results['DTEC_GR'] is None:
             self.calc_DTEC_GR()
             
-        dtec_gr = self.results.DTEC_GR
+        dtec_gr = self.daily_results.DTEC_GR
         dteec_np = self._calc_dteec_1d(dtec_cell=dtec_gr.values)
         dteec_gr = xr.DataArray(dteec_np, coords=dtec_gr.coords, dims=dtec_gr.dims)
 
         dteec_gr.attrs = get_attrs(vname='DTEEC_GR')
-        self.results['DTEEC_GR'] = dteec_gr
+        self.daily_results['DTEEC_GR'] = dteec_gr
 
     def calc_DTEA(self):
         """
         calculate Daily Threshold Exceedance Area (equation 02)
         note that 0 values are stored as NaN for optimization
         """
-        if self.results['DTEC'] is None:
+        if self.daily_results['DTEC'] is None:
             self.calc_DTEC()
-        dtec = self.results.DTEC
+        dtec = self.daily_results.DTEC
         # equation 02_1 not needed (cells with TEC == 0 are already nan)
         # equation 02_2
         dtea = dtec * self.area_grid
         dtea.attrs = get_attrs(vname='DTEA')
-        self.results['DTEA'] = dtea
+        self.daily_results['DTEA'] = dtea
         
     def calc_DTEA_GR(self):
         """
         calculate Daily Threshold Exceedance Area (GR) (equation 06)
         """
-        if self.results['DTEA'] is None:
+        if self.daily_results['DTEA'] is None:
             self.calc_DTEA()
-        dtea = self.results.DTEA
+        dtea = self.daily_results.DTEA
         dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
         dtea_gr = dtea_gr.rename('DTEA_GR')
         dtea_gr.attrs = get_attrs(vname='DTEA_GR')
-        self.results['DTEA_GR'] = dtea_gr
+        self.daily_results['DTEA_GR'] = dtea_gr
     
     def calc_DTEM(self):
         """
@@ -146,42 +146,42 @@ class TEAIndicators:
             dtem = self.input_data_grid - self.threshold_grid
         dtem = dtem.where(dtem > 0).astype('float32')
         dtem.attrs = get_attrs(vname='DTEM')
-        self.results['DTEM'] = dtem
+        self.daily_results['DTEM'] = dtem
         
     def calc_DTEM_max_gr(self):
         """
         calculate maximum DTEM for GR (equation 09)
         """
-        if self.results['DTEM'] is None:
+        if self.daily_results['DTEM'] is None:
             self.calc_DTEM()
-        if self.results['DTEC_GR'] is None:
+        if self.daily_results['DTEC_GR'] is None:
             self.calc_DTEC_GR()
-        dtem = self.results.DTEM
+        dtem = self.daily_results.DTEM
         dtem_max = dtem.max(dim=self.threshold_grid.dims)
-        dtem_max = dtem_max.where(self.results.DTEC_GR == 1)
+        dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1)
         dtem_max = dtem_max.rename('DTEM_max_gr')
         dtem_max.attrs = get_attrs(vname='DTEM_Max')
-        self.results['DTEM_max_gr'] = dtem_max
+        self.daily_results['DTEM_max_gr'] = dtem_max
 
     def calc_DTEM_GR(self):
         """
         calculate Daily Threshold Exceedance Magnitude (GR) (equation 08)
         """
-        if self.results['DTEA_GR'] is None:
+        if self.daily_results['DTEA_GR'] is None:
             self.calc_DTEA_GR()
-        if self.results['DTEM'] is None:
+        if self.daily_results['DTEM'] is None:
             self.calc_DTEM()
-        if self.results['DTEC_GR'] is None:
+        if self.daily_results['DTEC_GR'] is None:
             self.calc_DTEC_GR()
-        dtea_gr = self.results.DTEA_GR
-        dtem = self.results.DTEM
-        dtec_gr = self.results.DTEC_GR
+        dtea_gr = self.daily_results.DTEA_GR
+        dtem = self.daily_results.DTEM
+        dtec_gr = self.daily_results.DTEC_GR
         area_fac = self.area_grid / dtea_gr
         dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
         dtem_gr = dtem_gr.where(dtec_gr == 1)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR')
-        self.results['DTEM_GR'] = dtem_gr
+        self.daily_results['DTEM_GR'] = dtem_gr
     
     def calc_daily_basis_vars(self):
         """
@@ -197,17 +197,17 @@ class TEAIndicators:
         self.calc_DTEEC()
         self.calc_DTEEC_GR()
     
-    def save_results(self, filepath):
+    def save_daily_results(self, filepath):
         """
         save all variables to filepath
         """
-        self.results.to_netcdf(filepath)
+        self.daily_results.to_netcdf(filepath)
     
-    def load_results(self, filepath):
+    def load_daily_results(self, filepath):
         """
         load all variables from filepath
         """
-        self.results = xr.open_dataset(filepath)
+        self.daily_results = xr.open_dataset(filepath)
         
     @staticmethod
     def _calc_dteec_1d(dtec_cell):

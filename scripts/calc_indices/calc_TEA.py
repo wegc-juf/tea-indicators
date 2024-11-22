@@ -353,12 +353,12 @@ def calc_indicators(opts):
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
     tea_object = TEAIndicators(min_area=dtea_min)
-    tea_object.load_results(dbv_filename_new)
+    tea_object.load_daily_results(dbv_filename_new)
     for vvar in dbv.data_vars:
         if vvar == 'DTEEC_GR':
             # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
             tea_object.calc_DTEEC_GR()
-            dteec_gr = tea_object.results.DTEEC_GR
+            dteec_gr = tea_object.daily_results.DTEEC_GR
             dbv[vvar] = dteec_gr
         elif 'GR' in vvar:
             dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
