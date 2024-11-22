@@ -15,7 +15,8 @@ class TEAIndicators:
     Class to calculate TEA indicators
     """
     
-    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=None, area_grid=None, low_extreme=False):
+    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=None, area_grid=None, low_extreme=False,
+                 testing=False):
         """
         Initialize TEAIndicators object
         Args:
@@ -34,6 +35,7 @@ class TEAIndicators:
         self.min_area = min_area
         self.gr_vars = None
         self.low_extreme = low_extreme
+        self.testing = testing
         
         if input_data_grid is not None:
             if input_data_grid.shape[-2:] != threshold_grid.shape:
@@ -78,15 +80,18 @@ class TEAIndicators:
         dtec = self.results.DTEC
         
         dteec = xr.full_like(dtec, np.nan)
-        dtec_3d = dtec.values
-        # loop through all rows and calculate DTEEC
-        for iy in range(len(dtec_3d[0, :, 0])):
-            dtec_row = dtec_3d[:, iy, :]
-            # skip all nan rows
-            if np.isnan(dtec_row).all():
-                continue
-            dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
-            dteec[:, iy, :] = dteec_row
+        
+        # do not calculate DTEEC in testing mode
+        if not self.testing:
+            dtec_3d = dtec.values
+            # loop through all rows and calculate DTEEC
+            for iy in range(len(dtec_3d[0, :, 0])):
+                dtec_row = dtec_3d[:, iy, :]
+                # skip all nan rows
+                if np.isnan(dtec_row).all():
+                    continue
+                dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
+                dteec[:, iy, :] = dteec_row
         dteec.attrs = get_attrs(vname='DTEEC')
         self.results['DTEEC'] = dteec
     
@@ -191,6 +196,18 @@ class TEAIndicators:
         self.calc_DTEM_max_gr()
         self.calc_DTEEC()
         self.calc_DTEEC_GR()
+    
+    def save_results(self, filepath):
+        """
+        save all variables to filepath
+        """
+        self.results.to_netcdf(filepath)
+    
+    def load_results(self, filepath):
+        """
+        load all variables from filepath
+        """
+        self.results = xr.open_dataset(filepath)
         
     @staticmethod
     def _calc_dteec_1d(dtec_cell):
@@ -218,5 +235,4 @@ class TEAIndicators:
         events_np[middle_indices] = 1
         
         return events_np
-
-
+    

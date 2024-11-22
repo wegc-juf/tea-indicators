@@ -343,19 +343,20 @@ def calc_indicators(opts):
 
     # computation of daily basis variables (Methods chapter 3)
     calc_daily_basis_vars(opts=opts, static=static, data=data)
-    dbv = xr.open_dataset(
-        f'{opts.outpath}daily_basis_variables/'
-        f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-        f'_{opts.start}to{opts.end}.nc')
+    dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_{opts.period}'
+                    f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+    dbv_filename_new = dbv_filename.replace('.nc', '_new.nc')
+
+    dbv = xr.open_dataset(dbv_filename)
 
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
+    tea_object = TEAIndicators(min_area=dtea_min)
+    tea_object.load_results(dbv_filename_new)
     for vvar in dbv.data_vars:
         if vvar == 'DTEEC_GR':
             # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
-            tea_object = TEAIndicators(min_area=dtea_min)
-            tea_object.results['DTEC_GR'] = dbv['DTEC_GR']
             tea_object.calc_DTEEC_GR()
             dteec_gr = tea_object.results.DTEEC_GR
             dbv[vvar] = dteec_gr

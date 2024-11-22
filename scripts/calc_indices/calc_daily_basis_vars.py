@@ -7,6 +7,7 @@ import xarray as xr
 import numpy as np
 
 from scripts.general_stuff.var_attrs import get_attrs
+from scripts.general_stuff.TEA_logger import logger
 from TEA import TEAIndicators
 
 
@@ -119,13 +120,15 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
                         # set min area to < 1 grid cell area so that all exceedance days are considered
-                        min_area=0.0001, low_extreme=opts.low_extreme)
+                        min_area=0.0001, low_extreme=opts.low_extreme, testing=True)
+    logger.info('Calculating daily basis variables')
     TEA.calc_daily_basis_vars()
     
     # get custom attributes
     TEA.results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
     TEA.results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
+    logger.info('Saving DTEC and DTEA')
     save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
     dtem_gr = TEA.results.DTEM_GR
@@ -136,6 +139,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     outname = (f'{opts.outpath}/daily_basis_variables/tmp/'
                f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                f'_{opts.start}to{opts.end}.nc')
+    logger.info(f'Saving DTEMs to {outname}')
     dtems.to_netcdf(outname)
 
     save_event_count(opts=opts, tea=TEA, cstr=cell_str)
@@ -157,7 +161,11 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
                       f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                       f'_{opts.start}to{opts.end}.nc')
 
+    logger.info(f'Saving daily basis variables to {bv_outpath}')
     bv_ds.to_netcdf(bv_outpath)
+    bv_outpath_new = bv_outpath.replace('.nc', '_new.nc')
+    logger.info(f'Saving daily basis variables to {bv_outpath_new}')
+    TEA.save_results(bv_outpath_new)
 
     for file in bv_files:
         os.system(f'rm {file}')
