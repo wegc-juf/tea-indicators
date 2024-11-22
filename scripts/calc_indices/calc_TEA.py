@@ -107,6 +107,13 @@ def getopts():
                         help='Pass "perc" (default) if percentiles should be used as thresholds or '
                              '"abs" for absolute thresholds.')
 
+    parser.add_argument('--low_extreme',
+                        dest='low_extreme',
+                        default=False,
+                        action='store_true',
+                        help='Set if values should be lower than threshold to classify as extreme, '
+                             'e.g. for cold extremes.')
+
     parser.add_argument('--inpath',
                         default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
                         type=dir_path,

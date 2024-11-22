@@ -119,7 +119,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
                         # set min area to < 1 grid cell area so that all exceedance days are considered
-                        min_area=0.0001)
+                        min_area=0.0001, low_extreme=opts.low_extreme)
     TEA.calc_daily_basis_vars()
     
     # get custom attributes

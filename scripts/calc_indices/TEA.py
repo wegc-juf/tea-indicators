@@ -15,7 +15,7 @@ class TEAIndicators:
     Class to calculate TEA indicators
     """
     
-    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=None, area_grid=None):
+    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=None, area_grid=None, low_extreme=False):
         """
         Initialize TEAIndicators object
         Args:
@@ -33,6 +33,7 @@ class TEAIndicators:
         self.results = xr.Dataset()
         self.min_area = min_area
         self.gr_vars = None
+        self.low_extreme = low_extreme
         
         if input_data_grid is not None:
             if input_data_grid.shape[-2:] != threshold_grid.shape:
@@ -134,7 +135,10 @@ class TEAIndicators:
         calculate Daily Threshold Exceedance Magnitude (equation 07)
         note that 0 values are stored as NaN for optimization
         """
-        dtem = self.input_data_grid - self.threshold_grid
+        if self.low_extreme:
+            dtem = self.threshold_grid - self.input_data_grid
+        else:
+            dtem = self.input_data_grid - self.threshold_grid
         dtem = dtem.where(dtem > 0).astype('float32')
         dtem.attrs = get_attrs(vname='DTEM')
         self.results['DTEM'] = dtem
