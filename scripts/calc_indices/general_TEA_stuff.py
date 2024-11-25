@@ -28,21 +28,21 @@ def assign_ctp_coords(opts, data):
              'monthly': 'MS'}
     freq = freqs[opts.period]
 
-    pstarts = pd.date_range(data.days[0].values, data.days[-1].values,
+    pstarts = pd.date_range(data.time[0].values, data.time[-1].values,
                             freq=freq).to_series()
     if opts.period == 'WAS':
-        pends = pd.date_range(data.days[0].values, data.days[-1].values,
+        pends = pd.date_range(data.time[0].values, data.time[-1].values,
                               freq='A-OCT').to_series()
     elif opts.period == 'ESS':
-        pends = pd.date_range(data.days[0].values, data.days[-1].values,
+        pends = pd.date_range(data.time[0].values, data.time[-1].values,
                               freq='A-SEP').to_series()
     else:
         pends = pstarts - timedelta(days=1)
         pends[0:-1] = pends[1:]
-        pends.iloc[-1] = data.days[-1].values
+        pends.iloc[-1] = data.time[-1].values
 
     # add ctp as coordinates to enable using groupby later
-    # map the 'days' coordinate to 'ctp'
+    # map the 'time' coordinate to 'ctp'
     def map_to_ctp(dy, starts, ends):
         for start, end, ctp in zip(starts, ends, starts):
             if start <= dy <= end:
@@ -50,11 +50,11 @@ def assign_ctp_coords(opts, data):
         return np.nan
 
     days_to_ctp = []
-    for day in data.days.values:
+    for day in data.time.values:
         ctp_dy = map_to_ctp(dy=day, starts=pstarts, ends=pends)
         days_to_ctp.append(ctp_dy)
 
-    data.coords['ctp'] = ('days', days_to_ctp)
+    data.coords['ctp'] = ('time', days_to_ctp)
 
     # group into CTPs
     data_per = data.groupby('ctp')

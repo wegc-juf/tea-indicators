@@ -12,8 +12,8 @@ def calc_event_frequency(pdata):
         ef: event frequency
     """
 
-    ef = pdata.sum('days').DTEEC
-    ef_gr = pdata.sum('days').DTEEC_GR
+    ef = pdata.sum('time').DTEEC
+    ef_gr = pdata.sum('time').DTEEC_GR
 
     # combine to ds
     ef_ds = create_ef_ds(ef=ef, ef_gr=ef_gr)

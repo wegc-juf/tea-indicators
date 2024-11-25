@@ -37,7 +37,24 @@ class TEAIndicators:
         self.low_extreme = low_extreme
         self.testing = testing
         
+        # Climatic Time Period (CTP) variables
+        self.CTP = None
+        self.CTP_freqs = {'annual': 'AS', 'seasonal': 'QS-DEC', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
+                          'DJF': 'AS-DEC', 'EWS': 'AS-NOV', 'monthly': 'MS'}
+        self.CTP_months = {'WAS': [4, 5, 6, 7, 8, 9, 10], 'ESS': [5, 6, 7, 8, 9], 'EWS': [11, 12, 1, 2, 3],
+                           'JJA': [6, 7, 8]}
+        self._CTP_resampler = None
+        self._CTP_resample_sum = None
+        self.CTP_results = xr.Dataset()
+        
         if input_data_grid is not None:
+            # set time index
+            if 'days' in input_data_grid.dims:
+                self.input_data_grid = self.input_data_grid.rename({'days': 'time'})
+            elif 'time' in input_data_grid.dims:
+                pass
+            else:
+                raise ValueError("Input data must have a 'days' or 'time' dimension")
             if input_data_grid.shape[-2:] != threshold_grid.shape:
                 raise ValueError("Input data and threshold results must have the same area")
             if input_data_grid.shape[-2:] != area_grid.shape:
@@ -218,6 +235,42 @@ class TEAIndicators:
         self.calc_DTEM_GR()
         self.calc_DTEM_max_gr()
         self.calc_DTEEC_GR()
+        
+    # ### Climatic Time Period (CTP) functions ###
+    def set_ctp(self, ctp):
+        """
+        set Climatic Time Period (CTP)
+
+        args:
+            ctp: Climatic Time Period (CTP) to resample to
+                allowed values: 'annual', 'seasonal', 'WAS', 'ESS', 'JJA', 'DJF', 'EWS', 'monthly'
+                'WAS': warm season (April to October)
+                'ESS': extended summer season (May to September)
+                'JJA': summer season (June to August)
+                'DJF': winter season (December to February)
+                'EWS': extended winter season (November to March)
+        """
+        self.CTP = ctp
+    
+    def calc_event_frequency(self):
+        """
+        calculate event frequency (equation 11 and equation 12)
+        """
+        if self.CTP is None:
+            raise ValueError("CTP must be set before calculating event frequency")
+        if self.daily_results['DTEEC'] is None:
+            self.calc_DTEEC()
+        if self.daily_results['DTEEC_GR'] is None:
+            self.calc_DTEEC_GR()
+        if self._CTP_resample_sum is None:
+            self._resample_to_CTP()
+        ef = self._CTP_resample_sum.DTEEC
+        ef_gr = self._CTP_resample_sum.DTEEC_GR
+        
+        ef.attrs = get_attrs(vname='EF')
+        self.CTP_results['EF'] = ef
+        ef_gr.attrs = get_attrs(vname='EF_GR')
+        self.CTP_results['EF_GR'] = ef_gr
 
         
     @staticmethod
@@ -246,4 +299,40 @@ class TEAIndicators:
         events_np[middle_indices] = 1
         
         return events_np
+
+    def _filter_and_shift_CTP(self, ctp=None):
+        """
+        keep only values according to Climatic Time Period (CTP) definition
+        """
+        if ctp is not None:
+            self.CTP = ctp
+            
+        if self.CTP not in self.CTP_months:
+            # no filtering necessary
+            self._daily_results_filtered = self.daily_results.copy()
+            return
+        
+        months = self.CTP_months[self.CTP]
+        self._daily_results_filtered = self.daily_results.sel(time=self.daily_results.time.dt.month.isin(months))
+        
+        # shift for data overlapping a year
+        if self.CTP in ['EWS', 'DJF']:
+            self._daily_results_filtered['time'] = self._daily_results_filtered.time.where(
+                ds_filtered.time.dt.month < 10, ds_filtered.time - xr.Timedelta(days=365))
+
+    def _resample_to_CTP(self, ctp=None):
+        """
+        resample daily results to Climatic Time Period (CTP)
+        
+        """
+        if ctp is not None:
+            self.set_ctp(ctp)
+        elif self.CTP is None:
+            raise ValueError("CTP must be set before resampling")
+        
+        self._filter_and_shift_CTP()
+        self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
+        self._CTP_resample_sum = self._CTP_resampler.sum('time')
+        del self._daily_results_filtered
+        
     

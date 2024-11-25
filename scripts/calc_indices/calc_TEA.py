@@ -167,6 +167,12 @@ def getopts():
                         action='store_true',
                         help='Set if ONLY decadal TEA indicators should be calculated. '
                              'Only possible if CTP vars already calculated.')
+    
+    parser.add_argument('--recalc-daily',
+                        dest='recalc_daily',
+                        default=False,
+                        action='store_true',
+                        help='Set if daily basis variables should be recalculated. Default: False - read from file.')
 
     myopts = parser.parse_args()
 
@@ -342,14 +348,21 @@ def calc_indicators(opts):
     data = data * (masks['lt1500_mask'] * masks['mask'])
 
     # computation of daily basis variables (Methods chapter 3)
-    tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
-    
+    if opts.recalc_daily:
+        tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
+    else:
+        tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
+        
     # TODO remove old dbv stuff
     dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_{opts.period}'
                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
     dbv_filename_new = dbv_filename.replace('.nc', '_new.nc')
 
     dbv = xr.open_dataset(dbv_filename)
+    if not opts.recalc_daily:
+        logger.info(f'Loading daily basis variables from {dbv_filename_new}; if you want to recalculate them, '
+                    'set --recalc-daily.')
+        tea.load_daily_results(dbv_filename_new)
 
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)
@@ -361,6 +374,9 @@ def calc_indicators(opts):
 
     # calculate EF and corresponding supplementary variables
     ef = calc_event_frequency(pdata=dbv_per)
+    tea.set_ctp(opts.period)
+    tea.calc_event_frequency()
+    
     svars = calc_supplementary_event_vars(data=dbv)
 
     # calculate ED
