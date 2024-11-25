@@ -226,7 +226,6 @@ def get_data(opts):
 
     # select variable
     data = ds[opts.parameter]
-    data = data.rename(time='days')
 
     if opts.dataset == 'SPARTACUS':
         data = data.drop('lambert_conformal_conic')

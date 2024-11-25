@@ -32,8 +32,8 @@ def calc_supplementary_event_vars(data):
 
     """
 
-    doy = [pd.Timestamp(dy.values).day_of_year for dy in data.days]
-    data.coords['doy'] = ('days', doy)
+    doy = [pd.Timestamp(dy.values).day_of_year for dy in data.time]
+    data.coords['doy'] = ('time', doy)
 
     # calculate dEfirst(_GR), dElast(_GR)
     doy_events_gr = data['doy'].where(data['DTEEC_GR'].notnull())
@@ -64,7 +64,7 @@ def calc_event_duration(pdata, ef):
     """
 
     # calc cumulative events duration (Eq. 14_2 and 15_2)
-    pdata_sum = pdata.sum('days')
+    pdata_sum = pdata.sum('time')
     ed, ed_gr = pdata_sum['DTEC'], pdata_sum['DTEC_GR']
 
     # set EF = 0 to nan
@@ -94,7 +94,7 @@ def calc_exceedance_magnitude(opts, pdata, ed):
     """
 
     # calc cumulative events magnitude (Eq. 17_2 and 18_2)
-    pdata_sum = pdata.sum('days')
+    pdata_sum = pdata.sum('time')
     em, em_gr = pdata_sum['DTEM'], pdata_sum['DTEM_GR']
 
     # calc average exceedance magnitude (Eq. 17_1 and 18_1)
@@ -102,13 +102,13 @@ def calc_exceedance_magnitude(opts, pdata, ed):
     em_avg_gr = em_gr / ed['ED_GR']
 
     # calc median exceedance magnitude (Eq. 19)
-    pdata_med = pdata.median('days')
+    pdata_med = pdata.median('time')
     em_avg_med, em_avg_gr_med = pdata_med['DTEM'], pdata_med['DTEM_GR']
     em_med = ed['ED'] * em_avg_med
     em_gr_med = ed['ED_GR'] * em_avg_gr_med
 
     # calc maximum exceedance magnitude (Eq. 20)
-    pdata_max = pdata.max('days')
+    pdata_max = pdata.max('time')
     em_gr_max = pdata_max['DTEM_Max']
     em_gr_avg_max = em_gr_max / ed['ED_GR']
 
@@ -138,7 +138,7 @@ def calc_exceedance_area_tex_sev(opts, data, ed, em):
     else:
         em_var, em_avg_var = 'EM_Md_GR', 'EMavg_Md_GR'
 
-    tex = (data['DTEM_GR'] * data['DTEA_GR']).groupby('ctp').sum('days')
+    tex = (data['DTEM_GR'] * data['DTEA_GR']).groupby('ctp').sum('time')
     ea_gr = tex / em[em_var]
 
     es_gr = ed['EDavg_GR'] * em[em_avg_var] * ea_gr
