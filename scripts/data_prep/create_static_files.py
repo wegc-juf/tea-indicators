@@ -161,13 +161,14 @@ def area_grid(opts, masks):
     return agrid, gr_size
 
 
-def load_ref_data(opts, masks, ds_params):
+def load_ref_data(opts, masks, ds_params, gr_size):
     """
     load and prepare data for percentile calculation
     Args:
         opts: CLI parameter
         masks: GR masks
         ds_params: dict woth dataset dependent dimension names
+        gr_size: size of GR in areals
 
     Returns:
         data: data of reference period
@@ -186,9 +187,11 @@ def load_ref_data(opts, masks, ds_params):
                                     yn: ([yn], masks[yn].values),
                                     xn: ([xn], masks[xn].values)})
 
-    param_str = opts.parameter
+    param_str = ''
     if opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
+    elif opts.dataset == 'SPARTACUS' and not opts.precip:
+        param_str = opts.parameter
 
     idx = 0
     for yr in ref_period:
@@ -205,10 +208,23 @@ def load_ref_data(opts, masks, ds_params):
         # in case of European wide data, set all cells outside of region to nan (ERA5 data are not
         # smoothed --> we don't need data outside the GR and can apply mask here to reduce
         # memory usage)
-        # TODO: check if this doesn't clash with the special case treatment of large GRs where also
-        #  data outside of GR are used for TEA calculation!
-        if opts.dataset == 'ERA5':
+        # For larger GRs, also store some margins because of special treatment of GRs > 100 areals.
+        if opts.dataset == 'ERA5' and gr_size <= 100:
             data_param = data_param.where(masks['lt1500_mask'] == 1)
+        elif opts.dataset == 'ERA5' and gr_size > 100:
+            valid_cells = masks['lt1500_mask'].where(masks['lt1500_mask'] > 0, drop=True)
+            min_lat, max_lat = valid_cells.lat.min().values - 2, valid_cells.lat.max().values + 2
+            min_lon, max_lon = valid_cells.lon.min().values - 2, valid_cells.lon.max().values + 2
+            data_param = data_param.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+            # adjust size of DataArray accordingly
+            if len(data_param.lon) != len(data_ref.lon) or len(data_param.lat) != len(data_ref.lon):
+                data_ref = xr.DataArray(data=np.zeros((len(ref_period), len(dys),
+                                                       len(data_param[yn]), len(data_param[xn])),
+                                                      dtype='float32') * np.nan,
+                                        coords={'year': (['year'], ref_period),
+                                                'dys': (['dys'], dys),
+                                                yn: ([yn], data_param[yn].values),
+                                                xn: ([xn], data_param[xn].values)})
 
         # only select WAS and wet days for precip
         if opts.precip:
@@ -251,7 +267,7 @@ def calc_percentiles(opts, masks, gr_size):
               'ERA5': {'xname': 'lon', 'yname': 'lat'},
               'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
 
-    data = load_ref_data(opts=opts, masks=masks, ds_params=params)
+    data = load_ref_data(opts=opts, masks=masks, ds_params=params, gr_size=gr_size)
 
     # calc the chosen percentile for each grid point as threshold
     # (TMax-p99ANN AllDOYs Ref1961-1990 & P24H-p95WAS WetDOYs > 1 mm Ref1961-1990).
@@ -294,10 +310,10 @@ def calc_percentiles(opts, masks, gr_size):
     percent_smooth = percent_smooth.drop('quantile')
 
     # apply GR mask
-    percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
     if 'ERA' in opts.dataset and gr_size > 100:
-        percent_smooth = percent_smooth
+        percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
     else:
+        percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
         percent_smooth = percent_smooth * masks['mask']
     percent_smooth = percent_smooth.rename('threshold')
     percent_smooth.attrs = {'units': opts.unit, 'methods_variable_name': vname,
