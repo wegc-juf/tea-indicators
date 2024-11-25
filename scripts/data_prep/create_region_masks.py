@@ -198,6 +198,7 @@ def create_lt1500m_mask(opts, da_nwmask):
     lt1500_mask.attrs = {'long_name': 'below 1500m mask',
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
+    # TODO: needs adjusting if worldwide applicable
     lt1500_eur = None
     if 'ERA5' in opts.target_ds:
         lt1500_eur = orog.where(orog < 1500)
@@ -287,7 +288,7 @@ def run_eur(opts):
     Returns:
 
     """
-
+    # TODO: needs adjusting if worldwide applicable
     if opts.target_ds != 'ERA5':
         raise AttributeError('EUR mask can only be created for ERA5 data.')
 

@@ -45,7 +45,7 @@ def get_opts():
                         default=366,
                         type=int,
                         help='Number of days in season for threshold calculation. For whole year, '
-                             'use 366 [default], for WAS (Apr-Oct) 215.')
+                             'use 366 [default], for WAS (Apr-Oct) 214.')
 
     parser.add_argument('--threshold',
                         default=99,
@@ -186,10 +186,9 @@ def load_ref_data(opts, masks, ds_params):
                                     yn: ([yn], masks[yn].values),
                                     xn: ([xn], masks[xn].values)})
 
-    param_str = ''
-    if opts.dataset == 'SPARTACUS':
-        param_names = {'T': 'Tx', 'P': 'RR'}
-        param_str = param_names[opts.parameter]
+    param_str = opts.parameter
+    if opts.dataset == 'SPARTACUS' and opts.precip:
+        param_str = 'RR'
 
     idx = 0
     for yr in ref_period:
@@ -199,11 +198,15 @@ def load_ref_data(opts, masks, ds_params):
                                     f'directory. Please check and rerun.')
         file = files[0]
         data_yr = xr.open_dataset(file)
+        if opts.dataset == 'SPARTACUS' and opts.parameter == 'P24h_7to7':
+            data_yr = data_yr.rename({'RR': opts.parameter})
         data_param = data_yr[opts.parameter]
 
         # in case of European wide data, set all cells outside of region to nan (ERA5 data are not
         # smoothed --> we don't need data outside the GR and can apply mask here to reduce
         # memory usage)
+        # TODO: check if this doesn't clash with the special case treatment of large GRs where also
+        #  data outside of GR are used for TEA calculation!
         if opts.dataset == 'ERA5':
             data_param = data_param.where(masks['lt1500_mask'] == 1)
 
