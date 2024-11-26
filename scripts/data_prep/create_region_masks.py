@@ -264,12 +264,16 @@ def prep_lsm(opts):
     data = xr.open_dataset(opts.orofile)
     data = data.altitude
 
-    lsm_e = lsm_raw.sel(longitude=slice(180.25, 360))
+    step = 0.25
+    if opts.target_ds == 'ERA5Land':
+        step = 0.1
+
+    lsm_e = lsm_raw.sel(longitude=slice(180 + step, 360))
     lsm_w = lsm_raw.sel(longitude=slice(0, 180))
     lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]),
                                 axis=1)
 
-    lsm_lon = np.arange(-180, 180, 0.25)
+    lsm_lon = np.arange(-180, 180, step).astype('float32')
 
     lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
             'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})

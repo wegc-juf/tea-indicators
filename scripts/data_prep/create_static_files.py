@@ -54,7 +54,7 @@ def get_opts():
 
     parser.add_argument('--smoothing',
                         default=0,
-                        type=float,
+                        type=int,
                         help='Radius for spatial smoothing of threshold grid in km [default: 0].'
                              'Used for precipitation parameter from SPARTACUS data.')
 
@@ -209,9 +209,9 @@ def load_ref_data(opts, masks, ds_params, gr_size):
         # smoothed --> we don't need data outside the GR and can apply mask here to reduce
         # memory usage)
         # For larger GRs, also store some margins because of special treatment of GRs > 100 areals.
-        if opts.dataset == 'ERA5' and gr_size <= 100:
+        if 'ERA5' in opts.dataset and gr_size <= 100:
             data_param = data_param.where(masks['lt1500_mask'] == 1)
-        elif opts.dataset == 'ERA5' and gr_size > 100:
+        elif 'ERA5' in opts.dataset and gr_size > 100:
             valid_cells = masks['lt1500_mask'].where(masks['lt1500_mask'] > 0, drop=True)
             min_lat, max_lat = valid_cells.lat.min().values - 2, valid_cells.lat.max().values + 2
             min_lon, max_lon = valid_cells.lon.min().values - 2, valid_cells.lon.max().values + 2
@@ -234,7 +234,7 @@ def load_ref_data(opts, masks, ds_params, gr_size):
         else:
             # check length of year and add 29th of February if necessary
             if len(data_param.time) != 366:
-                t29th = np.zeros((1, len(masks[yn]), len(masks[xn]))) * np.nan
+                t29th = np.zeros((1, len(data_param[yn]), len(data_param[xn]))) * np.nan
                 data = np.append(data_param.sel(
                     time=slice(f'{yr}-01-01', f'{yr}-02-28')).values, t29th, axis=0)
                 data = np.append(data, data_param.sel(
@@ -273,8 +273,8 @@ def calc_percentiles(opts, masks, gr_size):
     # (TMax-p99ANN AllDOYs Ref1961-1990 & P24H-p95WAS WetDOYs > 1 mm Ref1961-1990).
     percent = data.quantile(q=opts.threshold / 100, dim=('year', 'dys'))
 
-    # smooth SPARTACUS percentiles (for each grid point calculate the average of all grid points
-    # within the given radius
+    # smooth SPARTACUS precip percentiles (for each grid point calculate the average of all grid
+    # points within the given radius)
     radius = opts.smoothing
 
     if radius == 0:
@@ -359,6 +359,8 @@ def run():
 
     # save output
     param_str = f'{opts.parameter}{opts.threshold}p'
+    if opts.precip:
+        param_str = f'{opts.parameter}_{opts.threshold}p'
     if opts.threshold_type == 'abs':
         param_str = f'{opts.parameter}{opts.threshold}{opts.unit}'
 
