@@ -45,7 +45,7 @@ def get_opts():
                         default=366,
                         type=int,
                         help='Number of days in season for threshold calculation. For whole year, '
-                             'use 366 [default], for WAS (Apr-Oct) 215.')
+                             'use 366 [default], for WAS (Apr-Oct) 214.')
 
     parser.add_argument('--threshold',
                         default=99,
@@ -54,7 +54,7 @@ def get_opts():
 
     parser.add_argument('--smoothing',
                         default=0,
-                        type=float,
+                        type=int,
                         help='Radius for spatial smoothing of threshold grid in km [default: 0].'
                              'Used for precipitation parameter from SPARTACUS data.')
 
@@ -161,13 +161,14 @@ def area_grid(opts, masks):
     return agrid, gr_size
 
 
-def load_ref_data(opts, masks, ds_params):
+def load_ref_data(opts, masks, ds_params, gr_size):
     """
     load and prepare data for percentile calculation
     Args:
         opts: CLI parameter
         masks: GR masks
         ds_params: dict woth dataset dependent dimension names
+        gr_size: size of GR in areals
 
     Returns:
         data: data of reference period
@@ -187,9 +188,10 @@ def load_ref_data(opts, masks, ds_params):
                                     xn: ([xn], masks[xn].values)})
 
     param_str = ''
-    if opts.dataset == 'SPARTACUS':
-        param_names = {'T': 'Tx', 'P': 'RR'}
-        param_str = param_names[opts.parameter]
+    if opts.dataset == 'SPARTACUS' and opts.precip:
+        param_str = 'RR'
+    elif opts.dataset == 'SPARTACUS' and not opts.precip:
+        param_str = opts.parameter
 
     idx = 0
     for yr in ref_period:
@@ -199,13 +201,30 @@ def load_ref_data(opts, masks, ds_params):
                                     f'directory. Please check and rerun.')
         file = files[0]
         data_yr = xr.open_dataset(file)
+        if opts.dataset == 'SPARTACUS' and opts.parameter == 'P24h_7to7':
+            data_yr = data_yr.rename({'RR': opts.parameter})
         data_param = data_yr[opts.parameter]
 
         # in case of European wide data, set all cells outside of region to nan (ERA5 data are not
         # smoothed --> we don't need data outside the GR and can apply mask here to reduce
         # memory usage)
-        if opts.dataset == 'ERA5':
+        # For larger GRs, also store some margins because of special treatment of GRs > 100 areals.
+        if 'ERA5' in opts.dataset and gr_size <= 100:
             data_param = data_param.where(masks['lt1500_mask'] == 1)
+        elif 'ERA5' in opts.dataset and gr_size > 100:
+            valid_cells = masks['lt1500_mask'].where(masks['lt1500_mask'] > 0, drop=True)
+            min_lat, max_lat = valid_cells.lat.min().values - 2, valid_cells.lat.max().values + 2
+            min_lon, max_lon = valid_cells.lon.min().values - 2, valid_cells.lon.max().values + 2
+            data_param = data_param.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+            # adjust size of DataArray accordingly
+            if len(data_param.lon) != len(data_ref.lon) or len(data_param.lat) != len(data_ref.lon):
+                data_ref = xr.DataArray(data=np.zeros((len(ref_period), len(dys),
+                                                       len(data_param[yn]), len(data_param[xn])),
+                                                      dtype='float32') * np.nan,
+                                        coords={'year': (['year'], ref_period),
+                                                'dys': (['dys'], dys),
+                                                yn: ([yn], data_param[yn].values),
+                                                xn: ([xn], data_param[xn].values)})
 
         # only select WAS and wet days for precip
         if opts.precip:
@@ -215,7 +234,7 @@ def load_ref_data(opts, masks, ds_params):
         else:
             # check length of year and add 29th of February if necessary
             if len(data_param.time) != 366:
-                t29th = np.zeros((1, len(masks[yn]), len(masks[xn]))) * np.nan
+                t29th = np.zeros((1, len(data_param[yn]), len(data_param[xn]))) * np.nan
                 data = np.append(data_param.sel(
                     time=slice(f'{yr}-01-01', f'{yr}-02-28')).values, t29th, axis=0)
                 data = np.append(data, data_param.sel(
@@ -248,14 +267,14 @@ def calc_percentiles(opts, masks, gr_size):
               'ERA5': {'xname': 'lon', 'yname': 'lat'},
               'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
 
-    data = load_ref_data(opts=opts, masks=masks, ds_params=params)
+    data = load_ref_data(opts=opts, masks=masks, ds_params=params, gr_size=gr_size)
 
     # calc the chosen percentile for each grid point as threshold
     # (TMax-p99ANN AllDOYs Ref1961-1990 & P24H-p95WAS WetDOYs > 1 mm Ref1961-1990).
     percent = data.quantile(q=opts.threshold / 100, dim=('year', 'dys'))
 
-    # smooth SPARTACUS percentiles (for each grid point calculate the average of all grid points
-    # within the given radius
+    # smooth SPARTACUS precip percentiles (for each grid point calculate the average of all grid
+    # points within the given radius)
     radius = opts.smoothing
 
     if radius == 0:
@@ -291,10 +310,10 @@ def calc_percentiles(opts, masks, gr_size):
     percent_smooth = percent_smooth.drop('quantile')
 
     # apply GR mask
-    percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
     if 'ERA' in opts.dataset and gr_size > 100:
-        percent_smooth = percent_smooth
+        percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
     else:
+        percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
         percent_smooth = percent_smooth * masks['mask']
     percent_smooth = percent_smooth.rename('threshold')
     percent_smooth.attrs = {'units': opts.unit, 'methods_variable_name': vname,
@@ -340,6 +359,8 @@ def run():
 
     # save output
     param_str = f'{opts.parameter}{opts.threshold}p'
+    if opts.precip:
+        param_str = f'{opts.parameter}_{opts.threshold}p'
     if opts.threshold_type == 'abs':
         param_str = f'{opts.parameter}{opts.threshold}{opts.unit}'
 

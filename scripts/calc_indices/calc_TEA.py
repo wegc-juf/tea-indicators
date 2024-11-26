@@ -187,8 +187,10 @@ def get_data(opts):
     """
 
     param_str = ''
-    if opts.dataset == 'SPARTACUS':
+    if opts.dataset == 'SPARTACUS' and not opts.precip:
         param_str = f'{opts.parameter}'
+    elif opts.dataset == 'SPARTACUS' and opts.precip:
+        param_str = 'RR'
 
     # select only files of interest, if chosen period is 'seasonal' append one year in the
     # beginning to have the first winter fully included
@@ -225,6 +227,8 @@ def get_data(opts):
         ds = ds.sel(time=season)
 
     # select variable
+    if opts.dataset == 'SPARTACUS' and opts.parameter == 'P24h_7to7':
+        ds = ds.rename({'RR': opts.parameter})
     data = ds[opts.parameter]
 
     if opts.dataset == 'SPARTACUS':
@@ -259,6 +263,7 @@ def load_static_files(opts):
     param_str = f'{opts.parameter}{opts.threshold:.1f}p'
     if opts.threshold_type == 'abs':
         param_str = f'{opts.parameter}{opts.threshold:.1f}{opts.unit}'
+
     static = xr.open_dataset(f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc')
 
     return masks, static
