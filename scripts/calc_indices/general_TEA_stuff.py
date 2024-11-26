@@ -2,14 +2,14 @@ from datetime import timedelta
 import pandas as pd
 
 def validate_period(opts):
-    valid_dec_periods = ['annual', 'WAS', 'ESS', 'JJA']
+    valid_dec_periods = ['annual', 'monthly', 'WAS', 'ESS', 'EWS', 'JJA']
     if opts.decadal and opts.period not in valid_dec_periods:
         raise AttributeError(f'For decadal output, please select from {valid_dec_periods} as '
                              f'period! {opts.period} was passed instead.')
 
     if opts.decadal or opts.decadal_only:
         if opts.end - opts.start < 9:
-            raise AttributeError(f'For decadal output, please pass more at least 10 years! '
+            raise AttributeError(f'For decadal output, please pass at least 10 years! '
                                  f'{(opts.end - opts.start) + 1} years were passed instead.')
 
 
@@ -25,7 +25,7 @@ def assign_ctp_coords(opts, data):
     """
 
     freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
-             'monthly': 'MS'}
+             'monthly': 'MS', 'EWS': 'AS-NOV'}
     freq = freqs[opts.period]
 
     pstarts = pd.date_range(data.time[0].values, data.time[-1].values,

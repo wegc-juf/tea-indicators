@@ -70,9 +70,9 @@ def getopts():
                         dest='period',
                         default='WAS',
                         type=str,
-                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
+                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA', 'EWS'],
                         help='Climatic time period (CTP) of interest. '
-                             'Options: monthly, seasonal, WAS, ESS, JJA, and  annual [default].')
+                             'Options: monthly, seasonal, WAS, ESS, EWS, JJA, and  annual [default].')
 
     parser.add_argument('--region',
                         default='AUT',
@@ -355,9 +355,11 @@ def calc_indicators(opts):
     # TODO remove old dbv stuff
     dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_{opts.period}'
                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-    dbv_filename_new = dbv_filename.replace('.nc', '_new.nc')
+    dbv_filename_annual = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
+                          f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+    dbv_filename_new = dbv_filename_annual.replace('.nc', '_new.nc')
 
-    dbv = xr.open_dataset(dbv_filename)
+    dbv = xr.open_dataset(dbv_filename_annual)
     if not opts.recalc_daily:
         logger.info(f'Loading daily basis variables from {dbv_filename_new}; if you want to recalculate them, '
                     'set --recalc-daily.')
@@ -367,6 +369,15 @@ def calc_indicators(opts):
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
     tea.update_min_area(dtea_min)
+    
+    # TODO remove old dbv stuff
+    for vvar in dbv.data_vars:
+        if vvar == 'DTEEC_GR':
+            # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
+            dteec_gr = tea.daily_results.DTEEC_GR
+            dbv[vvar] = dteec_gr
+        elif 'GR' in vvar:
+            dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
 
     # get dates for climatic time periods (CTP) and assign coords to dbv
     dbv, dbv_per = assign_ctp_coords(opts, data=dbv)

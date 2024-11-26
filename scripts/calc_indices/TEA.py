@@ -5,7 +5,9 @@ TODO: add reference to the paper
 Equation numbers refer to Supplementary Notes
 """
 import xarray as xr
+import pandas as pd
 import numpy as np
+import datetime as dt
 
 from scripts.general_stuff.var_attrs import get_attrs
 
@@ -41,8 +43,9 @@ class TEAIndicators:
         self.CTP = None
         self.CTP_freqs = {'annual': 'AS', 'seasonal': 'QS-DEC', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
                           'DJF': 'AS-DEC', 'EWS': 'AS-NOV', 'monthly': 'MS'}
+        self._overlap_ctps = ['EWS', 'DJF']
         self.CTP_months = {'WAS': [4, 5, 6, 7, 8, 9, 10], 'ESS': [5, 6, 7, 8, 9], 'EWS': [11, 12, 1, 2, 3],
-                           'JJA': [6, 7, 8]}
+                           'JJA': [6, 7, 8], 'DJF': [12, 1, 2]}
         self._CTP_resampler = None
         self._CTP_resample_sum = None
         self.CTP_results = xr.Dataset()
@@ -262,8 +265,10 @@ class TEAIndicators:
             self.calc_DTEEC()
         if self.daily_results['DTEEC_GR'] is None:
             self.calc_DTEEC_GR()
+            
         if self._CTP_resample_sum is None:
             self._resample_to_CTP()
+            
         ef = self._CTP_resample_sum.DTEEC
         ef_gr = self._CTP_resample_sum.DTEEC_GR
         
@@ -315,11 +320,6 @@ class TEAIndicators:
         months = self.CTP_months[self.CTP]
         self._daily_results_filtered = self.daily_results.sel(time=self.daily_results.time.dt.month.isin(months))
         
-        # shift for data overlapping a year
-        if self.CTP in ['EWS', 'DJF']:
-            self._daily_results_filtered['time'] = self._daily_results_filtered.time.where(
-                ds_filtered.time.dt.month < 10, ds_filtered.time - xr.Timedelta(days=365))
-
     def _resample_to_CTP(self, ctp=None):
         """
         resample daily results to Climatic Time Period (CTP)
@@ -333,6 +333,9 @@ class TEAIndicators:
         self._filter_and_shift_CTP()
         self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
         self._CTP_resample_sum = self._CTP_resampler.sum('time')
+        if self.CTP in self._overlap_ctps:
+            # remove first and last year
+            self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
         del self._daily_results_filtered
         
     
