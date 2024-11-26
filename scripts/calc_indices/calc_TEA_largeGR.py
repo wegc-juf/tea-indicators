@@ -89,6 +89,9 @@ def select_cell(opts, lat, lon, data, static, masks):
     # select static data for cell
     cell_static = static.sel(lat=slice(lat + lat_off, lat - lat_off),
                              lon=slice(lon_min, lon_max))
+    if len(cell_static.lat) == 0:
+        cell_static = static.sel(lat=slice(lat - lat_off, lat + lat_off),
+                                 lon=slice(lon_min, lon_max))
 
     for vvar in ['area_grid', 'threshold']:
         cell_static[vvar] = cell_static[vvar] * frac_da
