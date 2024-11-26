@@ -305,7 +305,7 @@ class TEAIndicators:
         
         return events_np
 
-    def _filter_and_shift_CTP(self, ctp=None):
+    def _filter_CTP(self, ctp=None):
         """
         keep only values according to Climatic Time Period (CTP) definition
         """
@@ -330,7 +330,7 @@ class TEAIndicators:
         elif self.CTP is None:
             raise ValueError("CTP must be set before resampling")
         
-        self._filter_and_shift_CTP()
+        self._filter_CTP()
         self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
         self._CTP_resample_sum = self._CTP_resampler.sum('time')
         if self.CTP in self._overlap_ctps:
