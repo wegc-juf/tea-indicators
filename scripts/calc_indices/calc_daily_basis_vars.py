@@ -133,7 +133,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     dtem_gr = TEA.daily_results.DTEM_GR
     dtem = TEA.daily_results.DTEM
-    dtem_max = TEA.daily_results.DTEM_max_gr
+    dtem_max = TEA.daily_results.DTEM_Max_GR
 
     dtems = xr.merge([dtem, dtem_gr, dtem_max])
     outname = (f'{opts.outpath}/daily_basis_variables/tmp/'
