@@ -270,12 +270,92 @@ class TEAIndicators:
             self._resample_to_CTP()
             
         ef = self._CTP_resample_sum.DTEEC
+        ef = ef.where(ef.notnull(), 0)
         ef_gr = self._CTP_resample_sum.DTEEC_GR
+        ef_gr = ef_gr.where(ef_gr.notnull(), 0)
         
         ef.attrs = get_attrs(vname='EF')
         self.CTP_results['EF'] = ef
         ef_gr.attrs = get_attrs(vname='EF_GR')
         self.CTP_results['EF_GR'] = ef_gr
+    
+    def calc_supplementary_event_vars(self):
+        """
+        calculate supplementary event variables (equation 13)
+        """
+        if self.CTP_results['EF'] is None:
+            self.calc_event_frequency()
+        
+        doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
+        self._daily_results_filtered.coords['doy'] = ('time', doy)
+        
+        event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC.notnull())
+        event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR.notnull())
+        event_doy_gr_old = self._daily_results_filtered.DTEEC_GR.where(self._daily_results_filtered.DTEEC_GR.notnull(),
+                                                                   drop=True).time.dt.dayofyear
+        resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
+        resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
+        
+        # equation 13_1
+        doy_first = resampler.min('time')
+        # equation 13_4
+        doy_first_gr = resampler_gr.min('time')
+        # equation 13_2
+        doy_last = resampler.max('time')
+        # equation 13_5
+        doy_last_gr = resampler_gr.max('time')
+        
+        # equation 13_3
+        aep = (doy_last - doy_first + 1) / 30.5
+        # equation 13_6
+        aep_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
+        
+        doy_first.attrs = get_attrs(vname='doy_first')
+        doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
+        doy_last.attrs = get_attrs(vname='doy_last')
+        doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
+        aep.attrs = get_attrs(vname='delta_y')
+        aep_gr.attrs = get_attrs(vname='delta_y_GR')
+        
+        self.CTP_results['doy_first'] = doy_first
+        self.CTP_results['doy_last'] = doy_last
+        self.CTP_results['AEP'] = aep
+        self.CTP_results['doy_first_GR'] = doy_first_gr
+        self.CTP_results['doy_last_GR'] = doy_last_gr
+        self.CTP_results['AEP_GR'] = aep_gr
+    
+    def calc_event_duration(self):
+        """
+        calculate event duration (equation 14 and equation 15)
+        """
+        if self.CTP_results['EF'] is None:
+            self.calc_event_frequency()
+        
+        # equation 14_2
+        ed = self._CTP_resample_sum.DTEC
+        # equation 15_2
+        ed_gr = self._CTP_resample_sum.DTEC_GR
+        
+        ed.attrs = get_attrs(vname='ED')
+        ed_gr.attrs = get_attrs(vname='ED_GR')
+        
+        self.CTP_results['ED'] = ed
+        self.CTP_results['ED_GR'] = ed_gr
+        
+        # set EF = 0 to nan
+        ef = self.CTP_results['EF'].where(self.CTP_results['EF'] > 0)
+        ef_gr = self.CTP_results['EF_GR'].where(self.CTP_results['EF_GR'] > 0)
+        
+        # calc average event duration
+        # equation 14_1
+        ed_avg = ed / ef
+        # equation 15_1
+        ed_avg_gr = ed_gr / ef_gr
+        
+        ed_avg.attrs = get_attrs(vname='ED_avg')
+        ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
+        self.CTP_results['ED_avg'] = ed_avg
+        self.CTP_results['ED_avg_GR'] = ed_avg_gr
 
     @staticmethod
     def _calc_dteec_1d(dtec_cell):
@@ -335,6 +415,5 @@ class TEAIndicators:
         if self.CTP in self._overlap_ctps:
             # remove first and last year
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
-        del self._daily_results_filtered
         
     

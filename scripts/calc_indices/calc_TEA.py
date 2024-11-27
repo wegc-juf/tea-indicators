@@ -392,10 +392,11 @@ def calc_indicators(opts):
     tea.set_ctp(opts.period)
     tea.calc_event_frequency()
     
-    svars = calc_supplementary_event_vars(data=dbv)
+    tea.calc_supplementary_event_vars()
 
     # calculate ED
     ed = calc_event_duration(pdata=dbv_per, ef=ef)
+    tea.calc_event_duration()
 
     # calculate EM
     em, em_suppl = calc_exceedance_magnitude(opts=opts, pdata=dbv_per, ed=ed)

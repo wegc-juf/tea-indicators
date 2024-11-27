@@ -1,5 +1,6 @@
 from datetime import timedelta
 import pandas as pd
+import numpy as np
 
 def validate_period(opts):
     valid_dec_periods = ['annual', 'monthly', 'WAS', 'ESS', 'EWS', 'JJA']

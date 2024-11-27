@@ -78,7 +78,7 @@ def calc_event_duration(pdata, ef):
     # combine to ds
     ed_ds = create_ed_ds(ed=ed, ed_gr=ed_gr, ed_avg=ed_avg, ed_avg_gr=ed_avg_gr)
 
-    return  ed_ds
+    return ed_ds
 
 
 def calc_exceedance_magnitude(opts, pdata, ed):

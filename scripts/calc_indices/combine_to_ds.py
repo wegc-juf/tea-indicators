@@ -76,10 +76,10 @@ def create_ed_ds(ed, ed_gr, ed_avg, ed_avg_gr):
     ed = ed.assign_attrs(get_attrs(vname='ED'))
     ed_gr = ed_gr.rename('ED_GR')
     ed_gr.attrs = get_attrs(vname='ED_GR')
-    ed_avg = ed_avg.rename('EDavg')
-    ed_avg.attrs = get_attrs(vname='EDavg')
-    ed_avg_gr = ed_avg_gr.rename('EDavg_GR')
-    ed_avg_gr.attrs = get_attrs(vname='EDavg_GR')
+    ed_avg = ed_avg.rename('ED_avg')
+    ed_avg.attrs = get_attrs(vname='ED_avg')
+    ed_avg_gr = ed_avg_gr.rename('ED_avg_GR')
+    ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
 
     ed_ds = xr.merge([ed, ed_gr, ed_avg, ed_avg_gr])
 
