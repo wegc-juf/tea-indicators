@@ -108,7 +108,7 @@ def calc_exceedance_magnitude(opts, pdata, ed):
     em_gr_med = ed['ED_GR'] * em_avg_gr_med
 
     # calc maximum exceedance magnitude (Eq. 20)
-    pdata_max = pdata.max('days')
+    pdata_max = pdata.sum('days')
     em_gr_max = pdata_max['DTEM_Max']
     em_gr_avg_max = em_gr_max / ed['ED_GR']
 
