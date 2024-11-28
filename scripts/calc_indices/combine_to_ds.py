@@ -115,17 +115,17 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     em_gr = em_gr.rename('EM_GR')
     em_gr.attrs = get_attrs(opts=opts, vname='EM_GR')
 
-    em_avg = em_avg.rename('EMavg')
-    em_avg.attrs = get_attrs(opts=opts, vname='EMavg')
+    em_avg = em_avg.rename('EM_avg')
+    em_avg.attrs = get_attrs(opts=opts, vname='EM_avg')
 
-    em_avg_gr = em_avg_gr.rename('EMavg_GR')
-    em_avg_gr.attrs = get_attrs(opts=opts, vname='EMavg_GR')
+    em_avg_gr = em_avg_gr.rename('EM_avg_GR')
+    em_avg_gr.attrs = get_attrs(opts=opts, vname='EM_avg_GR')
 
-    em_avg_med = em_avg_med.rename('EMavg_Md')
-    em_avg_med.attrs = get_attrs(opts=opts, vname='EMavg_Md')
+    em_avg_med = em_avg_med.rename('EM_avg_Md')
+    em_avg_med.attrs = get_attrs(opts=opts, vname='EM_avg_Md')
 
-    em_avg_gr_med = em_avg_gr_med.rename('EMavg_Md_GR')
-    em_avg_gr_med.attrs = get_attrs(opts=opts, vname='EMavg_Md_GR')
+    em_avg_gr_med = em_avg_gr_med.rename('EM_avg_Md_GR')
+    em_avg_gr_med.attrs = get_attrs(opts=opts, vname='EM_avg_Md_GR')
 
     em_med = em_med.rename('EM_Md')
     em_med.attrs = get_attrs(opts=opts, vname='EM_Md')
@@ -136,8 +136,8 @@ def create_em_ds(opts, em, em_gr, em_avg, em_avg_gr, em_avg_med, em_avg_gr_med, 
     em_gr_max = em_gr_max.rename('EM_Max_GR')
     em_gr_max.attrs = get_attrs(opts=opts, vname='EM_Max_GR')
 
-    em_gr_avg_max = em_gr_avg_max.rename('EMavg_Max_GR')
-    em_gr_avg_max.attrs = get_attrs(opts=opts, vname='EMavg_Max_GR')
+    em_gr_avg_max = em_gr_avg_max.rename('EM_avg_Max_GR')
+    em_gr_avg_max.attrs = get_attrs(opts=opts, vname='EM_avg_Max_GR')
 
 
     if not opts.precip:
