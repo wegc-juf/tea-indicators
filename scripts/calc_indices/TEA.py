@@ -71,7 +71,7 @@ class TEAIndicators:
         if self.daily_results['DTEM'] is None:
             self.calc_DTEM()
         dtem = self.daily_results.DTEM
-        dtec = xr.where(dtem == 0, np.nan, 1)
+        dtec = dtem.where(dtem.isnull(), 1)
         dtec.attrs = get_attrs(vname='DTEC')
         self.daily_results['DTEC'] = dtec
     
@@ -164,7 +164,7 @@ class TEAIndicators:
             dtem = self.threshold_grid - self.input_data_grid
         else:
             dtem = self.input_data_grid - self.threshold_grid
-        dtem = dtem.where(dtem > 0, 0).astype('float32')
+        dtem = dtem.where(dtem > 0).astype('float32')
         dtem.attrs = get_attrs(vname='DTEM')
         self.daily_results['DTEM'] = dtem
         
@@ -178,9 +178,8 @@ class TEAIndicators:
             self.calc_DTEC_GR()
         dtem = self.daily_results.DTEM
         dtem_max = dtem.max(dim=self.threshold_grid.dims)
-        dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1, 0)
-        dtem_max = dtem_max.rename('DTEM_Max_GR')
-        dtem_max.attrs = get_attrs(vname='DTEM_Max')
+        dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1)
+        dtem_max.attrs = get_attrs(vname='DTEM_Max_GR')
         self.daily_results['DTEM_Max_GR'] = dtem_max
 
     def calc_DTEM_GR(self):
@@ -198,7 +197,7 @@ class TEAIndicators:
         dtec_gr = self.daily_results.DTEC_GR
         area_fac = self.area_grid / dtea_gr
         dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
-        dtem_gr = dtem_gr.where(dtec_gr == 1, 0)
+        dtem_gr = dtem_gr.where(dtec_gr == 1)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR')
         self.daily_results['DTEM_GR'] = dtem_gr
