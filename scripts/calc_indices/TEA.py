@@ -355,6 +355,68 @@ class TEAIndicators:
         ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
         self.CTP_results['ED_avg'] = ed_avg
         self.CTP_results['ED_avg_GR'] = ed_avg_gr
+    
+    def calc_exceedance_magnitude(self):
+        """
+        calculate exceedance magnitude (equation 17 and equation 18), median exceedance magnitude (equation 19), and
+        maximum exceedance magnitude (equation 20)
+        """
+        
+        if self.CTP_results['ED'] is None:
+            self.calc_event_duration()
+            
+        # equation 17_2
+        em = self._CTP_resample_sum.DTEM
+        # equation 18_2
+        em_gr = self._CTP_resample_sum.DTEM_GR
+    
+        # calc average exceedance magnitude
+        # equation 17_1
+        em_avg = em / self.CTP_results.ED
+        # equation 18_1
+        em_avg_gr = em_gr / self.CTP_results.ED_GR
+        
+        em.attrs = get_attrs(vname='EM')
+        em_gr.attrs = get_attrs(vname='EM_GR')
+        em_avg.attrs = get_attrs(vname='EM_avg')
+        em_avg_gr.attrs = get_attrs(vname='EM_avg_GR')
+        
+        self.CTP_results['EM'] = em
+        self.CTP_results['EM_GR'] = em_gr
+        self.CTP_results['EM_avg'] = em_avg
+        self.CTP_results['EM_avg_GR'] = em_avg_gr
+        
+        # calc median exceedance magnitude
+        # equation 19_1
+        em_avg_med = self._CTP_resample_median.DTEM
+        # equation 19_3
+        em_avg_gr_med = self._CTP_resample_median.DTEM_GR
+        # equation 19_2
+        em_med = self.CTP_results.ED * em_avg_med
+        # equation 19_4
+        em_gr_med = self.CTP_results.ED_GR * em_avg_gr_med
+        
+        em_avg_med.attrs = get_attrs(vname='EM_avg_Md')
+        em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md')
+        em_med.attrs = get_attrs(vname='EM_Md')
+        em_gr_med.attrs = get_attrs(vname='EM_GR_Md')
+        
+        self.CTP_results['EM_avg_Md'] = em_avg_med
+        self.CTP_results['EM_avg_GR_Md'] = em_avg_gr_med
+        self.CTP_results['EM_Md'] = em_med
+        self.CTP_results['EM_GR_Md'] = em_gr_med
+        
+        # calc maximum exceedance magnitude
+        # equation 20_2
+        em_gr_max = self._CTP_resample_sum.DTEM_Max_GR
+        # equation 20_1
+        em_gr_avg_max = em_gr_max / self.CTP_results.ED_GR
+        
+        em_gr_max.attrs = get_attrs(vname='EM_Max_GR')
+        em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR')
+        
+        self.CTP_results['EM_Max_GR'] = em_gr_max
+        self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
 
     @staticmethod
     def _calc_dteec_1d(dtec_cell):
@@ -411,8 +473,14 @@ class TEAIndicators:
         self._filter_CTP()
         self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
         self._CTP_resample_sum = self._CTP_resampler.sum('time')
+        # dask does not support median for resampling so resample only what is necessary
+        self._CTP_resample_median = xr.Dataset()
+        for var in ['DTEM', 'DTEM_GR']:
+            resampler = self._daily_results_filtered[var].resample(time=self.CTP_freqs[self.CTP])
+            self._CTP_resample_median[var] = resampler.median('time')
         if self.CTP in self._overlap_ctps:
             # remove first and last year
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
+            self._CTP_resample_median = self._CTP_resample_median.isel(time=slice(1, -1))
         
     

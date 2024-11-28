@@ -400,6 +400,7 @@ def calc_indicators(opts):
 
     # calculate EM
     em, em_suppl = calc_exceedance_magnitude(opts=opts, pdata=dbv_per, ed=ed)
+    tea.calc_exceedance_magnitude()
 
     # calculate EA
     ea = calc_exceedance_area_tex_sev(opts=opts, data=dbv, ed=ed, em=em)
