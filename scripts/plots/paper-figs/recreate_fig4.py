@@ -74,7 +74,7 @@ def scale_figsize(figwidth, figheight, figdpi):
 
 def fig4a():
     data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/amplification/'
-                           'AF_T99.0p_AGR-EUR_WAS_ERA5_1961to2022.nc')
+                           'AF_Tx99.0p_AGR-EUR_WAS_ERA5_1961to2022.nc')
     vkeep = ['EF_AF_CC', 'EDavg_AF_CC', 'EMavg_AF_CC', 'EAavg_AF_CC', 'TEX_AF_CC']
     vdrop = [vvar for vvar in data.data_vars if vvar not in vkeep]
     data = data.drop_vars(vdrop)
@@ -154,8 +154,9 @@ def fig4c():
 
     for ireg, reg in enumerate(regs):
         data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/amplification/'
-                               f'AF_T99.0p_AGR-{reg}_WAS_ERA5_1961to2022.nc')
+                               f'AF_Tx99.0p_AGR-{reg}_WAS_ERA5_1961to2022.nc')
         data = data['TEX_AGR_AF']
+
         axs.plot(xticks[1:], data, color=cols[reg], linewidth=2, markersize=3,
                  label=reg)
 
@@ -167,7 +168,7 @@ def fig4c():
     axs.minorticks_on()
     axs.grid(color='gray', which='major', linestyle=':')
     axs.set_xlim(1960, 2023)
-    axs.set_ylim(0, 5)
+    axs.set_ylim(0, 25)
     axs.xaxis.set_minor_locator(mticker.FixedLocator(np.arange(1960, 2023)))
     axs.legend()
 
