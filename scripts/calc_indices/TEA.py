@@ -544,6 +544,7 @@ class TEAIndicators:
         # dask does not support median for resampling so resample only what is necessary
         self._CTP_resample_median = xr.Dataset()
         for var in ['DTEM', 'DTEM_GR']:
+            self._daily_results_filtered[var].load()
             resampler = self._daily_results_filtered[var].resample(time=self.CTP_freqs[self.CTP])
             self._CTP_resample_median[var] = resampler.median('time')
         if self.CTP in self._overlap_ctps:
