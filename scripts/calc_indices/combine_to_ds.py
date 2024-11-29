@@ -164,14 +164,14 @@ def create_ea_ds(opts, ea_gr, tex, es_gr):
         ea_ds: ds
     """
 
-    ea_gr = ea_gr.rename('EAavg_GR')
-    ea_gr.attrs = get_attrs(opts=opts, vname='EAavg_GR')
+    ea_gr = ea_gr.rename('EA_avg_GR')
+    ea_gr.attrs = get_attrs(opts=opts, vname='EA_avg_GR')
 
     tex = tex.rename('TEX_GR')
     tex.attrs = get_attrs(opts=opts, vname='TEX_GR')
 
-    es_gr = es_gr.rename('ESavg_GR')
-    es_gr.attrs = get_attrs(opts=opts, vname='ESavg_GR')
+    es_gr = es_gr.rename('ES_avg_GR')
+    es_gr.attrs = get_attrs(opts=opts, vname='ES_avg_GR')
 
     ea_ds = xr.merge([ea_gr, tex, es_gr])
 

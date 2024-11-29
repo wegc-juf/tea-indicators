@@ -134,14 +134,14 @@ def calc_exceedance_area_tex_sev(opts, data, ed, em):
     """
 
     if not opts.precip:
-        em_var, em_avg_var = 'EM_GR', 'EMavg_GR'
+        em_var, em_avg_var = 'EM_GR', 'EM_avg_GR'
     else:
-        em_var, em_avg_var = 'EM_Md_GR', 'EMavg_Md_GR'
+        em_var, em_avg_var = 'EM_Md_GR', 'EM_avg_Md_GR'
 
     tex = (data['DTEM_GR'] * data['DTEA_GR']).groupby('ctp').sum('time')
     ea_gr = tex / em[em_var]
 
-    es_gr = ed['EDavg_GR'] * em[em_avg_var] * ea_gr
+    es_gr = ed['ED_avg_GR'] * em[em_avg_var] * ea_gr
 
     # combine to ds
     ea_ds = create_ea_ds(opts=opts, ea_gr=ea_gr, tex=tex, es_gr=es_gr)
