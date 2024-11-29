@@ -34,6 +34,7 @@ class TEAIndicators:
         self.area_grid = area_grid
         self.input_data_grid = input_data_grid
         self.daily_results = xr.Dataset()
+        self._daily_results_filtered = None
         self.min_area = min_area
         self.gr_vars = None
         self.low_extreme = low_extreme
@@ -84,7 +85,7 @@ class TEAIndicators:
         """
         if min_area is None:
             min_area = self.min_area
-        if self.daily_results['DTEA_GR'] is None:
+        if 'DTEA_GR' not in self.daily_results:
             self.calc_DTEA_GR()
         dtea_gr = self.daily_results.DTEA_GR
         dtec_gr = xr.where(dtea_gr >= min_area, 1, np.nan)
@@ -119,7 +120,7 @@ class TEAIndicators:
         """
         calculate Daily Threshold Exceedance Event Count (GR) (equation 05)
         """
-        if self.daily_results['DTEC_GR'] is None:
+        if 'DTEC_GR' not in self.daily_results:
             self.calc_DTEC_GR()
             
         dtec_gr = self.daily_results.DTEC_GR
@@ -134,7 +135,7 @@ class TEAIndicators:
         calculate Daily Threshold Exceedance Area (equation 02)
         note that 0 values are stored as NaN for optimization
         """
-        if self.daily_results['DTEC'] is None:
+        if 'DTEC' not in self.daily_results:
             self.calc_DTEC()
         dtec = self.daily_results.DTEC
         # equation 02_1 not needed (cells with TEC == 0 are already nan)
@@ -147,7 +148,7 @@ class TEAIndicators:
         """
         calculate Daily Threshold Exceedance Area (GR) (equation 06)
         """
-        if self.daily_results['DTEA'] is None:
+        if 'DTEA' not in self.daily_results:
             self.calc_DTEA()
         dtea = self.daily_results.DTEA
         dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
@@ -172,9 +173,9 @@ class TEAIndicators:
         """
         calculate maximum DTEM for GR (equation 09)
         """
-        if self.daily_results['DTEM'] is None:
+        if 'DTEM' not in self.daily_results:
             self.calc_DTEM()
-        if self.daily_results['DTEC_GR'] is None:
+        if 'DTEC_GR' not in self.daily_results:
             self.calc_DTEC_GR()
         dtem = self.daily_results.DTEM
         dtem_max = dtem.max(dim=self.threshold_grid.dims)
@@ -186,11 +187,11 @@ class TEAIndicators:
         """
         calculate Daily Threshold Exceedance Magnitude (GR) (equation 08)
         """
-        if self.daily_results['DTEA_GR'] is None:
+        if 'DTEA_GR' not in self.daily_results:
             self.calc_DTEA_GR()
-        if self.daily_results['DTEM'] is None:
+        if 'DTEM' not in self.daily_results:
             self.calc_DTEM()
-        if self.daily_results['DTEC_GR'] is None:
+        if 'DTEC_GR' not in self.daily_results:
             self.calc_DTEC_GR()
         dtea_gr = self.daily_results.DTEA_GR
         dtem = self.daily_results.DTEM
@@ -200,7 +201,9 @@ class TEAIndicators:
         dtem_gr = dtem_gr.where(dtec_gr == 1)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR')
+        dtema_gr = dtem_gr * dtea_gr
         self.daily_results['DTEM_GR'] = dtem_gr
+        self.daily_results['DTEMA_GR'] = dtema_gr
     
     def calc_daily_basis_vars(self):
         """
@@ -241,7 +244,7 @@ class TEAIndicators:
     # ### Climatic Time Period (CTP) functions ###
     def set_ctp(self, ctp):
         """
-        set Climatic Time Period (CTP)
+        set annual Climatic Time Period (CTP)
 
         args:
             ctp: Climatic Time Period (CTP) to resample to
@@ -260,9 +263,9 @@ class TEAIndicators:
         """
         if self.CTP is None:
             raise ValueError("CTP must be set before calculating event frequency")
-        if self.daily_results['DTEEC'] is None:
+        if 'DTEEC' not in self.daily_results:
             self.calc_DTEEC()
-        if self.daily_results['DTEEC_GR'] is None:
+        if 'DTEEC_GR' not in self.daily_results:
             self.calc_DTEEC_GR()
             
         if self._CTP_resample_sum is None:
@@ -282,7 +285,7 @@ class TEAIndicators:
         """
         calculate supplementary event variables (equation 13)
         """
-        if self.CTP_results['EF'] is None:
+        if 'EF' not in self.CTP_results:
             self.calc_event_frequency()
         
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
@@ -327,7 +330,7 @@ class TEAIndicators:
         """
         calculate event duration (equation 14 and equation 15)
         """
-        if self.CTP_results['EF'] is None:
+        if 'EF' not in self.CTP_results:
             self.calc_event_frequency()
         
         # equation 14_2
@@ -362,7 +365,7 @@ class TEAIndicators:
         maximum exceedance magnitude (equation 20)
         """
         
-        if self.CTP_results['ED'] is None:
+        if 'ED' not in self.CTP_results:
             self.calc_event_duration()
             
         # equation 17_2
@@ -417,6 +420,71 @@ class TEAIndicators:
         
         self.CTP_results['EM_Max_GR'] = em_gr_max
         self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
+    
+    def calc_total_events_extremity(self):
+        """
+        calculate total events extremity (equation 21_3)
+        """
+        # equation 21_3
+        tex = self._CTP_resample_sum.DTEMA_GR
+        tex.attrs = get_attrs(vname='TEX_GR')
+        self.CTP_results['TEX_GR'] = tex
+    
+    def calc_exceedance_area(self):
+        """
+        calculate exceedance area (equation 21_1)
+        """
+        if self.CTP_results['TEX_GR'] is None:
+            self.calc_total_events_extremity()
+        if self.CTP_results['EM_GR'] is None:
+            self.calc_exceedance_magnitude()
+        
+        # equation 21_1
+        ea_avg = self.CTP_results.TEX_GR / self.CTP_results.EM_GR
+        ea_avg.attrs = get_attrs(vname='EA_avg_GR')
+        self.CTP_results['EA_avg_GR'] = ea_avg
+    
+    def calc_event_severity(self):
+        """
+        calculate event severity (equation 21_2)
+        """
+        if self.CTP_results['EA_avg_GR'] is None:
+            self.calc_exceedance_area()
+        if self.CTP_results['EM_avg_GR'] is None:
+            self.calc_exceedance_magnitude()
+        if self.CTP_results['ED_avg_GR'] is None:
+            self.calc_event_duration()
+        
+        # equation 21_2
+        es_avg = self.CTP_results.ED_avg_GR * self.CTP_results.EM_avg_GR * self.CTP_results.EA_avg_GR
+        es_avg.attrs = get_attrs(vname='ES_avg_GR')
+        self.CTP_results['ES_avg_GR'] = es_avg
+    
+    def calc_annual_CTP_indicators(self, ctp, delete_daily_results=True):
+        """
+        calculate all annual Climatic Time Period (CTP) indicators
+        
+        Args:
+            ctp: Climatic Time Period (CTP) to resample to
+                allowed values: 'annual', 'seasonal', 'WAS', 'ESS', 'JJA', 'DJF', 'EWS', 'monthly'
+                'WAS': warm season (April to October)
+                'ESS': extended summer season (May to September)
+                'JJA': summer season (June to August)
+                'DJF': winter season (December to February)
+                'EWS': extended winter season (November to March)
+            delete_daily_results: delete daily results after calculation
+        """
+        self.set_ctp(ctp)
+        self.calc_event_frequency()
+        self.calc_supplementary_event_vars()
+        self.calc_event_duration()
+        self.calc_exceedance_magnitude()
+        self.calc_total_events_extremity()
+        self.calc_exceedance_area()
+        self.calc_event_severity()
+        if delete_daily_results:
+            del self._daily_results_filtered
+            del self.daily_results
 
     @staticmethod
     def _calc_dteec_1d(dtec_cell):

@@ -389,18 +389,13 @@ def calc_indicators(opts):
 
     # calculate EF and corresponding supplementary variables
     ef = calc_event_frequency(pdata=dbv_per)
-    tea.set_ctp(opts.period)
-    tea.calc_event_frequency()
-    
-    tea.calc_supplementary_event_vars()
+    tea.calc_annual_CTP_indicators(opts.period)
 
     # calculate ED
     ed = calc_event_duration(pdata=dbv_per, ef=ef)
-    tea.calc_event_duration()
 
     # calculate EM
     em, em_suppl = calc_exceedance_magnitude(opts=opts, pdata=dbv_per, ed=ed)
-    tea.calc_exceedance_magnitude()
 
     # calculate EA
     ea = calc_exceedance_area_tex_sev(opts=opts, data=dbv, ed=ed, em=em)
