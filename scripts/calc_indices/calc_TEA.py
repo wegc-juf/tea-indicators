@@ -181,6 +181,9 @@ def getopts():
                         help='Set if results should be compared to reference file. Default: False.')
 
     myopts = parser.parse_args()
+    if myopts.recalc_daily:
+        logger.info('Daily basis variables will be recalculated. Period set to annual.')
+        myopts.period = 'annual'
 
     return myopts
 
