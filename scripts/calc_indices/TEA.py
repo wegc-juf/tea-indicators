@@ -17,8 +17,8 @@ class TEAIndicators:
     Class to calculate TEA indicators
     """
     
-    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=None, area_grid=None, low_extreme=False,
-                 testing=False):
+    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
+                 testing=False, treat_zero_as_nan=False):
         """
         Initialize TEAIndicators object
         Args:
@@ -26,7 +26,7 @@ class TEAIndicators:
             threshold_grid: gridded threshold values
             area_grid: results containing the area of each results cell, if None, area is assumed to be 1 for each cell
                        nan values mask out the corresponding results cells
-            min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
+            min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
         """
         self.threshold_grid = threshold_grid
         if area_grid is None and threshold_grid is not None:
@@ -39,6 +39,7 @@ class TEAIndicators:
         self.gr_vars = None
         self.low_extreme = low_extreme
         self.testing = testing
+        self.treat_zero_as_nan = treat_zero_as_nan
         
         # Climatic Time Period (CTP) variables
         self.CTP = None
@@ -50,6 +51,11 @@ class TEAIndicators:
         self._CTP_resampler = None
         self._CTP_resample_sum = None
         self.CTP_results = xr.Dataset()
+        
+        if self.treat_zero_as_nan:
+            self.null_val = np.nan
+        else:
+            self.null_val = 0
         
         if input_data_grid is not None:
             # set time index
@@ -67,12 +73,14 @@ class TEAIndicators:
     def calc_DTEC(self):
         """
         calculate Daily Threshold Exceedance Count (equation 01)
-        note that 0 values are stored as NaN for optimization
         """
         if self.daily_results['DTEM'] is None:
             self.calc_DTEM()
         dtem = self.daily_results.DTEM
-        dtec = dtem.where(dtem.isnull(), 1)
+        if self.treat_zero_as_nan:
+            dtec = dtem.where(dtem.isnull(), 1)
+        else:
+            dtec = xr.where(dtem > 0, 1, dtem)
         dtec.attrs = get_attrs(vname='DTEC')
         self.daily_results['DTEC'] = dtec
     
@@ -88,7 +96,7 @@ class TEAIndicators:
         if 'DTEA_GR' not in self.daily_results:
             self.calc_DTEA_GR()
         dtea_gr = self.daily_results.DTEA_GR
-        dtec_gr = xr.where(dtea_gr >= min_area, 1, np.nan)
+        dtec_gr = xr.where(dtea_gr >= min_area, 1, self.null_val)
         dtec_gr.attrs = get_attrs(vname='DTEC_GR')
         self.daily_results['DTEC_GR'] = dtec_gr
     
@@ -165,7 +173,10 @@ class TEAIndicators:
             dtem = self.threshold_grid - self.input_data_grid
         else:
             dtem = self.input_data_grid - self.threshold_grid
-        dtem = dtem.where(dtem > 0).astype('float32')
+        if self.treat_zero_as_nan:
+            dtem = dtem.where(dtem > 0).astype('float32')
+        else:
+            dtem = xr.where(dtem <= 0, 0, dtem)
         dtem.attrs = get_attrs(vname='DTEM')
         self.daily_results['DTEM'] = dtem
         
@@ -179,7 +190,7 @@ class TEAIndicators:
             self.calc_DTEC_GR()
         dtem = self.daily_results.DTEM
         dtem_max = dtem.max(dim=self.threshold_grid.dims)
-        dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1)
+        dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1, self.null_val)
         dtem_max.attrs = get_attrs(vname='DTEM_Max_GR')
         self.daily_results['DTEM_Max_GR'] = dtem_max
 
@@ -198,7 +209,7 @@ class TEAIndicators:
         dtec_gr = self.daily_results.DTEC_GR
         area_fac = self.area_grid / dtea_gr
         dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
-        dtem_gr = dtem_gr.where(dtec_gr == 1)
+        dtem_gr = dtem_gr.where(dtec_gr == 1, self.null_val)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR')
         dtema_gr = dtem_gr * dtea_gr
@@ -257,7 +268,7 @@ class TEAIndicators:
         """
         self.CTP = ctp
         ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
-        # TODO: add CF-Convention compatible attributes
+        # TODO: add CF-Convention compatible attributes...
         self.CTP_results.attrs = ctp_attrs
     
     def calc_event_frequency(self):
@@ -294,8 +305,12 @@ class TEAIndicators:
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
         self._daily_results_filtered.coords['doy'] = ('time', doy)
         
-        event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC.notnull())
-        event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR.notnull())
+        if self.treat_zero_as_nan:
+            event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC.notnull())
+            event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR.notnull())
+        else:
+            event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC > 0)
+            event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
         resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
         resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
         
@@ -501,8 +516,7 @@ class TEAIndicators:
         """
         self.CTP_results = xr.open_dataset(filepath)
 
-    @staticmethod
-    def _calc_dteec_1d(dtec_cell):
+    def _calc_dteec_1d(self, dtec_cell):
         """
         calculate DTEEC according to equation 04 and equation 05
         Args:
@@ -521,7 +535,7 @@ class TEAIndicators:
         middle_indices = (starts[0] + ends[0] - 1) // 2
         
         # Create an output array filled with NaNs
-        events_np = np.full(dtec_cell.shape, np.nan)
+        events_np = np.full(dtec_cell.shape, self.null_val)
         
         # Set the middle points to 1 (use flat indices to index into the 3D array)
         events_np[middle_indices] = 1
