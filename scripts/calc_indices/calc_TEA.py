@@ -173,6 +173,12 @@ def getopts():
                         default=False,
                         action='store_true',
                         help='Set if daily basis variables should be recalculated. Default: False - read from file.')
+    
+    parser.add_argument('--compare-to-ref',
+                        dest='compare_to_ref',
+                        default=False,
+                        action='store_true',
+                        help='Set if results should be compared to reference file. Default: False.')
 
     myopts = parser.parse_args()
 
@@ -269,6 +275,30 @@ def load_static_files(opts):
     return masks, static
 
 
+def compare_to_ref(tea, ctp_filename_ref):
+    """
+    compare results to reference file
+    TODO: move this to test routine
+    Args:
+        tea: TEA object
+        ctp_filename_ref: reference file
+    """
+    
+    if os.path.exists(ctp_filename_ref):
+        logger.info(f'Comparing results to reference file {ctp_filename_ref}')
+        tea_ref = TEAIndicators()
+        tea_ref.load_CTP_results(ctp_filename_ref)
+        for vvar in tea.CTP_results.data_vars:
+            if vvar in tea_ref.CTP_results.data_vars:
+                diff = tea.CTP_results[vvar] - tea_ref.CTP_results[vvar]
+                if diff.max() > 1e-6:
+                    logger.warning(f'Maximum difference in {vvar} is {diff.max().values}')
+            else:
+                logger.warning(f'{vvar} not found in reference file.')
+    else:
+        logger.warning(f'Reference file {ctp_filename_ref} not found.')
+
+
 def save_output(opts, tea, masks):
     """
     save data arrays to output datasets
@@ -313,6 +343,7 @@ def save_output(opts, tea, masks):
     logger.info(f'Saving CTP indicators to {outpath}')
     ds_out.to_netcdf(outpath)
     outpath_new = outpath.replace('.nc', '_new.nc')
+    path_ref = outpath.replace('.nc', '_ref.nc')
     
     logger.info(f'Saving CTP indicators to {outpath_new}')
     ds_out.to_netcdf(outpath_new)
@@ -322,6 +353,9 @@ def save_output(opts, tea, masks):
     ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
                      f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                      f'_{opts.start}to{opts.end}.nc')
+    
+    if opts.compare_to_ref:
+        compare_to_ref(tea, path_ref)
 
 
 def calc_indicators(opts):
