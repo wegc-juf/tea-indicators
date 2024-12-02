@@ -310,7 +310,7 @@ def calc_percentiles(opts, masks, gr_size):
     percent_smooth = percent_smooth.drop('quantile')
 
     # apply GR mask
-    if 'ERA' in opts.dataset and gr_size > 100:
+    if 'ERA' in opts.dataset and opts.region != 'EUR' and gr_size > 100:
         percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
     else:
         percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
