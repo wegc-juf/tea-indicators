@@ -3,15 +3,27 @@ script for adding attributes to TEA variables
 """
 
 
-def get_attrs(opts=None, vname=None, dec=False, spread=None):
-    if opts is None:
-        data_unit = ''
-        period = ''
-    else:
+def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_unit=''):
+    """
+    get attributes for TEA variables
+    Args:
+        opts: command line options
+        vname: variable name
+        dec: decadal mean added to variable name
+        spread: None, 'upper' or 'lower'. Set if spread estimator
+        period: climatic time period
+        data_unit: data unit (e.g. 'degC', 'mm')
+
+    Returns:
+        attributes: dict with attributes
+    """
+    if opts is not None:
         data_unit = opts.unit
         period = opts.period
 
     attrs = {'ctp': {'long_name': f'climatic time period ({period})'},
+             'CTP': {'long_name': f'start date of climatic time period {period}', 'standard_name': 'ctp_time'},
+             'CTP_global_attrs': {'title': f'TEA indicators for annual climatic time period: {period}'},
              'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
              'DTEA': {'long_name': 'daily threshold exceedance area', 'units': '100 km^2'},
@@ -30,17 +42,17 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None):
                     'description': 'expresses the temporal events extremity (tEX)'},
              'EM_avg': {'long_name': 'average exceedance magnitude', 'units': data_unit},
              'EM_avg_Md': {'long_name': 'average daily-median exceedance magnitude',
-                          'units': data_unit},
+                           'units': data_unit},
              'EM_Md': {'long_name': 'cumulative daily-median exceedance magnitude',
                        'units': data_unit},
              'EM_Max': {'long_name': 'cumulative maximum exceedance magnitude',
                         'units': data_unit},
              'EM_avg_Max': {'long_name': 'average maximum exceedance magnitude',
-                              'units': data_unit},
+                            'units': data_unit},
              'EA_avg': {'long_name': 'average exceedance area', 'units': 'areals'},
              'TEX': {'long_name': 'total events extremity', 'units': f'areal {data_unit} dys'},
              'ES_avg': {'long_name': 'average event severity',
-                       'units': f'areal {data_unit} dys'},
+                        'units': f'areal {data_unit} dys'},
              'tEX': {'long_name': 'temporal events extremity', 'units': f'areal {data_unit} dys'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
                                      'heat content', 'units': 'PJ'}

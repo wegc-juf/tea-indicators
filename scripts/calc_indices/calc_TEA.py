@@ -269,7 +269,7 @@ def load_static_files(opts):
     return masks, static
 
 
-def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
+def save_output(opts, tea, masks):
     """
     save data arrays to output datasets
     Args:
@@ -286,46 +286,42 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
 
     """
     # combine to output dataset
-    ds_out = xr.merge([ef, ed, em, ea])
-    ds_out_suppl = xr.merge([svars, em_suppl])
-
+    ds_out = tea.CTP_results.copy()
+    
     # set all values to 0 if EF is 0
     for vvar in ds_out.data_vars:
         if 'GR' in vvar:
-            ds_out[vvar] = ds_out[vvar].where(ef.EF_GR != 0, 0)
+            ds_out[vvar] = ds_out[vvar].where(tea.CTP_results.EF_GR != 0, 0)
         else:
-            ds_out[vvar] = ds_out[vvar].where(ef.EF != 0, 0)
-    for vvar in ds_out_suppl.data_vars:
-        if 'GR' in vvar:
-            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(ef.EF_GR != 0, 0)
-        else:
-            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(ef.EF != 0, 0)
-
-    ctp_attrs = get_attrs(opts=opts, vname='ctp')
-
-    ds_out['ctp'] = ds_out['ctp'].assign_attrs(ctp_attrs)
-    ds_out_suppl['ctp'] = ds_out_suppl['ctp'].assign_attrs(ctp_attrs)
+            ds_out[vvar] = ds_out[vvar].where(tea.CTP_results.EF != 0, 0)
 
     mask = masks['lt1500_mask'] * masks['mask']
     # apply masks to grid data again (sum etc. result in 0 outside of region)
     for vvar in ds_out.data_vars:
         if 'GR' not in vvar:
             ds_out[vvar] = ds_out[vvar].where(mask == 1)
-    for vvar in ds_out_suppl.data_vars:
-        if 'GR' not in vvar:
-            ds_out_suppl[vvar] = ds_out_suppl[vvar].where(mask == 1)
 
     ds_out = create_history(cli_params=sys.argv, ds=ds_out)
-    ds_out_suppl = create_history(cli_params=sys.argv, ds=ds_out_suppl)
 
     path = Path(f'{opts.outpath}ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
-    ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/'
-                     f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+    
+    outpath = (f'{opts.outpath}ctp_indicator_variables/'
+               f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
+    
+    logger.info(f'Saving CTP indicators to {outpath}')
+    ds_out.to_netcdf(outpath)
+    outpath_new = outpath.replace('.nc', '_new.nc')
+    
+    logger.info(f'Saving CTP indicators to {outpath_new}')
+    ds_out.to_netcdf(outpath_new)
+    
+    # save supplementary variables
+    logger.info('Saving supplementary variables')
+    ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
+                     f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                      f'_{opts.start}to{opts.end}.nc')
-    ds_out_suppl.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
-                           f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                           f'_{opts.start}to{opts.end}.nc')
 
 
 def calc_indicators(opts):
@@ -357,14 +353,9 @@ def calc_indicators(opts):
     else:
         tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
         
-    # TODO remove old dbv stuff
-    dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_{opts.period}'
-                    f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-    dbv_filename_annual = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
-                          f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-    dbv_filename_new = dbv_filename_annual.replace('.nc', '_new.nc')
+    dbv_filename_new = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
+                           f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')
 
-    dbv = xr.open_dataset(dbv_filename_annual)
     if not opts.recalc_daily:
         logger.info(f'Loading daily basis variables from {dbv_filename_new}; if you want to recalculate them, '
                     'set --recalc-daily.')
@@ -375,33 +366,12 @@ def calc_indicators(opts):
     dtea_min = 1
     tea.update_min_area(dtea_min)
     
-    # TODO remove old dbv stuff
-    for vvar in dbv.data_vars:
-        if vvar == 'DTEEC_GR':
-            # Amin criterion sometimes splits up events --> run DTEEC_GR detection again
-            dteec_gr = tea.daily_results.DTEEC_GR
-            dbv[vvar] = dteec_gr
-        elif 'GR' in vvar:
-            dbv[vvar] = dbv[vvar].where(dbv['DTEA_GR'] > dtea_min)
-
-    # get dates for climatic time periods (CTP) and assign coords to dbv
-    dbv, dbv_per = assign_ctp_coords(opts, data=dbv)
-
-    # calculate EF and corresponding supplementary variables
-    ef = calc_event_frequency(pdata=dbv_per)
+    # calculate annual climatic time period indicators
+    logger.info('Calculating CTP indicators')
     tea.calc_annual_CTP_indicators(opts.period)
 
-    # calculate ED
-    ed = calc_event_duration(pdata=dbv_per, ef=ef)
-
-    # calculate EM
-    em, em_suppl = calc_exceedance_magnitude(opts=opts, pdata=dbv_per, ed=ed)
-
-    # calculate EA
-    ea = calc_exceedance_area_tex_sev(opts=opts, data=dbv, ed=ed, em=em)
-
     # save output
-    save_output(opts=opts, ef=ef, ed=ed, em=em, ea=ea, svars=svars, em_suppl=em_suppl, masks=masks)
+    save_output(opts=opts, tea=tea, masks=masks)
 
 
 def run():

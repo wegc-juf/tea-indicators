@@ -256,6 +256,9 @@ class TEAIndicators:
                 'EWS': extended winter season (November to March)
         """
         self.CTP = ctp
+        ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
+        # TODO: add CF-Convention compatible attributes
+        self.CTP_results.attrs = ctp_attrs
     
     def calc_event_frequency(self):
         """
@@ -293,8 +296,6 @@ class TEAIndicators:
         
         event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC.notnull())
         event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR.notnull())
-        event_doy_gr_old = self._daily_results_filtered.DTEEC_GR.where(self._daily_results_filtered.DTEEC_GR.notnull(),
-                                                                   drop=True).time.dt.dayofyear
         resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
         resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
         
@@ -485,6 +486,20 @@ class TEAIndicators:
         if delete_daily_results:
             del self._daily_results_filtered
             del self.daily_results
+        ctp_attrs = get_attrs(vname='CTP', period=self.CTP)
+        self.CTP_results['time'].attrs = ctp_attrs
+
+    def save_CTP_results(self, filepath):
+        """
+        save all CTP results to filepath
+        """
+        self.CTP_results.to_netcdf(filepath)
+        
+    def load_CTP_results(self, filepath):
+        """
+        load all CTP results from filepath
+        """
+        self.CTP_results = xr.open_dataset(filepath)
 
     @staticmethod
     def _calc_dteec_1d(dtec_cell):
