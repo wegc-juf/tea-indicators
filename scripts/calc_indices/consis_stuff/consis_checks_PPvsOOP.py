@@ -125,15 +125,15 @@ def plot_gr_vars(opts, ods, nds):
     iplt, ldiff = 0, 0
     for ivar, vvar in enumerate(gr_vars_all):
         if opts.plot:
+            diff = ods[vvar] - nds[vvar]
+            if diff.max().values != 0:
+                print(vvar, diff.max().values)
+                ldiff += 1
             if vvar in gr_vars_plt:
                 axs[iplt].plot(ods[vvar], 'o-', color='tab:grey')
                 axs[iplt].plot(nds[vvar], 'o-', color='tab:green')
-                axs[iplt].set_title(vvar)
+                axs[iplt].set_title(f'{vvar}; diff_max = {diff.max().values:.2f}')
                 iplt += 1
-        diff = ods[vvar] - nds[vvar]
-        if diff.max().values != 0:
-            print(vvar, diff.max().values)
-            ldiff += 1
 
     if ldiff == 0:
         print('All GR vars OK.')
