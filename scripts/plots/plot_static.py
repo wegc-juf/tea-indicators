@@ -66,7 +66,8 @@ def getopts():
                         help='Parameter for which the TEA indices should be calculated '
                              'Options: T (= temperature, default), P (= precipitation).')
 
-    parser.add_argument('--precip_var',
+    parser.add_argument('--precip-var',
+                        dest='precip_var',
                         default='Px1h_7to7',
                         type=str,
                         choices=['Px1h', 'P24h', 'Px1h_7to7', 'P24h_7to7'],
@@ -78,7 +79,8 @@ def getopts():
                         type=float_1pcd,
                         help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
 
-    parser.add_argument('--threshold_type',
+    parser.add_argument('--threshold-type',
+                        dest='threshold_type',
                         type=str,
                         choices=['perc', 'abs'],
                         default='perc',

@@ -41,7 +41,8 @@ def get_opts():
                         action='store_true',
                         help='Set if chosen parameter is a precipitation parameter.')
 
-    parser.add_argument('--season_length',
+    parser.add_argument('--season-length',
+                        dest='season_length',
                         default=366,
                         type=int,
                         help='Number of days in season for threshold calculation. For whole year, '
@@ -58,7 +59,8 @@ def get_opts():
                         help='Radius for spatial smoothing of threshold grid in km [default: 0].'
                              'Used for precipitation parameter from SPARTACUS data.')
 
-    parser.add_argument('--threshold_type',
+    parser.add_argument('--threshold-type',
+                        dest='threshold_type',
                         type=str,
                         choices=['perc', 'abs'],
                         default='perc',

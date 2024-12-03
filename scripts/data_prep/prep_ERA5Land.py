@@ -40,7 +40,7 @@ def get_opts():
                         type=dir_path,
                         help='Output directory.')
 
-    parser.add_argument("--orog_file",
+    parser.add_argument('--orog-file',
                         default='/data/users/hst/cdrDPS/orographies/ERA5Land_geopotential.nc',
                         dest='orog',
                         help='Orography file.')

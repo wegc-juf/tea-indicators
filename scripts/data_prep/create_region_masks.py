@@ -43,18 +43,21 @@ def get_opts():
                              'In case of Austrian states, give name of state. '
                              'In case of european country, give ISO2 code of country.')
 
-    parser.add_argument('--target_sys',
+    parser.add_argument('--target-sys',
+                        dest='target_sys',
                         default=3416,
                         type=int,
                         help='ID of wanted coordinate System (https://epsg.io) which should be '
                              'used for mask. Default: 3416 (ETRS89 / Austria Lambert).')
 
-    parser.add_argument('--target_ds',
+    parser.add_argument('--target-ds',
+                        dest='target_ds',
                         default='SPARTACUS',
                         type=str,
                         help='Dataset for which mask should be created. Default: SPARTACUS')
 
-    parser.add_argument('--xy_name',
+    parser.add_argument('--xy-name',
+                        dest='xy_name',
                         type=str,
                         default='x,y',
                         help='Names of x and y coordinates in testfile, separated by ",". '
