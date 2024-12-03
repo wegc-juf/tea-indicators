@@ -45,7 +45,7 @@ def extend_tea_opts(opts):
     """
 
     pstr = opts.parameter
-    if opts.parameter == 'P':
+    if opts.parameter != 'Tx':
         pstr = f'{opts.precip_var}_'
 
     param_str = f'{pstr}{opts.threshold:.1f}p'
