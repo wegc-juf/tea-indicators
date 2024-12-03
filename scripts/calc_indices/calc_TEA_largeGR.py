@@ -20,6 +20,7 @@ from scripts.calc_indices.calc_TEA import (calc_event_frequency,
                                            calc_event_duration, calc_exceedance_magnitude,
                                            calc_exceedance_area_tex_sev)
 from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
+from scripts.calc_indices.TEA import TEAIndicators
 
 
 def select_cell(opts, lat, lon, data, static, masks):
