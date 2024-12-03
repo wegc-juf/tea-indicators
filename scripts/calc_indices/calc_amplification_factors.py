@@ -83,7 +83,8 @@ def getopts():
                         type=float,
                         help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
 
-    parser.add_argument('--threshold_type',
+    parser.add_argument('--threshold-type',
+                        dest='threshold_type',
                         type=str,
                         choices=['perc', 'abs'],
                         default='perc',

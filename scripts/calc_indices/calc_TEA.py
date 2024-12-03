@@ -100,14 +100,15 @@ def getopts():
                         type=float_1pcd,
                         help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
 
-    parser.add_argument('--threshold_type',
+    parser.add_argument('--threshold-type',
+                        dest='threshold_type',
                         type=str,
                         choices=['perc', 'abs'],
                         default='perc',
                         help='Pass "perc" (default) if percentiles should be used as thresholds or '
                              '"abs" for absolute thresholds.')
 
-    parser.add_argument('--low_extreme',
+    parser.add_argument('--low-extreme',
                         dest='low_extreme',
                         default=False,
                         action='store_true',
@@ -161,7 +162,7 @@ def getopts():
                         help='Set if spread estimators of decadal TEA indicators should also '
                              'be calculated. Default: False.')
 
-    parser.add_argument('--decadal_only',
+    parser.add_argument('--decadal-only',
                         dest='decadal_only',
                         default=False,
                         action='store_true',
