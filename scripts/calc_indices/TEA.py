@@ -4,6 +4,8 @@ Based on:
 TODO: add reference to the paper
 Equation numbers refer to Supplementary Notes
 """
+import warnings
+
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -236,7 +238,10 @@ class TEAIndicators:
         """
         save all variables to filepath
         """
-        self.daily_results.to_netcdf(filepath)
+        with warnings.catch_warnings():
+            # ignore warnings due to nan multiplication
+            warnings.simplefilter("ignore")
+            self.daily_results.to_netcdf(filepath)
     
     def load_daily_results(self, filepath):
         """
@@ -510,7 +515,10 @@ class TEAIndicators:
         """
         save all CTP results to filepath
         """
-        self.CTP_results.to_netcdf(filepath)
+        with warnings.catch_warnings():
+            # ignore warnings due to nan multiplication
+            warnings.simplefilter("ignore")
+            self.CTP_results.to_netcdf(filepath)
         
     def load_CTP_results(self, filepath):
         """
