@@ -29,6 +29,7 @@ class TEAIndicators:
             area_grid: results containing the area of each results cell, if None, area is assumed to be 1 for each cell
                        nan values mask out the corresponding results cells
             min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
+            low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
         """
         self.threshold_grid = threshold_grid
         if area_grid is None and threshold_grid is not None:
