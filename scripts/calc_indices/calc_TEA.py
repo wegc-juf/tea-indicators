@@ -180,6 +180,12 @@ def getopts():
                         default=False,
                         action='store_true',
                         help='Set if results should be compared to reference file. Default: False.')
+    
+    parser.add_argument('--save-old',
+                        dest='save_old',
+                        default=False,
+                        action='store_true',
+                        help='Set if old output files should be saved. Default: False.')
 
     myopts = parser.parse_args()
 
@@ -341,19 +347,21 @@ def save_output(opts, tea, masks):
                f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                f'_{opts.start}to{opts.end}.nc')
     
-    logger.info(f'Saving CTP indicators to {outpath}')
-    ds_out.to_netcdf(outpath)
+    if opts.save_old:
+        logger.info(f'Saving CTP indicators to {outpath}')
+        ds_out.to_netcdf(outpath)
+        
+        # save supplementary variables
+        logger.info('Saving supplementary variables')
+        ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
+                         f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                         f'_{opts.start}to{opts.end}.nc')
+    
     outpath_new = outpath.replace('.nc', '_new.nc')
     path_ref = outpath.replace('.nc', '_ref.nc')
     
     logger.info(f'Saving CTP indicators to {outpath_new}')
-    ds_out.to_netcdf(outpath_new)
-    
-    # save supplementary variables
-    logger.info('Saving supplementary variables')
-    ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
-                     f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                     f'_{opts.start}to{opts.end}.nc')
+    tea.save_CTP_results(outpath_new)
     
     if opts.compare_to_ref:
         compare_to_ref(tea, path_ref)

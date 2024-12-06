@@ -128,8 +128,9 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     TEA.daily_results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
     TEA.daily_results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
-    logger.info('Saving DTEC and DTEA')
-    save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
+    if opts.save_old:
+        logger.info('Saving DTEC and DTEA')
+        save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
 
     dtem_gr = TEA.daily_results.DTEM_GR
     dtem = TEA.daily_results.DTEM
@@ -139,17 +140,10 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     outname = (f'{opts.outpath}/daily_basis_variables/tmp/'
                f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                f'_{opts.start}to{opts.end}.nc')
-    logger.info(f'Saving DTEMs to {outname}')
-    dtems.to_netcdf(outname)
-
-    save_event_count(opts=opts, tea=TEA, cstr=cell_str)
-
-    # combine all basic variables into one ds
-    bv_files = sorted(glob.glob(
-        f'{opts.outpath}/daily_basis_variables/tmp/'
-        f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-        f'_{opts.start}to{opts.end}.nc'))
-    bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
+    if opts.save_old:
+        logger.info(f'Saving DTEMs to {outname}')
+        dtems.to_netcdf(outname)
+        save_event_count(opts=opts, tea=TEA, cstr=cell_str)
 
     bv_outpath = (f'{opts.outpath}/daily_basis_variables/'
                   f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
@@ -161,13 +155,20 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
                       f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                       f'_{opts.start}to{opts.end}.nc')
 
-    logger.info(f'Saving daily basis variables to {bv_outpath}')
-    bv_ds.to_netcdf(bv_outpath)
+    if opts.save_old:
+        # combine all basic variables into one ds
+        bv_files = sorted(glob.glob(
+            f'{opts.outpath}/daily_basis_variables/tmp/'
+            f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+            f'_{opts.start}to{opts.end}.nc'))
+        bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
+        logger.info(f'Saving daily basis variables to {bv_outpath}')
+        bv_ds.to_netcdf(bv_outpath)
+        for file in bv_files:
+            os.system(f'rm {file}')
+
     bv_outpath_new = bv_outpath.replace('.nc', '_new.nc')
     logger.info(f'Saving daily basis variables to {bv_outpath_new}')
     TEA.save_daily_results(bv_outpath_new)
-
-    for file in bv_files:
-        os.system(f'rm {file}')
     
     return TEA
