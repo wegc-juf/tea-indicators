@@ -182,9 +182,6 @@ def getopts():
                         help='Set if results should be compared to reference file. Default: False.')
 
     myopts = parser.parse_args()
-    if myopts.recalc_daily:
-        logger.info('Daily basis variables will be recalculated. Period set to annual.')
-        myopts.period = 'annual'
 
     return myopts
 
@@ -387,7 +384,11 @@ def calc_indicators(opts):
 
     # computation of daily basis variables (Methods chapter 3)
     if opts.recalc_daily:
+        logger.info('Daily basis variables will be recalculated. Period set to annual.')
+        old_period = opts.period
+        myopts.period = 'annual'
         tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
+        opts.period = old_period
     else:
         tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
         
