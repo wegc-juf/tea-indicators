@@ -207,6 +207,8 @@ class TEAIndicators:
         dtea_gr = self.daily_results.DTEA_GR
         dtem = self.daily_results.DTEM
         dtec_gr = self.daily_results.DTEC_GR
+        # replace 0 values with nan to avoid division by 0
+        dtec_gr = dtec_gr.where(dtec_gr > 0, np.nan)
         area_fac = self.area_grid / dtea_gr
         dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
         dtem_gr = dtem_gr.where(dtec_gr == 1, self.null_val)
