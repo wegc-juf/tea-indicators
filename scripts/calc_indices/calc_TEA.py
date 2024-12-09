@@ -419,6 +419,7 @@ def calc_indicators(opts):
 
     # save output
     save_output(opts=opts, tea=tea, masks=masks)
+    return tea
 
 
 def run():
@@ -446,15 +447,17 @@ def run():
                 opts.start = pstart
                 opts.end = pend
                 logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
-                calc_indicators(opts=opts)
+                tea = calc_indicators(opts=opts)
                 gc.collect()
         else:
-            calc_indicators(opts=opts)
+            tea = calc_indicators(opts=opts)
+    else:
+        tea = TEAIndicators()
 
     if opts.decadal or opts.decadal_only:
         opts.start, opts.end = start, end
         logger.info(f'Calculating decadal-mean primary variables.')
-        calc_decadal_indicators(opts=opts, suppl=False)
+        calc_decadal_indicators(opts=opts, suppl=False, tea=tea)
         logger.info(f'Calculating decadal-mean supplementary variables.')
         calc_decadal_indicators(opts=opts, suppl=True)
 
