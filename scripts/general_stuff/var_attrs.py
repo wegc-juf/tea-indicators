@@ -24,6 +24,9 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_uni
     attrs = {'ctp': {'long_name': f'climatic time period ({period})'},
              'CTP': {'long_name': f'start date of climatic time period {period}', 'standard_name': 'ctp_time'},
              'CTP_global_attrs': {'title': f'TEA indicators for annual climatic time period: {period}'},
+             'decadal': {'long_name': f'center year of decadal indicators for climatic time period {period}',},
+             'decadal_global_attrs': {'title': f'TEA decadal-mean indicator variables for climatic time period: '
+                                               f'{period}'},
              'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
              'DTEA': {'long_name': 'daily threshold exceedance area', 'units': '100 km^2'},
@@ -33,9 +36,8 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_uni
              'EF': {'long_name': 'event frequency', 'units': '1', 'metric_type': 'basic'},
              'doy_first': {'long_name': 'day of first event occurrence', 'units': '1', 'metric_type': 'basic'},
              'doy_last': {'long_name': 'day of last event occurrence', 'units': '1', 'metric_type': 'basic'},
-             'delta_y': {'long_name': 'annual exposure period', 'units': 'dys', 'metric_type': 'basic'},
              'AEP': {'long_name': 'annual exposure period', 'units': 'dys', 'metric_type': 'basic'},
-             'ED': {'long_name': 'cumulative events duration', 'units': 'dys', 'metric_type': 'basic'},
+             'ED': {'long_name': 'cumulative events duration', 'units': f'{data_unit} dys', 'metric_type': 'basic'},
              'ED_avg': {'long_name': 'average events duration', 'units': 'dys', 'metric_type': 'basic'},
              'EM': {'long_name': 'cumulative exceedance magnitude', 'units': data_unit,
                     'description': 'expresses the temporal events extremity (tEX)', 'metric_type': 'basic'},
@@ -55,7 +57,7 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_uni
                      'compound'},
              'ES_avg': {'long_name': 'average event severity',
                         'units': f'areal {data_unit} dys', 'metric_type': 'compound'},
-             'tEX': {'long_name': 'temporal events extremity', 'units': f'areal {data_unit} dys', 'metric_type':
+             'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} dys', 'metric_type':
                      'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
                                      'heat content', 'units': 'PJ', 'metric_type': 'compound'}

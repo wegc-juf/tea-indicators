@@ -278,6 +278,7 @@ class TEAIndicators:
         ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
         # TODO: add CF-Convention compatible attributes...
         self.CTP_results.attrs = ctp_attrs
+        self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=ctp)
     
     def calc_event_frequency(self):
         """
@@ -340,8 +341,8 @@ class TEAIndicators:
         doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
         doy_last.attrs = get_attrs(vname='doy_last')
         doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
-        aep.attrs = get_attrs(vname='delta_y')
-        aep_gr.attrs = get_attrs(vname='delta_y_GR')
+        aep.attrs = get_attrs(vname='AEP')
+        aep_gr.attrs = get_attrs(vname='AEP_GR')
         
         self.CTP_results['doy_first'] = doy_first
         self.CTP_results['doy_last'] = doy_last
@@ -385,8 +386,8 @@ class TEAIndicators:
     
     def calc_exceedance_magnitude(self):
         """
-        calculate exceedance magnitude (equation 17 and equation 18), median exceedance magnitude (equation 19), and
-        maximum exceedance magnitude (equation 20)
+        calculate average (EM_avg) and cumulative (tEX=EM) exceedance magnitude (equation 17 and equation 18),
+        median exceedance magnitude (equation 19), and maximum exceedance magnitude (equation 20)
         """
         
         if 'ED' not in self.CTP_results:
@@ -445,21 +446,43 @@ class TEAIndicators:
         self.CTP_results['EM_Max_GR'] = em_gr_max
         self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
     
-    def calc_total_events_extremity(self):
+    def calc_annual_total_events_extremity(self):
         """
-        calculate total events extremity (equation 21_3)
+        calculate annual total events extremity (equation 21_3)
         """
         # equation 21_3
         tex = self._CTP_resample_sum.DTEMA_GR
         tex.attrs = get_attrs(vname='TEX_GR')
         self.CTP_results['TEX_GR'] = tex
     
+    def calc_total_events_extremity(self, f, d=None, m=None, a=None, s=None):
+        """
+        calculate total events extremity (equation 21_4)
+        
+        Args:
+            f: event frequency
+            d: average event duration
+            m: average exceedance magnitude
+            a: average exceedance area
+            s: event severity
+        Either f, d, m, and a, or f and s must be provided
+        """
+        # equation 21_4
+        if s is None:
+            if d is None or m is None or a is None:
+                raise ValueError("Either f, d, m, and a, or f and s must be provided")
+            s = self.calc_event_severity(d=d, m=m, a=a)
+        tex = f * s
+        tex.attrs = get_attrs(vname='TEX_GR')
+        tex.rename('TEX_GR')
+        return tex
+    
     def calc_exceedance_area(self):
         """
         calculate exceedance area (equation 21_1)
         """
         if self.CTP_results['TEX_GR'] is None:
-            self.calc_total_events_extremity()
+            self.calc_annual_total_events_extremity()
         if self.CTP_results['EM_GR'] is None:
             self.calc_exceedance_magnitude()
         
@@ -468,7 +491,7 @@ class TEAIndicators:
         ea_avg.attrs = get_attrs(vname='EA_avg_GR')
         self.CTP_results['EA_avg_GR'] = ea_avg
     
-    def calc_event_severity(self):
+    def calc_annual_event_severity(self):
         """
         calculate event severity (equation 21_2)
         """
@@ -480,9 +503,57 @@ class TEAIndicators:
             self.calc_event_duration()
         
         # equation 21_2
-        es_avg = self.CTP_results.ED_avg_GR * self.CTP_results.EM_avg_GR * self.CTP_results.EA_avg_GR
-        es_avg.attrs = get_attrs(vname='ES_avg_GR')
+        es_avg = self.calc_event_severity(self.CTP_results.ED_avg_GR, self.CTP_results.EM_avg_GR,
+                                          self.CTP_results.EA_avg_GR)
         self.CTP_results['ES_avg_GR'] = es_avg
+    
+    def calc_event_severity(self, d, m, a):
+        """
+        calculate event severity (equation 21_2)
+        
+        Args:
+            d: average event duration
+            m: average exceedance magnitude
+            a: average exceedance area
+        """
+        # equation 21_5
+        es_avg = d * m * a
+        es_avg.attrs = get_attrs(vname='ES_avg_GR')
+        es_avg.rename('ES_avg_GR')
+        return es_avg
+    
+    def calc_cumulative_events_duration(self, f, d):
+        """
+        calculate cumulative events duration (equation 17_2)
+        
+        Args:
+            f: event frequency
+            d: average event duration
+        """
+        ced = f * d
+        ced.attrs = get_attrs(vname='ED')
+        ced.rename('ED')
+        return ced
+    
+    def calc_temporal_events_extremity(self, f=None, d=None, ed=None, m=None):
+        """
+        calculate temporal events extremity (equation 18_2)
+        
+        Args:
+            f: event frequency
+            d: average event duration
+            ed: cumulative events duration
+            m: average exceedance magnitude
+        either f, d, and m, or ed and m must be provided
+        """
+        if ed is None:
+            if f is None or d is None or m is None:
+                raise ValueError("Either f, d, and m, or ed and m must be provided")
+            ed = self.calc_cumulative_events_duration(f, d)
+        tem = ed * m
+        tem.attrs = get_attrs(vname='EM')
+        tem.rename('EM')
+        return tem
     
     def calc_annual_CTP_indicators(self, ctp, delete_daily_results=True):
         """
@@ -503,9 +574,9 @@ class TEAIndicators:
         self.calc_supplementary_event_vars()
         self.calc_event_duration()
         self.calc_exceedance_magnitude()
-        self.calc_total_events_extremity()
+        self.calc_annual_total_events_extremity()
         self.calc_exceedance_area()
-        self.calc_event_severity()
+        self.calc_annual_event_severity()
         if delete_daily_results:
             del self._daily_results_filtered
             del self.daily_results
@@ -525,8 +596,107 @@ class TEAIndicators:
         """
         load all CTP results from filepath
         """
-        self.CTP_results = xr.open_dataset(filepath)
+        self.CTP_results = xr.open_mfdataset(filepath)
+        
+    # ### Decadal mean functions ###
+    
+    def calc_decadal_indicators(self):
+        """
+        calculate decadal mean for all CTP indicators
+        equation 23_1 and equation 23_2
+        """
+        if self.CTP_results is None:
+            raise ValueError("CTP results must be calculated before calculating decadal mean")
+        
+        self._calc_decadal_mean()
+        self._calc_decadal_compound_vars()
+        # TODO: adjust doy_first(_GR) and doy_last(_GR) (Eq. 24)
+        # self._adjust_doy()
+        self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
+        
+    def _calc_decadal_mean(self):
+        """
+        calculate decadal mean for all basic CTP indicators (equation 23_1)
+        """
+        for var in self.CTP_results.data_vars:
+            if self.CTP_results[var].attrs['metric_type'] == 'basic':
+                self.decadal_results[var] = self.CTP_results[var].rolling(time=10, center=True).mean()
+                self.decadal_results[var].attrs = get_attrs(vname=var, dec=True)
+        
+    def _calc_decadal_compound_vars(self):
+        """
+        calculate decadal values for compound variables (equation 23_2)
+        """
+        
+        # calculate cumulative events duration (cf. equation 14_2 and equation 15_2)
+        ED = self.calc_cumulative_events_duration(f=self.decadal_results['EF'], d=self.decadal_results['ED_avg'])
+        ED.attrs = get_attrs(vname='ED', dec=True)
+        self.decadal_results['ED'] = ED
+        ED_GR = self.calc_cumulative_events_duration(f=self.decadal_results['EF_GR'], d=self.decadal_results[
+            'ED_avg_GR'])
+        ED_GR.attrs = get_attrs(vname='ED_GR', dec=True)
+        self.decadal_results['ED_GR'] = ED_GR
+        
+        # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 17_2
+        #   and equation 18_2)
+        EM = self.calc_temporal_events_extremity(ed=self.decadal_results['ED'], m=self.decadal_results['EM_avg'])
+        EM.attrs = get_attrs(vname='EM', dec=True)
+        self.decadal_results['EM'] = EM
+        EM_GR = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'],
+                                                    m=self.decadal_results['EM_avg_GR'])
+        EM_GR.attrs = get_attrs(vname='EM_GR', dec=True)
+        self.decadal_results['EM_GR'] = EM_GR
+        
+        # calculate cumulative median exceedance magnitude (cf. equation 19_2 and equation 19_4)
+        EM_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED'], m=self.decadal_results['EM_avg_Md'])
+        EM_Md.attrs = get_attrs(vname='EM_Md', dec=True)
+        self.decadal_results['EM_Md'] = EM_Md
+        EM_GR_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'], m=self.decadal_results[
+            'EM_avg_GR_Md'])
+        EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True)
+        self.decadal_results['EM_GR_Md'] = EM_GR_Md
+        
+        # calculate cumulative maximum exceedance magnitude (cf. equation 20_2)
+        EM_Max_GR = self.decadal_results['EM_avg_Max_GR'] * ED_GR
+        EM_Max_GR.attrs = get_attrs(vname='EM_Max_GR', dec=True)
+        self.decadal_results['EM_Max_GR'] = EM_Max_GR
 
+        # calculate duration-magnitude
+        DM = self.decadal_results['ED_avg'] * self.decadal_results['EM_avg']
+        DM.attrs = get_attrs(vname='DM', dec=True)
+        self.decadal_results['DM'] = DM
+        DM_GR = self.decadal_results['ED_avg_GR'] * self.decadal_results['EM_avg_GR']
+        DM_GR.attrs = get_attrs(vname='DM_GR', dec=True)
+        self.decadal_results['DM_GR'] = DM_GR
+        
+        # calculate event severity (cf. equation 21_2)
+        es_avg = self.calc_event_severity(d=self.decadal_results['ED_avg_GR'], m=self.decadal_results['EM_avg_GR'],
+                                          a=self.decadal_results['EA_avg_GR'])
+        es_avg.attrs = get_attrs(vname='ES_avg_GR', dec=True)
+        self.decadal_results['ES_avg_GR'] = es_avg
+        
+        # calculate total events extremity (cf. equation 21_4)
+        TEX = self.calc_total_events_extremity(f=self.decadal_results['EF_GR'], s=self.decadal_results['ES_avg_GR'])
+        TEX.attrs = get_attrs(vname='TEX_GR', dec=True)
+        self.decadal_results['TEX_GR'] = TEX
+        
+    def _adjust_doy(self):
+        """
+        adjust doy_first(_GR) and doy_last(_GR) (Eq. 24)
+        """
+        data['doy_first'] = data['doy_first'] - 0.5 * (
+                30.5 * data['AEP'] - (data['doy_last'] - data['doy_first'] + 1))
+        data['doy_last'] = data['doy_last'] + 0.5 * (
+                30.5 * data['AEP'] - (data['doy_last'] - data['doy_first'] + 1))
+        
+        if 'doy_first_GR' in data.data_vars:
+            data['doy_first_GR'] = data['doy_first_GR'] - 0.5 * (
+                    30.5 * data['AEP_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
+            data['doy_last_GR'] = data['doy_last_GR'] + 0.5 * (
+                    30.5 * data['AEP_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
+        
+        return data
+    
     def _calc_dteec_1d(self, dtec_cell):
         """
         calculate DTEEC according to equation 04 and equation 05
