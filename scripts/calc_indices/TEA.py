@@ -613,7 +613,6 @@ class TEAIndicators:
         
         self._calc_decadal_mean()
         self._calc_decadal_compound_vars()
-        # TODO: adjust doy_first(_GR) and doy_last(_GR) (Eq. 24)
         # self._adjust_doy()
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
         
@@ -685,20 +684,39 @@ class TEAIndicators:
         
     def _adjust_doy(self):
         """
-        adjust doy_first(_GR) and doy_last(_GR) (Eq. 24)
+        adjust doy_first(_GR) and doy_last(_GR) (Equation 24)
         """
-        data['doy_first'] = data['doy_first'] - 0.5 * (
-                30.5 * data['AEP'] - (data['doy_last'] - data['doy_first'] + 1))
-        data['doy_last'] = data['doy_last'] + 0.5 * (
-                30.5 * data['AEP'] - (data['doy_last'] - data['doy_first'] + 1))
+        doy_first = self.decadal_results['doy_first']
+        doy_last = self.decadal_results['doy_last']
+        aep = self.decadal_results['AEP']
+        doy_first_adjusted, doy_last_adjusted = self._calc_doy_adjustment(doy_first, doy_last, aep)
+        self.decadal_results['doy_first'] = doy_first_adjusted
+        self.decadal_results['doy_last'] = doy_last_adjusted
         
-        if 'doy_first_GR' in data.data_vars:
-            data['doy_first_GR'] = data['doy_first_GR'] - 0.5 * (
-                    30.5 * data['AEP_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
-            data['doy_last_GR'] = data['doy_last_GR'] + 0.5 * (
-                    30.5 * data['AEP_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
-        
-        return data
+        doy_first_GR = self.decadal_results['doy_first_GR']
+        doy_last_GR = self.decadal_results['doy_last_GR']
+        aep_GR = self.decadal_results['AEP_GR']
+        doy_first_adjusted_GR, doy_last_adjusted_GR = self._calc_doy_adjustment(doy_first_GR, doy_last_GR, aep_GR)
+        self.decadal_results['doy_first_GR'] = doy_first_adjusted_GR
+        self.decadal_results['doy_last_GR'] = doy_last_adjusted_GR
+
+    @staticmethod
+    def _calc_doy_adjustment(doy_first, doy_last, aep):
+        """
+        calculate adjustment for doy_first and doy_last (Equation 24)
+        Args:
+            doy_first:
+            doy_last:
+            aep: annual exposure period
+
+        Returns:
+            doy_first_adjusted, doy_last_adjusted
+
+        """
+        doy_offset = 0.5 * (30.5 * aep - (doy_last - doy_first + 1))
+        doy_first_adjusted = doy_first - doy_offset
+        doy_last_adjusted = doy_last + doy_offset
+        return doy_first_adjusted, doy_last_adjusted
     
     def _calc_dteec_1d(self, dtec_cell):
         """
