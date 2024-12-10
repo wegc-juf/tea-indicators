@@ -9,6 +9,7 @@ import xarray as xr
 
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.TEA_logger import logger
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,12 +17,13 @@ logging.basicConfig(
 )
 
 
-def load_ctp_data(opts, suppl):
+def load_ctp_data(opts, suppl, tea):
     """
     load CTP data
     Args:
         opts: CLI parameter
         suppl: set if supplementary variables should be processed
+        tea: TEA object
 
     Returns:
         data: CTP ds
@@ -41,16 +43,21 @@ def load_ctp_data(opts, suppl):
             return file_start <= end and file_end >= start
         else:
             return False
-
-    files = sorted(glob.glob(
-        f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}'
-        f'_{opts.dataset}_*.nc'))
+    
+    filenames = (f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}'
+                 f'_{opts.dataset}_*_new.nc')
+    files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
 
     data = xr.open_mfdataset(paths=files, data_vars='minimal')
+    tea.load_CTP_results(filenames)
 
     # check if more data than chosen period is loaded and select correct period if so
-    syr, eyr = int(files[0].split('_')[-1][:4]), int(files[-1].split('_')[-1][6:10])
+    if 'new' in filenames:
+        date_index = -2
+    else:
+        date_index = -1
+    syr, eyr = int(files[0].split('_')[date_index][:4]), int(files[-1].split('_')[date_index][6:10])
     if opts.start != syr or opts.end != eyr:
         data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
 
@@ -82,7 +89,7 @@ def adjust_doy(data):
 
 def save_output(opts, data, su, sl, suppl):
     """
-    save decdal-mean output
+    save decadal-mean output
     Args:
         opts: CLI parameter
         data: ds
@@ -176,24 +183,27 @@ def rolling_decadal_mean(data):
 
     # equation 23 (decadal averaging)
     for vvar in data.data_vars:
-        data[vvar] = data.rolling(ctp=10, center=True).construct('window')[vvar].dot(
+        data[vvar] = data.rolling(time=10, center=True).construct('window')[vvar].dot(
             weights)
         data[vvar].attrs = get_attrs(vname=vvar, dec=True)
 
     return data
 
 
-def calc_decadal_indicators(opts, suppl=False):
+def calc_decadal_indicators(opts, suppl=False, tea=None):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
     Args:
         opts: CLI parameter
         suppl: set if supplementary variables should be processed
+        tea: TEA object
 
     Returns:
 
     """
-    data = load_ctp_data(opts=opts, suppl=suppl)
+    data = load_ctp_data(opts=opts, suppl=suppl, tea=tea)
+    logger.info("Calculating decadal indicators")
+    tea.calc_decadal_indicators()
 
     dec_data = data.copy()
 
