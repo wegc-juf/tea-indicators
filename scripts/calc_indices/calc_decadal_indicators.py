@@ -74,15 +74,15 @@ def adjust_doy(data):
         data: ds with adjusted doy vars
     """
     data['doy_first'] = data['doy_first'] - 0.5 * (
-            30.5 * data['delta_y'] - (data['doy_last'] - data['doy_first'] + 1))
+            30.5 * data['AEP'] - (data['doy_last'] - data['doy_first'] + 1))
     data['doy_last'] = data['doy_last'] + 0.5 * (
-            30.5 * data['delta_y'] - (data['doy_last'] - data['doy_first'] + 1))
+            30.5 * data['AEP'] - (data['doy_last'] - data['doy_first'] + 1))
 
     if 'doy_first_GR' in data.data_vars:
         data['doy_first_GR'] = data['doy_first_GR'] - 0.5 * (
-                30.5 * data['delta_y_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
+                30.5 * data['AEP_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
         data['doy_last_GR'] = data['doy_last_GR'] + 0.5 * (
-                30.5 * data['delta_y_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
+                30.5 * data['AEP_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
 
     return data
 

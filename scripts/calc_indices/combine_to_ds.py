@@ -48,10 +48,10 @@ def create_svars_ds(doy_first, doy_first_gr, doy_last, doy_last_gr, delta_y, del
     doy_last_gr = doy_last_gr.rename(f'doy_last_GR')
     doy_last_gr = doy_last_gr.assign_attrs(get_attrs(vname='doy_last_GR'))
 
-    delta_y = delta_y.rename(f'delta_y')
-    delta_y = delta_y.assign_attrs(get_attrs(vname='delta_y'))
-    delta_y_gr = delta_y_gr.rename(f'delta_y_GR')
-    delta_y_gr = delta_y_gr.assign_attrs(get_attrs(vname='delta_y_GR'))
+    delta_y = delta_y.rename(f'AEP')
+    delta_y = delta_y.assign_attrs(get_attrs(vname='AEP'))
+    delta_y_gr = delta_y_gr.rename(f'AEP_GR')
+    delta_y_gr = delta_y_gr.assign_attrs(get_attrs(vname='AEP_GR'))
 
     svars_ds = xr.merge([doy_first, doy_last, delta_y, doy_first_gr, doy_last_gr, delta_y_gr])
 
