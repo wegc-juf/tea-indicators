@@ -55,6 +55,9 @@ class TEAIndicators:
         self._CTP_resample_sum = None
         self.CTP_results = xr.Dataset()
         
+        # Decadal data
+        self.decadal_results = xr.Dataset()
+        
         if self.treat_zero_as_nan:
             self.null_val = np.nan
         else:
