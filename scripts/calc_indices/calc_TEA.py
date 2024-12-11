@@ -394,7 +394,7 @@ def calc_indicators(opts):
     if opts.recalc_daily:
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
         old_period = opts.period
-        myopts.period = 'annual'
+        opts.period = 'annual'
         tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
         opts.period = old_period
     else:
