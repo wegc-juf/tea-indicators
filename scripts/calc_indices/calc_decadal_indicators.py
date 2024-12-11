@@ -203,7 +203,7 @@ def calc_decadal_indicators(opts, suppl=False, tea=None):
     """
     data = load_ctp_data(opts=opts, suppl=suppl, tea=tea)
     logger.info("Calculating decadal indicators")
-    tea.calc_decadal_indicators()
+    tea.calc_decadal_indicators(calc_spread=opts.spreads)
 
     dec_data = data.copy()
 

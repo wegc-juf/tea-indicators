@@ -604,7 +604,7 @@ class TEAIndicators:
         
     # ### Decadal mean functions ###
     
-    def calc_decadal_indicators(self):
+    def calc_decadal_indicators(self, calc_spread=False):
         """
         calculate decadal mean for all CTP indicators
         equation 23_1 and equation 23_2
