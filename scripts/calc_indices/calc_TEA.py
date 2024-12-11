@@ -457,9 +457,7 @@ def run():
     if opts.decadal or opts.decadal_only:
         opts.start, opts.end = start, end
         logger.info(f'Calculating decadal-mean primary variables.')
-        calc_decadal_indicators(opts=opts, suppl=False, tea=tea)
-        logger.info(f'Calculating decadal-mean supplementary variables.')
-        calc_decadal_indicators(opts=opts, suppl=True)
+        calc_decadal_indicators(opts=opts, tea=tea)
 
 
 if __name__ == '__main__':

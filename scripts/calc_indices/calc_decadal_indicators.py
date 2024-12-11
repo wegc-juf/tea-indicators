@@ -17,12 +17,11 @@ logging.basicConfig(
 )
 
 
-def load_ctp_data(opts, suppl, tea):
+def load_ctp_data(opts, tea):
     """
     load CTP data
     Args:
         opts: CLI parameter
-        suppl: set if supplementary variables should be processed
         tea: TEA object
 
     Returns:
@@ -30,11 +29,6 @@ def load_ctp_data(opts, suppl, tea):
     """
 
     ctppath = f'{opts.outpath}ctp_indicator_variables/'
-
-    sdir, suppl_str = '', ''
-    if suppl:
-        sdir = 'supplementary/'
-        suppl_str = 'suppl'
 
     def is_in_period(filename, start, end):
         match = re.search(pattern=r'(\d{4})to(\d{4})', string=filename)
@@ -44,7 +38,7 @@ def load_ctp_data(opts, suppl, tea):
         else:
             return False
     
-    filenames = (f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}'
+    filenames = (f'{ctppath}CTP_{opts.param_str}_{opts.region}_{opts.period}'
                  f'_{opts.dataset}_*_new.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
@@ -87,7 +81,7 @@ def adjust_doy(data):
     return data
 
 
-def save_output(opts, data, su, sl, suppl):
+def save_output(opts, data, su, sl):
     """
     save decadal-mean output
     Args:
@@ -95,32 +89,26 @@ def save_output(opts, data, su, sl, suppl):
         data: ds
         su: upper spread ds
         sl: lower spread ds
-        suppl: True if supplementary variables are processed
 
     Returns:
 
     """
-    sdir, suppl_str = '', ''
-    if suppl:
-        sdir = 'supplementary/'
-        suppl_str = 'suppl'
-
     data = create_history(cli_params=sys.argv, ds=data)
 
-    path = Path(f'{opts.outpath}dec_indicator_variables/supplementary/')
+    path = Path(f'{opts.outpath}/dec_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
-    data.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                   f'DEC{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+    data.to_netcdf(f'{opts.outpath}dec_indicator_variables/'
+                   f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}.nc')
 
     if su:
         sl = create_history(cli_params=sys.argv, ds=sl)
         su = create_history(cli_params=sys.argv, ds=su)
-        sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                     f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.period}'
+        sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/'
+                     f'DEC_sLOW_{opts.param_str}_{opts.region}_{opts.period}'
                      f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-        su.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                     f'DEC{suppl_str}_sUPP_{opts.param_str}_{opts.region}_{opts.period}'
+        su.to_netcdf(f'{opts.outpath}dec_indicator_variables/'
+                     f'DEC_sUPP_{opts.param_str}_{opts.region}_{opts.period}'
                      f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
 
@@ -190,18 +178,17 @@ def rolling_decadal_mean(data):
     return data
 
 
-def calc_decadal_indicators(opts, suppl=False, tea=None):
+def calc_decadal_indicators(opts, tea=None):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
     Args:
         opts: CLI parameter
-        suppl: set if supplementary variables should be processed
         tea: TEA object
 
     Returns:
 
     """
-    data = load_ctp_data(opts=opts, suppl=suppl, tea=tea)
+    data = load_ctp_data(opts=opts, tea=tea)
     logger.info("Calculating decadal indicators")
     tea.calc_decadal_indicators(calc_spread=opts.spreads)
     path = Path(f'{opts.outpath}/dec_indicator_variables/')
@@ -225,4 +212,7 @@ def calc_decadal_indicators(opts, suppl=False, tea=None):
         logging.info(f'Calculating spread estimators.')
         su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
 
-    save_output(opts=opts, data=dec_data, su=su, sl=sl, suppl=suppl)
+    logger.info('Saving old decadal indicators')
+    save_output(opts=opts, data=dec_data, su=su, sl=sl)
+    
+    # TODO compare_to_ref_decadal
