@@ -404,9 +404,13 @@ class TEAIndicators:
     
         # calc average exceedance magnitude
         # equation 17_1
-        em_avg = em / self.CTP_results.ED
+        ed = self.CTP_results.ED
+        em_avg = em / ed
+        em_avg = xr.where(ed == 0, 0, em_avg)
         # equation 18_1
-        em_avg_gr = em_gr / self.CTP_results.ED_GR
+        ed_gr = self.CTP_results.ED_GR
+        em_avg_gr = em_gr / ed_gr
+        em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
         
         em.attrs = get_attrs(vname='EM')
         em_gr.attrs = get_attrs(vname='EM_GR')
