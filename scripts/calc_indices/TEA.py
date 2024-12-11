@@ -631,6 +631,12 @@ class TEAIndicators:
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
             self.decadal_results.to_netcdf(filepath)
+    
+    def load_decadal_results(self, filepath):
+        """
+        load all decadal results from filepath
+        """
+        self.decadal_results = xr.open_dataset(filepath)
         
     def _calc_decadal_mean(self):
         """
