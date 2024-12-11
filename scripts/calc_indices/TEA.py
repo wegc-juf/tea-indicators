@@ -629,7 +629,11 @@ class TEAIndicators:
         """
         for var in self.CTP_results.data_vars:
             if self.CTP_results[var].attrs['metric_type'] == 'basic':
-                self.decadal_results[var] = self.CTP_results[var].rolling(time=10, center=True).mean()
+                self.decadal_results[var] = self.CTP_results[var].rolling(time=10, center=True, min_periods=1).mean(
+                    skipna=True)
+                # set first and last 5 years to nan
+                self.decadal_results[var][:5] = np.nan
+                self.decadal_results[var][-4:] = np.nan
                 self.decadal_results[var].attrs = get_attrs(vname=var, dec=True)
         
     def _calc_decadal_compound_vars(self):
