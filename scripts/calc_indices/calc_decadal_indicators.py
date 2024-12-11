@@ -4,12 +4,13 @@ import numpy as np
 from pathlib import Path
 import pandas as pd
 import re
-import sys
+import sys, os
 import xarray as xr
 
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.general_functions import create_history
 from scripts.general_stuff.TEA_logger import logger
+from TEA import TEAIndicators
 
 logging.basicConfig(
     level=logging.INFO,
@@ -178,41 +179,95 @@ def rolling_decadal_mean(data):
     return data
 
 
-def calc_decadal_indicators(opts, tea=None):
+def calc_decadal_indicators(opts, tea, recalc=False):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
     Args:
         opts: CLI parameter
         tea: TEA object
+        recalc: recalculate decadal indicators
 
     Returns:
 
     """
-    data = load_ctp_data(opts=opts, tea=tea)
-    logger.info("Calculating decadal indicators")
-    tea.calc_decadal_indicators(calc_spread=opts.spreads)
-    path = Path(f'{opts.outpath}/dec_indicator_variables/')
-    path.mkdir(parents=True, exist_ok=True)
     outpath_new = (f'{opts.outpath}/dec_indicator_variables/'
                    f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}_new.nc')
-    logger.info(f'Saving decadal indicators to {outpath_new}')
-    tea.save_decadal_results(outpath_new)
+    if recalc:
+        data = load_ctp_data(opts=opts, tea=tea)
+        logger.info("Calculating decadal indicators")
+        tea.calc_decadal_indicators(calc_spread=opts.spreads)
+        path = Path(f'{opts.outpath}/dec_indicator_variables/')
+        path.mkdir(parents=True, exist_ok=True)
+        logger.info(f'Saving decadal indicators to {outpath_new}')
+        tea.save_decadal_results(outpath_new)
+    else:
+        logger.info(f'Loading decadal indicators from {outpath_new}. To recalculate call function with recalc=True')
+        tea = TEAIndicators()
+        tea.load_decadal_results(outpath_new)
 
-    dec_data = data.copy()
-
-    dec_data = rolling_decadal_mean(data=dec_data)
-
-    # equation 24 (re-adjusting doy vars)
-    if 'doy_first' in data.data_vars:
-        dec_data = adjust_doy(data=dec_data)
-
-    su, sl = None, None
-    if opts.spreads:
-        logging.info(f'Calculating spread estimators.')
-        su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
-
-    logger.info('Saving old decadal indicators')
-    save_output(opts=opts, data=dec_data, su=su, sl=sl)
+    if opts.save_old:
+        dec_data = data.copy()
+        
+        dec_data = rolling_decadal_mean(data=dec_data)
+        
+        # equation 24 (re-adjusting doy vars)
+        if 'doy_first' in data.data_vars:
+            dec_data = adjust_doy(data=dec_data)
+        
+        su, sl = None, None
+        if opts.spreads:
+            logging.info(f'Calculating spread estimators.')
+            su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
+        logger.info('Saving old decadal indicators')
+        save_output(opts=opts, data=dec_data, su=su, sl=sl)
     
-    # TODO compare_to_ref_decadal
+    if opts.compare_to_ref:
+        # TODO: in the future compare to new reference file
+        file_ref = (f'{opts.outpath}/dec_indicator_variables/DEC_{opts.param_str}_{opts.region}_{opts.period}'
+                    f'_{opts.dataset}_{opts.start}to{opts.end}_ref.nc')
+        compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
+        file_ref_slow = file_ref.replace('DEC', 'DEC_sLOW')
+        file_ref_supp = file_ref.replace('DEC', 'DEC_sUPP')
+        compare_to_ref_decadal(tea=tea, filename_ref=file_ref_slow)
+        compare_to_ref_decadal(tea=tea, filename_ref=file_ref_supp)
+
+
+def compare_to_ref_decadal(tea, filename_ref):
+    """
+    compare results to reference file
+    TODO: move this to test routine
+    Args:
+        tea: TEA object
+        filename_ref: reference file
+    """
+    
+    if os.path.exists(filename_ref):
+        if 'sLOW' in filename_ref:
+            spread = 'slow'
+        elif 'sUPP' in filename_ref:
+            spread = 'supp'
+        else:
+            spread = None
+        logger.info(f'Comparing results to reference file {filename_ref}')
+        tea_ref = TEAIndicators()
+        tea_ref.load_decadal_results(filename_ref)
+        for vvar in tea.decadal_results.data_vars:
+            attrs = tea.decadal_results[vvar].attrs
+            if attrs['metric_type'] == 'compound':
+                logger.info(f'Skipping compound metric {vvar}')
+                continue
+            if spread is None and ('supp' in vvar or 'slow' in vvar):
+                continue
+            if spread is not None and spread not in vvar:
+                continue
+            if vvar in tea_ref.decadal_results.data_vars:
+                diff = tea.decadal_results[vvar] - tea_ref.decadal_results[vvar]
+                if diff.max() > 1e-6:
+                    logger.warning(f'Maximum difference in {vvar} is {diff.max().values}')
+            else:
+                logger.warning(f'{vvar} not found in reference file.')
+    else:
+        logger.warning(f'Reference file {filename_ref} not found.')
+
+

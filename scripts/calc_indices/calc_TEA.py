@@ -401,7 +401,7 @@ def calc_indicators(opts):
         tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
         
     dbv_filename_new = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
-                           f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')
+                        f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')
 
     if not opts.recalc_daily:
         logger.info(f'Loading daily basis variables from {dbv_filename_new}; if you want to recalculate them, '
