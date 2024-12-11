@@ -372,15 +372,16 @@ class TEAIndicators:
         self.CTP_results['ED'] = ed
         self.CTP_results['ED_GR'] = ed_gr
         
-        # set EF = 0 to nan
-        ef = self.CTP_results['EF'].where(self.CTP_results['EF'] > 0)
-        ef_gr = self.CTP_results['EF_GR'].where(self.CTP_results['EF_GR'] > 0)
+        ef = self.CTP_results['EF']
+        ef_gr = self.CTP_results['EF_GR']
         
         # calc average event duration
         # equation 14_1
         ed_avg = ed / ef
+        ed_avg = xr.where(ef == 0, 0, ed_avg)
         # equation 15_1
         ed_avg_gr = ed_gr / ef_gr
+        ed_avg_gr = xr.where(ef_gr == 0, 0, ed_avg_gr)
         
         ed_avg.attrs = get_attrs(vname='ED_avg')
         ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
