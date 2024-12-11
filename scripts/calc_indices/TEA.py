@@ -622,6 +622,15 @@ class TEAIndicators:
         # TODO: optional calculation of AEHC
         self.calc_spread_estimators()
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
+    
+    def save_decadal_results(self, filepath):
+        """
+        save all decadal results to filepath
+        """
+        with warnings.catch_warnings():
+            # ignore warnings due to nan multiplication
+            warnings.simplefilter("ignore")
+            self.decadal_results.to_netcdf(filepath)
         
     def _calc_decadal_mean(self):
         """

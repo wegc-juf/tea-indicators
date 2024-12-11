@@ -26,6 +26,7 @@ def create_history(cli_params, ds):
 
     return ds
 
+
 def ref_cc_params():
     params = {'REF': {'start': '1961-01-01', 'end': '1990-12-31',
                       'start_cy': '1966-01-01', 'end_cy': '1986-12-31'},

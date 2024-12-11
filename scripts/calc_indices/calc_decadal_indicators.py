@@ -204,6 +204,13 @@ def calc_decadal_indicators(opts, suppl=False, tea=None):
     data = load_ctp_data(opts=opts, suppl=suppl, tea=tea)
     logger.info("Calculating decadal indicators")
     tea.calc_decadal_indicators(calc_spread=opts.spreads)
+    path = Path(f'{opts.outpath}/dec_indicator_variables/')
+    path.mkdir(parents=True, exist_ok=True)
+    outpath_new = (f'{opts.outpath}/dec_indicator_variables/'
+                   f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                   f'_{opts.start}to{opts.end}_new.nc')
+    logger.info(f'Saving decadal indicators to {outpath_new}')
+    tea.save_decadal_results(outpath_new)
 
     dec_data = data.copy()
 
