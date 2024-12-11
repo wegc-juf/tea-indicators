@@ -559,7 +559,7 @@ class TEAIndicators:
         tem.rename('EM')
         return tem
     
-    def calc_annual_CTP_indicators(self, ctp, delete_daily_results=True):
+    def calc_annual_CTP_indicators(self, ctp, delete_daily_results=False):
         """
         calculate all annual Climatic Time Period (CTP) indicators
         
@@ -615,6 +615,8 @@ class TEAIndicators:
         self._calc_decadal_mean()
         self._calc_decadal_compound_vars()
         # self._adjust_doy()
+        # TODO: optional calculation of AEHC
+        self.calc_spread_estimators()
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
         
     def _calc_decadal_mean(self):
@@ -664,14 +666,6 @@ class TEAIndicators:
         EM_Max_GR.attrs = get_attrs(vname='EM_Max_GR', dec=True)
         self.decadal_results['EM_Max_GR'] = EM_Max_GR
 
-        # calculate duration-magnitude
-        DM = self.decadal_results['ED_avg'] * self.decadal_results['EM_avg']
-        DM.attrs = get_attrs(vname='DM', dec=True)
-        self.decadal_results['DM'] = DM
-        DM_GR = self.decadal_results['ED_avg_GR'] * self.decadal_results['EM_avg_GR']
-        DM_GR.attrs = get_attrs(vname='DM_GR', dec=True)
-        self.decadal_results['DM_GR'] = DM_GR
-        
         # calculate event severity (cf. equation 21_2)
         es_avg = self.calc_event_severity(d=self.decadal_results['ED_avg_GR'], m=self.decadal_results['EM_avg_GR'],
                                           a=self.decadal_results['EA_avg_GR'])
@@ -682,6 +676,40 @@ class TEAIndicators:
         TEX = self.calc_total_events_extremity(f=self.decadal_results['EF_GR'], s=self.decadal_results['ES_avg_GR'])
         TEX.attrs = get_attrs(vname='TEX_GR', dec=True)
         self.decadal_results['TEX_GR'] = TEX
+    
+    def calc_spread_estimators(self):
+        """
+        calculate spread estimators (equation 25)
+        """
+        annual_data = self.CTP_results
+        dec_data = self.decadal_results
+        supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
+        for icy, cy in enumerate(annual_data.time):
+            # skip first and last 5 years
+            if icy < 5 or icy > len(annual_data.time) - 4:
+                continue
+            one_decade = annual_data.isel(time=slice(icy - 5, icy + 5))
+            center_val = dec_data.isel(time=icy)
+            # equation 25_1
+            cupp = xr.where(one_decade > center_val, 1, 0)
+            
+            cupp_sum = cupp.sum(dim='time')
+            cupp_sum = cupp_sum.where(cupp_sum > 0, 1)
+            supp_per = np.sqrt(1 / cupp_sum * ((cupp * (one_decade - center_val)**2).sum(dim='time')))
+            
+            clow_sum = (1 - cupp).sum(dim='time')
+            clow_sum = clow_sum.where(clow_sum > 0, 1)
+            slow_per = np.sqrt(1 / clow_sum * (((1 - cupp) * (one_decade - center_val)**2).sum(dim='time')))
+            
+            supp.loc[{'time': cy}] = supp_per
+            slow.loc[{'time': cy}] = slow_per
+        
+        for vvar in supp.data_vars:
+            supp[vvar].attrs = get_attrs(vname=vvar, spread='upper')
+            self.decadal_results[vvar + '_supp'] = supp[vvar]
+        for vvar in slow.data_vars:
+            slow[vvar].attrs = get_attrs(vname=vvar, spread='lower')
+            self.decadal_results[vvar + '_slow'] = slow[vvar]
         
     def _adjust_doy(self):
         """
