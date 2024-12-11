@@ -136,25 +136,25 @@ def calc_spread_estimators(data, dec_data):
     """
 
     supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
-    for icy, cy in enumerate(data.ctp):
+    for icy, cy in enumerate(data.time):
         # skip first and last 5 years
-        if icy < 5 or icy > len(data.ctp) - 4:
+        if icy < 5 or icy > len(data.time) - 4:
             continue
-        pdata = data.isel(ctp=slice(icy - 5, icy + 5))
-        cupp = xr.where(pdata > dec_data.isel(ctp=icy), 1, 0)
+        pdata = data.isel(time=slice(icy - 5, icy + 5))
+        cupp = xr.where(pdata > dec_data.isel(time=icy), 1, 0)
 
-        cupp_sum = cupp.sum(dim='ctp')
+        cupp_sum = cupp.sum(dim='time')
         cupp_sum = cupp_sum.where(cupp_sum > 0, 1)
         supp_per = np.sqrt((1 / (cupp_sum.max()))
-                           * ((cupp * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
+                           * ((cupp * (data - dec_data.isel(time=icy)) ** 2).sum()))
 
-        clow_sum = (1 - cupp).sum(dim='ctp')
+        clow_sum = (1 - cupp).sum(dim='time')
         clow_sum = clow_sum.where(clow_sum > 0, 1)
         slow_per = np.sqrt((1 / (clow_sum.max()))
-                           * (((1 - cupp) * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
+                           * (((1 - cupp) * (data - dec_data.isel(time=icy)) ** 2).sum()))
 
-        supp.loc[{'ctp': cy}] = supp_per
-        slow.loc[{'ctp': cy}] = slow_per
+        supp.loc[{'time': cy}] = supp_per
+        slow.loc[{'time': cy}] = slow_per
 
     for vvar in supp.data_vars:
         supp[vvar].attrs = get_attrs(vname=vvar, spread='upper')
