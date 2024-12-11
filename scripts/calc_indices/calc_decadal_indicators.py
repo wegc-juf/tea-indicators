@@ -138,13 +138,13 @@ def calc_spread_estimators(data, dec_data):
 
         cupp_sum = cupp.sum(dim='ctp')
         cupp_sum = cupp_sum.where(cupp_sum > 0, 1)
-        supp_per = np.sqrt((1 / (cupp_sum.max()))
-                           * ((cupp * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
+        supp_per = np.sqrt((1 / cupp_sum)
+                           * ((cupp * (pdata - dec_data.isel(ctp=icy)) ** 2).sum()))
 
         clow_sum = (1 - cupp).sum(dim='ctp')
         clow_sum = clow_sum.where(clow_sum > 0, 1)
-        slow_per = np.sqrt((1 / (clow_sum.max()))
-                           * (((1 - cupp) * (data - dec_data.isel(ctp=icy)) ** 2).sum()))
+        slow_per = np.sqrt((1 / clow_sum)
+                           * (((1 - cupp) * (pdata - dec_data.isel(ctp=icy)) ** 2).sum()))
 
         supp.loc[{'ctp': cy}] = supp_per
         slow.loc[{'ctp': cy}] = slow_per
