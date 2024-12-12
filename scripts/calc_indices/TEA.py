@@ -563,7 +563,7 @@ class TEAIndicators:
         tem.rename('EM')
         return tem
     
-    def calc_annual_CTP_indicators(self, ctp, delete_daily_results=False):
+    def calc_annual_CTP_indicators(self, ctp, drop_daily_results=False):
         """
         calculate all annual Climatic Time Period (CTP) indicators
         
@@ -575,7 +575,7 @@ class TEAIndicators:
                 'JJA': summer season (June to August)
                 'DJF': winter season (December to February)
                 'EWS': extended winter season (November to March)
-            delete_daily_results: delete daily results after calculation
+            drop_daily_results: delete daily results after calculation
         """
         self.set_ctp(ctp)
         self.calc_event_frequency()
@@ -585,7 +585,7 @@ class TEAIndicators:
         self.calc_annual_total_events_extremity()
         self.calc_exceedance_area()
         self.calc_annual_event_severity()
-        if delete_daily_results:
+        if drop_daily_results:
             del self._daily_results_filtered
             del self.daily_results
         ctp_attrs = get_attrs(vname='CTP', period=self.CTP)

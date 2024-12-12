@@ -416,7 +416,7 @@ def calc_indicators(opts):
     
     # calculate annual climatic time period indicators
     logger.info('Calculating CTP indicators')
-    tea.calc_annual_CTP_indicators(opts.period)
+    tea.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
 
     # save output
     save_output(opts=opts, tea=tea, masks=masks)
