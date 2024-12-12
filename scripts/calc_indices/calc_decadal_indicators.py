@@ -196,14 +196,13 @@ def calc_decadal_indicators(opts, tea, recalc=False):
     if recalc:
         data = load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
-        tea.calc_decadal_indicators(calc_spread=opts.spreads)
+        tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath_new}')
         tea.save_decadal_results(outpath_new)
     else:
         logger.info(f'Loading decadal indicators from {outpath_new}. To recalculate call function with recalc=True')
-        tea = TEAIndicators()
         tea.load_decadal_results(outpath_new)
 
     if opts.save_old:

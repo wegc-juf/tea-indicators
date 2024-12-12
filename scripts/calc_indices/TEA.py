@@ -608,20 +608,28 @@ class TEAIndicators:
         
     # ### Decadal mean functions ###
     
-    def calc_decadal_indicators(self, calc_spread=False):
+    def calc_decadal_indicators(self, calc_spread=False, drop_annual_results=True):
         """
         calculate decadal mean for all CTP indicators
         equation 23_1 and equation 23_2
+        
+        Args:
+            calc_spread: calculate spread estimators (equation 25)
+            drop_annual_results: delete annual results after calculation
         """
         if self.CTP_results is None:
             raise ValueError("CTP results must be calculated before calculating decadal mean")
         
         self._calc_decadal_mean()
         self._calc_decadal_compound_vars()
-        # self._adjust_doy()
         # TODO: optional calculation of AEHC
-        self.calc_spread_estimators()
+        if calc_spread:
+            self.calc_spread_estimators()
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
+        if drop_annual_results:
+            del self.CTP_results
+            del self._CTP_resampler
+            del self._CTP_resample_sum
     
     def save_decadal_results(self, filepath):
         """
