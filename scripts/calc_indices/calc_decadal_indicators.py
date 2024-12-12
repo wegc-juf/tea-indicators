@@ -263,8 +263,9 @@ def compare_to_ref_decadal(tea, filename_ref):
                 continue
             if vvar in tea_ref.decadal_results.data_vars:
                 diff = tea.decadal_results[vvar] - tea_ref.decadal_results[vvar]
-                if diff.max() > 1e-6:
-                    logger.warning(f'Maximum difference in {vvar} is {diff.max().values}')
+                max_diff = diff.max(skipna=True).values
+                if max_diff > 1e-6:
+                    logger.warning(f'Maximum difference in {vvar} is {max_diff}')
             else:
                 logger.warning(f'{vvar} not found in reference file.')
     else:

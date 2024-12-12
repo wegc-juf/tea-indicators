@@ -298,8 +298,9 @@ def compare_to_ref(tea, ctp_filename_ref):
         for vvar in tea.CTP_results.data_vars:
             if vvar in tea_ref.CTP_results.data_vars:
                 diff = tea.CTP_results[vvar] - tea_ref.CTP_results[vvar]
-                if diff.max() > 1e-6:
-                    logger.warning(f'Maximum difference in {vvar} is {diff.max().values}')
+                max_diff = diff.max(skipna=True).values
+                if max_diff > 1e-6:
+                    logger.warning(f'Maximum difference in {vvar} is {max_diff}')
             else:
                 logger.warning(f'{vvar} not found in reference file.')
     else:
