@@ -359,7 +359,7 @@ def save_output(opts, tea, masks):
                          f'_{opts.start}to{opts.end}.nc')
     
     outpath_new = outpath.replace('.nc', '_new.nc')
-    path_ref = outpath.replace('.nc', '_ref.nc')
+    path_ref = outpath.replace('.nc', '_new_ref.nc')
     
     logger.info(f'Saving CTP indicators to {outpath_new}')
     tea.save_CTP_results(outpath_new)

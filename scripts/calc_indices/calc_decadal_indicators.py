@@ -223,14 +223,9 @@ def calc_decadal_indicators(opts, tea, recalc=False):
         save_output(opts=opts, data=dec_data, su=su, sl=sl)
     
     if opts.compare_to_ref:
-        # TODO: in the future compare to new reference file
         file_ref = (f'{opts.outpath}/dec_indicator_variables/DEC_{opts.param_str}_{opts.region}_{opts.period}'
-                    f'_{opts.dataset}_{opts.start}to{opts.end}_ref.nc')
+                    f'_{opts.dataset}_{opts.start}to{opts.end}_new_ref.nc')
         compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
-        file_ref_slow = file_ref.replace('DEC', 'DEC_sLOW')
-        file_ref_supp = file_ref.replace('DEC', 'DEC_sUPP')
-        compare_to_ref_decadal(tea=tea, filename_ref=file_ref_slow)
-        compare_to_ref_decadal(tea=tea, filename_ref=file_ref_supp)
 
 
 def compare_to_ref_decadal(tea, filename_ref):
@@ -241,26 +236,12 @@ def compare_to_ref_decadal(tea, filename_ref):
         tea: TEA object
         filename_ref: reference file
     """
-    
     if os.path.exists(filename_ref):
-        if 'sLOW' in filename_ref:
-            spread = 'slow'
-        elif 'sUPP' in filename_ref:
-            spread = 'supp'
-        else:
-            spread = None
         logger.info(f'Comparing results to reference file {filename_ref}')
         tea_ref = TEAIndicators()
         tea_ref.load_decadal_results(filename_ref)
         for vvar in tea.decadal_results.data_vars:
             attrs = tea.decadal_results[vvar].attrs
-            if attrs['metric_type'] == 'compound':
-                logger.info(f'Skipping compound metric {vvar}')
-                continue
-            if spread is None and ('supp' in vvar or 'slow' in vvar):
-                continue
-            if spread is not None and spread not in vvar:
-                continue
             if vvar in tea_ref.decadal_results.data_vars:
                 diff = tea.decadal_results[vvar] - tea_ref.decadal_results[vvar]
                 max_diff = diff.max(skipna=True).values
