@@ -282,7 +282,7 @@ def load_static_files(opts):
     return masks, static
 
 
-def compare_to_ref(tea, ctp_filename_ref):
+def compare_to_ctp_ref(tea, ctp_filename_ref):
     """
     compare results to reference file
     TODO: move this to test routine
@@ -295,16 +295,21 @@ def compare_to_ref(tea, ctp_filename_ref):
         logger.info(f'Comparing results to reference file {ctp_filename_ref}')
         tea_ref = TEAIndicators()
         tea_ref.load_CTP_results(ctp_filename_ref)
-        for vvar in tea.CTP_results.data_vars:
-            if vvar in tea_ref.CTP_results.data_vars:
-                diff = tea.CTP_results[vvar] - tea_ref.CTP_results[vvar]
-                max_diff = diff.max(skipna=True).values
-                if max_diff > 1e-6:
-                    logger.warning(f'Maximum difference in {vvar} is {max_diff}')
-            else:
-                logger.warning(f'{vvar} not found in reference file.')
+        tea_result = tea.CTP_results
+        compare_to_ref(tea_result, tea_ref.CTP_results)
     else:
         logger.warning(f'Reference file {ctp_filename_ref} not found.')
+    
+    
+def compare_to_ref(tea_result, tea_ref):
+    for vvar in tea_result.data_vars:
+        if vvar in tea_ref.data_vars:
+            diff = tea_result[vvar] - tea_ref[vvar]
+            max_diff = diff.max(skipna=True).values
+            if max_diff > 1e-6:
+                logger.warning(f'Maximum difference in {vvar} is {max_diff}')
+        else:
+            logger.warning(f'{vvar} not found in reference file.')
 
 
 def save_output(opts, tea, masks):
@@ -365,7 +370,7 @@ def save_output(opts, tea, masks):
     tea.save_CTP_results(outpath_new)
     
     if opts.compare_to_ref:
-        compare_to_ref(tea, path_ref)
+        compare_to_ctp_ref(tea, path_ref)
 
 
 def calc_indicators(opts):
