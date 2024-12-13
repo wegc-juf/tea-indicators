@@ -98,7 +98,6 @@ class TEAIndicators:
     def calc_DTEC_GR(self, min_area=None):
         """
         calculate Daily Threshold Exceedance Count (GR) (equation 03)
-        note that 0 values are stored as NaN for optimization
 
         @param min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
         """
@@ -152,7 +151,6 @@ class TEAIndicators:
     def calc_DTEA(self):
         """
         calculate Daily Threshold Exceedance Area (equation 02)
-        note that 0 values are stored as NaN for optimization
         """
         if 'DTEC' not in self.daily_results:
             self.calc_DTEC()
@@ -178,7 +176,6 @@ class TEAIndicators:
     def calc_DTEM(self):
         """
         calculate Daily Threshold Exceedance Magnitude (equation 07)
-        note that 0 values are stored as NaN for optimization
         """
         if self.low_extreme:
             dtem = self.threshold_grid - self.input_data_grid
@@ -897,7 +894,7 @@ class TEAIndicators:
         # Convert to a NumPy array and change NaN to 0
         dtec_np = np.nan_to_num(dtec_cell, nan=0)
         
-        # Find the starts and ends of sequences (change NaNs to 0 before the diff operation)
+        # Find the starts and ends of sequences
         change = np.diff(np.concatenate(
             ([np.zeros((1,) + dtec_np.shape[1:]), dtec_np, np.zeros((1,) + dtec_np.shape[1:])]), axis=0), axis=0)
         starts = np.where(change == 1)
