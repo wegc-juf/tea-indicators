@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-from scripts.general_stuff.var_attrs import get_attrs
+from scripts.general_stuff.var_attrs import get_attrs, equal_vars
 
 
 class TEAIndicators:
@@ -831,6 +831,12 @@ class TEAIndicators:
         cc_amplification = cc_amplification.rename(rename_dict_af_cc)
         
         self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
+        # duplicate vars that have multiple possible names
+        for vvar in self.amplification_factors.data_vars:
+            # loop through equal_vars dict
+            for equal_var, repl_var in equal_vars.items():
+                if equal_var in vvar and not 'avg' in vvar and not 'Md' in vvar and not 'Max' in vvar:
+                    self.amplification_factors[vvar.replace(equal_var, repl_var)] = self.amplification_factors[vvar]
     
     def save_amplification_factors(self, filepath):
         """
