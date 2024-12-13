@@ -412,7 +412,8 @@ def calc_indicators(opts):
         tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
         opts.period = old_period
     else:
-        tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'])
+        tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
+                            unit=opts.unit)
         
     dbv_filename_new = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
                         f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')

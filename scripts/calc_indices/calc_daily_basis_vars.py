@@ -120,31 +120,12 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
 
     TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
                         # set min area to < 1 grid cell area so that all exceedance days are considered
-                        min_area=0.0001, low_extreme=opts.low_extreme, testing=False)
+                        min_area=0.0001, low_extreme=opts.low_extreme, unit=opts.unit)
     logger.info('Calculating daily basis variables')
     TEA.calc_daily_basis_vars()
     
     # get custom attributes
-    TEA.daily_results.DTEM.attrs = get_attrs(opts=opts, vname='DTEM')
-    TEA.daily_results.DTEC.attrs = get_attrs(opts=opts, vname='DTEC')
     
-    if opts.save_old:
-        logger.info('Saving DTEC and DTEA')
-        save_dtec_dtea(opts=opts, tea=TEA, static=static, cstr=cell_str)
-
-    dtem_gr = TEA.daily_results.DTEM_GR
-    dtem = TEA.daily_results.DTEM
-    dtem_max = TEA.daily_results.DTEM_Max_GR
-
-    dtems = xr.merge([dtem, dtem_gr, dtem_max])
-    outname = (f'{opts.outpath}/daily_basis_variables/tmp/'
-               f'DTEM{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-               f'_{opts.start}to{opts.end}.nc')
-    if opts.save_old:
-        logger.info(f'Saving DTEMs to {outname}')
-        dtems.to_netcdf(outname)
-        save_event_count(opts=opts, tea=TEA, cstr=cell_str)
-
     bv_outpath = (f'{opts.outpath}/daily_basis_variables/'
                   f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                   f'_{opts.start}to{opts.end}.nc')

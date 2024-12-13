@@ -20,7 +20,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
-                 treat_zero_as_nan=False):
+                 unit='', treat_zero_as_nan=False):
         """
         Initialize TEAIndicators object
         Args:
@@ -30,6 +30,7 @@ class TEAIndicators:
                        nan values mask out the corresponding results cells
             min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
+            unit: unit of the input data. Default: ''
         """
         self.threshold_grid = threshold_grid
         if area_grid is None and threshold_grid is not None:
@@ -41,6 +42,7 @@ class TEAIndicators:
         self.min_area = min_area
         self.gr_vars = None
         self.low_extreme = low_extreme
+        self.unit = unit
         self.treat_zero_as_nan = treat_zero_as_nan
         
         # Climatic Time Period (CTP) variables
@@ -182,7 +184,7 @@ class TEAIndicators:
             dtem = dtem.where(dtem > 0).astype('float32')
         else:
             dtem = xr.where(dtem <= 0, 0, dtem)
-        dtem.attrs = get_attrs(vname='DTEM')
+        dtem.attrs = get_attrs(vname='DTEM', data_unit=self.unit)
         self.daily_results['DTEM'] = dtem
         
     def calc_DTEM_Max_GR(self):
@@ -196,7 +198,7 @@ class TEAIndicators:
         dtem = self.daily_results.DTEM
         dtem_max = dtem.max(dim=self.threshold_grid.dims)
         dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1, self.null_val)
-        dtem_max.attrs = get_attrs(vname='DTEM_Max_GR')
+        dtem_max.attrs = get_attrs(vname='DTEM_Max_GR', data_unit=self.unit)
         self.daily_results['DTEM_Max_GR'] = dtem_max
 
     def calc_DTEM_GR(self):
@@ -218,7 +220,7 @@ class TEAIndicators:
         dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
         dtem_gr = dtem_gr.where(dtec_gr == 1, self.null_val)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
-        dtem_gr.attrs = get_attrs(vname='DTEM_GR')
+        dtem_gr.attrs = get_attrs(vname='DTEM_GR', data_unit=self.unit)
         dtema_gr = dtem_gr * dtea_gr
         self.daily_results['DTEM_GR'] = dtem_gr
         self.daily_results['DTEMA_GR'] = dtema_gr
@@ -251,6 +253,7 @@ class TEAIndicators:
         load all variables from filepath
         """
         self.daily_results = xr.open_dataset(filepath)
+        self.unit = self.daily_results.DTEM.attrs['units']
     
     def update_min_area(self, min_area):
         """
@@ -410,8 +413,8 @@ class TEAIndicators:
         em_avg_gr = em_gr / ed_gr
         em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
         
-        em.attrs = get_attrs(vname='EM')
-        em_gr.attrs = get_attrs(vname='EM_GR')
+        em.attrs = get_attrs(vname='EM', data_unit=self.unit)
+        em_gr.attrs = get_attrs(vname='EM_GR', data_unit=self.unit)
         em_avg.attrs = get_attrs(vname='EM_avg')
         em_avg_gr.attrs = get_attrs(vname='EM_avg_GR')
         
@@ -432,8 +435,8 @@ class TEAIndicators:
         
         em_avg_med.attrs = get_attrs(vname='EM_avg_Md')
         em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md')
-        em_med.attrs = get_attrs(vname='EM_Md')
-        em_gr_med.attrs = get_attrs(vname='EM_GR_Md')
+        em_med.attrs = get_attrs(vname='EM_Md', data_unit=self.unit)
+        em_gr_med.attrs = get_attrs(vname='EM_GR_Md', data_unit=self.unit)
         
         self.CTP_results['EM_avg_Md'] = em_avg_med
         self.CTP_results['EM_avg_GR_Md'] = em_avg_gr_med
@@ -446,7 +449,7 @@ class TEAIndicators:
         # equation 20_1
         em_gr_avg_max = em_gr_max / self.CTP_results.ED_GR
         
-        em_gr_max.attrs = get_attrs(vname='EM_Max_GR')
+        em_gr_max.attrs = get_attrs(vname='EM_Max_GR', data_unit=self.unit)
         em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR')
         
         self.CTP_results['EM_Max_GR'] = em_gr_max
@@ -458,7 +461,7 @@ class TEAIndicators:
         """
         # equation 21_3
         tex = self._CTP_resample_sum.DTEMA_GR
-        tex.attrs = get_attrs(vname='TEX_GR')
+        tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         self.CTP_results['TEX_GR'] = tex
     
     def calc_total_events_extremity(self, f, d=None, m=None, a=None, s=None):
@@ -479,7 +482,7 @@ class TEAIndicators:
                 raise ValueError("Either f, d, m, and a, or f and s must be provided")
             s = self.calc_event_severity(d=d, m=m, a=a)
         tex = f * s
-        tex.attrs = get_attrs(vname='TEX_GR')
+        tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         tex.rename('TEX_GR')
         return tex
     
@@ -524,7 +527,7 @@ class TEAIndicators:
         """
         # equation 21_5
         es_avg = d * m * a
-        es_avg.attrs = get_attrs(vname='ES_avg_GR')
+        es_avg.attrs = get_attrs(vname='ES_avg_GR', data_unit=self.unit)
         es_avg.rename('ES_avg_GR')
         return es_avg
     
@@ -557,7 +560,7 @@ class TEAIndicators:
                 raise ValueError("Either f, d, and m, or ed and m must be provided")
             ed = self.calc_cumulative_events_duration(f, d)
         tem = ed * m
-        tem.attrs = get_attrs(vname='EM')
+        tem.attrs = get_attrs(vname='EM', data_unit=self.unit)
         tem.rename('EM')
         return tem
     
@@ -604,6 +607,7 @@ class TEAIndicators:
         load all CTP results from filepath
         """
         self.CTP_results = xr.open_mfdataset(filepath)
+        self.unit = self.CTP_results.EM_avg.attrs['units']
         
     # ### Decadal mean functions ###
     
@@ -822,7 +826,9 @@ class TEAIndicators:
             cc_amplification[vvar].attrs = self.decadal_results[vvar].attrs
             if 'long_name' in amplification_factors[vvar].attrs:
                 amplification_factors[vvar].attrs['long_name'] += ' amplification'
+                amplification_factors[vvar].attrs['units'] = '1'
                 cc_amplification[vvar].attrs['long_name'] += ' current climate amplification factor'
+                cc_amplification[vvar].attrs['units'] = '1'
         
         # rename vars
         rename_dict_af = {vvar: f'{vvar}_AF' for vvar in amplification_factors.data_vars}
