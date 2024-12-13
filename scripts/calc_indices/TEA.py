@@ -286,7 +286,6 @@ class TEAIndicators:
         ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
         # TODO: add CF-Convention compatible attributes...
         self.CTP_results.attrs = ctp_attrs
-        self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=ctp)
     
     def calc_event_frequency(self):
         """
@@ -595,6 +594,7 @@ class TEAIndicators:
             del self.daily_results
         ctp_attrs = get_attrs(vname='CTP', period=self.CTP)
         self.CTP_results['time'].attrs = ctp_attrs
+        self.CTP_results.attrs['CTP'] = self.CTP
 
     def save_CTP_results(self, filepath):
         """
@@ -630,7 +630,10 @@ class TEAIndicators:
         # TODO: optional calculation of AEHC
         if calc_spread:
             self.calc_spread_estimators()
+        self.CTP = self.CTP_results.attrs['CTP']
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
+        self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=self.CTP)
+
         if drop_annual_results:
             del self.CTP_results
             del self._CTP_resampler
@@ -650,6 +653,7 @@ class TEAIndicators:
         load all decadal results from filepath
         """
         self.decadal_results = xr.open_dataset(filepath)
+        self.CTP = self.decadal_results.attrs['CTP']
         
     def _calc_decadal_mean(self):
         """
@@ -831,6 +835,10 @@ class TEAIndicators:
         cc_amplification = cc_amplification.rename(rename_dict_af_cc)
         
         self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
+        self.amplification_factors.time.attrs = get_attrs(vname='amplification',
+                                                          period=self.CTP)
+        self.amplification_factors.attrs = get_attrs(vname='amplification_global_attrs',
+                                                     period=self.CTP)
         # duplicate vars that have multiple possible names
         for vvar in self.amplification_factors.data_vars:
             # loop through equal_vars dict

@@ -4,6 +4,7 @@ script for adding attributes to TEA variables
 
 equal_vars = {'EM': 'tEX'}
 
+
 def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_unit=''):
     """
     get attributes for TEA variables
@@ -28,6 +29,10 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_uni
              'decadal': {'long_name': f'center year of decadal indicators for climatic time period {period}',},
              'decadal_global_attrs': {'title': f'TEA decadal-mean indicator variables for climatic time period: '
                                                f'{period}'},
+             'amplification': {'long_name': 'center year of decadal amplification factors for climatic time period'
+                                            f' {period}'},
+             'amplification_global_attrs': {'title': f'TEA decadal-mean amplification factors for climatic time period:'
+                                                     f' {period}'},
              'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
              'DTEA': {'long_name': 'daily threshold exceedance area', 'units': '100 km^2'},
