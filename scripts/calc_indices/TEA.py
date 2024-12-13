@@ -58,6 +58,11 @@ class TEAIndicators:
         # Decadal data
         self.decadal_results = xr.Dataset()
         
+        # Amplification factors
+        self._cc_mean = None
+        self._ref_mean = None
+        self.amplification_factors = xr.Dataset()
+        
         if self.treat_zero_as_nan:
             self.null_val = np.nan
         else:
@@ -741,25 +746,114 @@ class TEAIndicators:
         for vvar in slow.data_vars:
             slow[vvar].attrs = get_attrs(vname=vvar, spread='lower')
             self.decadal_results[vvar + '_slow'] = slow[vvar]
-        
-    def _adjust_doy(self):
+            
+    # ### amplification factors ###
+    def _calc_cc(self, start_year=2008, end_year=2022):
         """
-        adjust doy_first(_GR) and doy_last(_GR) (Equation 24)
+        calculate geometric mean of CC period
         """
-        doy_first = self.decadal_results['doy_first']
-        doy_last = self.decadal_results['doy_last']
-        aep = self.decadal_results['AEP']
-        doy_first_adjusted, doy_last_adjusted = self._calc_doy_adjustment(doy_first, doy_last, aep)
-        self.decadal_results['doy_first'] = doy_first_adjusted
-        self.decadal_results['doy_last'] = doy_last_adjusted
+        cc_mean = self._calc_gmean(start_year=start_year, end_year=end_year)
+        for vvar in cc_mean.data_vars:
+            cc_mean[vvar].attrs = self.decadal_results[vvar].attrs
+            if 'long_name' in cc_mean[vvar].attrs:
+                cc_mean[vvar].attrs['long_name'] = 'CC mean of ' + cc_mean[vvar].attrs['long_name']
+        self._cc_mean = cc_mean
+    
+    def _calc_ref(self, start_year=1961, end_year=1990):
+        """
+        calculate geometric mean of ref period
+        """
+        ref_mean = self._calc_gmean(start_year=start_year, end_year=end_year)
         
-        doy_first_GR = self.decadal_results['doy_first_GR']
-        doy_last_GR = self.decadal_results['doy_last_GR']
-        aep_GR = self.decadal_results['AEP_GR']
-        doy_first_adjusted_GR, doy_last_adjusted_GR = self._calc_doy_adjustment(doy_first_GR, doy_last_GR, aep_GR)
-        self.decadal_results['doy_first_GR'] = doy_first_adjusted_GR
-        self.decadal_results['doy_last_GR'] = doy_last_adjusted_GR
+        for vvar in ref_mean.data_vars:
+            ref_mean[vvar].attrs = self.decadal_results[vvar].attrs
+            if 'long_name' in ref_mean[vvar].attrs:
+                ref_mean[vvar].attrs['long_name'] = 'Ref mean of ' + ref_mean[vvar].attrs['long_name']
+        self._ref_mean = ref_mean
+    
+    def _calc_gmean(self, start_year, end_year):
+        """
+        calculate geometric mean for given period
+        Args:
+            start_year:
+            end_year:
 
+        Returns:
+            gmean
+        """
+        start_cy = f'{start_year + 5}-01-01'
+        end_cy = f'{end_year - 4}-12-31'
+        period_data = self.decadal_results.sel(time=slice(start_cy, end_cy))
+        
+        period_mean = self.gmean_custom(period_data, dim='time')
+        doy_first, doy_last = self._calc_doy_adjustment(doy_first=period_mean.doy_first.values,
+                                                        doy_last=period_mean.doy_last.values, aep=period_mean.AEP.values)
+        period_mean['doy_first'].values = doy_first
+        period_mean['doy_last'].values = doy_last
+        doy_first_gr, doy_last_gr = self._calc_doy_adjustment(doy_first=period_mean.doy_first_GR.values,
+                                                              doy_last=period_mean.doy_last_GR.values,
+                                                              aep=period_mean.AEP_GR.values)
+        period_mean['doy_first_GR'].values = doy_first_gr
+        period_mean['doy_last_GR'].values = doy_last_gr
+        return period_mean
+    
+    def calc_amplification_factors(self):
+        """
+        calculate amplification factors (equation 26)
+        """
+        if self._cc_mean is None:
+            self._calc_cc()
+        if self._ref_mean is None:
+            self._calc_ref()
+        cc_mean = self._cc_mean
+        ref_mean = self._ref_mean
+        amplification_factors = self.decadal_results / ref_mean
+        cc_amplification = cc_mean / ref_mean
+        
+        # drop all spread variables
+        amplification_factors = amplification_factors.drop([vvar for vvar in amplification_factors.data_vars if
+                                                            'slow' in vvar or 'supp' in vvar])
+        cc_amplification = cc_amplification.drop([vvar for vvar in cc_amplification.data_vars if
+                                                  'slow' in vvar or 'supp' in vvar])
+
+        for vvar in amplification_factors.data_vars:
+            # update attributes
+            amplification_factors[vvar].attrs = self.decadal_results[vvar].attrs
+            cc_amplification[vvar].attrs = self.decadal_results[vvar].attrs
+            if 'long_name' in amplification_factors[vvar].attrs:
+                amplification_factors[vvar].attrs['long_name'] += ' amplification'
+                cc_amplification[vvar].attrs['long_name'] += ' current climate amplification factor'
+        
+        # rename vars
+        rename_dict_af = {vvar: f'{vvar}_AF' for vvar in amplification_factors.data_vars}
+        rename_dict_af_cc = {vvar: f'{vvar}_AF_CC' for vvar in cc_amplification.data_vars}
+        amplification_factors = amplification_factors.rename(rename_dict_af)
+        cc_amplification = cc_amplification.rename(rename_dict_af_cc)
+        
+        self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
+    
+    def save_amplification_factors(self, filepath):
+        """
+        save amplification factors to filepath
+        """
+        with warnings.catch_warnings():
+            # ignore warnings due to nan multiplication
+            warnings.simplefilter("ignore")
+            self.amplification_factors.to_netcdf(filepath)
+    
+    def load_amplification_factors(self, filepath):
+        """
+        load amplification factors from filepath
+        """
+        self.amplification_factors = xr.open_dataset(filepath)
+    
+    @staticmethod
+    def gmean_custom(x, dim):
+        """
+        calculate geometric mean
+        """
+        return np.exp((np.log(x).mean(dim=dim)))
+    
     @staticmethod
     def _calc_doy_adjustment(doy_first, doy_last, aep):
         """

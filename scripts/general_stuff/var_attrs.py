@@ -2,6 +2,7 @@
 script for adding attributes to TEA variables
 """
 
+equal_vars = {'EM': 'tEX'}
 
 def get_attrs(opts=None, vname=None, dec=False, spread=None, period='', data_unit=''):
     """
