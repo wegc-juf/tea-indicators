@@ -302,7 +302,9 @@ def compare_to_ctp_ref(tea, ctp_filename_ref):
         tea_ref = TEAIndicators()
         tea_ref.load_CTP_results(ctp_filename_ref)
         tea_result = tea.CTP_results
-        compare_to_ref(tea_result, tea_ref.CTP_results)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
+            compare_to_ref(tea_result, tea_ref.CTP_results)
     else:
         logger.warning(f'Reference file {ctp_filename_ref} not found.')
     
@@ -427,7 +429,9 @@ def calc_indicators(opts):
     
     # calculate annual climatic time period indicators
     logger.info('Calculating CTP indicators')
-    tea.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
+        tea.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
 
     # save output
     save_output(opts=opts, tea=tea, masks=masks)
