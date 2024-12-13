@@ -466,7 +466,7 @@ def run():
     else:
         tea = TEAIndicators()
 
-    if opts.decadal or opts.decadal_only:
+    if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end
         calc_decadal_indicators(opts=opts, tea=tea)
         
