@@ -633,6 +633,7 @@ class TEAIndicators:
         self.CTP = self.CTP_results.attrs['CTP']
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
         self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=self.CTP)
+        self.decadal_results.attrs['CTP'] = self.CTP
 
         if drop_annual_results:
             del self.CTP_results
@@ -653,7 +654,8 @@ class TEAIndicators:
         load all decadal results from filepath
         """
         self.decadal_results = xr.open_dataset(filepath)
-        self.CTP = self.decadal_results.attrs['CTP']
+        if 'CTP' in self.decadal_results.attrs:
+            self.CTP = self.decadal_results.attrs['CTP']
         
     def _calc_decadal_mean(self):
         """
