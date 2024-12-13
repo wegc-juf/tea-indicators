@@ -175,6 +175,12 @@ def getopts():
                         action='store_true',
                         help='Set if daily basis variables should be recalculated. Default: False - read from file.')
     
+    parser.add_argument('--recalc-decadal',
+                        dest='recalc_decadal',
+                        default=False,
+                        action='store_true',
+                        help='Set if decadal data should be recalculated. Default: False - read from file.')
+    
     parser.add_argument('--compare-to-ref',
                         dest='compare_to_ref',
                         default=False,

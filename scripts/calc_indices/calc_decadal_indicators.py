@@ -179,13 +179,12 @@ def rolling_decadal_mean(data):
     return data
 
 
-def calc_decadal_indicators(opts, tea, recalc=False):
+def calc_decadal_indicators(opts, tea):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
     Args:
         opts: CLI parameter
         tea: TEA object
-        recalc: recalculate decadal indicators
 
     Returns:
 
@@ -193,7 +192,7 @@ def calc_decadal_indicators(opts, tea, recalc=False):
     outpath_new = (f'{opts.outpath}/dec_indicator_variables/'
                    f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}_new.nc')
-    if recalc:
+    if opts.recalc_decadal or not os.path.exists(outpath_new):
         data = load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
         tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
@@ -202,10 +201,11 @@ def calc_decadal_indicators(opts, tea, recalc=False):
         logger.info(f'Saving decadal indicators to {outpath_new}')
         tea.save_decadal_results(outpath_new)
     else:
-        logger.info(f'Loading decadal indicators from {outpath_new}. To recalculate call function with recalc=True')
+        logger.info(f'Loading decadal indicators from {outpath_new}. To recalculate use --recalc-decadal')
         tea.load_decadal_results(outpath_new)
 
     if opts.save_old:
+        logger.info(f'Calculating decadal-mean primary variables.')
         dec_data = data.copy()
         
         dec_data = rolling_decadal_mean(data=dec_data)
