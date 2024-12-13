@@ -146,11 +146,11 @@ def calc_ref_cc_mean(data):
         cc: mean values of current climate period
     """
 
-    ref_ds = data.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
-    cc_ds = data.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
+    ref_ds = data.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    cc_ds = data.sel(time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
 
-    ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
-    cc_db = (1 / len(cc_ds.ctp)) * (np.log10(cc_ds)).sum(dim='ctp')
+    ref_db = (1 / len(ref_ds.time)) * (np.log10(ref_ds)).sum(dim='time')
+    cc_db = (1 / len(cc_ds.time)) * (np.log10(cc_ds)).sum(dim='time')
 
     ref = 10 ** ref_db
     cc = 10 ** cc_db
@@ -214,25 +214,25 @@ def calc_compound_amplification_factors(opts, af, af_cc, dm=False):
     if 'agr' in opts:
         gr_str = ''
 
-    em_var = f'EMavg{gr_str}_AF'
+    em_var = f'EM_avg{gr_str}_AF'
     if opts.precip:
-        em_var = f'EMavg_Md{gr_str}_AF'
+        em_var = f'EM_avg_Md{gr_str}_AF'
 
     # tEX
-    af_tEX = af[f'EF{gr_str}_AF'] * af[f'EDavg{gr_str}_AF'] * af[em_var]
+    af_tEX = af[f'EF{gr_str}_AF'] * af[f'ED_avg{gr_str}_AF'] * af[em_var]
     af_tEX = af_tEX.rename(f'tEX{gr_str}_AF')
     af_tEX = af_tEX.assign_attrs(get_attrs(vname=f'tEX{gr_str}_AF'))
-    af_cc_tEX = af_cc[f'EF{gr_str}_AF_CC'] * af_cc[f'EDavg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
+    af_cc_tEX = af_cc[f'EF{gr_str}_AF_CC'] * af_cc[f'ED_avg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
     af_cc_tEX = af_cc_tEX.rename(f'tEX{gr_str}_AF_CC')
     af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname=f'tEX{gr_str}_AF_CC'))
 
     # ES
-    af_es = af[f'EDavg{gr_str}_AF'] * af[em_var] * af[f'EAavg{gr_str}_AF']
-    af_es = af_es.rename(f'ESavg{gr_str}_AF')
-    af_es = af_es.assign_attrs(get_attrs(vname=f'ESavg{gr_str}_AF'))
-    af_cc_es = af_cc[f'EDavg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc[f'EAavg{gr_str}_AF_CC']
-    af_cc_es = af_cc_es.rename(f'ESavg{gr_str}_AF_CC')
-    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname=f'ESavg{gr_str}_AF_CC'))
+    af_es = af[f'ED_avg{gr_str}_AF'] * af[em_var] * af[f'EA_avg{gr_str}_AF']
+    af_es = af_es.rename(f'ES_avg{gr_str}_AF')
+    af_es = af_es.assign_attrs(get_attrs(vname=f'ES_avg{gr_str}_AF'))
+    af_cc_es = af_cc[f'ED_avg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc[f'EA_avg{gr_str}_AF_CC']
+    af_cc_es = af_cc_es.rename(f'ES_avg{gr_str}_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname=f'ES_avg{gr_str}_AF_CC'))
 
     # TEX
     af_TEX = af[f'EF{gr_str}_AF'] * af_es
@@ -246,10 +246,10 @@ def calc_compound_amplification_factors(opts, af, af_cc, dm=False):
     af_cc_vars = [af_cc, af_cc_tEX, af_cc_es, af_cc_TEX]
 
     if dm:
-        af_dm = af[f'EDavg{gr_str}_AF'] * af[em_var]
+        af_dm = af[f'ED_avg{gr_str}_AF'] * af[em_var]
         af_dm = af_dm.rename(f'DM{gr_str}_AF')
         af_dm = af_dm.assign_attrs(get_attrs(vname=f'DM{gr_str}_AF'))
-        af_cc_dm = af_cc[f'EDavg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
+        af_cc_dm = af_cc[f'ED_avg{gr_str}_AF_CC'] * af_cc[f'{em_var}_CC']
         af_cc_dm = af_cc_dm.rename(f'DM{gr_str}_AF_CC')
         af_cc_dm = af_cc_dm.assign_attrs(get_attrs(vname=f'DM{gr_str}_AF_CC'))
         af_vars = [af, af_tEX, af_es, af_TEX, af_dm]
@@ -299,7 +299,7 @@ def run():
     ref_avg, cc_avg = calc_ref_cc_mean(data=ds)
 
     # calc amplification factors of basis variables
-    bvars = [vvar for vvar in ds.data_vars if vvar not in ['TEX_GR', 'ESavg_GR']]
+    bvars = [vvar for vvar in ds.data_vars if vvar not in ['TEX_GR', 'ES_avg_GR']]
     af, af_cc = calc_basis_amplification_factors(data=ds[bvars], ref=ref_avg[bvars],
                                                  cc=cc_avg[bvars])
 
