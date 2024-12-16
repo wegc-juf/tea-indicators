@@ -354,10 +354,10 @@ def save_output(opts, tea, masks):
 
     ds_out = create_history(cli_params=sys.argv, ds=ds_out)
 
-    path = Path(f'{opts.outpath}ctp_indicator_variables/supplementary/')
+    path = Path(f'{opts.outpath}/ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     
-    outpath = (f'{opts.outpath}ctp_indicator_variables/'
+    outpath = (f'{opts.outpath}/ctp_indicator_variables/'
                f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                f'_{opts.start}to{opts.end}.nc')
     
@@ -367,7 +367,7 @@ def save_output(opts, tea, masks):
         
         # save supplementary variables
         logger.info('Saving supplementary variables')
-        ds_out.to_netcdf(f'{opts.outpath}ctp_indicator_variables/supplementary/'
+        ds_out.to_netcdf(f'{opts.outpath}/ctp_indicator_variables/supplementary/'
                          f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                          f'_{opts.start}to{opts.end}.nc')
     
@@ -479,6 +479,9 @@ def run():
             warnings.simplefilter("ignore")
             logger.info('Calculating amplification factors.')
             tea.calc_amplification_factors()
+            
+        path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
+        path.mkdir(parents=True, exist_ok=True)
         
         out_path = (f'{opts.outpath}/dec_indicator_variables/amplification/'
                     f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
