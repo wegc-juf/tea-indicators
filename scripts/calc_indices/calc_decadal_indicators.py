@@ -222,3 +222,39 @@ def compare_to_ref_decadal(tea, filename_ref):
         logger.warning(f'Reference file {filename_ref} not found.')
 
 
+def calc_amplification_factors(opts, tea):
+    """
+    calculate amplification factors
+    Args:
+        opts: command line parameters
+        tea: TEA object
+
+    Returns:
+
+    """
+    # calculate amplification factors
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        logger.info('Calculating amplification factors.')
+        tea.calc_amplification_factors()
+    
+    path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
+    path.mkdir(parents=True, exist_ok=True)
+    out_path = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+                f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                f'_{opts.start}to{opts.end}_new.nc')
+    
+    # compare to reference file
+    if opts.compare_to_ref:
+        ref_path = out_path.replace('_new.nc', '_new_ref.nc')
+        ref_data = xr.open_dataset(ref_path)
+        logger.info(f'Comparing amplification factors to reference file {ref_path}')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            compare_to_ref(tea.amplification_factors, ref_data)
+    
+    # save amplification factors
+    logger.info(f'Saving amplification factors to {out_path}')
+    tea.save_amplification_factors(out_path)
+
+

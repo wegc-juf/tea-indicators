@@ -416,6 +416,7 @@ def run():
     end = opts.end
 
     if not opts.decadal_only:
+        # calculate annual climatic time period indicators
         if end - start > 10 - 1:
             starts = np.arange(start, end, 10)
             ends = np.append(np.arange(start + 10 - 1, end, 10), end)
@@ -436,27 +437,8 @@ def run():
         # calculate decadal-mean ctp indicator variables
         calc_decadal_indicators(opts=opts, tea=tea)
         
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            logger.info('Calculating amplification factors.')
-            tea.calc_amplification_factors()
-            
-        path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
-        path.mkdir(parents=True, exist_ok=True)
-        
-        out_path = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                    f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}_new.nc')
-        
-        if opts.compare_to_ref:
-            ref_path = out_path.replace('_new.nc', '_new_ref.nc')
-            ref_data = xr.open_dataset(ref_path)
-            logger.info(f'Comparing amplification factors to reference file {ref_path}')
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                compare_to_ref(tea.amplification_factors, ref_data)
-        logger.info(f'Saving amplification factors to {out_path}')
-        tea.save_amplification_factors(out_path)
+        # calculate amplification factors
+        calc_amplification_factors(opts, tea)
 
 
 if __name__ == '__main__':
