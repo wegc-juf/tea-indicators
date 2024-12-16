@@ -432,6 +432,8 @@ def run():
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end
+        
+        # calculate decadal-mean ctp indicator variables
         calc_decadal_indicators(opts=opts, tea=tea)
         
         with warnings.catch_warnings():

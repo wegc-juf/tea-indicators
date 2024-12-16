@@ -29,7 +29,7 @@ def load_ctp_data(opts, tea):
         data: CTP ds
     """
 
-    ctppath = f'{opts.outpath}ctp_indicator_variables/'
+    ctppath = f'{opts.outpath}/ctp_indicator_variables/'
 
     def is_in_period(filename, start, end):
         match = re.search(pattern=r'(\d{4})to(\d{4})', string=filename)
@@ -44,19 +44,7 @@ def load_ctp_data(opts, tea):
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
 
-    data = xr.open_mfdataset(paths=files, data_vars='minimal')
-    tea.load_CTP_results(filenames)
-
-    # check if more data than chosen period is loaded and select correct period if so
-    if 'new' in filenames:
-        date_index = -2
-    else:
-        date_index = -1
-    syr, eyr = int(files[0].split('_')[date_index][:4]), int(files[-1].split('_')[date_index][6:10])
-    if opts.start != syr or opts.end != eyr:
-        data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
-
-    return data
+    tea.load_CTP_results(files)
 
 
 def adjust_doy(data):
@@ -193,7 +181,7 @@ def calc_decadal_indicators(opts, tea):
                    f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                    f'_{opts.start}to{opts.end}_new.nc')
     if opts.recalc_decadal or not os.path.exists(outpath_new):
-        data = load_ctp_data(opts=opts, tea=tea)
+        load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
         tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
@@ -204,26 +192,8 @@ def calc_decadal_indicators(opts, tea):
         logger.info(f'Loading decadal indicators from {outpath_new}. To recalculate use --recalc-decadal')
         tea.load_decadal_results(outpath_new)
 
-    if opts.save_old:
-        logger.info(f'Calculating decadal-mean primary variables.')
-        dec_data = data.copy()
-        
-        dec_data = rolling_decadal_mean(data=dec_data)
-        
-        # equation 24 (re-adjusting doy vars)
-        if 'doy_first' in data.data_vars:
-            dec_data = adjust_doy(data=dec_data)
-        
-        su, sl = None, None
-        if opts.spreads:
-            logging.info(f'Calculating spread estimators.')
-            su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
-        logger.info('Saving old decadal indicators')
-        save_output(opts=opts, data=dec_data, su=su, sl=sl)
-    
     if opts.compare_to_ref:
-        file_ref = (f'{opts.outpath}/dec_indicator_variables/DEC_{opts.param_str}_{opts.region}_{opts.period}'
-                    f'_{opts.dataset}_{opts.start}to{opts.end}_new_ref.nc')
+        file_ref = outpath_new.replace('.nc', '_ref.nc')
         compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
 
 
