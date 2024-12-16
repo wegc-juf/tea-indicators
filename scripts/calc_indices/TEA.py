@@ -284,6 +284,9 @@ class TEAIndicators:
                 'DJF': winter season (December to February)
                 'EWS': extended winter season (November to March)
         """
+        valid_dec_periods = ['annual', 'seasonal', 'monthly', 'WAS', 'ESS', 'EWS', 'JJA', 'DJF']
+        if ctp not in valid_dec_periods:
+            raise ValueError(f"Invalid CTP: {ctp}. Allowed values: {valid_dec_periods}")
         self.CTP = ctp
         ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
         # TODO: add CF-Convention compatible attributes...
@@ -664,6 +667,10 @@ class TEAIndicators:
         """
         calculate decadal mean for all basic CTP indicators (equation 23_1)
         """
+        # check if CTP_results contain at least a decade of data
+        if len(self.CTP_results.time) < 10:
+            raise ValueError("For calculating decadal results, CTP results and daily data must contain at least a "
+                             "decade of data")
         for var in self.CTP_results.data_vars:
             if self.CTP_results[var].attrs['metric_type'] == 'basic':
                 self.decadal_results[var] = self.CTP_results[var].rolling(time=10, center=True, min_periods=1).mean(

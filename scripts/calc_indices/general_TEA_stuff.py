@@ -2,17 +2,6 @@ from datetime import timedelta
 import pandas as pd
 import numpy as np
 
-def validate_period(opts):
-    valid_dec_periods = ['annual', 'monthly', 'WAS', 'ESS', 'EWS', 'JJA']
-    if opts.decadal and opts.period not in valid_dec_periods:
-        raise AttributeError(f'For decadal output, please select from {valid_dec_periods} as '
-                             f'period! {opts.period} was passed instead.')
-
-    if opts.decadal or opts.decadal_only:
-        if opts.end - opts.start < 9:
-            raise AttributeError(f'For decadal output, please pass at least 10 years! '
-                                 f'{(opts.end - opts.start) + 1} years were passed instead.')
-
 
 def assign_ctp_coords(opts, data):
     """

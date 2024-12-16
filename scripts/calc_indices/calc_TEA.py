@@ -417,8 +417,6 @@ def run():
     start = opts.start
     end = opts.end
 
-    validate_period(opts)
-
     if not opts.decadal_only:
         if end - start > 10 - 1:
             starts = np.arange(start, end, 10)
