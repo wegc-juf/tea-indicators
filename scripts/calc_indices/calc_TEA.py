@@ -27,7 +27,7 @@ from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_freque
                                                                calc_exceedance_magnitude,
                                                                calc_exceedance_area_tex_sev)
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators
-from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords, validate_period
+from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
 
