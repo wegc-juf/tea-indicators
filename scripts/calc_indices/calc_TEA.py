@@ -20,14 +20,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from scripts.general_stuff.general_functions import create_tea_history, extend_tea_opts, compare_to_ref
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
-from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, save_event_count
-from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_frequency,
-                                                               calc_supplementary_event_vars,
-                                                               calc_event_duration,
-                                                               calc_exceedance_magnitude,
-                                                               calc_exceedance_area_tex_sev)
+from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
-from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
 

@@ -11,60 +11,6 @@ from scripts.general_stuff.TEA_logger import logger
 from TEA import TEAIndicators
 
 
-def save_dtec_dtea(opts, tea, static, cstr):
-    """
-    save DTEC, DTEC_GR, and DTEA_GR to tmp files
-    Args:
-        opts: CLI parameter
-        tea: TEA object
-        static: static files
-        cstr: cell string to add to filename (only if called from calc_TEA_largeGR)
-    """
-    dtem = tea.daily_results.DTEM
-    dtec = tea.daily_results.DTEC
-    dtea = tea.daily_results.DTEA
-    dtea_gr = tea.daily_results.DTEA_GR
-    dtec_gr = tea.daily_results.DTEC_GR
-    
-    outpath = f'{opts.outpath}/daily_basis_variables/tmp/'
-    
-    # check if outpath exists and create it if not
-    Path(outpath).mkdir(parents=True, exist_ok=True)
-
-    # calc area fraction
-    area_frac = (dtea_gr / static['GR_size']) * 100
-    area_frac = area_frac.rename('DTEA_frac')
-
-    areas = xr.merge([dtea_gr, area_frac])
-    areas.to_netcdf(f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}.nc')
-
-    dtecs = xr.merge([dtec, dtec_gr])
-    dtecs.to_netcdf(f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}.nc')
-
-
-def save_event_count(opts, tea, cstr):
-    """
-    save DTEEC(_GR) to netcdf file
-    Args:
-        opts: CLI parameter
-        tea: TEA object
-        cstr: string for subcell
-    """
-    vars = ['DTEEC', 'DTEEC_GR']
-    for var in vars:
-        if 'GR' in var:
-            dteec = tea.daily_results.DTEEC_GR
-        else:
-            dteec = tea.daily_results.DTEEC
-
-        outname = (f'{opts.outpath}daily_basis_variables/tmp/'
-                   f'{dteec.name}{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
-        dteec.to_netcdf(outname)
-
-
 def check_tmp_dir(opts):
     """
     check if tmp directory is empty and ask if files should be deleted
