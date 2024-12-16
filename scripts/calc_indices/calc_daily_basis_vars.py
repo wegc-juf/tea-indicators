@@ -112,7 +112,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None, mask=No
     if large_gr:
         cell_str = f'_lat{cell[0]}_lon{cell[1]}'
 
-    path = Path(f'{opts.outpath}daily_basis_variables/tmp/')
+    path = Path(f'{opts.outpath}/daily_basis_variables/tmp/')
     path.mkdir(parents=True, exist_ok=True)
 
     # check if tmp directory is empty

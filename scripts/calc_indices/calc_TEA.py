@@ -320,59 +320,23 @@ def compare_to_ref(tea_result, tea_ref):
             logger.warning(f'{vvar} not found in reference file.')
 
 
-def save_output(opts, tea, masks):
+def save_ctp_output(opts, tea):
     """
-    save data arrays to output datasets
+    save CTP results to netcdf file
     Args:
-        opts: CLI parameter
-        ef: EF da
-        ed: ED da
-        em: EM da
-        ea: EA da
-        svars: suppl. vars da
-        em_suppl: suppl. EM da
-        masks: masks
-
-    Returns:
-
+        opts: CLI parameters
+        tea: TEA object
     """
-    # combine to output dataset
-    ds_out = tea.CTP_results.copy()
-    
-    # set all values to 0 if EF is 0
-    for vvar in ds_out.data_vars:
-        if 'GR' in vvar:
-            ds_out[vvar] = ds_out[vvar].where(tea.CTP_results.EF_GR != 0, 0)
-        else:
-            ds_out[vvar] = ds_out[vvar].where(tea.CTP_results.EF != 0, 0)
-
-    mask = masks['lt1500_mask'] * masks['mask']
-    # apply masks to grid data again (sum etc. result in 0 outside of region)
-    for vvar in ds_out.data_vars:
-        if 'GR' not in vvar:
-            ds_out[vvar] = ds_out[vvar].where(mask == 1)
-
-    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    create_tea_history(cli_params=sys.argv, tea=tea)
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     
-    outpath = (f'{opts.outpath}/ctp_indicator_variables/'
-               f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-               f'_{opts.start}to{opts.end}.nc')
+    outpath_new = (f'{opts.outpath}/ctp_indicator_variables/'
+                   f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                   f'_{opts.start}to{opts.end}_new.nc')
     
-    if opts.save_old:
-        logger.info(f'Saving CTP indicators to {outpath}')
-        ds_out.to_netcdf(outpath)
-        
-        # save supplementary variables
-        logger.info('Saving supplementary variables')
-        ds_out.to_netcdf(f'{opts.outpath}/ctp_indicator_variables/supplementary/'
-                         f'CTPsuppl_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                         f'_{opts.start}to{opts.end}.nc')
-    
-    outpath_new = outpath.replace('.nc', '_new.nc')
-    path_ref = outpath.replace('.nc', '_new_ref.nc')
+    path_ref = outpath_new.replace('.nc', '_ref.nc')
     
     logger.info(f'Saving CTP indicators to {outpath_new}')
     tea.save_CTP_results(outpath_new)
@@ -381,9 +345,9 @@ def save_output(opts, tea, masks):
         compare_to_ctp_ref(tea, path_ref)
 
 
-def calc_indicators(opts):
+def calc_ctp_indicators(opts):
     """
-    calculate the TEA indicators
+    calculate the TEA indicators for the annual climatic time period
     Args:
         opts: CLI parameter
 
@@ -428,13 +392,13 @@ def calc_indicators(opts):
     tea.update_min_area(dtea_min)
     
     # calculate annual climatic time period indicators
-    logger.info('Calculating CTP indicators')
+    logger.info('Calculating annual CTP indicators')
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
         tea.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
 
     # save output
-    save_output(opts=opts, tea=tea, masks=masks)
+    save_ctp_output(opts=opts, tea=tea)
     return tea
 
 
@@ -463,10 +427,10 @@ def run():
                 opts.start = pstart
                 opts.end = pend
                 logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
-                tea = calc_indicators(opts=opts)
+                tea = calc_ctp_indicators(opts=opts)
                 gc.collect()
         else:
-            tea = calc_indicators(opts=opts)
+            tea = calc_ctp_indicators(opts=opts)
     else:
         tea = TEAIndicators()
 
