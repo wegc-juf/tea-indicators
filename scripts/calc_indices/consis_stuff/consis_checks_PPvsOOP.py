@@ -41,7 +41,7 @@ def get_opts():
 
     parser.add_argument('--period',
                         dest='period',
-                        default='annual',
+                        default='WAS',
                         type=str,
                         choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA', 'EWS'],
                         help='Climatic time period (CTP) of interest. '
@@ -95,15 +95,19 @@ def load_data(opts):
     elif opts.level == 'DEC':
         sdir = 'dec_indicator_variables'
 
+    perstr = opts.period
+    if opts.level == 'DBV':
+        perstr = 'annual'
+
     pstr = f'{opts.parameter}{opts.threshold:.1f}p'
     if opts.parameter != 'Tx':
         pstr = f'{opts.parameter}_{opts.threshold:.1f}p'
 
     ods = xr.open_dataset(f'{opts.inpath}{sdir}/{opts.level}_{pstr}_{opts.region}'
-                          f'_{opts.period}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+                          f'_{perstr}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
     nds = xr.open_dataset(f'{opts.inpath}{sdir}/{opts.level}_{pstr}_{opts.region}'
-                          f'_{opts.period}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+                          f'_{perstr}_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
     return ods, nds
 
