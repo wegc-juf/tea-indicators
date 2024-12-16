@@ -17,7 +17,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_tea_history, extend_tea_opts
+from scripts.general_stuff.general_functions import create_tea_history, extend_tea_opts, compare_to_ref
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, save_event_count
@@ -26,7 +26,7 @@ from scripts.calc_indices.calc_ctp_indicator_variables import (calc_event_freque
                                                                calc_event_duration,
                                                                calc_exceedance_magnitude,
                                                                calc_exceedance_area_tex_sev)
-from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators
+from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
 from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
@@ -309,17 +309,6 @@ def compare_to_ctp_ref(tea, ctp_filename_ref):
         logger.warning(f'Reference file {ctp_filename_ref} not found.')
     
     
-def compare_to_ref(tea_result, tea_ref):
-    for vvar in tea_result.data_vars:
-        if vvar in tea_ref.data_vars:
-            diff = tea_result[vvar] - tea_ref[vvar]
-            max_diff = diff.max(skipna=True).values
-            if max_diff > 5e-5:
-                logger.warning(f'Maximum difference in {vvar} is {max_diff}')
-        else:
-            logger.warning(f'{vvar} not found in reference file.')
-
-
 def save_ctp_output(opts, tea):
     """
     save CTP results to netcdf file

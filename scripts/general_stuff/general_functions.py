@@ -70,3 +70,16 @@ def extend_tea_opts(opts):
     opts.param_str = param_str
 
     return opts
+
+
+def compare_to_ref(tea_result, tea_ref):
+    for vvar in tea_result.data_vars:
+        if vvar in tea_ref.data_vars:
+            diff = tea_result[vvar] - tea_ref[vvar]
+            max_diff = diff.max(skipna=True).values
+            if max_diff > 5e-5:
+                logger.warning(f'Maximum difference in {vvar} is {max_diff}')
+        else:
+            logger.warning(f'{vvar} not found in reference file.')
+
+
