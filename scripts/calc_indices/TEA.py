@@ -20,7 +20,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
-                 unit='', treat_zero_as_nan=False):
+                 unit='', treat_zero_as_nan=False, mask=None):
         """
         Initialize TEAIndicators object
         Args:
@@ -31,12 +31,17 @@ class TEAIndicators:
             min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
             unit: unit of the input data. Default: ''
+            mask: mask grid for input data containing nan values for cells that should be masked. Default: None
         """
         self.threshold_grid = threshold_grid
         if area_grid is None and threshold_grid is not None:
             area_grid = xr.ones_like(threshold_grid)
         self.area_grid = area_grid
-        self.input_data_grid = input_data_grid
+        self.mask = mask
+        if mask is not None:
+            self.input_data_grid = input_data_grid * mask
+        else:
+            self.input_data_grid = input_data_grid
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
         self.min_area = min_area

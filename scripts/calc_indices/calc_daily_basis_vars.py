@@ -91,7 +91,7 @@ def check_tmp_dir(opts):
         delete_files_in_directory(tmp_dir)
 
 
-def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
+def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None, mask=None):
     """
     compute daily basis variables following chapter 3 of TEA methods
     Args:
@@ -100,6 +100,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
         data: data
         large_gr: set if called from calc_TEA_largeGR (saves output in different directory)
         cell: lat and lon of cell (only relevant if called from calc_TEA_largeGR).
+        mask: mask grid for masking out regions (nan values are masked out)
 
     Returns:
         basic_vars: ds with daily basis variables (DTEC, DTEM, DTEA) both gridded and for GR
@@ -119,6 +120,7 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
         check_tmp_dir(opts)
 
     TEA = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
+                        mask=mask,
                         # set min area to < 1 grid cell area so that all exceedance days are considered
                         min_area=0.0001, low_extreme=opts.low_extreme, unit=opts.unit)
     logger.info('Calculating daily basis variables')
@@ -128,28 +130,15 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):
     
     bv_outpath = (f'{opts.outpath}/daily_basis_variables/'
                   f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                  f'_{opts.start}to{opts.end}.nc')
+                  f'_{opts.start}to{opts.end}_new.nc')
     if large_gr:
         large_gr_path = Path(f'{opts.tmppath}/daily_basis_variables/')
         large_gr_path.mkdir(parents=True, exist_ok=True)
         bv_outpath = (f'{opts.tmppath}daily_basis_variables/'
                       f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                      f'_{opts.start}to{opts.end}.nc')
+                      f'_{opts.start}to{opts.end}_new.nc')
 
-    if opts.save_old:
-        # combine all basic variables into one ds
-        bv_files = sorted(glob.glob(
-            f'{opts.outpath}/daily_basis_variables/tmp/'
-            f'*{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-            f'_{opts.start}to{opts.end}.nc'))
-        bv_ds = xr.open_mfdataset(bv_files, data_vars='minimal')
-        logger.info(f'Saving daily basis variables to {bv_outpath}')
-        bv_ds.to_netcdf(bv_outpath)
-        for file in bv_files:
-            os.system(f'rm {file}')
-
-    bv_outpath_new = bv_outpath.replace('.nc', '_new.nc')
-    logger.info(f'Saving daily basis variables to {bv_outpath_new}')
-    TEA.save_daily_results(bv_outpath_new)
+    logger.info(f'Saving daily basis variables to {bv_outpath}')
+    TEA.save_daily_results(bv_outpath)
     
     return TEA

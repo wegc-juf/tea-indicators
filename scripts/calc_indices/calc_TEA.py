@@ -401,24 +401,23 @@ def calc_indicators(opts):
         largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
         return
 
-    # apply mask to data
-    data = data * (masks['lt1500_mask'] * masks['mask'])
+    # create mask array
+    mask = masks['lt1500_mask'] * masks['mask']
 
     # computation of daily basis variables (Methods chapter 3)
     if opts.recalc_daily:
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
         old_period = opts.period
         opts.period = 'annual'
-        tea = calc_daily_basis_vars(opts=opts, static=static, data=data)
+        tea = calc_daily_basis_vars(opts=opts, static=static, data=data, mask=mask)
         opts.period = old_period
     else:
         tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
                             unit=opts.unit)
         
-    dbv_filename_new = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
-                        f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')
+        dbv_filename_new = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
+                            f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')
 
-    if not opts.recalc_daily:
         logger.info(f'Loading daily basis variables from {dbv_filename_new}; if you want to recalculate them, '
                     'set --recalc-daily.')
         tea.load_daily_results(dbv_filename_new)
