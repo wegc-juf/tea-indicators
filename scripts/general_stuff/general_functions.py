@@ -27,6 +27,20 @@ def create_history(cli_params, ds):
     return ds
 
 
+def create_tea_history(cli_params, tea, result_type):
+    """
+    add history to dataset
+    :param cli_params: CLI parameter
+    :param tea: TEA object
+    """
+    
+    script = cli_params[0].split('/')[-1]
+    cli_params = cli_params[1:]
+    
+    new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {" ".join(cli_params)}'
+    tea.create_history(new_hist, result_type)
+
+
 def ref_cc_params():
     params = {'REF': {'start': '1961-01-01', 'end': '1990-12-31',
                       'start_cy': '1966-01-01', 'end_cy': '1986-12-31'},

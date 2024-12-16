@@ -17,7 +17,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, extend_tea_opts
+from scripts.general_stuff.general_functions import create_tea_history, extend_tea_opts
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, save_event_count
@@ -327,7 +327,7 @@ def save_ctp_output(opts, tea):
         opts: CLI parameters
         tea: TEA object
     """
-    create_tea_history(cli_params=sys.argv, tea=tea)
+    create_tea_history(cli_params=sys.argv, tea=tea, result_type='CTP')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
