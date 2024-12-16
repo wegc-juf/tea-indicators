@@ -752,10 +752,14 @@ class TEAIndicators:
             self.decadal_results[vvar + '_slow'] = slow[vvar]
             
     # ### amplification factors ###
-    def _calc_cc(self, start_year=2008, end_year=2022):
+    def _calc_cc(self, period=(2008, 2022)):
         """
         calculate geometric mean of CC period
+        
+        Args:
+            period: current climate period: tuple(start year, end year)
         """
+        start_year, end_year = period
         cc_mean = self._calc_gmean(start_year=start_year, end_year=end_year)
         for vvar in cc_mean.data_vars:
             cc_mean[vvar].attrs = self.decadal_results[vvar].attrs
@@ -763,10 +767,14 @@ class TEAIndicators:
                 cc_mean[vvar].attrs['long_name'] = 'CC mean of ' + cc_mean[vvar].attrs['long_name']
         self._cc_mean = cc_mean
     
-    def _calc_ref(self, start_year=1961, end_year=1990):
+    def _calc_ref(self, period=(1961, 1990)):
         """
         calculate geometric mean of ref period
+        
+        Args:
+            period: reference period: tuple(start year, end year)
         """
+        start_year, end_year = period
         ref_mean = self._calc_gmean(start_year=start_year, end_year=end_year)
         
         for vvar in ref_mean.data_vars:
@@ -779,15 +787,20 @@ class TEAIndicators:
         """
         calculate geometric mean for given period
         Args:
-            start_year:
-            end_year:
+            start_year: start year of selected period
+            end_year: end year of selected period
 
         Returns:
             gmean
         """
-        start_cy = f'{start_year + 5}-01-01'
-        end_cy = f'{end_year - 4}-12-31'
-        period_data = self.decadal_results.sel(time=slice(start_cy, end_cy))
+        start_cy = start_year + 5
+        end_cy = end_year - 4
+        start_cy_date = f'{start_cy}-01-01'
+        end_cy_date = f'{end_cy}-12-31'
+        if start_cy < self.decadal_results.time.min().dt.year or end_cy > self.decadal_results.time.max().dt.year:
+            raise ValueError(f"Selected period {start_cy} - {end_cy} not within time range of decadal results")
+        
+        period_data = self.decadal_results.sel(time=slice(start_cy_date, end_cy_date))
         
         period_mean = self.gmean_custom(period_data, dim='time')
         doy_first, doy_last = self._calc_doy_adjustment(doy_first=period_mean.doy_first.values,
@@ -801,14 +814,18 @@ class TEAIndicators:
         period_mean['doy_last_GR'].values = doy_last_gr
         return period_mean
     
-    def calc_amplification_factors(self):
+    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2022)):
         """
         calculate amplification factors (equation 26)
+        
+        Args:
+            ref_period: reference period: tuple(start year, end year)
+            cc_period: current climate period: tuple(start year, end year)
         """
         if self._cc_mean is None:
-            self._calc_cc()
+            self._calc_cc(cc_period)
         if self._ref_mean is None:
-            self._calc_ref()
+            self._calc_ref(ref_period)
         cc_mean = self._cc_mean
         ref_mean = self._ref_mean
         amplification_factors = self.decadal_results / ref_mean
