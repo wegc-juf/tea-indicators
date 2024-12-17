@@ -11,10 +11,9 @@ import os
 import sys
 import warnings
 import xarray as xr
-import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.general_functions import create_history, load_opts
 
 
 def get_opts():
@@ -330,10 +329,7 @@ def run():
     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
     # opts = get_opts()
-    with open('../TEA_CFG.yaml', 'r') as stream:
-        opts = yaml.safe_load(stream)
-        opts = opts['create_static_files']
-        opts = argparse.Namespace(**opts)
+    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
 
     # load GR masks
     masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')

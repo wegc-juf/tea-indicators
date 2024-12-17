@@ -14,6 +14,7 @@ import pyproj
 import sys
 from tqdm import trange
 import xarray as xr
+import yaml
 
 from scripts.general_stuff.general_functions import create_history
 
@@ -227,7 +228,11 @@ def regrid_orog(opts):
 
 
 def run():
-    opts = get_opts()
+    # opts = get_opts()
+    with open('../TEA_CFG.yaml', 'r') as stream:
+        opts = yaml.safe_load(stream)
+        opts = opts['regrid_SPARTACUS_to_WEGNext']
+        opts = argparse.Namespace(**opts)
 
     if opts.orography:
         regrid_orog(opts=opts)

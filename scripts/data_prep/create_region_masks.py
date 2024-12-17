@@ -11,10 +11,9 @@ from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
 import sys
 from tqdm import trange
-import yaml
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.general_functions import create_history, load_opts
 
 
 def get_opts():
@@ -333,10 +332,7 @@ def run_eur(opts):
 
 def run():
     # opts = get_opts()
-    with open('../TEA_CFG.yaml', 'r') as stream:
-        opts = yaml.safe_load(stream)
-        opts = opts['create_region_masks']
-        opts = argparse.Namespace(**opts)
+    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
 
     if opts.region == 'SEA':
         run_sea(opts=opts)

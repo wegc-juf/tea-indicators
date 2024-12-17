@@ -2,7 +2,21 @@
 scripts for general stuff (e.g. nc-history)
 """
 
+import argparse
 import datetime as dt
+import yaml
+
+from scripts.general_stuff.check_CFG import check_config
+
+
+def load_opts(script_name):
+    with open('../TEA_CFG.yaml', 'r') as stream:
+        opts = yaml.safe_load(stream)
+        opts = opts[script_name]
+        opts = check_config(opts_dict=opts)
+        opts = argparse.Namespace(**opts)
+
+    return opts
 
 
 def create_history(cli_params, ds):

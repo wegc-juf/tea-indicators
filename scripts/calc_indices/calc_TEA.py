@@ -15,9 +15,10 @@ import re
 import sys
 import warnings
 import xarray as xr
+import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, extend_tea_opts
+from scripts.general_stuff.general_functions import create_history, extend_tea_opts, load_opts
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
@@ -389,7 +390,8 @@ def run():
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
 
     # load CLI parameter
-    opts = getopts()
+    # opts = getopts()
+    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
 
     # add necessary strings to opts
     opts = extend_tea_opts(opts)
