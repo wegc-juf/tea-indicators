@@ -11,6 +11,7 @@ from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
 import sys
 from tqdm import trange
+import yaml
 import xarray as xr
 
 from scripts.general_stuff.general_functions import create_history
@@ -295,7 +296,6 @@ def run_eur(opts):
     Returns:
 
     """
-    # TODO: needs adjusting if worldwide applicable
     if opts.target_ds != 'ERA5':
         raise AttributeError('EUR mask can only be created for ERA5 data.')
 
@@ -332,7 +332,11 @@ def run_eur(opts):
 
 
 def run():
-    opts = get_opts()
+    # opts = get_opts()
+    with open('../TEA_CFG.yaml', 'r') as stream:
+        opts = yaml.safe_load(stream)
+        opts = opts['create_region_masks']
+        opts = argparse.Namespace(**opts)
 
     if opts.region == 'SEA':
         run_sea(opts=opts)
