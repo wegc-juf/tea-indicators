@@ -15,7 +15,7 @@ import sys
 from tqdm import trange
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.general_functions import create_history, load_opts
 
 
 def get_opts():
@@ -227,7 +227,8 @@ def regrid_orog(opts):
 
 
 def run():
-    opts = get_opts()
+    # opts = get_opts()
+    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
 
     if opts.orography:
         regrid_orog(opts=opts)
