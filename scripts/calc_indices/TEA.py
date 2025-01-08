@@ -259,6 +259,13 @@ class TEAIndicators:
         """
         self.daily_results = xr.open_dataset(filepath)
         self.unit = self.daily_results.DTEM.attrs['units']
+        
+    def set_daily_results(self, daily_results):
+        """
+        set daily results
+        """
+        self.daily_results = daily_results
+        self.unit = self.daily_results.DTEM.attrs['units']
     
     def update_min_area(self, min_area):
         """
@@ -612,6 +619,23 @@ class TEAIndicators:
         """
         self.CTP_results = xr.open_mfdataset(filepath)
         self.unit = self.CTP_results.EM_avg.attrs['units']
+    
+    def get_CTP_results(self, grid=True, gr=True):
+        """
+        get CTP results
+        
+        Args:
+            grid: get gridded results. Default: True
+            gr: get GR results. Default: True
+        """
+        gr_vars = [var for var in self.CTP_results.data_vars if 'GR' in var]
+        grid_vars = [var for var in self.CTP_results.data_vars if 'GR' not in var]
+        if not grid:
+            return self.CTP_results.drop_vars(grid_vars)
+        if not gr:
+            return self.CTP_results.drop_vars(gr_vars)
+        else:
+            return self.CTP_results
         
     # ### Decadal mean functions ###
     
