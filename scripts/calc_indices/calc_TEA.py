@@ -111,7 +111,7 @@ def getopts():
                              'e.g. for cold extremes.')
 
     parser.add_argument('--inpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
+                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/',
                         type=dir_path,
                         help='Path of folder where data is located.')
 
@@ -189,6 +189,9 @@ def getopts():
                         help='Set if old output files should be saved. Default: False.')
 
     myopts = parser.parse_args()
+    
+    # add dataset to inpath
+    myopts.inpath = f'{myopts.inpath}/{myopts.dataset}/'
 
     return myopts
 
