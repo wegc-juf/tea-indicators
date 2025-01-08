@@ -161,16 +161,23 @@ class TEAIndicators:
         dtea.attrs = get_attrs(vname='DTEA')
         self.daily_results['DTEA'] = dtea
         
-    def calc_DTEA_GR(self):
+    def calc_DTEA_GR(self, relative=False):
         """
         calculate Daily Threshold Exceedance Area (GR) (equation 06)
+        
+        Args:
+            relative: calculate area relative to full GR area. Default: False
         """
         if 'DTEA' not in self.daily_results:
             self.calc_DTEA()
         dtea = self.daily_results.DTEA
         dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
+        if relative:
+            dtea_gr = dtea_gr / self.gr_size
+            dtea_gr.attrs = get_attrs(vname='DTEA_GR', data_unit='%')
+        else:
+            dtea_gr.attrs = get_attrs(vname='DTEA_GR')
         dtea_gr = dtea_gr.rename('DTEA_GR')
-        dtea_gr.attrs = get_attrs(vname='DTEA_GR')
         self.daily_results['DTEA_GR'] = dtea_gr
     
     def calc_DTEM(self):
