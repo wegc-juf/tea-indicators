@@ -18,6 +18,8 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
     Returns:
         attributes: dict with attributes
     """
+    if 'DTEA' in vname and not data_unit:
+        data_unit = '100 km^2'
     attrs = {'ctp': {'long_name': f'climatic time period ({period})'},
              'CTP': {'long_name': f'start date of climatic time period {period}', 'standard_name': 'ctp_time'},
              'CTP_global_attrs': {'title': f'TEA indicators for annual climatic time period: {period}'},
@@ -30,7 +32,7 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
                                                      f' {period}'},
              'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
-             'DTEA': {'long_name': 'daily threshold exceedance area', 'units': '100 km^2'},
+             'DTEA': {'long_name': 'daily threshold exceedance area', 'units': data_unit},
              'DTEM_Max': {'long_name': 'daily maximum grid cell exceedance magnitude',
                           'units': data_unit},
              f'DTEEC': {'long_name': f'daily threshold exceedance event count', 'units': '1'},
