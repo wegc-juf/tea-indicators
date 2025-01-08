@@ -20,7 +20,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
-                 unit='', treat_zero_as_nan=False, mask=None):
+                 unit='', mask=None, calc_grid=True):
         """
         Initialize TEAIndicators object
         Args:
@@ -48,7 +48,9 @@ class TEAIndicators:
         self.gr_vars = None
         self.low_extreme = low_extreme
         self.unit = unit
-        self.treat_zero_as_nan = treat_zero_as_nan
+        
+        # size of whole GeoRegion
+        self.gr_size = area_grid.sum().values
         
         # Climatic Time Period (CTP) variables
         self.CTP = None
@@ -69,10 +71,7 @@ class TEAIndicators:
         self._ref_mean = None
         self.amplification_factors = xr.Dataset()
         
-        if self.treat_zero_as_nan:
-            self.null_val = np.nan
-        else:
-            self.null_val = 0
+        self.null_val = 0
         
         if input_data_grid is not None:
             # set time index
@@ -94,10 +93,7 @@ class TEAIndicators:
         if self.daily_results['DTEM'] is None:
             self.calc_DTEM()
         dtem = self.daily_results.DTEM
-        if self.treat_zero_as_nan:
-            dtec = dtem.where(dtem.isnull(), 1)
-        else:
-            dtec = xr.where(dtem > 0, 1, dtem)
+        dtec = xr.where(dtem > 0, 1, dtem)
         dtec.attrs = get_attrs(vname='DTEC')
         self.daily_results['DTEC'] = dtec
     
@@ -185,10 +181,7 @@ class TEAIndicators:
             dtem = self.threshold_grid - self.input_data_grid
         else:
             dtem = self.input_data_grid - self.threshold_grid
-        if self.treat_zero_as_nan:
-            dtem = dtem.where(dtem > 0).astype('float32')
-        else:
-            dtem = xr.where(dtem <= 0, 0, dtem)
+        dtem = xr.where(dtem <= 0, 0, dtem)
         dtem.attrs = get_attrs(vname='DTEM', data_unit=self.unit)
         self.daily_results['DTEM'] = dtem
         
@@ -326,12 +319,8 @@ class TEAIndicators:
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
         self._daily_results_filtered.coords['doy'] = ('time', doy)
         
-        if self.treat_zero_as_nan:
-            event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC.notnull())
-            event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR.notnull())
-        else:
-            event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC > 0)
-            event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
+        event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC > 0)
+        event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
         resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
         resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
         
