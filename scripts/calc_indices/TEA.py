@@ -45,7 +45,6 @@ class TEAIndicators:
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
         self.min_area = min_area
-        self.gr_vars = None
         self.low_extreme = low_extreme
         self.unit = unit
         
@@ -201,7 +200,7 @@ class TEAIndicators:
         if 'DTEC_GR' not in self.daily_results:
             self.calc_DTEC_GR()
         dtem = self.daily_results.DTEM
-        dtem_max = dtem.max(dim=self.threshold_grid.dims)
+        dtem_max = dtem.max(dim=self.area_grid.dims)
         dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1, self.null_val)
         dtem_max.attrs = get_attrs(vname='DTEM_Max_GR', data_unit=self.unit)
         self.daily_results['DTEM_Max_GR'] = dtem_max
@@ -230,19 +229,25 @@ class TEAIndicators:
         self.daily_results['DTEM_GR'] = dtem_gr
         self.daily_results['DTEMA_GR'] = dtema_gr
     
-    def calc_daily_basis_vars(self):
+    def calc_daily_basis_vars(self, grid=True, gr=True):
         """
         calculate all daily basis variables
+        
+        Args:
+            grid: calculate grid variables. Default: True
+            gr: calculate GR variables. Default: True
         """
-        self.calc_DTEM()
-        self.calc_DTEC()
-        self.calc_DTEA()
-        self.calc_DTEA_GR()
-        self.calc_DTEC_GR()
-        self.calc_DTEM_GR()
-        self.calc_DTEM_Max_GR()
-        self.calc_DTEEC()
-        self.calc_DTEEC_GR()
+        if grid:
+            self.calc_DTEM()
+            self.calc_DTEC()
+            self.calc_DTEA()
+            self.calc_DTEEC()
+        if gr:
+            self.calc_DTEA_GR()
+            self.calc_DTEC_GR()
+            self.calc_DTEM_GR()
+            self.calc_DTEM_Max_GR()
+            self.calc_DTEEC_GR()
     
     def save_daily_results(self, filepath):
         """
