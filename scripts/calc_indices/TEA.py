@@ -20,7 +20,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
-                 unit='', mask=None, calc_grid=True):
+                 unit='', mask=None):
         """
         Initialize TEAIndicators object
         Args:
@@ -47,6 +47,9 @@ class TEAIndicators:
         self.min_area = min_area
         self.low_extreme = low_extreme
         self.unit = unit
+        
+        self.calc_grid = True
+        self.calc_gr = True
         
         # size of whole GeoRegion
         self.gr_size = area_grid.sum().values
@@ -237,17 +240,21 @@ class TEAIndicators:
             grid: calculate grid variables. Default: True
             gr: calculate GR variables. Default: True
         """
+        self.calc_grid = False
+        self.calc_gr = False
         if grid:
             self.calc_DTEM()
             self.calc_DTEC()
             self.calc_DTEA()
             self.calc_DTEEC()
+            self.calc_grid = True
         if gr:
             self.calc_DTEA_GR()
             self.calc_DTEC_GR()
             self.calc_DTEM_GR()
             self.calc_DTEM_Max_GR()
             self.calc_DTEEC_GR()
+            self.calc_gr = True
     
     def save_daily_results(self, filepath):
         """
@@ -318,13 +325,17 @@ class TEAIndicators:
         if self._CTP_resample_sum is None:
             self._resample_to_CTP()
             
-        ef = self._CTP_resample_sum.DTEEC
-        ef = ef.where(ef.notnull(), 0)
+        if 'DTEEC' in self._CTP_resample_sum:
+            # # process grid data
+            ef = self._CTP_resample_sum.DTEEC
+            ef = ef.where(ef.notnull(), 0)
+            ef.attrs = get_attrs(vname='EF')
+            self.CTP_results['EF'] = ef
+            
+        # # process GR data
         ef_gr = self._CTP_resample_sum.DTEEC_GR
         ef_gr = ef_gr.where(ef_gr.notnull(), 0)
         
-        ef.attrs = get_attrs(vname='EF')
-        self.CTP_results['EF'] = ef
         ef_gr.attrs = get_attrs(vname='EF_GR')
         self.CTP_results['EF_GR'] = ef_gr
     
@@ -332,41 +343,51 @@ class TEAIndicators:
         """
         calculate supplementary event variables (equation 13)
         """
-        if 'EF' not in self.CTP_results:
+        if 'EF' not in self.CTP_results and 'EF_GR' not in self.CTP_results:
             self.calc_event_frequency()
         
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
         self._daily_results_filtered.coords['doy'] = ('time', doy)
         
-        event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC > 0)
+        if 'DTEEC' in self._daily_results_filtered:
+            # # process grid data
+            event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC > 0)
+            resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
+        
+            # equation 13_1
+            doy_first = resampler.min('time')
+            doy_first.attrs = get_attrs(vname='doy_first')
+            
+            # equation 13_2
+            doy_last = resampler.max('time')
+            doy_last.attrs = get_attrs(vname='doy_last')
+            
+            # equation 13_3
+            aep = (doy_last - doy_first + 1) / 30.5
+            aep.attrs = get_attrs(vname='AEP')
+            
+            self.CTP_results['doy_first'] = doy_first
+            self.CTP_results['doy_last'] = doy_last
+            self.CTP_results['AEP'] = aep
+            # indent
+
+        # # process GR data
         event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
-        resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
         resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
         
-        # equation 13_1
-        doy_first = resampler.min('time')
         # equation 13_4
         doy_first_gr = resampler_gr.min('time')
-        # equation 13_2
-        doy_last = resampler.max('time')
+        
         # equation 13_5
         doy_last_gr = resampler_gr.max('time')
         
-        # equation 13_3
-        aep = (doy_last - doy_first + 1) / 30.5
         # equation 13_6
         aep_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
         
-        doy_first.attrs = get_attrs(vname='doy_first')
         doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
-        doy_last.attrs = get_attrs(vname='doy_last')
         doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
-        aep.attrs = get_attrs(vname='AEP')
         aep_gr.attrs = get_attrs(vname='AEP_GR')
         
-        self.CTP_results['doy_first'] = doy_first
-        self.CTP_results['doy_last'] = doy_last
-        self.CTP_results['AEP'] = aep
         self.CTP_results['doy_first_GR'] = doy_first_gr
         self.CTP_results['doy_last_GR'] = doy_last_gr
         self.CTP_results['AEP_GR'] = aep_gr
@@ -375,34 +396,38 @@ class TEAIndicators:
         """
         calculate event duration (equation 14 and equation 15)
         """
-        if 'EF' not in self.CTP_results:
+        if 'EF' not in self.CTP_results and 'EF_GR' not in self.CTP_results:
             self.calc_event_frequency()
         
-        # equation 14_2
-        ed = self._CTP_resample_sum.DTEC
+        if 'DTEC' in self._CTP_resample_sum:
+            # # process grid data
+            
+            # equation 14_2
+            ed = self._CTP_resample_sum.DTEC
+            ed.attrs = get_attrs(vname='ED')
+            self.CTP_results['ED'] = ed
+            
+            ef = self.CTP_results['EF']
+            
+            # calc average event duration (equation 14_1)
+            ed_avg = ed / ef
+            ed_avg = xr.where(ef == 0, 0, ed_avg)
+            ed_avg.attrs = get_attrs(vname='ED_avg')
+            self.CTP_results['ED_avg'] = ed_avg
+            # indent
+        
+        # # process GR data
         # equation 15_2
         ed_gr = self._CTP_resample_sum.DTEC_GR
-        
-        ed.attrs = get_attrs(vname='ED')
         ed_gr.attrs = get_attrs(vname='ED_GR')
-        
-        self.CTP_results['ED'] = ed
         self.CTP_results['ED_GR'] = ed_gr
         
-        ef = self.CTP_results['EF']
         ef_gr = self.CTP_results['EF_GR']
         
-        # calc average event duration
-        # equation 14_1
-        ed_avg = ed / ef
-        ed_avg = xr.where(ef == 0, 0, ed_avg)
-        # equation 15_1
+        # calc average event duration (equation 15_1)
         ed_avg_gr = ed_gr / ef_gr
         ed_avg_gr = xr.where(ef_gr == 0, 0, ed_avg_gr)
-        
-        ed_avg.attrs = get_attrs(vname='ED_avg')
         ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
-        self.CTP_results['ED_avg'] = ed_avg
         self.CTP_results['ED_avg_GR'] = ed_avg_gr
     
     def calc_exceedance_magnitude(self):
@@ -411,64 +436,71 @@ class TEAIndicators:
         median exceedance magnitude (equation 19), and maximum exceedance magnitude (equation 20)
         """
         
-        if 'ED' not in self.CTP_results:
+        if 'ED' not in self.CTP_results and 'ED_GR' not in self.CTP_results:
             self.calc_event_duration()
             
-        # equation 17_2
-        em = self._CTP_resample_sum.DTEM
+        if 'DTEM' in self._CTP_resample_sum:
+            # process grid data
+        
+            # equation 17_2
+            em = self._CTP_resample_sum.DTEM
+            
+            # calc average exceedance magnitude (equation 17_1)
+            ed = self.CTP_results.ED
+            em_avg = em / ed
+            em_avg = xr.where(ed == 0, 0, em_avg)
+            
+            em.attrs = get_attrs(vname='EM', data_unit=self.unit)
+            em_avg.attrs = get_attrs(vname='EM_avg')
+            self.CTP_results['EM'] = em
+            self.CTP_results['EM_avg'] = em_avg
+            
+            # calc median exceedance magnitude (equation 19_1)
+            em_avg_med = self._CTP_resample_median.DTEM
+            em_avg_med.attrs = get_attrs(vname='EM_avg_Md')
+
+            # equation 19_2
+            em_med = self.CTP_results.ED * em_avg_med
+            em_med.attrs = get_attrs(vname='EM_Md', data_unit=self.unit)
+            
+            self.CTP_results['EM_avg_Md'] = em_avg_med
+            self.CTP_results['EM_Md'] = em_med
+            
+            # indent
+            
+        # # process GR data
         # equation 18_2
         em_gr = self._CTP_resample_sum.DTEM_GR
     
-        # calc average exceedance magnitude
-        # equation 17_1
-        ed = self.CTP_results.ED
-        em_avg = em / ed
-        em_avg = xr.where(ed == 0, 0, em_avg)
-        # equation 18_1
+        # calc average exceedance magnitude (equation 18_1)
         ed_gr = self.CTP_results.ED_GR
         em_avg_gr = em_gr / ed_gr
         em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
         
-        em.attrs = get_attrs(vname='EM', data_unit=self.unit)
         em_gr.attrs = get_attrs(vname='EM_GR', data_unit=self.unit)
-        em_avg.attrs = get_attrs(vname='EM_avg')
         em_avg_gr.attrs = get_attrs(vname='EM_avg_GR')
         
-        self.CTP_results['EM'] = em
         self.CTP_results['EM_GR'] = em_gr
-        self.CTP_results['EM_avg'] = em_avg
         self.CTP_results['EM_avg_GR'] = em_avg_gr
         
-        # calc median exceedance magnitude
-        # equation 19_1
-        em_avg_med = self._CTP_resample_median.DTEM
-        # equation 19_3
+        # calc median exceedance magnitude (equation 19_3)
         em_avg_gr_med = self._CTP_resample_median.DTEM_GR
-        # equation 19_2
-        em_med = self.CTP_results.ED * em_avg_med
+        em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md')
+        self.CTP_results['EM_avg_GR_Md'] = em_avg_gr_med
+
         # equation 19_4
         em_gr_med = self.CTP_results.ED_GR * em_avg_gr_med
-        
-        em_avg_med.attrs = get_attrs(vname='EM_avg_Md')
-        em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md')
-        em_med.attrs = get_attrs(vname='EM_Md', data_unit=self.unit)
         em_gr_med.attrs = get_attrs(vname='EM_GR_Md', data_unit=self.unit)
-        
-        self.CTP_results['EM_avg_Md'] = em_avg_med
-        self.CTP_results['EM_avg_GR_Md'] = em_avg_gr_med
-        self.CTP_results['EM_Md'] = em_med
         self.CTP_results['EM_GR_Md'] = em_gr_med
         
-        # calc maximum exceedance magnitude
-        # equation 20_2
+        # calc maximum exceedance magnitude (equation 20_2)
         em_gr_max = self._CTP_resample_sum.DTEM_Max_GR
-        # equation 20_1
-        em_gr_avg_max = em_gr_max / self.CTP_results.ED_GR
-        
         em_gr_max.attrs = get_attrs(vname='EM_Max_GR', data_unit=self.unit)
-        em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR')
-        
         self.CTP_results['EM_Max_GR'] = em_gr_max
+        
+        # calc average maximum exceedance magnitude (equation 20_1)
+        em_gr_avg_max = em_gr_max / self.CTP_results.ED_GR
+        em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR')
         self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
     
     def calc_annual_total_events_extremity(self):
@@ -993,15 +1025,20 @@ class TEAIndicators:
         elif self.CTP is None:
             raise ValueError("CTP must be set before resampling")
         
+        # drop all non GR variables
+        if not self.calc_grid:
+            self.daily_results = self.daily_results.drop([var for var in self.daily_results.data_vars if 'GR' not in var])
         self._filter_CTP()
         self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
         self._CTP_resample_sum = self._CTP_resampler.sum('time')
+        
         # dask does not support median for resampling so resample only what is necessary
         self._CTP_resample_median = xr.Dataset()
         for var in ['DTEM', 'DTEM_GR']:
-            self._daily_results_filtered[var].load()
-            resampler = self._daily_results_filtered[var].resample(time=self.CTP_freqs[self.CTP])
-            self._CTP_resample_median[var] = resampler.median('time')
+            if var in self._daily_results_filtered:
+                self._daily_results_filtered[var].load()
+                resampler = self._daily_results_filtered[var].resample(time=self.CTP_freqs[self.CTP])
+                self._CTP_resample_median[var] = resampler.median('time')
         if self.CTP in self._overlap_ctps:
             # remove first and last year
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
