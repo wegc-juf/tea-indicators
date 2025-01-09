@@ -376,7 +376,7 @@ def run_custom_gr(opts):
 
     # create non weighted mask array
     nw_mask_arr = np.full((len(dummy[y]), len(dummy[x])), np.nan)
-    da_nw_mask = xr.DataArray(data=nw_mask_arr, coords={y: ([y], dummy[y].data),
+    da_nwmask = xr.DataArray(data=nw_mask_arr, coords={y: ([y], dummy[y].data),
                                                         x: ([x], dummy[x].data)},
                               attrs={'long_name': 'non weighted mask',
                                      'coordinate_sys': f'EPSG:{opts.target_sys}'},
@@ -388,8 +388,8 @@ def run_custom_gr(opts):
 
     # set values in non-weighted mask within GR to 1 and create weighted mask
     if xvals_check and yvals_check:
-        da_nw_mask.loc[sw_coords[1]:ne_coords[1], sw_coords[0]:ne_coords[0]] = 1
-        da_mask = da_nw_mask.copy()
+        da_nwmask.loc[sw_coords[1]:ne_coords[1], sw_coords[0]:ne_coords[0]] = 1
+        da_mask = da_nwmask.copy()
         da_mask = da_mask.rename('mask')
         da_mask.attrs['long_name'] = 'non weighted mask'
     else:
@@ -402,7 +402,7 @@ def run_custom_gr(opts):
         closest_ne_y = find_closest(dummy[y], ne_coords[1], direction=1)
 
         # set values in non-weighted mask within GR to 1
-        da_nw_mask.loc[closest_sw_y:closest_ne_y, closest_sw_x:closest_ne_x] = 1
+        da_nwmask.loc[closest_sw_y:closest_ne_y, closest_sw_x:closest_ne_x] = 1
 
         # calculate fractions of cells that are within passed corners for weighted mask
         w_frac = (sw_coords[0] - closest_sw_x) / dx
@@ -411,7 +411,7 @@ def run_custom_gr(opts):
         n_frac = (closest_ne_y - ne_coords[1]) / dy
 
         # create weighted mask
-        da_mask = da_nw_mask.copy()
+        da_mask = da_nwmask.copy()
         da_mask = da_mask.rename('mask')
         da_mask.attrs['long_name'] = 'non weighted mask'
 
@@ -421,9 +421,17 @@ def run_custom_gr(opts):
         da_mask.loc[:, closest_ne_x] = da_mask.loc[:, closest_ne_x] * e_frac
         da_mask.loc[closest_ne_y, :] = da_mask.loc[closest_ne_y, :] * n_frac
 
-    lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nw_mask)
+    lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
-    ds = xr.merge([da_mask, da_nw_mask, lt1500_mask])
+    if 'ERA5' in opts.target_ds:
+        lsm = prep_lsm(opts=opts)
+        lsm = lsm.where(lsm > 0.5)
+        lsm = lsm.rename('LSM_EUR')
+        lsm.attrs = {'long_name': 'land sea mask (EUR)',
+                     'coordinate_sys': f'EPSG:{opts.target_sys}'}
+        ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
+    else:
+        ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
     ds = create_history(cli_params=sys.argv, ds=ds)
 
     out_region = f'SW_{sw_coords[0]}_{sw_coords[1]}-NE_{ne_coords[0]}_{ne_coords[1]}'
