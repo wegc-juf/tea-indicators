@@ -42,11 +42,15 @@ class TEAAgr(TEAIndicators):
         
         self.ctp_results = None
         
-    def calc_daily_basis_vars(self):
+    def calc_daily_basis_vars(self, grid=True, gr=False):
         """
         calculate all daily basis variables
+        
+        Args:
+            grid: set if grid cells should be calculated (default: True)
+            gr: set if GeoRegion values should be calculated (default: False)
         """
-        super().calc_daily_basis_vars(gr=False)
+        super().calc_daily_basis_vars(grid=grid, gr=gr)
         
     @staticmethod
     def _my_rolling_test(data, axis, keep_attrs=True, step=1):
@@ -59,8 +63,7 @@ class TEAAgr(TEAIndicators):
         """
         regrid daily basis variables to individual georegions
         """
-        dtem = self.daily_results.DTEM
-        # apply custom rolling function to dtem
+        # apply custom rolling function
         self.daily_results.rolling(lat=4, lon=4, center=True).reduce(self._my_rolling_test, step=2).compute()
 
     def select_sub_gr(self, lat, lon, cell_size_lat, land_frac_min=0):
@@ -99,13 +102,10 @@ class TEAAgr(TEAIndicators):
                                             lon=slice(lon - lon_off, lon + lon_off))
         if len(cell_area_grid.lat) == 0:
             raise ValueError('No valid cell found, check why this happens')
-            cell_area_grid = self.area_grid.sel(lat=slice(lat - lat_off, lat + lat_off),
-                                                lon=slice(lon - lon_off, lon + lon_off))
         
         # TODO: two options: either return data itself and stack to xarray then calculate TEA or return individual TEA
         # objects
-        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid,
-                                   min_area=0.0001, unit=self.unit, calc_grid=False)
+        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=0.0001, unit=self.unit)
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
 
