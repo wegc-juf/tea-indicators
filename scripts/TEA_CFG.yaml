@@ -4,9 +4,9 @@ common_params:
     gr_type: center
     sw_corner: 267200,5144700
     ne_corner: 292500,5296300
-    center: 292500,5296300
-    we_len: 5000
-    ns_len: 5000
+    center: 17,45
+    we_len: 2.6
+    ns_len: 2.6
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -30,12 +30,12 @@ regrid_SPARTACUS_to_WEGNext:
 create_region_masks:
   <<: *GR
   subreg: custom
-  target_sys: 3416
-  target_ds: SPARTACUS
-  xy_name: x,y
+  target_sys: 4326
+  target_ds: ERA5
+  xy_name: lon,lat
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 

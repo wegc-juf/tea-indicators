@@ -352,7 +352,7 @@ def run_custom_gr(opts):
     xy = opts.xy_name.split(',')
     x, y = xy[0], xy[1]
     dx = dummy[x][1] - dummy[x][0]
-    dy = dummy[y][1] - dummy[y][0]
+    dy = abs(dummy[y][1] - dummy[y][0])
 
     # get corners from CFG file
     if opts.gr_type == 'corners':
@@ -366,49 +366,58 @@ def run_custom_gr(opts):
         sw_coords = [center_coords[0] - float(opts.we_len), center_coords[1] - float(opts.ns_len)]
         ne_coords = [center_coords[0] + float(opts.we_len), center_coords[1] + float(opts.ns_len)]
 
+    if 'ERA5' in opts.target_ds:
+        xn, xx = sw_coords[0], ne_coords[0]
+        yn, yx = ne_coords[1], sw_coords[1]
+        yidxn, yidxx = -1, 0
+    else:
+        xn, xx = sw_coords[0], ne_coords[0]
+        yn, yx = sw_coords[1], ne_coords[1]
+        yidxn, yidxx = 0, -1
+
     # check if corners are within grid
-    if (any(xv < dummy[x][0] for xv in [sw_coords[0], ne_coords[0]]) or
-            any(xv > dummy[x][-1] for xv in [sw_coords[0], ne_coords[0]])):
+    if any(xv < dummy[x][0] for xv in [xn, xx]) or any(xv > dummy[x][-1] for xv in [xn, xx]):
         raise KeyError('Passed corner(s) are outside of target grid!')
-    if (any(yv < dummy[y][0] for yv in [sw_coords[1], ne_coords[1]]) or
-            any(yv > dummy[y][-1] for yv in [sw_coords[1], ne_coords[1]])):
+    if any(yv < dummy[y][yidxn] for yv in [yn, yx]) or any(yv > dummy[y][yidxx] for yv in [yn, yx]):
         raise KeyError('Passed corner(s) are outside of target grid!')
 
     # create non weighted mask array
     nw_mask_arr = np.full((len(dummy[y]), len(dummy[x])), np.nan)
     da_nwmask = xr.DataArray(data=nw_mask_arr, coords={y: ([y], dummy[y].data),
-                                                        x: ([x], dummy[x].data)},
-                              attrs={'long_name': 'non weighted mask',
-                                     'coordinate_sys': f'EPSG:{opts.target_sys}'},
-                              name='nw_mask')
+                                                       x: ([x], dummy[x].data)},
+                             attrs={'long_name': 'non weighted mask',
+                                    'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                             name='nw_mask')
 
     # check if corners are identical with grid points on target grid
-    xvals_check = all(xv in dummy[x] for xv in [sw_coords[0], ne_coords[0]])
-    yvals_check = all(yv in dummy[y] for yv in [sw_coords[1], ne_coords[1]])
+    xvals_check = all(xv in dummy[x] for xv in [xn, xx])
+    yvals_check = all(yv in dummy[y] for yv in [yn, yx])
 
     # set values in non-weighted mask within GR to 1 and create weighted mask
     if xvals_check and yvals_check:
-        da_nwmask.loc[sw_coords[1]:ne_coords[1], sw_coords[0]:ne_coords[0]] = 1
+        da_nwmask.loc[yn:yx, xn:xx] = 1
         da_mask = da_nwmask.copy()
         da_mask = da_mask.rename('mask')
         da_mask.attrs['long_name'] = 'non weighted mask'
     else:
-        # Find the closest x and y for the south-west corner
-        closest_sw_x = find_closest(dummy[x], sw_coords[0], direction=-1)
-        closest_sw_y = find_closest(dummy[y], sw_coords[1], direction=-1)
-
-        # Find the closest x and y for the north-east corner
-        closest_ne_x = find_closest(dummy[x], ne_coords[0], direction=1)
-        closest_ne_y = find_closest(dummy[y], ne_coords[1], direction=1)
+        # Find the closest x and y for the corners and calculate fractions of cell area
+        if 'ERA5' in opts.target_ds:
+            closest_sw_y = find_closest(dummy[y][::-1], yn, direction=1)
+            closest_ne_y = find_closest(dummy[y][::-1], yx, direction=-1)
+            s_frac = (closest_sw_y - yn) / dy
+            n_frac = (yx - closest_ne_y) / dy
+        else:
+            closest_sw_y = find_closest(dummy[y], yn, direction=-1)
+            closest_ne_y = find_closest(dummy[y], yx, direction=1)
+            s_frac = (yn - closest_sw_y) / dy
+            n_frac = (closest_ne_y - yx) / dy
+        closest_sw_x = find_closest(dummy[x], xn, direction=-1)
+        closest_ne_x = find_closest(dummy[x], xx, direction=1)
+        w_frac = (xn - closest_sw_x) / dx
+        e_frac = (closest_ne_x - xx) / dx
 
         # set values in non-weighted mask within GR to 1
         da_nwmask.loc[closest_sw_y:closest_ne_y, closest_sw_x:closest_ne_x] = 1
-
-        # calculate fractions of cells that are within passed corners for weighted mask
-        w_frac = (sw_coords[0] - closest_sw_x) / dx
-        e_frac = (closest_ne_x - ne_coords[0]) / dx
-        s_frac = (sw_coords[1] - closest_sw_y) / dy
-        n_frac = (closest_ne_y - ne_coords[1]) / dy
 
         # create weighted mask
         da_mask = da_nwmask.copy()
@@ -434,7 +443,7 @@ def run_custom_gr(opts):
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
     ds = create_history(cli_params=sys.argv, ds=ds)
 
-    out_region = f'SW_{sw_coords[0]}_{sw_coords[1]}-NE_{ne_coords[0]}_{ne_coords[1]}'
+    out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
     ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
 
 
@@ -444,8 +453,7 @@ def run():
 
     if opts.gr_type != 'polygon':
         run_custom_gr(opts=opts)
-
-    if opts.region == 'SEA':
+    elif opts.region == 'SEA':
         run_sea(opts=opts)
     elif opts.region == 'EUR':
         run_eur(opts=opts)
