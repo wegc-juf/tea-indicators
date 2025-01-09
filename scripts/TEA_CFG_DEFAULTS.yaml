@@ -1,6 +1,12 @@
 common_params:
   GeoRegion: &GR
     region: AUT
+    gr_type: polygon
+    sw_corner: null
+    ne_corner: null
+    center: null
+    we_len: null
+    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -27,7 +33,7 @@ create_region_masks:
   target_sys: 3416
   target_ds: SPARTACUS
   xy_name: x,y
-  shpfile: /path/to/your/shapefile.shp
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc

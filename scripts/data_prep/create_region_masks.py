@@ -183,7 +183,7 @@ def create_lt1500m_mask(opts, da_nwmask):
     create mask of all cells with an altitude lower than 1500m
     Args:
         opts: CLI parameter
-        da_nwmask: non weightes mask da
+        da_nwmask: non weighted mask da
 
     Returns:
         lt1500_mask: lower than 1500m mask da
@@ -208,7 +208,7 @@ def create_lt1500m_mask(opts, da_nwmask):
         lt1500_eur = lt1500_eur.where(lt1500_eur.isnull(), 1)
         lt1500_eur = lt1500_eur.rename('lt1500_mask_EUR')
         lt1500_eur.attrs = {'long_name': 'below 1500m mask (EUR)',
-                             'coordinate_sys': f'EPSG:{opts.target_sys}'}
+                            'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
     return lt1500_mask, lt1500_eur
 
@@ -279,7 +279,7 @@ def prep_lsm(opts):
     lsm_lon = np.arange(-180, 180, step).astype('float32')
 
     lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
-            'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})
+        'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})
 
     lsm = lsm.sel(lat=data.lat.values, lon=data.lon.values)
 
@@ -330,9 +330,112 @@ def run_eur(opts):
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
 
+def find_closest(coords, corner_val, direction):
+    """
+    Find the closest value in sorted_list to the target with a given direction.
+    direction=-1 means the closest on the left (smaller than target)
+    direction=1 means the closest on the right (larger than target)
+    """
+    if direction == 1:
+        for i in range(len(coords)):
+            if coords[i] > corner_val:
+                return coords[i]
+    elif direction == -1:
+        for i in reversed(range(len(coords))):
+            if coords[i] < corner_val:
+                return coords[i]
+
+
+def run_custom_gr(opts):
+    # load testfile
+    dummy = xr.open_dataset(opts.testfile)
+    xy = opts.xy_name.split(',')
+    x, y = xy[0], xy[1]
+    dx = dummy[x][1] - dummy[x][0]
+    dy = dummy[y][1] - dummy[y][0]
+
+    # get corners from CFG file
+    if opts.gr_type == 'corners':
+        sw_coords = opts.sw_corner.split(',')
+        ne_coords = opts.ne_corner.split(',')
+        sw_coords = [float(ii) for ii in sw_coords]
+        ne_coords = [float(ii) for ii in ne_coords]
+    else:
+        center_coords = opts.center.split(',')
+        center_coords = [float(ii) for ii in center_coords]
+        sw_coords = [center_coords[0] - float(opts.we_len), center_coords[1] - float(opts.ns_len)]
+        ne_coords = [center_coords[0] + float(opts.we_len), center_coords[1] + float(opts.ns_len)]
+
+    # check if corners are within grid
+    if (any(xv < dummy[x][0] for xv in [sw_coords[0], ne_coords[0]]) or
+            any(xv > dummy[x][-1] for xv in [sw_coords[0], ne_coords[0]])):
+        raise KeyError('Passed corner(s) are outside of target grid!')
+    if (any(yv < dummy[y][0] for yv in [sw_coords[1], ne_coords[1]]) or
+            any(yv > dummy[y][-1] for yv in [sw_coords[1], ne_coords[1]])):
+        raise KeyError('Passed corner(s) are outside of target grid!')
+
+    # create non weighted mask array
+    nw_mask_arr = np.full((len(dummy[y]), len(dummy[x])), np.nan)
+    da_nw_mask = xr.DataArray(data=nw_mask_arr, coords={y: ([y], dummy[y].data),
+                                                        x: ([x], dummy[x].data)},
+                              attrs={'long_name': 'non weighted mask',
+                                     'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                              name='nw_mask')
+
+    # check if corners are identical with grid points on target grid
+    xvals_check = all(xv in dummy[x] for xv in [sw_coords[0], ne_coords[0]])
+    yvals_check = all(yv in dummy[y] for yv in [sw_coords[1], ne_coords[1]])
+
+    # set values in non-weighted mask within GR to 1 and create weighted mask
+    if xvals_check and yvals_check:
+        da_nw_mask.loc[sw_coords[1]:ne_coords[1], sw_coords[0]:ne_coords[0]] = 1
+        da_mask = da_nw_mask.copy()
+        da_mask = da_mask.rename('mask')
+        da_mask.attrs['long_name'] = 'non weighted mask'
+    else:
+        # Find the closest x and y for the south-west corner
+        closest_sw_x = find_closest(dummy[x], sw_coords[0], direction=-1)
+        closest_sw_y = find_closest(dummy[y], sw_coords[1], direction=-1)
+
+        # Find the closest x and y for the north-east corner
+        closest_ne_x = find_closest(dummy[x], ne_coords[0], direction=1)
+        closest_ne_y = find_closest(dummy[y], ne_coords[1], direction=1)
+
+        # set values in non-weighted mask within GR to 1
+        da_nw_mask.loc[closest_sw_y:closest_ne_y, closest_sw_x:closest_ne_x] = 1
+
+        # calculate fractions of cells that are within passed corners for weighted mask
+        w_frac = (sw_coords[0] - closest_sw_x) / dx
+        e_frac = (closest_ne_x - ne_coords[0]) / dx
+        s_frac = (sw_coords[1] - closest_sw_y) / dy
+        n_frac = (closest_ne_y - ne_coords[1]) / dy
+
+        # create weighted mask
+        da_mask = da_nw_mask.copy()
+        da_mask = da_mask.rename('mask')
+        da_mask.attrs['long_name'] = 'non weighted mask'
+
+        # apply fractions to mask to get weighted mask
+        da_mask.loc[:, closest_sw_x] = da_mask.loc[:, closest_sw_x] * w_frac
+        da_mask.loc[closest_sw_y, :] = da_mask.loc[closest_sw_y, :] * s_frac
+        da_mask.loc[:, closest_ne_x] = da_mask.loc[:, closest_ne_x] * e_frac
+        da_mask.loc[closest_ne_y, :] = da_mask.loc[closest_ne_y, :] * n_frac
+
+    lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nw_mask)
+
+    ds = xr.merge([da_mask, da_nw_mask, lt1500_mask])
+    ds = create_history(cli_params=sys.argv, ds=ds)
+
+    out_region = f'SW_{sw_coords[0]}_{sw_coords[1]}-NE_{ne_coords[0]}_{ne_coords[1]}'
+    ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
+
+
 def run():
     # opts = get_opts()
     opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
+
+    if opts.gr_type != 'polygon':
+        run_custom_gr(opts=opts)
 
     if opts.region == 'SEA':
         run_sea(opts=opts)
