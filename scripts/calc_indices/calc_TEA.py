@@ -44,7 +44,7 @@ def getopts():
             raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
 
     def float_1pcd(value):
-        if not re.match(r'^\d+(\.\d{1})?$', value):
+        if not re.match(r'^\d+(\.\d)?$', value):
             raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
                                              'the decimal point.')
         return float(value)
@@ -391,6 +391,8 @@ def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
+    
+    tea = TEAIndicators()
 
     # load CLI parameter
     if len(sys.argv) > 1:
@@ -420,8 +422,6 @@ def run():
                 gc.collect()
         else:
             tea = calc_ctp_indicators(opts=opts)
-    else:
-        tea = TEAIndicators()
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end
