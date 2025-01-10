@@ -541,6 +541,28 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
     return mask_0p5
 
 
+def regrid_data_experimental(data):
+    import xarray as xr
+    import numpy as np
+    from rasterio.enums import Resampling
+    import matplotlib.pyplot as plt
+    
+    data = data.isel(time=0)
+    data = data.rio.write_crs('EPSG:4326')
+    data = data.rio.set_spatial_dims('lon', 'lat')
+    dst = data.rio.reproject('EPSG:3857',
+                             # shape=(250, 250),
+                             resampling=Resampling.bilinear,
+                             nodata=np.nan)
+    merc = data.rio.reproject('ESRI:53004',
+                              resampling=Resampling.bilinear,
+                              nodata=np.nan)
+    sinu = data.rio.reproject('ESRI:54008',
+                              resampling=Resampling.bilinear,
+                              nodata=np.nan)
+    pass
+
+
 def calc_tea_large_gr(opts, data, masks, static):
     logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
 
