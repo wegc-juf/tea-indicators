@@ -52,7 +52,10 @@ class TEAIndicators:
         self.calc_gr = True
         
         # size of whole GeoRegion
-        self.gr_size = area_grid.sum().values
+        if area_grid is not None:
+            self.gr_size = area_grid.sum().values
+        else:
+            self.gr_size = None
         
         # Climatic Time Period (CTP) variables
         self.CTP = None
@@ -278,6 +281,23 @@ class TEAIndicators:
         """
         self.daily_results = daily_results
         self.unit = self.daily_results.DTEM.attrs['units']
+    
+    def get_daily_results(self, grid=True, gr=True):
+        """
+        get daily basis variable results
+
+        Args:
+            grid: get gridded results. Default: True
+            gr: get GR results. Default: True
+        """
+        gr_vars = [var for var in self.daily_results.data_vars if 'GR' in var]
+        grid_vars = [var for var in self.daily_results.data_vars if 'GR' not in var]
+        if not grid:
+            return self.daily_results.drop_vars(grid_vars)
+        if not gr:
+            return self.daily_results.drop_vars(gr_vars)
+        else:
+            return self.daily_results
     
     def update_min_area(self, min_area):
         """
