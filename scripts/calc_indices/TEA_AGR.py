@@ -40,7 +40,10 @@ class TEAAgr(TEAIndicators):
             self.lat_resolution = None
         self.agr_resolution = agr_resolution
         
-        self.ctp_results = None
+        # daily basis variables for aggregated GeoRegion
+        self.dbv_agr_results = None
+        # annual CTP variables for aggregated GeoRegion
+        self.ctp_agr_results = None
         
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
@@ -108,6 +111,55 @@ class TEAAgr(TEAIndicators):
         tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=0.0001, unit=self.unit)
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
+    
+    def set_dbv_results(self, lat, lon, dbv_results):
+        """
+        set daily basis variables for point
+        Args:
+            lat: latitude
+            lon: longitude
+            dbv_results: daily basis GR data for point
+        """
+        if self.dbv_agr_results is None:
+            data_vars = [var for var in dbv_results.data_vars]
+            var_dict = {}
+            lats, lons = self._get_lats_lons()
+            for var in data_vars:
+                var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(dbv_results.time),
+                                                                           len(lats), len(lons))))
+            self.dbv_agr_results = xr.Dataset(coords=dict(time=dbv_results.time,
+                                                          lon=lons,
+                                                          lat=lats),
+                                              data_vars=var_dict,
+                                              attrs=dbv_results.attrs)
+        
+        self.dbv_agr_results.loc[dict(lat=lat, lon=lon)] = dbv_results
+
+    def get_dbv_results(self, grid=True, gr=True):
+        """
+        get daily basis variable results for aggregated GeoRegion
+
+        Args:
+            grid: get gridded results. Default: True
+            gr: get GR results. Default: True
+        """
+        gr_vars = [var for var in self.dbv_agr_results.data_vars if 'GR' in var]
+        grid_vars = [var for var in self.dbv_agr_results.data_vars if 'GR' not in var]
+        if not grid:
+            return self.dbv_agr_results.drop_vars(grid_vars)
+        if not gr:
+            return self.dbv_agr_results.drop_vars(gr_vars)
+        else:
+            return self.dbv_agr_results
+    
+    def save_dbv_results(self, filepath):
+        """
+        save all daily basis variable results to filepath
+        """
+        with warnings.catch_warnings():
+            # ignore warnings due to nan multiplication
+            warnings.simplefilter("ignore")
+            self.dbv_agr_results.to_netcdf(filepath)
 
     def set_ctp_results(self, lat, lon, ctp_results):
         """
@@ -117,23 +169,57 @@ class TEAAgr(TEAIndicators):
             lon: longitude
             ctp_results: CTP GR data for point
         """
-        if self.ctp_results is None:
+        if self.ctp_agr_results is None:
             data_vars = [var for var in ctp_results.data_vars]
             var_dict = {}
-            lats = np.arange(self.input_data_grid.lat.max(),
-                             self.input_data_grid.lat.min(),
-                             -self.agr_resolution)
-            lons = np.arange(self.input_data_grid.lon.min(),
-                             self.input_data_grid.lon.max(),
-                             self.agr_resolution)
+            lats, lons = self._get_lats_lons()
             for var in data_vars:
                 var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(ctp_results.time),
                                                                            len(lats),
                                                                            len(lons))))
-            self.ctp_results = xr.Dataset(coords=dict(time=ctp_results.time,
-                                                      lon=lons,
-                                                      lat=lats),
-                                          data_vars=var_dict,
-                                          attrs=ctp_results.attrs)
+            self.ctp_agr_results = xr.Dataset(coords=dict(time=ctp_results.time,
+                                                          lon=lons,
+                                                          lat=lats),
+                                              data_vars=var_dict,
+                                              attrs=ctp_results.attrs)
             
-        self.ctp_results.loc[dict(lat=lat, lon=lon)] = ctp_results
+        self.ctp_agr_results.loc[dict(lat=lat, lon=lon)] = ctp_results
+        
+    def get_ctp_results(self, grid=True, gr=True):
+        """
+        get CTP results for aggregated GeoRegion
+
+        Args:
+            grid: get gridded results. Default: True
+            gr: get GR results. Default: True
+        """
+        gr_vars = [var for var in self.ctp_agr_results.data_vars if 'GR' in var]
+        grid_vars = [var for var in self.ctp_agr_results.data_vars if 'GR' not in var]
+        if not grid:
+            return self.ctp_agr_results.drop_vars(grid_vars)
+        if not gr:
+            return self.ctp_agr_results.drop_vars(gr_vars)
+        else:
+            return self.ctp_agr_results
+    
+    def save_ctp_results(self, filepath):
+        """
+        save all CTP results to filepath
+        """
+        with warnings.catch_warnings():
+            # ignore warnings due to nan multiplication
+            warnings.simplefilter("ignore")
+            self.ctp_agr_results.to_netcdf(filepath)
+
+    def _get_lats_lons(self):
+        """
+        get latitudes and longitudes for GeoRegion grid
+        """
+
+        lats = np.arange(self.input_data_grid.lat.max(),
+                         self.input_data_grid.lat.min() - self.agr_resolution,
+                         -self.agr_resolution)
+        lons = np.arange(self.input_data_grid.lon.min(),
+                         self.input_data_grid.lon.max() + self.agr_resolution,
+                         self.agr_resolution)
+        return lats, lons
