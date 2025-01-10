@@ -343,6 +343,7 @@ def calc_ctp_indicators(opts):
     """
 
     # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
+    masks, static = load_static_files(opts=opts)
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
         largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
         return
@@ -352,13 +353,13 @@ def calc_ctp_indicators(opts):
         data = get_data(opts=opts)
         
         # load GR masks and static file
-        masks, static = load_static_files(opts=opts)
-        # create mask array
-        mask = masks['lt1500_mask'] * masks['mask']
-        
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
         old_period = opts.period
         opts.period = 'annual'
+        
+        # create mask array
+        mask = masks['lt1500_mask'] * masks['mask']
+        
         tea = calc_daily_basis_vars(opts=opts, static=static, data=data, mask=mask)
         opts.period = old_period
     else:
