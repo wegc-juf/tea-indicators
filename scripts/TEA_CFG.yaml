@@ -1,12 +1,12 @@
 common_params:
   GeoRegion: &GR
-    region: custom
-    gr_type: center
-    sw_corner: 267200,5144700
-    ne_corner: 292500,5296300
-    center: 17,45
-    we_len: 2.6
-    ns_len: 2.6
+    region: AUT
+    gr_type: polygon
+    sw_corner: null
+    ne_corner: null
+    center: null
+    we_len: null
+    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -16,7 +16,7 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2024
+    end: 2022
     period: WAS
 
 regrid_SPARTACUS_to_WEGNext:
@@ -44,25 +44,25 @@ create_static_files:
   <<: *PARAM
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-  dataset: SPARTACUS
+  dataset: ERA5
 
 calc_TEA:
   <<: *GR
   <<: *PARAM
   <<: *TIME
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   outpath: /data/users/hst/TEA-clean/TEA/
   statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
   maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
   tmppath: /home/hst/tmp_data/TEAclean/largeGR/
-  dataset: SPARTACUS
-  decadal: false
+  dataset: ERA5
+  decadal: true
   spreads: false
   decadal_only: false
   recalc_daily: false
   recalc_decadal: false
   compare_to_ref: false
-  save_old: true
+  save_old: false
