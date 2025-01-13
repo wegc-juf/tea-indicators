@@ -53,4 +53,4 @@ if __name__ == "__main__":
 
             client = cdsapi.Client()
             client.retrieve("reanalysis-era5-land", request,
-                            f'ERA5Land_{yr}_{var}.nc').download()
+                            f'ERA5Land_{yr}_{var}.nc')
