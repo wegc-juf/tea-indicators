@@ -345,6 +345,7 @@ def calc_ctp_indicators(opts):
     # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
     masks, static = load_static_files(opts=opts)
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
+        data = get_data(opts=opts)
         largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
         return
 

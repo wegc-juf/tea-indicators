@@ -5,6 +5,7 @@ scripts for general stuff (e.g. nc-history)
 import argparse
 import datetime as dt
 import yaml
+import numpy as np
 
 from scripts.general_stuff.check_CFG import check_config
 
@@ -46,6 +47,7 @@ def create_tea_history(cli_params, tea, result_type):
     add history to dataset
     :param cli_params: CLI parameter
     :param tea: TEA object
+    :param result_type: result type (e.g. 'CTP')
     """
     
     script = cli_params[0].split('/')[-1]
@@ -86,14 +88,20 @@ def extend_tea_opts(opts):
     return opts
 
 
-def compare_to_ref(tea_result, tea_ref):
+def compare_to_ref(tea_result, tea_ref, relative=False):
     for vvar in tea_result.data_vars:
         if vvar in tea_ref.data_vars:
-            diff = tea_result[vvar] - tea_ref[vvar]
+            if relative:
+                diff = (tea_result[vvar] - tea_ref[vvar]) / tea_ref[vvar]
+                diff = diff.where(np.isfinite(diff), 0)
+                threshold = .03
+            else:
+                diff = tea_result[vvar] - tea_ref[vvar]
+                threshold = 5e-5
             max_diff = diff.max(skipna=True).values
-            if max_diff > 5e-5:
-                logger.warning(f'Maximum difference in {vvar} is {max_diff}')
+            if max_diff > threshold:
+                print(f'Maximum difference in {vvar} is {max_diff}')
         else:
-            logger.warning(f'{vvar} not found in reference file.')
+            print(f'{vvar} not found in reference file.')
 
 

@@ -20,7 +20,7 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5):
+                 agr_resolution=0.5, land_sea_mask=None):
         """
         initialize TEA object
         
@@ -31,20 +31,27 @@ class TEAAgr(TEAIndicators):
             mask: mask grid
             min_area: minimum area for valid grid cells
             agr_resolution: resolution for aggregated GeoRegion (in degrees)
+            land_sea_mask: land-sea mask
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
                          mask=mask, min_area=min_area)
         if self.area_grid is not None:
-            self.lat_resolution = self.area_grid.lat[1] - self.area_grid.lat[0]
+            self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
             self.lat_resolution = None
         self.agr_resolution = agr_resolution
+        self.agr_mask = None
+        self.agr_area = None
+        self.land_sea_mask = land_sea_mask
+        
+        if mask is not None and area_grid is not None:
+            self._generate_agr_mask()
         
         # daily basis variables for aggregated GeoRegion
         self.dbv_agr_results = None
         # annual CTP variables for aggregated GeoRegion
         self.ctp_agr_results = None
-        
+    
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
         calculate all daily basis variables
@@ -85,11 +92,14 @@ class TEAAgr(TEAIndicators):
         
         lat_off = cell_size_lat / 2
         lon_off = 1 / np.cos(np.deg2rad(lat)) * lat_off
+        round_coords = True
+        if round_coords:
+            lon_off = np.round(lon_off * 2, 0) / 2.
         
         if land_frac_min > 0:
             # get land-sea mask
-            cell_lsm = self.mask.sel(lat=slice(lat + lat_off, lat - lat_off),
-                                     lon=slice(lon - lon_off, lon + lon_off))
+            cell_lsm = self.land_sea_mask.sel(lat=slice(lat + lat_off, lat - lat_off),
+                                              lon=slice(lon - lon_off, lon + lon_off))
             
             # calculate fraction covered by valid cells (land below 1500 m)
             land_frac = cell_lsm.sum() / np.size(cell_lsm)
@@ -108,7 +118,7 @@ class TEAAgr(TEAIndicators):
         
         # TODO: two options: either return data itself and stack to xarray then calculate TEA or return individual TEA
         # objects
-        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=0.0001, unit=self.unit)
+        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=self.min_area, unit=self.unit)
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
     
@@ -169,6 +179,9 @@ class TEAAgr(TEAIndicators):
             lon: longitude
             ctp_results: CTP GR data for point
         """
+        # remove GR from variable names
+        ctp_results = ctp_results.rename({var: var.replace('_GR', '') for var in ctp_results.data_vars})
+        
         if self.ctp_agr_results is None:
             data_vars = [var for var in ctp_results.data_vars]
             var_dict = {}
@@ -210,6 +223,15 @@ class TEAAgr(TEAIndicators):
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
             self.ctp_agr_results.to_netcdf(filepath)
+    
+    def apply_mask(self):
+        """
+        apply AGR mask to daily basis variables and CTP results
+        """
+        if self.dbv_agr_results is not None:
+            self.dbv_agr_results = self.dbv_agr_results.where(self.agr_mask > 0)
+        if self.ctp_agr_results is not None:
+            self.ctp_agr_results = self.ctp_agr_results.where(self.agr_mask > 0)
 
     def _get_lats_lons(self):
         """
@@ -223,3 +245,39 @@ class TEAAgr(TEAIndicators):
                          self.input_data_grid.lon.max() + self.agr_resolution,
                          self.agr_resolution)
         return lats, lons
+    
+    def _generate_agr_mask(self):
+        """
+        generate mask for aggregated GeoRegion
+        """
+        lats, lons = self._get_lats_lons()
+        mask_orig = self.mask
+        area_orig = self.area_grid
+        res_orig = self.lat_resolution
+        
+        mask_agr = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
+                                coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
+                                dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
+        mask_agr = mask_agr.rename('mask_lt1500')
+        
+        area_agr = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
+                                coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
+                                dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
+        area_agr = area_agr.rename('area_grid')
+        
+        for llat in mask_agr.lat:
+            for llon in mask_agr.lon:
+                cell_orig = mask_orig.sel(lat=slice(llat + res_orig, llat - res_orig),
+                                          lon=slice(llon - res_orig, llon + res_orig))
+                cell_area = area_orig.sel(lat=slice(llat + res_orig, llat - res_orig),
+                                          lon=slice(llon - res_orig, llon + res_orig))
+                valid_cells = cell_orig.sum()
+                if valid_cells == 0:
+                    continue
+                vcell_frac = valid_cells / cell_orig.size
+                mask_agr.loc[llat, llon] = vcell_frac.values
+                area_agr.loc[llat, llon] = cell_area.sum().values
+        
+        self.agr_mask = mask_agr
+        self.agr_area = area_agr
+
