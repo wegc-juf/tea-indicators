@@ -65,7 +65,8 @@ def check_config(opts_dict):
         defaults = defaults['calc_TEA']
 
     choice_vals = {'threshold_type': ['abs', 'perc'],
-                   'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA']}
+                   'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
+                   'gr_type': ['polygon', 'corners', 'center']}
 
     for param in opts_dict.keys():
         # set default value if None was passed
@@ -86,7 +87,7 @@ def check_config(opts_dict):
                 strs(param=param, val=opts_dict[param])
             if param == 'threshold':
                 float_1pcd(opts_dict[param])
-            if param in ['threshold_type', 'period']:
+            if param in ['threshold_type', 'period', 'gr_type']:
                 choices(param=param, val=opts_dict[param], poss_vals=choice_vals[param])
             if param in ['start', 'end', 'target_sys', 'season_length', 'smoothing']:
                 ints(param=param, val=opts_dict[param])

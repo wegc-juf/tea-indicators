@@ -1,6 +1,12 @@
 common_params:
   GeoRegion: &GR
     region: AUT
+    gr_type: polygon
+    sw_corner: null
+    ne_corner: null
+    center: null
+    we_len: null
+    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -10,7 +16,7 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2024
+    end: 1970
     period: WAS
 
 regrid_SPARTACUS_to_WEGNext:
@@ -23,13 +29,13 @@ regrid_SPARTACUS_to_WEGNext:
 
 create_region_masks:
   <<: *GR
-  subreg: null
-  target_sys: 3416
-  target_ds: SPARTACUS
-  xy_name: x,y
-  shpfile: /path/to/your/shapefile.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
+  subreg: custom
+  target_sys: 4326
+  target_ds: ERA5
+  xy_name: lon,lat
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
@@ -38,25 +44,25 @@ create_static_files:
   <<: *PARAM
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-  dataset: SPARTACUS
+  dataset: ERA5
 
 calc_TEA:
   <<: *GR
   <<: *PARAM
   <<: *TIME
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   outpath: /data/users/hst/TEA-clean/TEA/
   statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
   maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
   tmppath: /home/hst/tmp_data/TEAclean/largeGR/
-  dataset: SPARTACUS
+  dataset: ERA5
   decadal: false
   spreads: false
   decadal_only: false
   recalc_daily: false
   recalc_decadal: false
   compare_to_ref: false
-  save_old: true
+  save_old: false

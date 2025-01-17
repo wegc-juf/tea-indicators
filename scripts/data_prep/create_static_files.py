@@ -13,7 +13,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, load_opts
+from scripts.general_stuff.general_functions import create_history, load_opts, extend_tea_opts
 
 
 def get_opts():
@@ -330,6 +330,7 @@ def run():
 
     # opts = get_opts()
     opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
+    opts = extend_tea_opts(opts)
 
     # load GR masks
     masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
@@ -351,7 +352,7 @@ def run():
         thr_grid = calc_percentiles(opts=opts, masks=masks, gr_size=gr_size)
 
     # combine to single dataset
-    ds_out = xr.merge([area, gr_size, thr_grid])
+    ds_out = xr.merge([area, gr_size, thr_grid], join='left')
     del ds_out.attrs['units']
     ds_out = create_history(cli_params=sys.argv, ds=ds_out)
 
@@ -361,13 +362,7 @@ def run():
     ds_out.attrs['coordinate_sys'] = masks.attrs['coordinate_sys']
 
     # save output
-    param_str = f'{opts.parameter}{opts.threshold}p'
-    if opts.precip:
-        param_str = f'{opts.parameter}_{opts.threshold}p'
-    if opts.threshold_type == 'abs':
-        param_str = f'{opts.parameter}{opts.threshold}{opts.unit}'
-
-    outname = f'{opts.outpath}static_{param_str}_{opts.region}_{opts.dataset}.nc'
+    outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
 
     ds_out.to_netcdf(outname)
 

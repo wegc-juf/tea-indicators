@@ -277,11 +277,8 @@ def load_static_files(opts):
         valid_cells = valid_cells.rename('valid_cells')
         masks['valid_cells'] = valid_cells
 
-    param_str = f'{opts.parameter}{opts.threshold:.1f}p'
-    if opts.threshold_type == 'abs':
-        param_str = f'{opts.parameter}{opts.threshold:.1f}{opts.unit}'
-
-    static = xr.open_dataset(f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc')
+    static = xr.open_dataset(
+        f'{opts.statpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc')
 
     return masks, static
 
