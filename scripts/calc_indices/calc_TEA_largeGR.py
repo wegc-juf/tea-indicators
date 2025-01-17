@@ -446,7 +446,10 @@ def combine_to_eur(opts, lat_lims, mask):
 
     # save 0.5° mask
     mask = create_history(cli_params=sys.argv, ds=mask)
-    mask.to_netcdf(f'{opts.maskpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
+    try:
+        mask.to_netcdf(f'{opts.maskpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
+    except PermissionError:
+        mask.to_netcdf(f'{opts.outpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
 
 
 def check_tmp_dirs(opts):
@@ -532,7 +535,10 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
             area_0p5.loc[llat, llon] = cell_area.sum().values
 
     area_0p5 = create_history(cli_params=sys.argv, ds=area_0p5)
-    area_0p5.to_netcdf(f'{opts.statpath}area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+    try:
+        area_0p5.to_netcdf(f'{opts.statpath}area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+    except PermissionError:
+        area_0p5.to_netcdf(f'{opts.outpath}area_grid_0p5_{opts.region}_{opts.dataset}.nc')
 
     return mask_0p5
 
