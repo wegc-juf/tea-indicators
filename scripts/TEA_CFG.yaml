@@ -16,7 +16,7 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2022
+    end: 1970
     period: WAS
 
 regrid_SPARTACUS_to_WEGNext:
@@ -59,7 +59,7 @@ calc_TEA:
   maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
   tmppath: /home/hst/tmp_data/TEAclean/largeGR/
   dataset: ERA5
-  decadal: true
+  decadal: false
   spreads: false
   decadal_only: false
   recalc_daily: false
