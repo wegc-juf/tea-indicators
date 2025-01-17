@@ -20,7 +20,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
-                 unit='', mask=None):
+                 unit='', mask=None, apply_mask=True):
         """
         Initialize TEAIndicators object
         Args:
@@ -38,7 +38,7 @@ class TEAIndicators:
             area_grid = xr.ones_like(threshold_grid)
         self.area_grid = area_grid
         self.mask = mask
-        if mask is not None:
+        if mask is not None and apply_mask:
             self.input_data_grid = input_data_grid * mask
         else:
             self.input_data_grid = input_data_grid

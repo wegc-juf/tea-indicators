@@ -34,7 +34,7 @@ class TEAAgr(TEAIndicators):
             land_sea_mask: land-sea mask
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
-                         mask=mask, min_area=min_area)
+                         mask=mask, min_area=min_area, apply_mask=False)
         if self.area_grid is not None:
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
