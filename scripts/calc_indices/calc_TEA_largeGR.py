@@ -507,7 +507,7 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
     # flip lats to be consistent with other datasets
     lats = lats[::-1]
 
-    if opts.dataset == 'ERA5':
+    if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
     else:
         lons = np.arange(9, 18, 0.5)
