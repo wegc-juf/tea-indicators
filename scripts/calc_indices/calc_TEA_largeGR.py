@@ -295,6 +295,7 @@ def calc_tea_lat(opts, data, static, masks, lat):
 
     # step through all longitudes
     for ilon, lon in enumerate(lons):
+        logger.info(f'Processing lat {lat}, lon {lon}')
         # this comment is necessary to suppress an unnecessary PyCharm warning for lon
         # noinspection PyTypeChecker
         cell_data, land_frac, cell_static = select_cell(opts=opts, lat=lat, lon=lon, data=data,
