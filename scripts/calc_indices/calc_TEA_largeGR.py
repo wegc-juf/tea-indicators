@@ -284,7 +284,7 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
 def calc_tea_lat(opts, data, static, masks, lat):
     logger.info(f'Processing lat {lat}')
 
-    if opts.dataset == 'ERA5':
+    if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
     else:
         lons = np.arange(9, 18, 0.5)
