@@ -316,7 +316,7 @@ def calc_percentiles(opts, masks, gr_size):
         percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
     else:
         percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
-        percent_smooth = percent_smooth * masks['mask']
+        percent_smooth = percent_smooth.where(masks['mask'] > 0)
     percent_smooth = percent_smooth.rename('threshold')
     percent_smooth.attrs = {'units': opts.unit, 'methods_variable_name': vname,
                             'percentile': f'{opts.threshold}p'}
