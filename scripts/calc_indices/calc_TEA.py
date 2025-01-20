@@ -254,7 +254,7 @@ def get_data(opts):
     return data
 
 
-def load_static_files(opts):
+def load_static_files(opts, large_gr=False):
     """
     load GR masks and static file
     Args:
@@ -277,8 +277,12 @@ def load_static_files(opts):
         valid_cells = valid_cells.rename('valid_cells')
         masks['valid_cells'] = valid_cells
 
+    if large_gr:
+        region = 'EUR'
+    else:
+        region = opts.region
     static = xr.open_dataset(
-        f'{opts.statpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc')
+        f'{opts.statpath}static_{opts.param_str}_{region}_{opts.dataset}.nc')
 
     return masks, static
 
@@ -342,6 +346,8 @@ def calc_ctp_indicators(opts):
     # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
     masks, static = load_static_files(opts=opts)
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
+        # use European masks
+        masks, static = load_static_files(opts=opts, large_gr=True)
         data = get_data(opts=opts)
         largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
         return
