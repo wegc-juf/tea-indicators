@@ -22,7 +22,10 @@ import time
 
 
 def calc_tea_lat(opts, lat, tea_agr, lons):
-    logger.info(f'Processing lat {lat}')
+    if opts.full_region:
+        land_frac_min = 0
+    else:
+        land_frac_min = 0.5
     
     if opts.precip:
         cell_size_lat = 1
@@ -35,7 +38,7 @@ def calc_tea_lat(opts, lat, tea_agr, lons):
         # noinspection PyTypeChecker
         logger.info(f'Processing lat {lat}, lon {lon}')
         start_time = time.time()
-        tea_sub = tea_agr.select_sub_gr(lat=lat, lon=lon, cell_size_lat=cell_size_lat, land_frac_min=0.5)
+        tea_sub = tea_agr.select_sub_gr(lat=lat, lon=lon, cell_size_lat=cell_size_lat, land_frac_min=land_frac_min)
         if tea_sub is None:
             continue
         
@@ -81,10 +84,14 @@ def calc_tea_large_gr(opts, data, masks, static):
     logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
     
     # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
-    min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - 2
-    max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + 2
-    if min_lat < 35:
-        min_lat = 35
+    if opts.full_region:
+        min_lat = masks.lat.min().values
+        max_lat = masks.lat.max().values
+    else:
+        min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - 2
+        max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + 2
+        if min_lat < 35:
+            min_lat = 35
     if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
     else:

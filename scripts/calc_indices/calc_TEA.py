@@ -259,6 +259,7 @@ def load_static_files(opts, large_gr=False):
     load GR masks and static file
     Args:
         opts: CLI parameter
+        large_gr: set for large GR (> 100 areals)
 
     Returns:
         masks: GR masks (ds)
@@ -266,6 +267,10 @@ def load_static_files(opts, large_gr=False):
 
     """
 
+    if opts.full_region:
+        full_str = '_full'
+    else:
+        full_str = ''
     masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
 
     if 'LSM_EUR' in masks.data_vars:
@@ -282,7 +287,7 @@ def load_static_files(opts, large_gr=False):
     else:
         region = opts.region
     static = xr.open_dataset(
-        f'{opts.statpath}static_{opts.param_str}_{region}_{opts.dataset}.nc')
+        f'{opts.statpath}static_{opts.param_str}_{region}_{opts.dataset}{full_str}.nc')
 
     return masks, static
 

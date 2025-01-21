@@ -1,12 +1,8 @@
 common_params:
   GeoRegion: &GR
-    region: AUT
-    gr_type: polygon
-    sw_corner: null
-    ne_corner: null
-    center: null
-    we_len: null
-    ns_len: null
+    region: EUR
+    # use full data without land, border, and altitude masks
+    full_region: true
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -16,7 +12,7 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 1970
+    end: 2024
     period: WAS
 
 regrid_SPARTACUS_to_WEGNext:

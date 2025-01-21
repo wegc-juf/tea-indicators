@@ -146,12 +146,17 @@ def area_grid(opts, masks):
 
         # calculate size of cells in areals
         x_len_da = xr.DataArray(data=x_len, coords={'lat': (['lat'], lat)})
-        agrid = masks['nw_mask'] * y_len * x_len_da
+        if opts.full_region:
+            mask_template = xr.full_like(masks['nw_mask'], 1.)
+        else:
+            mask_template = masks['nw_mask']
+        agrid = mask_template * y_len * x_len_da
         agrid = agrid / 100
 
     # apply GR mask
-    agrid = agrid.where(masks['lt1500_mask'] == 1)
-    agrid = agrid * masks['mask']
+    if not opts.full_region:
+        agrid = agrid.where(masks['lt1500_mask'] == 1)
+        agrid = agrid * masks['mask']
     agrid = agrid.rename('area_grid')
     agrid.attrs = {'units': 'areals'}
 
@@ -312,11 +317,12 @@ def calc_percentiles(opts, masks, gr_size):
     percent_smooth = percent_smooth.drop('quantile')
 
     # apply GR mask
-    if 'ERA' in opts.dataset and opts.region != 'EUR' and gr_size > 100:
-        percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
-    else:
-        percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
-        percent_smooth = percent_smooth.where(masks['mask'] > 0)
+    if not opts.full_region:
+        if 'ERA' in opts.dataset and opts.region != 'EUR' and gr_size > 100:
+            percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
+        else:
+            percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
+            percent_smooth = percent_smooth.where(masks['mask'] > 0)
     percent_smooth = percent_smooth.rename('threshold')
     percent_smooth.attrs = {'units': opts.unit, 'methods_variable_name': vname,
                             'percentile': f'{opts.threshold}p'}
@@ -362,7 +368,10 @@ def run():
     ds_out.attrs['coordinate_sys'] = masks.attrs['coordinate_sys']
 
     # save output
-    outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
+    if opts.full_region:
+        outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}_full.nc'
+    else:
+        outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
 
     ds_out.to_netcdf(outname)
 
