@@ -48,11 +48,14 @@ def calc_tea_lat(opts, lat, tea_agr, lons):
         # dbv_results = tea_sub.get_daily_results(gr=True, grid=False).compute()
         # tea_agr.set_dbv_results(lat, lon, dbv_results)
         
-        # calculate CTP indicators
-        tea_sub.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
-
-        # set agr_results for lat and lon
-        ctp_results = tea_sub.get_CTP_results(gr=True, grid=False).compute()
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='invalid value encountered in multiply')
+            # calculate CTP indicators
+            tea_sub.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
+            
+            # set agr_results for lat and lon
+            ctp_results = tea_sub.get_CTP_results(gr=True, grid=False).compute()
+            
         tea_agr.set_ctp_results(lat, lon, ctp_results)
         end_time = time.time()
         logger.info(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
