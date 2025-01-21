@@ -20,7 +20,7 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5, land_sea_mask=None):
+                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None):
         """
         initialize TEA object
         
@@ -44,8 +44,10 @@ class TEAAgr(TEAIndicators):
         self.agr_area = None
         self.land_sea_mask = land_sea_mask
         
-        if mask is not None and area_grid is not None:
+        if agr_mask is None and mask is not None and area_grid is not None:
             self._generate_agr_mask()
+        else:
+            self.agr_mask = agr_mask
         
         # daily basis variables for aggregated GeoRegion
         self.dbv_agr_results = None

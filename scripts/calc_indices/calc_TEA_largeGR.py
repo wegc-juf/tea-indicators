@@ -104,8 +104,15 @@ def calc_tea_large_gr(opts, data, masks, static):
     full_mask = masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     proc_static = static.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     
+    # load agr mask
+    try:
+        agr_mask = xr.open_dataset(f'{opts.statpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
+    except FileNotFoundError:
+        agr_mask = None
+    
     tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
-                     area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask)
+                     area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
+                     agr_mask=agr_mask)
     tea_agr.calc_daily_basis_vars()
 
     # define latitudes with 0.5° resolution for output
