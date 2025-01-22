@@ -58,7 +58,7 @@ def calc_tea_lat(opts, lat, tea_agr, lons):
             
         tea_agr.set_ctp_results(lat, lon, ctp_results)
         end_time = time.time()
-        logger.info(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
+        logger.debug(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
 
     
 def regrid_data_experimental(data):
