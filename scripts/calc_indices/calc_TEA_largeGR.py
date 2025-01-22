@@ -114,6 +114,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     # load agr mask
     try:
         agr_mask = xr.open_dataset(f'{opts.statpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
+        agr_mask = agr_mask.mask_lt1500
     except FileNotFoundError:
         agr_mask = None
     
