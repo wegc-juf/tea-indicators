@@ -92,7 +92,11 @@ def calc_tea_large_gr(opts, data, masks, static):
         max_lat = masks.lat.max().values
     else:
         min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - 2
+        if min_lat < static.area_grid.lat.min().values:
+            min_lat = float(static.area_grid.lat.min().values)
         max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + 2
+        if max_lat > static.area_grid.lat.max().values:
+            max_lat = float(static.area_grid.lat.max().values)
         if min_lat < 35:
             min_lat = 35
     if opts.dataset == 'ERA5' and opts.region == 'EUR':
