@@ -96,7 +96,7 @@ class TEAAgr(TEAIndicators):
         lon_off = 1 / np.cos(np.deg2rad(lat)) * lat_off
         round_coords = True
         if round_coords:
-            lon_off = np.round(lon_off * 2, 0) / 2.
+            lon_off = np.round(lon_off * 4, 0) / 4.
         
         if land_frac_min > 0:
             # get land-sea mask
