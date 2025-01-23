@@ -4,7 +4,6 @@
 @author: hst
 """
 
-import argparse
 import glob
 import numpy as np
 import os
@@ -14,99 +13,6 @@ import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
-
-
-def get_opts():
-    """
-    get CLI parameter
-    Returns:
-        myopts: CLI parameter
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path!')
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--parameter',
-                        default='Tx',
-                        type=str,
-                        help='Parameter for which the TEA indices should be calculated'
-                             '[default: Tx].')
-
-    parser.add_argument('--precip',
-                        action='store_true',
-                        help='Set if chosen parameter is a precipitation parameter.')
-
-    parser.add_argument('--season-length',
-                        dest='season_length',
-                        default=366,
-                        type=int,
-                        help='Number of days in season for threshold calculation. For whole year, '
-                             'use 366 [default], for WAS (Apr-Oct) 214.')
-
-    parser.add_argument('--threshold',
-                        default=99,
-                        type=float,
-                        help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
-
-    parser.add_argument('--smoothing',
-                        default=0,
-                        type=int,
-                        help='Radius for spatial smoothing of threshold grid in km [default: 0].'
-                             'Used for precipitation parameter from SPARTACUS data.')
-
-    parser.add_argument('--threshold-type',
-                        dest='threshold_type',
-                        type=str,
-                        choices=['perc', 'abs'],
-                        default='perc',
-                        help='Pass "perc" (default) if percentiles should be used as thresholds or '
-                             '"abs" for absolute thresholds.')
-
-    parser.add_argument('--unit',
-                        default='degC',
-                        type=str,
-                        help='Physical unit of chosen parameter.')
-
-    parser.add_argument('--region',
-                        default='AUT',
-                        type=str,
-                        help='Geo region [options: AUT (default), Austrian state name, '
-                             'or ISO2 code of european country].')
-
-    parser.add_argument('--inpath',
-                        dest='inpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
-                        type=dir_path,
-                        help='Path of input data.')
-
-    parser.add_argument('--maskpath',
-                        dest='maskpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
-                        type=dir_path,
-                        help='Path of folder where GR masks are located.')
-
-    parser.add_argument('--outpath',
-                        dest='outpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
-                        type=dir_path,
-                        help='Path of folder where static file should be saved.')
-
-    parser.add_argument('--dataset',
-                        dest='dataset',
-                        default='SPARTACUS',
-                        choices=['SPARTACUS', 'ERA5', 'ERA5Land'],
-                        type=str,
-                        help='Input dataset [default: SPARTACUS].')
-
-    myopts = parser.parse_args()
-
-    return myopts
-
 
 def area_grid(opts, masks):
     """

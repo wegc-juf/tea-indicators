@@ -5,77 +5,15 @@
 
 """
 
-import argparse
 import glob
 import numpy as np
 import os
 from pathlib import Path
 import pyproj
-import sys
 from tqdm import trange
 import xarray as xr
 
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
-
-
-def get_opts():
-    """
-    loads CLI parameter
-    Returns:
-        myopts: CLI parameter
-
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
-
-    def file(entry):
-        if os.path.isfile(entry):
-            return entry
-        else:
-            raise argparse.ArgumentTypeError(f'{entry} is not a valid file.')
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--parameter',
-                        default='Tx',
-                        type=str,
-                        choices=['Tx', 'Tn', 'RR', 'TX'],
-                        help='Parameter for which the SPARTACUS data should be regridded '
-                             '[options: Tx (default), Tn, RR, RRhr].')
-
-    parser.add_argument('--inpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/'
-                                'v2024_v1.5/',
-                        type=dir_path,
-                        help='Path of folder where data is located.')
-
-    parser.add_argument('--orography',
-                        action='store_true',
-                        help='Set if orography should be regridded.')
-
-    parser.add_argument('--orofile',
-                        default='/data/reloclim/backup/ZAMG_INCA/data/original/'
-                                'INCA_orog_corrected_y_dim.nc',
-                        type=file,
-                        help='Orography file only necessary if "orography" is set to true.')
-
-    parser.add_argument('--wegnfile',
-                        default='/data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc',
-                        type=file,
-                        help='Dummy WEGN file to extract grid.')
-
-    parser.add_argument('--outpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
-                        help='Path of folder where output data should be saved.')
-
-    myopts = parser.parse_args()
-
-    return myopts
-
 
 def define_wegn_grid_1000x1000(opts):
     """

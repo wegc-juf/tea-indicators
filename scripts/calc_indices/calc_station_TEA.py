@@ -5,12 +5,10 @@
 
 """
 
-import argparse
-import os
 import copy
-
 import glob
 import logging
+import os
 import pandas as pd
 from pathlib import Path
 import sys
@@ -29,69 +27,6 @@ from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords
 from scripts.calc_indices.calc_daily_basis_vars import calc_dteec_1d
 
 PARAMS = ref_cc_params()
-
-def getopts():
-    """
-    get arguments
-    :return: command line parameters
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path!')
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--period',
-                        dest='period',
-                        default='WAS',
-                        type=str,
-                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
-                        help='Climatic time period (CTP) of interest. '
-                             'Options: monthly, seasonal, WAS, ESS, JJA, and  annual [default].')
-
-    parser.add_argument('--threshold',
-                        default=99,
-                        type=float,
-                        help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
-
-    parser.add_argument('--threshold_type',
-                        type=str,
-                        choices=['perc', 'abs'],
-                        default='perc',
-                        help='Pass "perc" (default) if percentiles should be used as thresholds or '
-                             '"abs" for absolute thresholds.')
-
-    parser.add_argument('--station',
-                        default='Graz',
-                        type=str,
-                        choices=['Graz', 'Innsbruck', 'Salzburg', 'Kremsmuenster', 'Wien',
-                                 'BadGleichenberg', 'Deutschlandsberg'],
-                        help='Station to use.')
-
-    parser.add_argument('--parameter',
-                        default='T',
-                        type=str,
-                        choices=['T', 'P'],
-                        help='Parameter for which the TEA indices should be calculated '
-                             'Options: T (= temperature, default), P (= precipitation).')
-
-    parser.add_argument('--inpath',
-                        default='/data/users/hst/cdrDPS/station_data/',
-                        type=dir_path,
-                        help='Path of folder where data is located.')
-
-    parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
-                        type=dir_path,
-                        help='Path of folder where output data should be saved.')
-
-    myopts = parser.parse_args()
-
-    return myopts
-
 
 def load_data(opts):
     """
