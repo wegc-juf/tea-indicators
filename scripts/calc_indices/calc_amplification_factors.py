@@ -14,7 +14,8 @@ import sys
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, ref_cc_params, extend_tea_opts
+from scripts.general_stuff.general_functions import (create_history_from_cfg, ref_cc_params,
+                                                     load_opts)
 from scripts.general_stuff.var_attrs import get_attrs
 
 logging.basicConfig(
@@ -281,7 +282,8 @@ def save_output(opts, af, af_cc):
         if 'GR' not in vvar:
             ds_out[vvar] = ds_out[vvar].where(mask == 1)
 
-    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    ds_out = create_history_from_cfg(cfg_params=opts, ds=ds_out)
+    # ds_out = create_history(cli_params=sys.argv, ds=ds_out)
     path = Path(f'{opts.outpath}amplification/')
     path.mkdir(parents=True, exist_ok=True)
     ds_out.to_netcdf(f'{opts.outpath}amplification/'
@@ -289,8 +291,8 @@ def save_output(opts, af, af_cc):
                      f'_{opts.start}to{opts.end}.nc')
 
 def run():
-    opts = getopts()
-    opts = extend_tea_opts(opts)
+    # load CLI parameter
+    opts = load_opts(fname=__file__)
 
     # load DEC TEA data
     ds = load_data(opts=opts)

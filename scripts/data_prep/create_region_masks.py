@@ -13,7 +13,7 @@ import sys
 from tqdm import trange
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history, load_opts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
 
 def get_opts():
@@ -248,7 +248,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
@@ -325,7 +325,7 @@ def run_eur(opts):
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
     ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
@@ -441,7 +441,7 @@ def run_custom_gr(opts):
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
     ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
@@ -449,7 +449,7 @@ def run_custom_gr(opts):
 
 def run():
     # opts = get_opts()
-    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
+    opts = load_opts(fname=__file__.split('/')[-1].split('.py')[0])
 
     if opts.gr_type != 'polygon':
         run_custom_gr(opts=opts)
@@ -538,7 +538,7 @@ def run():
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
         else:
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-        ds = create_history(cli_params=sys.argv, ds=ds)
+        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
         out_region = opts.region
         if opts.subreg:

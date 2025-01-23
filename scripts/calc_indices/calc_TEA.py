@@ -15,10 +15,9 @@ import re
 import sys
 import warnings
 import xarray as xr
-import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, extend_tea_opts, load_opts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
@@ -308,8 +307,8 @@ def save_output(opts, ef, ed, em, ea, svars, em_suppl, masks):
         if 'GR' not in vvar:
             ds_out_suppl[vvar] = ds_out_suppl[vvar].where(mask == 1)
 
-    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
-    ds_out_suppl = create_history(cli_params=sys.argv, ds=ds_out_suppl)
+    ds_out = create_history_from_cfg(cfg_params=opts, ds=ds_out)
+    ds_out_suppl = create_history_from_cfg(cfg_params=opts, ds=ds_out_suppl)
 
     path = Path(f'{opts.outpath}ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
@@ -386,12 +385,8 @@ def run():
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
 
-    # load CLI parameter
-    # opts = getopts()
-    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
-
-    # add necessary strings to opts
-    opts = extend_tea_opts(opts)
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     # check length of input time span
     start = opts.start

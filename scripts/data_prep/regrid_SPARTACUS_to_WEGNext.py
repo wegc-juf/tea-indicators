@@ -15,7 +15,7 @@ import sys
 from tqdm import trange
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history, load_opts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
 
 def get_opts():
@@ -217,7 +217,7 @@ def regrid_orog(opts):
     orog_file = xr.open_dataset(opts.orofile)
     oro_new = regrid_spartacus(opts=opts, ds_in=orog_file.orog, method='linear')
     oro_new = oro_new.assign_attrs(grid_mapping='UTM33N')
-    oro_new = create_history(cli_params=sys.argv, ds=oro_new)
+    oro_new = create_history_from_cfg(cfg_params=opts, ds=oro_new)
     oro_new.attrs['crs'] = 'EPSG:32633'
     oro_new = oro_new.drop(['lat', 'lon'])
 
@@ -227,8 +227,8 @@ def regrid_orog(opts):
 
 
 def run():
-    # opts = get_opts()
-    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
+    opts = load_opts(fname=__file__.split('/')[-1].split('.py')[0])
+    opts.script = __file__
 
     if opts.orography:
         regrid_orog(opts=opts)
@@ -245,7 +245,7 @@ def run():
             ds_new = ds_new.assign_attrs(grid_mapping='UTM33N')
 
             # Add history to attributes and change crs to EPSG:32633
-            ds_new = create_history(cli_params=sys.argv, ds=ds_new)
+            ds_new = create_history_from_cfg(cfg_params=opts, ds=ds_new)
             ds_new.attrs['crs'] = 'EPSG:32633'
 
             # Rename variables if necessary

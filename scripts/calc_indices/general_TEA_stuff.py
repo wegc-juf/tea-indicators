@@ -1,4 +1,5 @@
 from datetime import timedelta
+import numpy as np
 import pandas as pd
 
 def validate_period(opts):

@@ -11,7 +11,7 @@ warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
 warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.general_functions import create_history_from_cfg
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars, calculate_event_count
@@ -170,7 +170,7 @@ def dbv_to_new_grid(opts, dbv, cell, dbv_ds):
     # drop time (no idea where this is coming from in the first place...)
     dbv_ds = dbv_ds.drop_vars('time')
 
-    dbv_ds = create_history(cli_params=sys.argv, ds=dbv_ds)
+    dbv_ds = create_history_from_cfg(cfg_params=opts, ds=dbv_ds)
 
     # save tmp files
     # remove previous file
@@ -275,8 +275,8 @@ def ctp_to_new_grid(opts, ef, ed, em, ea, svars, em_suppl, cell, ds, ds_suppl):
     ds = ds.drop_vars('time')
     ds_suppl = ds_suppl.drop_vars('time')
 
-    ds = create_history(cli_params=sys.argv, ds=ds)
-    ds_suppl = create_history(cli_params=sys.argv, ds=ds_suppl)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    ds_suppl = create_history_from_cfg(cfg_params=opts, ds=ds_suppl)
 
     return ds, ds_suppl
 
@@ -435,7 +435,7 @@ def combine_to_eur(opts, lat_lims, mask):
 
         # clear history of combined dataset and create new one (otherwise, history is added 10 times)
         ds.attrs['history'] = ''
-        ds = create_history(cli_params=sys.argv, ds=ds)
+        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
         # save ds to netcdf
         ds.to_netcdf(outpaths[vvars])
@@ -446,7 +446,7 @@ def combine_to_eur(opts, lat_lims, mask):
             os.system(f'rm {tfile}')
 
     # save 0.5° mask
-    mask = create_history(cli_params=sys.argv, ds=mask)
+    mask = create_history_from_cfg(cfg_params=opts, ds=mask)
     try:
         mask.to_netcdf(f'{opts.maskpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
     except PermissionError:
@@ -535,7 +535,7 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
             mask_0p5.loc[llat, llon] = vcell_frac.values
             area_0p5.loc[llat, llon] = cell_area.sum().values
 
-    area_0p5 = create_history(cli_params=sys.argv, ds=area_0p5)
+    area_0p5 = create_history_from_cfg(cfg_params=opts, ds=area_0p5)
     try:
         area_0p5.to_netcdf(f'{opts.statpath}area_grid_0p5_{opts.region}_{opts.dataset}.nc')
     except PermissionError:

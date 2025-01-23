@@ -6,13 +6,15 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from scripts.general_stuff.general_functions import ref_cc_params
+
 
 def get_data():
     af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/amplification/'
-                         'AF_T99.0p_AUT_WAS_SPARTACUS_1961to2022.nc')
+                         'AF_Tx99.0p_AUT_WAS_SPARTACUS_1961to2022.nc')
 
     nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/natural_variability/'
-                     'NV_AF_T99.0p_AUT.csv',
+                     'NV_AF_Tx99.0p_AUT.csv',
                      index_col=0)
 
     return af, nv
@@ -50,13 +52,13 @@ def gr_plot_params(vname):
 def map_plot_params(vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
-                           'title': 'Event Frequency (EF) amplification (CC2008-2022)'},
+                           'title': f'Event Frequency (EF) amplification (CC2008-2022)'},
               'EDavg_AF_CC': {'cmap': 'Purples',
                            'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                           'title': 'Event Duration (ED) amplification (CC2008-2022)'},
+                           'title': f'Event Duration (ED) amplification (CC2008-2022)'},
               'EMavg_AF_CC': {'cmap': 'Oranges',
                            'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                           'title': 'Exceedance Magnitude (EM) amplification (CC2008-2022)'}
+                           'title': f'Exceedance Magnitude (EM) amplification (CC2008-2022)'}
               }
 
     return params[vname]

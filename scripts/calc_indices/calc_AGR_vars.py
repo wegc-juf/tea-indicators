@@ -15,7 +15,8 @@ import sys
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, extend_tea_opts, ref_cc_params
+from scripts.general_stuff.general_functions import (create_history_from_cfg, ref_cc_params,
+                                                     load_opts)
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
                                                              calc_basis_amplification_factors,
@@ -177,7 +178,6 @@ def calc_grid_afacs(opts, data):
     # adjust opts for calc_amplification_factors.py functions
     af_opts = copy.deepcopy(opts)
     af_opts.maskpath = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-    af_opts.region = 'EUR'
 
     # calc mean of REF and CC periods
     ref_avg, cc_avg = calc_ref_cc_mean(data=data)
@@ -451,7 +451,7 @@ def save_output(opts, data):
 
     for vvars in data.keys():
         ds = data[vvars]
-        ds = create_history(cli_params=sys.argv, ds=ds)
+        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
         ds.to_netcdf(outpaths[vvars])
 
 
@@ -510,10 +510,8 @@ def calc_spread_estimates(gdata, data, areas, afacs=False):
 
 
 def run():
-    opts = getopts()
-
-    # add necessary strings to opts
-    opts = extend_tea_opts(opts)
+    # load CLI parameter
+    opts = load_opts(fname=__file__)
 
     # load area grid (0.5°)
     if 'EUR' in opts.agr:

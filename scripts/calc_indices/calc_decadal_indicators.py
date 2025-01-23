@@ -8,7 +8,7 @@ import sys
 import xarray as xr
 
 from scripts.general_stuff.var_attrs import get_attrs
-from scripts.general_stuff.general_functions import create_history
+from scripts.general_stuff.general_functions import create_history_from_cfg
 
 logging.basicConfig(
     level=logging.INFO,
@@ -98,7 +98,7 @@ def save_output(opts, data, su, sl, suppl):
         sdir = 'supplementary/'
         suppl_str = 'suppl'
 
-    data = create_history(cli_params=sys.argv, ds=data)
+    data = create_history_from_cfg(cfg_params=opts, ds=data)
 
     path = Path(f'{opts.outpath}dec_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
@@ -107,8 +107,8 @@ def save_output(opts, data, su, sl, suppl):
                    f'_{opts.start}to{opts.end}.nc')
 
     if su:
-        sl = create_history(cli_params=sys.argv, ds=sl)
-        su = create_history(cli_params=sys.argv, ds=su)
+        sl = create_history_from_cfg(cfg_params=opts, ds=sl)
+        su = create_history_from_cfg(cfg_params=opts, ds=su)
         sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
                      f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.period}'
                      f'_{opts.dataset}_{opts.start}to{opts.end}.nc')

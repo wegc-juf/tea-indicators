@@ -13,7 +13,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, load_opts, extend_tea_opts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
 
 def get_opts():
@@ -329,8 +329,7 @@ def run():
     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
     # opts = get_opts()
-    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
-    opts = extend_tea_opts(opts)
+    opts = load_opts(fname=__file__)
 
     # load GR masks
     masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
@@ -354,7 +353,7 @@ def run():
     # combine to single dataset
     ds_out = xr.merge([area, gr_size, thr_grid], join='left')
     del ds_out.attrs['units']
-    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    ds_out = create_history_from_cfg(cfg_params=opts, ds=ds_out)
 
     # add additional attributes
     ds_out.attrs['region'] = opts.region
