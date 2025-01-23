@@ -66,7 +66,9 @@ def check_config(opts_dict):
 
     choice_vals = {'threshold_type': ['abs', 'perc'],
                    'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
-                   'gr_type': ['polygon', 'corners', 'center']}
+                   'gr_type': ['polygon', 'corners', 'center'],
+                   'station': ['Graz', 'Innsbruck', 'Wien', 'Salzburg', 'Kremsmuenster',
+                               'BadGleichenberg', 'Deutschlandsberg']}
 
     for param in opts_dict.keys():
         # set default value if None was passed
