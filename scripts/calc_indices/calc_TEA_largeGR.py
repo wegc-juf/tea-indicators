@@ -103,8 +103,8 @@ def calc_tea_large_gr(opts, data, masks, static):
         lons = np.arange(-12, 40.5, 0.5)
     else:
         lons = np.arange(9, 18, 0.5)
-    min_lon = lons[0]
-    max_lon = lons[-1]
+    min_lon = lons[0] - 2
+    max_lon = lons[-1] + 2
     proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     # regrid_data(proc_data)
     land_sea_mask = masks['valid_cells'].sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
@@ -124,7 +124,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     tea_agr.calc_daily_basis_vars()
 
     # define latitudes with 0.5° resolution for output
-    lats = np.arange(math.ceil(min_lat / .5) / 2, math.ceil(max_lat) + 0.5, 0.5)
+    lats = np.arange(math.ceil(min_lat / .5) / 2 + 2, math.ceil(max_lat) + 0.5 - 2, 0.5)
     
     # for testing with only one latitude or debugging
     if False:
