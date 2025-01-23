@@ -227,8 +227,8 @@ def regrid_orog(opts):
 
 
 def run():
-    opts = load_opts(fname=__file__.split('/')[-1].split('.py')[0])
-    opts.script = __file__
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     if opts.orography:
         regrid_orog(opts=opts)

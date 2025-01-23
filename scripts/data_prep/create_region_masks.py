@@ -448,8 +448,8 @@ def run_custom_gr(opts):
 
 
 def run():
-    # opts = get_opts()
-    opts = load_opts(fname=__file__.split('/')[-1].split('.py')[0])
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     if opts.gr_type != 'polygon':
         run_custom_gr(opts=opts)

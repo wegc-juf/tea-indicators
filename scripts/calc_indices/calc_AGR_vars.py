@@ -510,7 +510,7 @@ def calc_spread_estimates(gdata, data, areas, afacs=False):
 
 
 def run():
-    # load CLI parameter
+    # load CFG parameter
     opts = load_opts(fname=__file__)
 
     # load area grid (0.5°)

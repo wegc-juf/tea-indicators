@@ -328,7 +328,7 @@ def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
 
-    # opts = get_opts()
+    # load CFG parameter
     opts = load_opts(fname=__file__)
 
     # load GR masks

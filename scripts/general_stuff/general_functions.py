@@ -107,26 +107,3 @@ def ref_cc_params():
     #                  'start_cy': '2013-01-01', 'end_cy': '2018-12-31',
     #                  'cc_str': 'CC2008-2022'}}
     return params
-
-
-def extend_tea_opts(opts):
-    """
-    add strings that are often needed to parameters (opts)
-    Args:
-        opts: CLI parameter
-
-    Returns:
-
-    """
-
-    pstr = opts.parameter
-    if opts.parameter != 'Tx':
-        pstr = f'{opts.parameter}_'
-
-    param_str = f'{pstr}{opts.threshold:.1f}p'
-    if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold:.1f}{opts.unit}'
-
-    opts.param_str = param_str
-
-    return opts

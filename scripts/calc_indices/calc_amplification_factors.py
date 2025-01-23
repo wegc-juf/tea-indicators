@@ -291,7 +291,7 @@ def save_output(opts, af, af_cc):
                      f'_{opts.start}to{opts.end}.nc')
 
 def run():
-    # load CLI parameter
+    # load CFG parameter
     opts = load_opts(fname=__file__)
 
     # load DEC TEA data
