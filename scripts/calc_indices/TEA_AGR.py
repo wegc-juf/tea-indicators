@@ -118,10 +118,14 @@ class TEAAgr(TEAIndicators):
         # select data for cell
         cell_data = self.daily_results.sel(lat=slice(lat + lat_off, lat - lat_off),
                                            lon=slice(lon - lon_off, lon + lon_off))
+        # compensate rounding errors
+        cell_data['DTEA'] = cell_data['DTEA'] / area_frac
         
         # select static data for cell
         cell_area_grid = self.area_grid.sel(lat=slice(lat + lat_off, lat - lat_off),
                                             lon=slice(lon - lon_off, lon + lon_off))
+        cell_area_grid = cell_area_grid / area_frac
+        
         if len(cell_area_grid.lat) == 0:
             raise ValueError('No valid cell found, check why this happens')
         
