@@ -58,10 +58,10 @@ def calc_tea_large_gr(opts, data, masks, static):
         max_lat = masks.lat.max().values
     else:
         land_frac_min = 0.5
-        min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - 2
+        min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - cell_size_lat
         if min_lat < static.area_grid.lat.min().values:
             min_lat = float(static.area_grid.lat.min().values)
-        max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + 2
+        max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + cell_size_lat
         if max_lat > static.area_grid.lat.max().values:
             max_lat = float(static.area_grid.lat.max().values)
         if min_lat < 35:
@@ -70,8 +70,8 @@ def calc_tea_large_gr(opts, data, masks, static):
         lons = np.arange(-12, 40.5, 0.5)
     else:
         lons = np.arange(9, 18, 0.5)
-    min_lon = lons[0] - 2
-    max_lon = lons[-1] + 2
+    min_lon = lons[0] - cell_size_lat
+    max_lon = lons[-1] + cell_size_lat
     proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     # regrid_data(proc_data)
     land_sea_mask = masks['valid_cells'].sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
@@ -90,9 +90,6 @@ def calc_tea_large_gr(opts, data, masks, static):
                      agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat, ctp=opts.period)
     tea_agr.calc_daily_basis_vars()
 
-    # define latitudes with 0.5° resolution for output
-    lats = np.arange(math.ceil(min_lat / .5) / 2 + 2, math.ceil(max_lat) + 0.5 - 2, 0.5)
-    
     # for testing with only one latitude or debugging
     if False:
         lons = [38]
