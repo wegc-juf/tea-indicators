@@ -64,8 +64,8 @@ def calc_tea_large_gr(opts, data, masks, static):
         max_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][0]].values + cell_size_lat
         if max_lat > static.area_grid.lat.max().values:
             max_lat = float(static.area_grid.lat.max().values)
-        if min_lat < 35:
-            min_lat = 35
+        if min_lat < 35 - cell_size_lat:
+            min_lat = 35 - cell_size_lat
     if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
     else:
