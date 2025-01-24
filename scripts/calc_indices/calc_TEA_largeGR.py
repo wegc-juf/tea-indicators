@@ -21,46 +21,6 @@ from scripts.calc_indices.TEA_AGR import TEAAgr
 import time
 
 
-def calc_tea_lat(opts, lat, tea_agr, lons):
-    if opts.full_region:
-        land_frac_min = 0
-    else:
-        land_frac_min = 0.5
-    
-    if opts.precip:
-        cell_size_lat = 1
-    else:
-        cell_size_lat = 2
-    
-    # step through all longitudes
-    for ilon, lon in enumerate(lons):
-        # this comment is necessary to suppress an unnecessary PyCharm warning for lon
-        # noinspection PyTypeChecker
-        logger.info(f'Processing lat {lat}, lon {lon}')
-        start_time = time.time()
-        tea_sub = tea_agr.select_sub_gr(lat=lat, lon=lon)
-        if tea_sub is None:
-            continue
-        
-        # calculate daily basis variables
-        tea_sub.calc_daily_basis_vars(grid=False)
-        # TODO check if this is necessary
-        # dbv_results = tea_sub.get_daily_results(gr=True, grid=False).compute()
-        # tea_agr.set_dbv_results(lat, lon, dbv_results)
-        
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='invalid value encountered in multiply')
-            # calculate CTP indicators
-            tea_sub.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
-            
-            # set agr_results for lat and lon
-            ctp_results = tea_sub.get_CTP_results(gr=True, grid=False).compute()
-            
-        tea_agr.set_ctp_results(lat, lon, ctp_results)
-        end_time = time.time()
-        logger.debug(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
-
-    
 def regrid_data_experimental(data):
     import xarray as xr
     import numpy as np
@@ -127,7 +87,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     
     tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
-                     agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat)
+                     agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat, ctp=opts.period)
     tea_agr.calc_daily_basis_vars()
 
     # define latitudes with 0.5° resolution for output
@@ -136,10 +96,13 @@ def calc_tea_large_gr(opts, data, masks, static):
     # for testing with only one latitude or debugging
     if False:
         lons = [38]
-        calc_tea_lat(opts=opts, lat=47., tea_agr=tea_agr, lons=lons)
+        lat = 47
+        tea_agr.calc_tea_agr(lats=[lat], lons=lons)
+        res = tea_agr.get_ctp_results()
+        res = res.sel(lat=lat, lon=slice(lons[0], lons[-1]))
+        logger.info(res)
     else:
-        for llat in lats:
-            calc_tea_lat(opts=opts, lat=llat, tea_agr=tea_agr, lons=lons)
+        tea_agr.calc_tea_agr()
     
     # save output files
     # TODO do we need these results?

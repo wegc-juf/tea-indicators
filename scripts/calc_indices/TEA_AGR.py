@@ -10,8 +10,10 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import datetime as dt
+import time
 
 from scripts.general_stuff.var_attrs import get_attrs, equal_vars
+from scripts.general_stuff.TEA_logger import logger
 from TEA import TEAIndicators
 
 
@@ -20,7 +22,7 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, land_frac_min=0.5, cell_size_lat=2):
+                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, land_frac_min=0.5, cell_size_lat=2, ctp=None):
         """
         initialize TEA object
         
@@ -34,9 +36,10 @@ class TEAAgr(TEAIndicators):
             land_sea_mask: land-sea mask
             land_frac_min: minimum fraction of land below 1500m
             cell_size_lat: size of AGR cell in latitudinal direction (in degrees)
+            ctp: climatic time period. For definition see TEAIndicators.set_ctp()
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
-                         mask=mask, min_area=min_area, apply_mask=False)
+                         mask=mask, min_area=min_area, apply_mask=False, ctp=ctp)
         if self.area_grid is not None:
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
@@ -130,7 +133,7 @@ class TEAAgr(TEAIndicators):
         
         # TODO: two options: either return data itself and stack to xarray then calculate TEA or return individual TEA
         # objects
-        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=self.min_area, unit=self.unit)
+        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=self.min_area, unit=self.unit, ctp=self.CTP)
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
     
@@ -244,7 +247,23 @@ class TEAAgr(TEAIndicators):
             self.dbv_agr_results = self.dbv_agr_results.where(self.agr_mask > 0)
         if self.ctp_agr_results is not None:
             self.ctp_agr_results = self.ctp_agr_results.where(self.agr_mask > 0)
+    
+    def calc_tea_agr(self, lats=None, lons=None):
+        """
+        calculate TEA indicators for all aggregated GeoRegions
+        Args:
+            lats: Latitudes (default: get automatically)
+            lons: Longitudes (default: get automatically)
 
+        Returns:
+
+        """
+        if lats is None:
+            lats, lons = self._get_lats_lons()
+        
+        for lat in lats:
+            self._calc_tea_lat(lat, lons=lons)
+    
     def _get_lats_lons(self, margin=None):
         """
         get latitudes and longitudes for GeoRegion grid
@@ -295,3 +314,45 @@ class TEAAgr(TEAIndicators):
         self.agr_mask = mask_agr
         self.agr_area = area_agr
 
+    def _calc_tea_lat(self, lat, lons=None):
+        """
+        calculate TEA indicators for all longitudes of a latitude
+        Args:
+            lat: Latitude
+            lons: Longitudes (default: get automatically)
+
+        Returns:
+
+        """
+        if lons is None:
+            lats, lons = self._get_lats_lons()
+        
+        # step through all longitudes
+        for ilon, lon in enumerate(lons):
+            # this comment is necessary to suppress an unnecessary PyCharm warning for lon
+            # noinspection PyTypeChecker
+            logger.info(f'Processing lat {lat}, lon {lon}')
+            start_time = time.time()
+            tea_sub = self.select_sub_gr(lat=lat, lon=lon)
+            if tea_sub is None:
+                continue
+            
+            # calculate daily basis variables
+            tea_sub.calc_daily_basis_vars(grid=False)
+            # TODO check if this is necessary
+            # dbv_results = tea_sub.get_daily_results(gr=True, grid=False).compute()
+            # self.set_dbv_results(lat, lon, dbv_results)
+            
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', message='invalid value encountered in multiply')
+                # calculate CTP indicators
+                tea_sub.calc_annual_CTP_indicators(drop_daily_results=True)
+                
+                # set agr_results for lat and lon
+                ctp_results = tea_sub.get_CTP_results(gr=True, grid=False).compute()
+            
+            self.set_ctp_results(lat, lon, ctp_results)
+            end_time = time.time()
+            logger.debug(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
+        
+        

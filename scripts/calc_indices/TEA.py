@@ -12,6 +12,7 @@ import numpy as np
 import datetime as dt
 
 from scripts.general_stuff.var_attrs import get_attrs, equal_vars
+from scripts.general_stuff.TEA_logger import logger
 
 
 class TEAIndicators:
@@ -20,7 +21,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
-                 unit='', mask=None, apply_mask=True):
+                 unit='', mask=None, apply_mask=True, ctp=None):
         """
         Initialize TEAIndicators object
         Args:
@@ -32,6 +33,7 @@ class TEAIndicators:
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
             unit: unit of the input data. Default: ''
             mask: mask grid for input data containing nan values for cells that should be masked. Default: None
+            ctp: Climatic Time Period (CTP) to resample to. For allowed values see set_ctp method. Default: None
         """
         self.threshold_grid = threshold_grid
         if area_grid is None and threshold_grid is not None:
@@ -58,7 +60,7 @@ class TEAIndicators:
             self.gr_size = None
         
         # Climatic Time Period (CTP) variables
-        self.CTP = None
+        self.CTP = ctp
         self.CTP_freqs = {'annual': 'AS', 'seasonal': 'QS-DEC', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
                           'DJF': 'AS-DEC', 'EWS': 'AS-NOV', 'monthly': 'MS'}
         self._overlap_ctps = ['EWS', 'DJF']
@@ -632,7 +634,7 @@ class TEAIndicators:
         tem.rename('EM')
         return tem
     
-    def calc_annual_CTP_indicators(self, ctp, drop_daily_results=False):
+    def calc_annual_CTP_indicators(self, ctp=None, drop_daily_results=False):
         """
         calculate all annual Climatic Time Period (CTP) indicators
         
@@ -646,7 +648,8 @@ class TEAIndicators:
                 'EWS': extended winter season (November to March)
             drop_daily_results: delete daily results after calculation
         """
-        self.set_ctp(ctp)
+        if ctp is not None:
+            self.set_ctp(ctp)
         self.calc_event_frequency()
         self.calc_supplementary_event_vars()
         self.calc_event_duration()
