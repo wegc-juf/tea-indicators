@@ -1,32 +1,32 @@
 # Documentation of TEA CFG parameter
 
 ## Common parameter (used in all scripts)
-| NAME             | DESCRIPTION                                                                                                                      | TYPE  | DEFAULT                                                   |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------|-------|-----------------------------------------------------------|
-|                  |                                                                                                                                  |       |                                                           |
-| *region*         | Name of GeoRegion; AUT, SAR, SEA, FBR, name of Austrian state, EUR, or ISO2 country code.                                        | str   | AUT                                                       |
-| *gr_type*        | Method to define GR; polygon, corners, or center.                                                                                | str   | polygon                                                   |
-| *sw_corner*      | Only if *gr_type* corners, southwest corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                      |
-| *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                      |
-| *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                      |
-| *we_len*         | Only if *gr_type* center,length of GR west to east.                                                                              | float | null                                                      |
-| *ns_len*         | Only: if *gr_type* center,length of GR north to south.                                                                           | float | null                                                      |
-|                  |                                                                                                                                  |       |                                                           |
-| *parameter*      | Name of parameter for TEA calculation .                                                                                          | str   | Tx                                                        |
-| *precip*         | Marks if precipitation data is used; set if input is precipitation data.                                                         | bool  | false                                                     |
-| *threshold*      | Threshold value; if percentiles are used as thresholds, *theshold* defines the percentile, otherwise it is the absolute value    | float | 99                                                        |
-| *threshold_type* | Type of threshold; abs for absolute thresholds, perc for percentiles.                                                            | str   | perc                                                      |
-| *unit*           | Physical unit of chosen parameter.                                                                                               | str   | degC                                                      |
-| *low_extreme*    | Marks if a low extreme is investigated; set if low extreme is investigated (values lower than threshold are considered extreme). | bool  | false                                                     |
-|                  |                                                                                                                                  |       |                                                           |
-| *start*          | Start year.                                                                                                                      | int   | 1961                                                      |
-| *end*            | End year.                                                                                                                        | int   | current year                                              |
-| *period*         | Climatic time period of interest; monthly, seasonal, WAS, ESS, JJA, or annual.                                                   | str   | WAS                                                       |
-| *dataset*        | Name of dataset; SPARTACUS, ERA5, or ERA5Land.                                                                                   | str   | SPARTACUS                                                 |
-|                  |                                                                                                                                  |       |                                                           |
-| *maskpath*       | Path of mask directory.                                                                                                          | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/   |
-| *statpath*       | Path of static file directory.                                                                                                   | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/  |
-| *tmppath*        | Path of temporary directory. Only relevant if large GR (> 100 areals) are processed with ERA5(-Land) data.                       | path  | /home/hst/tmp_data/TEAclean/largeGR/                      |
+| NAME             | DESCRIPTION                                                                                                                      | TYPE  | DEFAULT                                                  |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------|-------|----------------------------------------------------------|
+|                  |                                                                                                                                  |       |                                                          |
+| *region*         | Name of GeoRegion; AUT, SAR, SEA, FBR, name of Austrian state, EUR, or ISO2 country code.                                        | str   | AUT                                                      |
+| *gr_type*        | Method to define GR; polygon, corners, or center.                                                                                | str   | polygon                                                  |
+| *sw_corner*      | Only if *gr_type* corners, southwest corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
+| *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
+| *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                     |
+| *we_len*         | Only if *gr_type* center,length of GR west to east.                                                                              | float | null                                                     |
+| *ns_len*         | Only: if *gr_type* center,length of GR north to south.                                                                           | float | null                                                     |
+|                  |                                                                                                                                  |       |                                                          |
+| *parameter*      | Name of parameter for TEA calculation .                                                                                          | str   | Tx                                                       |
+| *precip*         | Marks if precipitation data is used; set if input is precipitation data.                                                         | bool  | false                                                    |
+| *threshold*      | Threshold value; if percentiles are used as thresholds, *theshold* defines the percentile, otherwise it is the absolute value    | float | 99                                                       |
+| *threshold_type* | Type of threshold; abs for absolute thresholds, perc for percentiles.                                                            | str   | perc                                                     |
+| *unit*           | Physical unit of chosen parameter.                                                                                               | str   | degC                                                     |
+| *low_extreme*    | Marks if a low extreme is investigated; set if low extreme is investigated (values lower than threshold are considered extreme). | bool  | false                                                    |
+|                  |                                                                                                                                  |       |                                                          |
+| *start*          | Start year.                                                                                                                      | int   | 1961                                                     |
+| *end*            | End year.                                                                                                                        | int   | 2024                                                     |
+| *period*         | Climatic time period of interest; monthly, seasonal, WAS, ESS, JJA, or annual.                                                   | str   | WAS                                                      |
+| *dataset*        | Name of dataset; SPARTACUS, ERA5, or ERA5Land.                                                                                   | str   | SPARTACUS                                                |
+|                  |                                                                                                                                  |       |                                                          |
+| *maskpath*       | Path of mask directory.                                                                                                          | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/  |
+| *statpath*       | Path of static file directory.                                                                                                   | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/ |
+| *tmppath*        | Path of temporary directory. Only relevant if large GR (> 100 areals) are processed with ERA5(-Land) data.                       | path  | /home/hst/tmp_data/TEAclean/largeGR/                     |
 
 ## regrid_SPARTACUS_to_WEGNext
 | NAME        | DESCRIPTION                             | TYPE | DEFAULT                                                                    |

@@ -1,6 +1,6 @@
 common_params:
   GeoRegion: &GR
-    region: EUR
+    region: AUT
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -19,7 +19,7 @@ common_params:
     end: 2024
     period: WAS
   dataset: &DATA
-    dataset: ERA5
+    dataset: SPARTACUS
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
     statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
@@ -35,13 +35,13 @@ regrid_SPARTACUS_to_WEGNext:
 
 create_region_masks:
   <<: *GR
-  subreg: custom
-  target_sys: 4326
-  target_ds: ERA5
-  xy_name: lon,lat
+  subreg: null
+  target_sys: 3416
+  target_ds: SPARTACUS
+  xy_name: x,y
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_1961.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/ SPARTACUSreg_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
@@ -52,7 +52,7 @@ create_static_files:
   <<: *PATHS
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
 
 calc_TEA:
@@ -61,13 +61,13 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/users/hst/TEA-clean/TEA/
-  recalc_daily: true
-  decadal: true
+  recalc_daily: false
+  decadal: false
   spreads: false
   decadal_only: false
-  recalc_decadal: true
+  recalc_decadal: false
   compare_to_ref: false
   save_old: false
 
@@ -95,5 +95,5 @@ calc_AGR_vars:
   <<: *PATHS
   inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
   outpath: /data/users/hst/TEA-clean/TEA/
-  agr: AUT
+  agr: EUR
   spreads: false
