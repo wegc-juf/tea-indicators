@@ -567,6 +567,7 @@ class TEAIndicators:
         
         # equation 21_1
         ea_avg = self.CTP_results.TEX_GR / self.CTP_results.EM_GR
+        ea_avg = xr.where(self.CTP_results.EM_GR == 0, 0, ea_avg)
         ea_avg.attrs = get_attrs(vname='EA_avg_GR')
         self.CTP_results['EA_avg_GR'] = ea_avg
     
