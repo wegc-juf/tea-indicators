@@ -29,7 +29,7 @@ def define_wegn_grid_1000x1000(opts):
 
     # Load sample SPARTACUS data
     original_grid = xr.open_dataset(
-        os.path.join(f'{opts.inpath}', f'SPARTACUS-DAILY_{opts.parameter}_2000.nc'))
+        os.path.join(f'{opts.inpath}', f'SPARTACUS2-DAILY_{opts.parameter.upper()}_2000.nc'))
 
     # Open WEGN sample data
     wegnet = xr.open_dataset(opts.wegnfile)
@@ -187,11 +187,12 @@ def run():
             ds_new.attrs['crs'] = 'EPSG:32633'
 
             # Rename variables if necessary
-            if opts.parameter == 'TX':
+            if opts.parameter in ['TX', 'Tx']:
                 ds_new = ds_new.rename({'TX': 'Tx'})
                 opts.parameter = 'Tx'
-            elif opts.parameter == 'TN':
+            elif opts.parameter in ['TN', 'Tn']:
                 ds_new = ds_new.rename({'TN': 'Tn'})
+                opts.parameter = 'Tn'
 
             # drop unnecessary coords
             ds_new = ds_new.drop(['lat', 'lon'])
@@ -202,7 +203,9 @@ def run():
 
             path = Path(f'{opts.outpath}')
             path.mkdir(parents=True, exist_ok=True)
-            ds_new.to_netcdf(f'{opts.outpath}{filename}', encoding=encoding,
+            filename_parts = filename.split(opts.parameter.upper())
+            filename_out = f'{filename_parts[0]}{opts.parameter}{filename_parts[1]}'
+            ds_new.to_netcdf(f'{opts.outpath}{filename_out}', encoding=encoding,
                              engine='netcdf4')
 
 

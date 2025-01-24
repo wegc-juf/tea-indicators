@@ -1,6 +1,6 @@
 common_params:
   GeoRegion: &GR
-    region: EUR
+    region: AUT
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -10,8 +10,8 @@ common_params:
   parameter: &PARAM
     parameter: Tx
     precip: false
-    threshold: 99
-    threshold_type: perc
+    threshold: 30
+    threshold_type: abs
     unit: degC
     low_extreme: false
   time_params: &TIME
@@ -19,7 +19,7 @@ common_params:
     end: 2024
     period: WAS
   dataset: &DATA
-    dataset: ERA5
+    dataset: SPARTACUS
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
     statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
@@ -27,7 +27,7 @@ common_params:
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/v2024_v1.5/
+  inpath: /data/users/hst/TEA-clean/SPARTACUS/
   orography: false
   orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
   wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
@@ -35,13 +35,13 @@ regrid_SPARTACUS_to_WEGNext:
 
 create_region_masks:
   <<: *GR
-  subreg: custom
-  target_sys: 4326
-  target_ds: ERA5
-  xy_name: lon,lat
-  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  subreg: Niederösterreich
+  target_sys: 32633
+  target_ds: SPARTACUS
+  xy_name: x,y
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/LAND_AT_.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_2011.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
@@ -52,7 +52,7 @@ create_static_files:
   <<: *PATHS
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
 
 calc_TEA:
@@ -61,7 +61,7 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/users/hst/TEA-clean/TEA/
   recalc_daily: true
   decadal: true

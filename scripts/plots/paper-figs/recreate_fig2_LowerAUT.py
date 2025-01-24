@@ -1,21 +1,19 @@
 import matplotlib.pyplot as plt
-import matplotlib.patches as pat
 from matplotlib.ticker import FormatStrFormatter, FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
-import pandas as pd
 import xarray as xr
 
 
 def get_data():
     af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/amplification/'
-                         'AF_Tx99.0p_AUT_WAS_SPARTACUS_1961to2022.nc')
+                         'AF_Tx25.0degC_Niederösterreich_WAS_SPARTACUS_1961to2024.nc')
 
-    nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/natural_variability/'
-                     'NV_AF_Tx99.0p_AUT.csv',
-                     index_col=0)
+    # nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/natural_variability/'
+    #                  'NV_AF_Tx99.0p_AUT.csv',
+    #                  index_col=0)
 
-    return af, nv
+    return af#, nv
 
 
 def gr_plot_params(vname):
@@ -50,13 +48,13 @@ def gr_plot_params(vname):
 def map_plot_params(vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
-                           'title': f'Event Frequency (EF) amplification (CC2008-2022)'},
+                           'title': f'Event Frequency (EF) amplification (CC2010-2024)'},
               'EDavg_AF_CC': {'cmap': 'Purples',
                            'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                           'title': f'Event Duration (ED) amplification (CC2008-2022)'},
+                           'title': f'Event Duration (ED) amplification (CC2010-2024)'},
               'EMavg_AF_CC': {'cmap': 'Oranges',
                            'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                           'title': f'Exceedance Magnitude (EM) amplification (CC2008-2022)'}
+                           'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
 
     return params[vname]
@@ -66,16 +64,16 @@ def plot_gr_data(ax, data, af_cc, nv):
     props = gr_plot_params(vname=data.name)
 
     xvals = data.ctp
-    xticks = np.arange(1961, 2023)
+    xticks = np.arange(1961, 2025)
 
-    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc[props['nv_name'], 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc[props['nv_name'], 'upper'] * 1.645)
-    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=props['col'], alpha=0.2)
+    # nat_var_low = np.ones(len(xvals)) * (1 - nv.loc[props['nv_name'], 'lower'] * 1.645)
+    # nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc[props['nv_name'], 'upper'] * 1.645)
+    # ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=props['col'], alpha=0.2)
 
     ax.plot(xticks, data, 'o-', color=props['col'], markersize=3, linewidth=2)
 
     ax.plot(xticks[0:30], np.ones(len(xvals[:30])), alpha=0.5, color=props['col'], linewidth=2)
-    ax.plot(xticks[47:], np.ones(len(xvals[47:])) * af_cc.values, alpha=0.5,
+    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc.values, alpha=0.5,
             color=props['col'], linewidth=2)
 
     ax.set_ylabel(props['ylbl'], fontsize=12)
@@ -83,8 +81,8 @@ def plot_gr_data(ax, data, af_cc, nv):
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    ax.set_xlim(1960, 2023)
-    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2023)))
+    ax.set_xlim(1960, 2025)
+    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
 
     ymin, ymax = 0.5, 2
     ax.set_yticks(np.arange(ymin, ymax + 0.5, 0.5))
@@ -115,19 +113,19 @@ def plot_gr_data(ax, data, af_cc, nv):
 def plot_tex_es(ax, data, af_cc, nv):
 
     xvals = data.ctp
-    xticks = np.arange(1961, 2023)
+    xticks = np.arange(1961, 2025)
 
-    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc['TEX', 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
-    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
+    # nat_var_low = np.ones(len(xvals)) * (1 - nv.loc['TEX', 'lower'] * 1.645)
+    # nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
+    # ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
 
     ax.plot(xticks, data['ESavg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
     ax.plot(xticks, data['TEX_GR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
 
     ax.plot(xticks[0:30], np.ones(len(xvals[:30])), alpha=0.5, color='tab:grey', linewidth=2)
-    ax.plot(xticks[47:], np.ones(len(xvals[47:])) * af_cc['ESavg_GR_AF_CC'].values, alpha=0.5,
+    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['ESavg_GR_AF_CC'].values, alpha=0.5,
             color='tab:grey', linewidth=2)
-    ax.plot(xticks[47:], np.ones(len(xvals[47:])) * af_cc['TEX_GR_AF_CC'].values, alpha=0.5,
+    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['TEX_GR_AF_CC'].values, alpha=0.5,
             color='tab:red', linewidth=2)
 
     ax.set_ylabel(r'ES|TEX amplification $(\mathcal{A}^\mathrm{S}, \mathcal{A}^\mathrm{T})$',
@@ -136,18 +134,18 @@ def plot_tex_es(ax, data, af_cc, nv):
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    ax.set_xlim(1960, 2023)
-    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2023)))
+    ax.set_xlim(1960, 2025)
+    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
 
-    ymin, ymax = 0, 10
-    ax.set_yticks(np.arange(ymin, ymax + 1, 1))
+    ymin, ymax = 0, 4
+    ax.set_yticks(np.arange(ymin, ymax + 0.5, 0.5))
     ax.set_ylim(ymin, ymax)
 
     ax.set_title('Avg. Event Severity and Total Events Extremity', fontsize=14)
     ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
 
     ypos_ref = 0.12
-    ypos_cc_tex = ((af_cc['TEX_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
+    ypos_cc_tex = ((af_cc['TEX_GR_AF_CC'].values - ymin) / (ymax - ymin)) - 0.07
     ypos_cc_es = ((af_cc['ESavg_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
     ax.text(0.02, ypos_ref, r'$\mathcal{A}_\mathrm{Ref}$',
             horizontalalignment='left',
@@ -179,20 +177,9 @@ def find_range(data):
     """
 
     data = data.where(data > 0)
-
     aut_min, aut_max = data.min().values, data.max().values
 
-    sea_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'SEA_masks_SPARTACUS.nc')
-    sea_data = data * sea_mask.nw_mask
-    sea_min, sea_max = sea_data.min().values, sea_data.max().values
-
-    fbr_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'FBR_masks_SPARTACUS.nc')
-    fbr_data = data * fbr_mask.nw_mask
-    fbr_min, fbr_max = fbr_data.min().values, fbr_data.max().values
-
-    ranges = {'AUT': [aut_min, aut_max], 'SEA': [sea_min, sea_max], 'FBR': [fbr_min, fbr_max]}
+    ranges = [aut_min, aut_max]
 
     return ranges
 
@@ -205,7 +192,9 @@ def plot_map(fig, ax, data):
                           'AUT_masks_SPARTACUS.nc')
     ax.contourf(aut.nw_mask, colors='mistyrose')
 
-    lvls = np.arange(1, 4.25, 0.25)
+
+    vn, vx = 0, 3
+    lvls = np.arange(vn, vx + 0.25, 0.25)
     if data.max() > lvls[-1] and data.min() > lvls[0]:
         ext = 'max'
     elif data.max() < lvls[-1] and data.min() > lvls[0]:
@@ -215,12 +204,8 @@ def plot_map(fig, ax, data):
 
     range_vals = find_range(data=data)
 
-    map_vals = ax.contourf(data, cmap=props['cmap'], extend=ext, levels=lvls, vmin=1, vmax=4)
+    map_vals = ax.contourf(data, cmap=props['cmap'], extend=ext, levels=lvls, vmin=vn, vmax=vx)
 
-    ax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
-                               fill=False, linewidth=1))
-    ax.add_patch(pat.Rectangle(xy=(410, 28), height=92, width=125, edgecolor='black',
-                               fill=False, linewidth=1))
     ax.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
@@ -230,33 +215,31 @@ def plot_map(fig, ax, data):
     cb.ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     ax.set_title(props["title"], fontsize=14)
 
-    ax.text(0.02, 0.82, props['lbl'] + '(i,j)\n'
-            + f'AUT: [{range_vals["AUT"][0]:.2f}, {range_vals["AUT"][1]:.2f}]\n'
-              f'SEA: [{range_vals["SEA"][0]:.2f}, {range_vals["SEA"][1]:.2f}]\n'
-              f'FBR: [{range_vals["FBR"][0]:.2f}, {range_vals["FBR"][1]:.2f}]',
+    ax.text(0.02, 0.9, props['lbl'] + '(i,j)' + f' [{range_vals[0]:.2f}, {range_vals[1]:.2f}]',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
             fontsize=9)
 
 
 def run():
-    data, natv = get_data()
+    data = get_data() #, natv
 
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
     gr_vars = ['EF_GR_AF', 'EDavg_GR_AF', 'EMavg_GR_AF', 'EAavg_GR_AF']
     for irow, gr_var in enumerate(gr_vars):
-        plot_gr_data(ax=axs[irow, 0], data=data[gr_var], af_cc=data[f'{gr_var}_CC'], nv=natv)
+        plot_gr_data(ax=axs[irow, 0], data=data[gr_var], af_cc=data[f'{gr_var}_CC'], nv=np.nan)
 
     map_vars = ['EF_AF_CC', 'EDavg_AF_CC', 'EMavg_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
 
     plot_tex_es(ax=axs[3, 1], data=data[['TEX_GR_AF', 'ESavg_GR_AF']],
-                af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=natv)
+                af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=np.nan)
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig('/nas/home/hst/work/TEAclean/plots/paper-figs/Figure2.png', dpi=300)
+    plt.savefig('/nas/home/hst/work/TEAclean/plots/misc/TEA-Indicators_LowerAustria.png',
+                bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':

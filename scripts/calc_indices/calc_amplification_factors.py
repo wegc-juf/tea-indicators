@@ -82,6 +82,8 @@ def calc_basis_amplification_factors(data, ref, cc):
         af_cc_ds: AF CC ds
 
     """
+    # only use data with positive values in reference period to avoid inf-values later on
+    ref = ref.where(ref > 0)
 
     af_ds = data / ref
     af_cc_ds = cc / ref
