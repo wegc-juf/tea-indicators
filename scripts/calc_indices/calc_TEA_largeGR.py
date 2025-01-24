@@ -135,6 +135,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     
     # for testing with only one latitude or debugging
     if False:
+        lons = [38]
         calc_tea_lat(opts=opts, lat=47., tea_agr=tea_agr, lons=lons)
     else:
         for llat in lats:
@@ -158,12 +159,11 @@ def calc_tea_large_gr(opts, data, masks, static):
     
     ref_path = ctp_path.replace('.nc', '_ref.nc')
     ref_data = xr.open_dataset(ref_path)
-    ref_data = ref_data.sel(lat=47., lon=slice(13, 16))
     ref_data = ref_data.rename({'ctp': 'time'})
     
     ref_data = ref_data.rename({vvar: vvar.replace('avg', '_avg') for vvar in ref_data.data_vars if 'avg' in vvar})
     
-    compare_data = tea_agr.get_ctp_results().sel(lat=47., lon=slice(13, 16))
+    compare_data = tea_agr.get_ctp_results()
     compare_to_ref(compare_data, ref_data, relative=True)
     del tea_agr
     

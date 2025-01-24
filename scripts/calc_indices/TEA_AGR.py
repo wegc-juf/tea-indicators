@@ -104,7 +104,6 @@ class TEAAgr(TEAIndicators):
         size_real = lon_off * lat_off
         area_frac = size_real / size_exact
         
-        print (f'lat_off: {lat_off}, lon_off: {lon_off}, area_frac: {area_frac}')
         if self.land_frac_min > 0:
             # get land-sea mask
             cell_lsm = self.land_sea_mask.sel(lat=slice(lat + lat_off, lat - lat_off),
@@ -246,10 +245,12 @@ class TEAAgr(TEAIndicators):
         if self.ctp_agr_results is not None:
             self.ctp_agr_results = self.ctp_agr_results.where(self.agr_mask > 0)
 
-    def _get_lats_lons(self, margin=0.):
+    def _get_lats_lons(self, margin=None):
         """
         get latitudes and longitudes for GeoRegion grid
         """
+        if margin is None:
+            margin = self.cell_size_lat
 
         lats = np.arange(self.input_data_grid.lat.max() - margin,
                          self.input_data_grid.lat.min() - self.agr_resolution + margin,
