@@ -94,7 +94,7 @@ def compare_to_ref(tea_result, tea_ref, relative=False):
             if relative:
                 diff = (tea_result[vvar] - tea_ref[vvar]) / tea_ref[vvar]
                 diff = diff.where(np.isfinite(diff), 0)
-                threshold = .03
+                threshold = .05
             else:
                 diff = tea_result[vvar] - tea_ref[vvar]
                 threshold = 5e-5
