@@ -38,7 +38,7 @@ def calc_tea_lat(opts, lat, tea_agr, lons):
         # noinspection PyTypeChecker
         logger.info(f'Processing lat {lat}, lon {lon}')
         start_time = time.time()
-        tea_sub = tea_agr.select_sub_gr(lat=lat, lon=lon, cell_size_lat=cell_size_lat, land_frac_min=land_frac_min)
+        tea_sub = tea_agr.select_sub_gr(lat=lat, lon=lon)
         if tea_sub is None:
             continue
         
@@ -86,11 +86,18 @@ def regrid_data_experimental(data):
 def calc_tea_large_gr(opts, data, masks, static):
     logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
     
+    if opts.precip:
+        cell_size_lat = 1
+    else:
+        cell_size_lat = 2
+    
     # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
     if opts.full_region:
+        land_frac_min = 0
         min_lat = masks.lat.min().values
         max_lat = masks.lat.max().values
     else:
+        land_frac_min = 0.5
         min_lat = data.lat[np.where(masks['lt1500_mask'] > 0)[0][-1]].values - 2
         if min_lat < static.area_grid.lat.min().values:
             min_lat = float(static.area_grid.lat.min().values)
@@ -120,7 +127,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     
     tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
-                     agr_mask=agr_mask)
+                     agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat)
     tea_agr.calc_daily_basis_vars()
 
     # define latitudes with 0.5° resolution for output

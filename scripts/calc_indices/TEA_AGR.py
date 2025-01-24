@@ -20,7 +20,7 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None):
+                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, land_frac_min=0.5, cell_size_lat=2):
         """
         initialize TEA object
         
@@ -32,6 +32,8 @@ class TEAAgr(TEAIndicators):
             min_area: minimum area for valid grid cells
             agr_resolution: resolution for aggregated GeoRegion (in degrees)
             land_sea_mask: land-sea mask
+            land_frac_min: minimum fraction of land below 1500m
+            cell_size_lat: size of AGR cell in latitudinal direction (in degrees)
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
                          mask=mask, min_area=min_area, apply_mask=False)
@@ -43,6 +45,8 @@ class TEAAgr(TEAIndicators):
         self.agr_mask = None
         self.agr_area = None
         self.land_sea_mask = land_sea_mask
+        self.land_frac_min = land_frac_min
+        self.cell_size_lat = cell_size_lat
         
         if agr_mask is None and mask is not None and area_grid is not None:
             self._generate_agr_mask()
@@ -78,34 +82,37 @@ class TEAAgr(TEAIndicators):
         # apply custom rolling function
         self.daily_results.rolling(lat=4, lon=4, center=True).reduce(self._my_rolling_test, step=2).compute()
 
-    def select_sub_gr(self, lat, lon, cell_size_lat, land_frac_min=0):
+    def select_sub_gr(self, lat, lon):
         """
         select data of GeoRegion sub-cell and weight edges
         Args:
             lat: center latitude of cell (in degrees)
             lon: center longitude of cell (in degrees)
-            cell_size_lat: size of cell in latitudinal direction (in degrees)
-            land_frac_min: minimum fraction of land below 1500m
 
         Returns:
             cell_data: data of cell
             cell_static: static data of cell
         """
         
-        lat_off = cell_size_lat / 2
-        lon_off = 1 / np.cos(np.deg2rad(lat)) * lat_off
+        lat_off = self.cell_size_lat / 2
+        lon_off_exact = 1 / np.cos(np.deg2rad(lat)) * lat_off
+        size_exact = lon_off_exact * lat_off
+        
         round_coords = True
         if round_coords:
-            lon_off = np.round(lon_off * 4, 0) / 4.
+            lon_off = np.round(lon_off_exact * 4, 0) / 4.
+        size_real = lon_off * lat_off
+        area_frac = size_real / size_exact
         
-        if land_frac_min > 0:
+        print (f'lat_off: {lat_off}, lon_off: {lon_off}, area_frac: {area_frac}')
+        if self.land_frac_min > 0:
             # get land-sea mask
             cell_lsm = self.land_sea_mask.sel(lat=slice(lat + lat_off, lat - lat_off),
                                               lon=slice(lon - lon_off, lon + lon_off))
             
             # calculate fraction covered by valid cells (land below 1500 m)
             land_frac = cell_lsm.sum() / np.size(cell_lsm)
-            if land_frac < land_frac_min:
+            if land_frac < self.land_frac_min:
                 return None
         
         # select data for cell
@@ -235,16 +242,16 @@ class TEAAgr(TEAIndicators):
         if self.ctp_agr_results is not None:
             self.ctp_agr_results = self.ctp_agr_results.where(self.agr_mask > 0)
 
-    def _get_lats_lons(self):
+    def _get_lats_lons(self, margin=0.):
         """
         get latitudes and longitudes for GeoRegion grid
         """
 
-        lats = np.arange(self.input_data_grid.lat.max(),
-                         self.input_data_grid.lat.min() - self.agr_resolution,
+        lats = np.arange(self.input_data_grid.lat.max() - margin,
+                         self.input_data_grid.lat.min() - self.agr_resolution + margin,
                          -self.agr_resolution)
-        lons = np.arange(self.input_data_grid.lon.min(),
-                         self.input_data_grid.lon.max() + self.agr_resolution,
+        lons = np.arange(self.input_data_grid.lon.min() + margin,
+                         self.input_data_grid.lon.max() + self.agr_resolution - margin,
                          self.agr_resolution)
         return lats, lons
     
