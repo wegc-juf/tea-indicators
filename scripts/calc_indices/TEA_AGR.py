@@ -22,7 +22,8 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, land_frac_min=0.5, cell_size_lat=2, ctp=None):
+                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, land_frac_min=0.5, cell_size_lat=2, ctp=None,
+                 **kwargs):
         """
         initialize TEA object
         
@@ -39,7 +40,7 @@ class TEAAgr(TEAIndicators):
             ctp: climatic time period. For definition see TEAIndicators.set_ctp()
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
-                         mask=mask, min_area=min_area, apply_mask=False, ctp=ctp)
+                         mask=mask, min_area=min_area, apply_mask=False, ctp=ctp, **kwargs)
         if self.area_grid is not None:
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
@@ -195,7 +196,7 @@ class TEAAgr(TEAIndicators):
         # remove GR from variable names
         ctp_results = ctp_results.rename({var: var.replace('_GR', '') for var in ctp_results.data_vars})
         
-        if self.CTP_results is None:
+        if self.CTP_results is None or not len(self.CTP_results.data_vars):
             data_vars = [var for var in ctp_results.data_vars]
             var_dict = {}
             lats, lons = self._get_lats_lons()
@@ -204,12 +205,21 @@ class TEAAgr(TEAIndicators):
                                                                            len(lats),
                                                                            len(lons))))
             self.CTP_results = xr.Dataset(coords=dict(time=ctp_results.time,
-                                                          lon=lons,
-                                                          lat=lats),
-                                              data_vars=var_dict,
-                                              attrs=ctp_results.attrs)
+                                                      lon=lons,
+                                                      lat=lats),
+                                          data_vars=var_dict,
+                                          attrs=ctp_results.attrs)
             
         self.CTP_results.loc[dict(lat=lat, lon=lon)] = ctp_results
+        
+        # set attributes for variables
+        for var in ctp_results.data_vars:
+            if 'attrs' not in self.CTP_results[var]:
+                attrs = ctp_results[var].attrs
+                new_attrs = get_attrs(vname=var)
+                attrs['long_name'] = new_attrs['long_name']
+                self.CTP_results[var].attrs = attrs
+        
         
     def get_ctp_results(self, grid=True, gr=True):
         """
