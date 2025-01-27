@@ -325,14 +325,14 @@ def save_ctp_output(opts, tea):
     path = Path(f'{opts.outpath}/ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     
-    outpath_new = (f'{opts.outpath}/ctp_indicator_variables/'
+    outpath = (f'{opts.outpath}/ctp_indicator_variables/'
                    f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}_new.nc')
+                   f'_{opts.start}to{opts.end}.nc')
     
-    path_ref = outpath_new.replace('.nc', '_ref.nc')
+    path_ref = outpath.replace('.nc', '_ref.nc')
     
-    logger.info(f'Saving CTP indicators to {outpath_new}')
-    tea.save_CTP_results(outpath_new)
+    logger.info(f'Saving CTP indicators to {outpath}')
+    tea.save_CTP_results(outpath)
     
     if opts.compare_to_ref:
         compare_to_ctp_ref(tea, path_ref)
@@ -374,12 +374,12 @@ def calc_ctp_indicators(opts):
     else:
         tea = TEAIndicators()
         
-        dbv_filename_new = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
-                            f'_{opts.dataset}_{opts.start}to{opts.end}_new.nc')
+        dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
+                            f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
-        logger.info(f'Loading daily basis variables from {dbv_filename_new}; if you want to recalculate them, '
+        logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
                     'set --recalc-daily.')
-        tea.load_daily_results(dbv_filename_new)
+        tea.load_daily_results(dbv_filename)
 
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)

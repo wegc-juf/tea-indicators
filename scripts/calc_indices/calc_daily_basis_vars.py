@@ -76,11 +76,11 @@ def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None, mask=No
     
     bv_outpath = (f'{opts.outpath}/daily_basis_variables/'
                   f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                  f'_{opts.start}to{opts.end}_new.nc')
+                  f'_{opts.start}to{opts.end}.nc')
     if large_gr:
         bv_outpath = (f'{opts.tmppath}/daily_basis_variables/'
                       f'DBV{cell_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                      f'_{opts.start}to{opts.end}_new.nc')
+                      f'_{opts.start}to{opts.end}.nc')
 
     logger.info(f'Saving daily basis variables to {bv_outpath}')
     TEA.save_daily_results(bv_outpath)

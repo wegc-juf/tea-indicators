@@ -41,7 +41,7 @@ def load_ctp_data(opts, tea):
             return False
     
     filenames = (f'{ctppath}CTP_{opts.param_str}_{opts.region}_{opts.period}'
-                 f'_{opts.dataset}_*_new.nc')
+                 f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
 
@@ -79,23 +79,23 @@ def calc_decadal_indicators(opts, tea):
     Returns:
 
     """
-    outpath_new = (f'{opts.outpath}/dec_indicator_variables/'
+    outpath = (f'{opts.outpath}/dec_indicator_variables/'
                    f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}_new.nc')
-    if opts.recalc_decadal or not os.path.exists(outpath_new):
+                   f'_{opts.start}to{opts.end}.nc')
+    if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
         tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
-        logger.info(f'Saving decadal indicators to {outpath_new}')
-        tea.save_decadal_results(outpath_new)
+        logger.info(f'Saving decadal indicators to {outpath}')
+        tea.save_decadal_results(outpath)
     else:
-        logger.info(f'Loading decadal indicators from {outpath_new}. To recalculate use --recalc-decadal')
-        tea.load_decadal_results(outpath_new)
+        logger.info(f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
+        tea.load_decadal_results(outpath)
 
     if opts.compare_to_ref:
-        file_ref = outpath_new.replace('.nc', '_ref.nc')
+        file_ref = outpath.replace('.nc', '_ref.nc')
         compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
 
 
@@ -144,11 +144,11 @@ def calc_amplification_factors(opts, tea):
     path.mkdir(parents=True, exist_ok=True)
     out_path = (f'{opts.outpath}/dec_indicator_variables/amplification/'
                 f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                f'_{opts.start}to{opts.end}_new.nc')
+                f'_{opts.start}to{opts.end}.nc')
     
     # compare to reference file
     if opts.compare_to_ref:
-        ref_path = out_path.replace('_new.nc', '_new_ref.nc')
+        ref_path = out_path.replace('.nc', '_ref.nc')
         ref_data = xr.open_dataset(ref_path)
         logger.info(f'Comparing amplification factors to reference file {ref_path}')
         with warnings.catch_warnings():
