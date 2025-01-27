@@ -58,8 +58,6 @@ class TEAAgr(TEAIndicators):
         
         # daily basis variables for aggregated GeoRegion
         self.dbv_agr_results = None
-        # annual CTP variables for aggregated GeoRegion
-        self.ctp_agr_results = None
     
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
@@ -197,7 +195,7 @@ class TEAAgr(TEAIndicators):
         # remove GR from variable names
         ctp_results = ctp_results.rename({var: var.replace('_GR', '') for var in ctp_results.data_vars})
         
-        if self.ctp_agr_results is None:
+        if self.CTP_results is None:
             data_vars = [var for var in ctp_results.data_vars]
             var_dict = {}
             lats, lons = self._get_lats_lons()
@@ -205,13 +203,13 @@ class TEAAgr(TEAIndicators):
                 var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(ctp_results.time),
                                                                            len(lats),
                                                                            len(lons))))
-            self.ctp_agr_results = xr.Dataset(coords=dict(time=ctp_results.time,
+            self.CTP_results = xr.Dataset(coords=dict(time=ctp_results.time,
                                                           lon=lons,
                                                           lat=lats),
                                               data_vars=var_dict,
                                               attrs=ctp_results.attrs)
             
-        self.ctp_agr_results.loc[dict(lat=lat, lon=lon)] = ctp_results
+        self.CTP_results.loc[dict(lat=lat, lon=lon)] = ctp_results
         
     def get_ctp_results(self, grid=True, gr=True):
         """
@@ -221,14 +219,14 @@ class TEAAgr(TEAIndicators):
             grid: get gridded results. Default: True
             gr: get GR results. Default: True
         """
-        gr_vars = [var for var in self.ctp_agr_results.data_vars if 'GR' in var]
-        grid_vars = [var for var in self.ctp_agr_results.data_vars if 'GR' not in var]
+        gr_vars = [var for var in self.CTP_results.data_vars if 'GR' in var]
+        grid_vars = [var for var in self.CTP_results.data_vars if 'GR' not in var]
         if not grid:
-            return self.ctp_agr_results.drop_vars(grid_vars)
+            return self.CTP_results.drop_vars(grid_vars)
         if not gr:
-            return self.ctp_agr_results.drop_vars(gr_vars)
+            return self.CTP_results.drop_vars(gr_vars)
         else:
-            return self.ctp_agr_results
+            return self.CTP_results
     
     def save_ctp_results(self, filepath):
         """
@@ -237,7 +235,7 @@ class TEAAgr(TEAIndicators):
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
-            self.ctp_agr_results.to_netcdf(filepath)
+            self.CTP_results.to_netcdf(filepath)
     
     def apply_mask(self):
         """
@@ -245,8 +243,8 @@ class TEAAgr(TEAIndicators):
         """
         if self.dbv_agr_results is not None:
             self.dbv_agr_results = self.dbv_agr_results.where(self.agr_mask > 0)
-        if self.ctp_agr_results is not None:
-            self.ctp_agr_results = self.ctp_agr_results.where(self.agr_mask > 0)
+        if self.CTP_results is not None:
+            self.CTP_results = self.CTP_results.where(self.agr_mask > 0)
     
     def calc_tea_agr(self, lats=None, lons=None):
         """
