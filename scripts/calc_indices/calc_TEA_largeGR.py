@@ -87,7 +87,8 @@ def calc_tea_large_gr(opts, data, masks, static):
     
     tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
-                     agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat, ctp=opts.period)
+                     agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat, ctp=opts.period,
+                     unit=opts.unit, low_extreme=opts.low_extreme)
     tea_agr.calc_daily_basis_vars()
 
     # for testing with only one latitude or debugging
