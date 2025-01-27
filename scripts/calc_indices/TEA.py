@@ -683,7 +683,10 @@ class TEAIndicators:
         load all CTP results from filepath
         """
         self.CTP_results = xr.open_mfdataset(filepath)
-        self.unit = self.CTP_results.EM_avg.attrs['units']
+        if 'units' not in self.CTP_results.EM_avg.attrs:
+            logger.warning("No unit attribute found in CTP results. Please set the unit attribute manually.")
+        else:
+            self.unit = self.CTP_results.EM_avg.attrs['units']
     
     def get_CTP_results(self, grid=True, gr=True):
         """
@@ -770,49 +773,62 @@ class TEAIndicators:
         calculate decadal values for compound variables (equation 23_2)
         """
         
-        # calculate cumulative events duration (cf. equation 14_2 and equation 15_2)
+        # calculate cumulative events duration (cf. equation 14_2)
         ED = self.calc_cumulative_events_duration(f=self.decadal_results['EF'], d=self.decadal_results['ED_avg'])
         ED.attrs = get_attrs(vname='ED', dec=True)
         self.decadal_results['ED'] = ED
-        ED_GR = self.calc_cumulative_events_duration(f=self.decadal_results['EF_GR'], d=self.decadal_results[
-            'ED_avg_GR'])
-        ED_GR.attrs = get_attrs(vname='ED_GR', dec=True)
-        self.decadal_results['ED_GR'] = ED_GR
         
-        # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 17_2
-        #   and equation 18_2)
+        # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 17_2)
         EM = self.calc_temporal_events_extremity(ed=self.decadal_results['ED'], m=self.decadal_results['EM_avg'])
         EM.attrs = get_attrs(vname='EM', dec=True)
         self.decadal_results['EM'] = EM
-        EM_GR = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'],
-                                                    m=self.decadal_results['EM_avg_GR'])
-        EM_GR.attrs = get_attrs(vname='EM_GR', dec=True)
-        self.decadal_results['EM_GR'] = EM_GR
         
-        # calculate cumulative median exceedance magnitude (cf. equation 19_2 and equation 19_4)
+        # calculate cumulative median exceedance magnitude (cf. equation 19_2)
         EM_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED'], m=self.decadal_results['EM_avg_Md'])
         EM_Md.attrs = get_attrs(vname='EM_Md', dec=True)
         self.decadal_results['EM_Md'] = EM_Md
-        EM_GR_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'], m=self.decadal_results[
-            'EM_avg_GR_Md'])
-        EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True)
-        self.decadal_results['EM_GR_Md'] = EM_GR_Md
         
+        if 'EF_GR' in self.decadal_results:
+            # calculate cumulative events duration (equation 15_2)
+            ED_GR = self.calc_cumulative_events_duration(f=self.decadal_results['EF_GR'], d=self.decadal_results[
+                'ED_avg_GR'])
+            ED_GR.attrs = get_attrs(vname='ED_GR', dec=True)
+            self.decadal_results['ED_GR'] = ED_GR
+            
+            # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 18_2)
+            EM_GR = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'],
+                                                        m=self.decadal_results['EM_avg_GR'])
+            EM_GR.attrs = get_attrs(vname='EM_GR', dec=True)
+            self.decadal_results['EM_GR'] = EM_GR
+            
+            # calculate cumulative median exceedance magnitude (equation 19_4)
+            EM_GR_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'], m=self.decadal_results[
+                'EM_avg_GR_Md'])
+            EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True)
+            self.decadal_results['EM_GR_Md'] = EM_GR_Md
+            
+        if 'EM_avg_Max_GR' in self.decadal_results:
+            gvar = '_GR'
+        else:
+            gvar = ''
+            
         # calculate cumulative maximum exceedance magnitude (cf. equation 20_2)
-        EM_Max_GR = self.decadal_results['EM_avg_Max_GR'] * ED_GR
-        EM_Max_GR.attrs = get_attrs(vname='EM_Max_GR', dec=True)
-        self.decadal_results['EM_Max_GR'] = EM_Max_GR
+        EM_Max = self.decadal_results[f'EM_avg_Max{gvar}'] * self.decadal_results[f'ED{gvar}']
+        EM_Max.attrs = get_attrs(vname=f'EM_Max{gvar}', dec=True)
+        self.decadal_results[f'EM_Max{gvar}'] = EM_Max
 
         # calculate event severity (cf. equation 21_2)
-        es_avg = self.calc_event_severity(d=self.decadal_results['ED_avg_GR'], m=self.decadal_results['EM_avg_GR'],
-                                          a=self.decadal_results['EA_avg_GR'])
-        es_avg.attrs = get_attrs(vname='ES_avg_GR', dec=True)
-        self.decadal_results['ES_avg_GR'] = es_avg
-        
+        es_avg = self.calc_event_severity(d=self.decadal_results[f'ED_avg{gvar}'], m=self.decadal_results[
+            f'EM_avg{gvar}'],
+                                          a=self.decadal_results[f'EA_avg{gvar}'])
+        es_avg.attrs = get_attrs(vname=f'ES_avg{gvar}', dec=True)
+        self.decadal_results[f'ES_avg{gvar}'] = es_avg
+    
         # calculate total events extremity (cf. equation 21_4)
-        TEX = self.calc_total_events_extremity(f=self.decadal_results['EF_GR'], s=self.decadal_results['ES_avg_GR'])
-        TEX.attrs = get_attrs(vname='TEX_GR', dec=True)
-        self.decadal_results['TEX_GR'] = TEX
+        TEX = self.calc_total_events_extremity(f=self.decadal_results[f'EF{gvar}'],
+                                               s=self.decadal_results[f'ES_avg{gvar}'])
+        TEX.attrs = get_attrs(vname=f'TEX{gvar}', dec=True)
+        self.decadal_results[f'TEX{gvar}'] = TEX
     
     def calc_spread_estimators(self):
         """
@@ -901,7 +917,8 @@ class TEAIndicators:
         
         period_mean = self.gmean_custom(period_data, dim='time')
         doy_first, doy_last = self._calc_doy_adjustment(doy_first=period_mean.doy_first.values,
-                                                        doy_last=period_mean.doy_last.values, aep=period_mean.AEP.values)
+                                                        doy_last=period_mean.doy_last.values,
+                                                        aep=period_mean.AEP.values)
         period_mean['doy_first'].values = doy_first
         period_mean['doy_last'].values = doy_last
         doy_first_gr, doy_last_gr = self._calc_doy_adjustment(doy_first=period_mean.doy_first_GR.values,
@@ -929,10 +946,10 @@ class TEAIndicators:
         cc_amplification = cc_mean / ref_mean
         
         # drop all spread variables
-        amplification_factors = amplification_factors.drop([vvar for vvar in amplification_factors.data_vars if
-                                                            'slow' in vvar or 'supp' in vvar])
-        cc_amplification = cc_amplification.drop([vvar for vvar in cc_amplification.data_vars if
-                                                  'slow' in vvar or 'supp' in vvar])
+        amplification_factors = amplification_factors.drop_vars([vvar for vvar in amplification_factors.data_vars if
+                                                                'slow' in vvar or 'supp' in vvar])
+        cc_amplification = cc_amplification.drop_vars([vvar for vvar in cc_amplification.data_vars if
+                                                       'slow' in vvar or 'supp' in vvar])
 
         for vvar in amplification_factors.data_vars:
             # update attributes
@@ -959,7 +976,7 @@ class TEAIndicators:
         for vvar in self.amplification_factors.data_vars:
             # loop through equal_vars dict
             for equal_var, repl_var in equal_vars.items():
-                if equal_var in vvar and not 'avg' in vvar and not 'Md' in vvar and not 'Max' in vvar:
+                if equal_var in vvar and 'avg' not in vvar and 'Md' not in vvar and 'Max' not in vvar:
                     self.amplification_factors[vvar.replace(equal_var, repl_var)] = self.amplification_factors[vvar]
     
     def save_amplification_factors(self, filepath):
@@ -1055,7 +1072,8 @@ class TEAIndicators:
         
         # drop all non GR variables
         if not self.calc_grid:
-            self.daily_results = self.daily_results.drop([var for var in self.daily_results.data_vars if 'GR' not in var])
+            self.daily_results = self.daily_results.drop_vars([var for var in self.daily_results.data_vars if 'GR' not
+                                                               in var])
         self._filter_CTP()
         self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
         self._CTP_resample_sum = self._CTP_resampler.sum('time')
