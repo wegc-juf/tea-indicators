@@ -354,8 +354,8 @@ def calc_ctp_indicators(opts):
         # use European masks
         masks, static = load_static_files(opts=opts, large_gr=True)
         data = get_data(opts=opts)
-        largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
-        return
+        tea_agr = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
+        return tea_agr
 
     # computation of daily basis variables (Methods chapter 3)
     if opts.recalc_daily:
