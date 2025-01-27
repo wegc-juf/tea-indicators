@@ -112,7 +112,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     ctp_path = (f'{opts.outpath}/ctp_indicator_variables/'
                 f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                 f'_{opts.start}to{opts.end}.nc')
-    create_tea_history(cli_params=sys.argv, tea=tea_agr, result_type='ctp_agr')
+    create_tea_history(cli_params=sys.argv, tea=tea_agr, result_type='CTP')
     tea_agr.apply_mask()
     # TODO: check if var attributes are correct
     tea_agr.save_ctp_results(ctp_path)
