@@ -43,7 +43,7 @@ def load_ctp_data(opts, tea):
     filenames = (f'{ctppath}CTP_{opts.param_str}_{opts.region}_{opts.period}'
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
-    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
+    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if not 'ref' in file]
 
     tea.load_CTP_results(files)
 
