@@ -117,13 +117,14 @@ def calc_tea_large_gr(opts, data, masks, static):
     # TODO: check if var attributes are correct
     tea_agr.save_ctp_results(ctp_path)
     
-    ref_path = ctp_path.replace('.nc', '_ref.nc')
-    ref_data = xr.open_dataset(ref_path)
-    if 'ctp' in ref_data.coords:
-        ref_data = ref_data.rename({'ctp': 'time'})
-        ref_data = ref_data.rename({vvar: vvar.replace('avg', '_avg') for vvar in ref_data.data_vars if 'avg' in vvar})
-    
-    compare_data = tea_agr.get_ctp_results()
-    compare_to_ref(compare_data, ref_data, relative=True)
-    del tea_agr
+    if opts.compare_to_ref:
+        ref_path = ctp_path.replace('.nc', '_ref.nc')
+        ref_data = xr.open_dataset(ref_path)
+        if 'ctp' in ref_data.coords:
+            ref_data = ref_data.rename({'ctp': 'time'})
+            ref_data = ref_data.rename({vvar: vvar.replace('avg', '_avg') for vvar in ref_data.data_vars if 'avg' in vvar})
+        
+        compare_data = tea_agr.get_ctp_results()
+        compare_to_ref(compare_data, ref_data, relative=True)
+    return tea_agr
     
