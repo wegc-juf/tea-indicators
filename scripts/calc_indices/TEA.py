@@ -386,6 +386,8 @@ class TEAIndicators:
             
             # equation 13_3
             aep = (doy_last - doy_first + 1) / 30.5
+            # set aep values where EF == 0 to 0
+            aep = xr.where(self.CTP_results.EF == 0, 0, aep)
             aep.attrs = get_attrs(vname='AEP')
             
             self.CTP_results['doy_first'] = doy_first
@@ -405,6 +407,8 @@ class TEAIndicators:
         
         # equation 13_6
         aep_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
+        # set aep values where EF == 0 to 0
+        aep_gr = xr.where(self.CTP_results.EF_GR == 0, 0, aep_gr)
         
         doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
         doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
