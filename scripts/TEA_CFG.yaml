@@ -19,14 +19,13 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    # end: 1970
     period: WAS
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
     statpath: /home/wegnet/results/static/
-    tmppath: /home/hst/tmp_data/TEAclean/largeGR/
+    tmppath: /home/wegnet/results/TEA_indicators/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
@@ -69,8 +68,8 @@ calc_TEA:
   recalc_daily: false
   decadal: false
   spreads: false
-  decadal_only: false
-  recalc_decadal: false
+  decadal_only: true
+  recalc_decadal: true
   compare_to_ref: false
   save_old: false
 
@@ -79,7 +78,7 @@ calc_station_TEA:
   <<: *PARAM
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /home/wegnet/results/static/
+  outpath: /home/wegnet/results/TEA_indicators/station_indices/
 
 calc_amplification_factors:
   <<: *GR
@@ -87,8 +86,8 @@ calc_amplification_factors:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /home/wegnet/results/static/
+  inpath: /home/wegnet/results/TEA_indicators/dec_indicator_variables/
+  outpath: /home/wegnet/results/TEA_indicators/amplification/
 
 calc_AGR_vars:
   <<: *GR
@@ -96,7 +95,7 @@ calc_AGR_vars:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /home/wegnet/results/static/
+  inpath: /home/wegnet/results/TEA_indicators/dec_indicator_variables/
+  outpath: /home/wegnet/results/TEA_indicators/amplification/
   agr: AUT
   spreads: false
