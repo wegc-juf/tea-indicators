@@ -68,6 +68,33 @@ def create_history(cli_params, ds):
     return ds
 
 
+def create_history_from_cfg(cfg_params, ds):
+    """
+    add history to dataset
+    :param cfg_params: CFG parameter
+    :param ds: dataset
+    :return: ds with history in attrs
+    """
+    
+    parts = []
+    for key, value in vars(cfg_params).items():
+        if key != 'script':
+            part = f"--{key} {value}"
+            parts.append(part)
+    params = ' '.join(parts)
+    
+    script = cfg_params.script.split('/')[-1]
+    
+    if 'history' in ds.attrs:
+        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+    else:
+        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+    
+    ds.attrs['history'] = new_hist
+    
+    return ds
+
+
 def create_tea_history(cfg_params, tea, result_type):
     """
     add history to dataset
