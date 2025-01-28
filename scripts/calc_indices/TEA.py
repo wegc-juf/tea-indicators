@@ -921,11 +921,13 @@ class TEAIndicators:
                                                         aep=period_mean.AEP.values)
         period_mean['doy_first'].values = doy_first
         period_mean['doy_last'].values = doy_last
-        doy_first_gr, doy_last_gr = self._calc_doy_adjustment(doy_first=period_mean.doy_first_GR.values,
-                                                              doy_last=period_mean.doy_last_GR.values,
-                                                              aep=period_mean.AEP_GR.values)
-        period_mean['doy_first_GR'].values = doy_first_gr
-        period_mean['doy_last_GR'].values = doy_last_gr
+        
+        if 'doy_first_GR' in period_mean:
+            doy_first_gr, doy_last_gr = self._calc_doy_adjustment(doy_first=period_mean.doy_first_GR.values,
+                                                                  doy_last=period_mean.doy_last_GR.values,
+                                                                  aep=period_mean.AEP_GR.values)
+            period_mean['doy_first_GR'].values = doy_first_gr
+            period_mean['doy_last_GR'].values = doy_last_gr
         return period_mean
     
     def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2022)):
