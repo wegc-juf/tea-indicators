@@ -9,7 +9,7 @@ import xarray as xr
 import warnings
 
 from scripts.general_stuff.var_attrs import get_attrs
-from scripts.general_stuff.general_functions import create_history, compare_to_ref
+from scripts.general_stuff.general_functions import compare_to_ref
 from scripts.general_stuff.TEA_logger import logger
 from TEA import TEAIndicators
 
@@ -159,4 +159,5 @@ def calc_amplification_factors(opts, tea):
     logger.info(f'Saving amplification factors to {out_path}')
     tea.save_amplification_factors(out_path)
 
+    save_output(opts=opts, data=dec_data, su=su, sl=sl, suppl=suppl)
 

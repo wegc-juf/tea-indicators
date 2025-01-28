@@ -4,18 +4,15 @@
 @author: hst
 """
 
-import argparse
 import copy
-
 import numpy as np
 import os
-import pandas as pd
-import re
 import sys
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, extend_tea_opts, ref_cc_params
+from scripts.general_stuff.general_functions import (create_history_from_cfg, ref_cc_params,
+                                                     load_opts)
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
                                                              calc_basis_amplification_factors,
@@ -26,110 +23,6 @@ DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
 
 PARAMS = ref_cc_params()
-
-
-def getopts():
-    """
-    get arguments
-    :return: command line parameters
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path')
-
-    def float_1pcd(value):
-        if not re.match(r'^\d+(\.\d{1})?$', value):
-            raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
-                                             'the decimal point')
-        return float(value)
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--start',
-                        default=1961,
-                        type=int,
-                        help='Start of the interval to be processed [default: 1961].')
-
-    parser.add_argument('--end',
-                        default=pd.to_datetime('today').year,
-                        type=int,
-                        help='End of the interval to be processed [default: current year].')
-
-    parser.add_argument('--period',
-                        dest='period',
-                        default='WAS',
-                        type=str,
-                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
-                        help='Climatic time period (CTP) of interest. '
-                             'Options: monthly, seasonal, WAS, ESS, JJA, and  annual [default].')
-
-    parser.add_argument('--agr',
-                        default='EUR',
-                        type=str,
-                        help='Aggregate GeoRegion. Options: EUR, S-EUR, C-EUR, N-EUR, AUT, '
-                             'or ISO2-code of country.')
-
-    parser.add_argument('--parameter',
-                        default='Tx',
-                        type=str,
-                        help='Parameter for which the TEA indices should be calculated.')
-
-    parser.add_argument('--unit',
-                        default='degC',
-                        type=str,
-                        help='Physical unit of chosen parameter.')
-
-    parser.add_argument('--precip',
-                        action='store_true',
-                        help='Set if chosen parameter is a precipitation parameter.')
-
-    parser.add_argument('--threshold',
-                        default=99,
-                        type=float_1pcd,
-                        help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
-
-    parser.add_argument('--threshold-type',
-                        dest='threshold_type',
-                        type=str,
-                        choices=['perc', 'abs'],
-                        default='perc',
-                        help='Pass "perc" (default) if percentiles should be used as thresholds or '
-                             '"abs" for absolute thresholds.')
-
-    parser.add_argument('--inpath',
-                        default='/data/users/hst/TEA-clean/TEA/dec_indicator_variables/',
-                        type=dir_path,
-                        help='Path of folder where data is located.')
-
-    parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
-                        help='Path of folder where output data should be saved.')
-
-    parser.add_argument('--statpath',
-                        type=dir_path,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
-                        help='Path of folder where static file is located.')
-
-    parser.add_argument('--dataset',
-                        dest='dataset',
-                        default='ERA5',
-                        type=str,
-                        choices=['ERA5', 'ERA5Land'],
-                        help='Input dataset. Options: ERA5 (default) or ERA5Land.')
-
-    parser.add_argument('--spreads',
-                        dest='spreads',
-                        default=False,
-                        action='store_true',
-                        help='Set if spread estimators of decadal TEA indicators should also '
-                             'be calculated. Default: False.')
-
-    myopts = parser.parse_args()
-
-    return myopts
 
 
 def load_data(opts, suppl=False):
@@ -177,7 +70,6 @@ def calc_grid_afacs(opts, data):
     # adjust opts for calc_amplification_factors.py functions
     af_opts = copy.deepcopy(opts)
     af_opts.maskpath = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-    af_opts.region = 'EUR'
 
     # calc mean of REF and CC periods
     ref_avg, cc_avg = calc_ref_cc_mean(data=data)
@@ -451,7 +343,7 @@ def save_output(opts, data):
 
     for vvars in data.keys():
         ds = data[vvars]
-        ds = create_history(cli_params=sys.argv, ds=ds)
+        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
         ds.to_netcdf(outpaths[vvars])
 
 
@@ -510,10 +402,8 @@ def calc_spread_estimates(gdata, data, areas, afacs=False):
 
 
 def run():
-    opts = getopts()
-
-    # add necessary strings to opts
-    opts = extend_tea_opts(opts)
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     # load area grid (0.5°)
     if 'EUR' in opts.agr:

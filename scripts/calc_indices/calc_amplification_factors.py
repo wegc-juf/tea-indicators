@@ -4,17 +4,16 @@
 @author: hst
 """
 
-import argparse
 import logging
 import numpy as np
 import os
-import pandas as pd
 from pathlib import Path
 import sys
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, ref_cc_params, extend_tea_opts
+from scripts.general_stuff.general_functions import (create_history_from_cfg, ref_cc_params,
+                                                     load_opts)
 from scripts.general_stuff.var_attrs import get_attrs
 
 logging.basicConfig(
@@ -23,99 +22,6 @@ logging.basicConfig(
 )
 
 PARAMS = ref_cc_params()
-
-
-def getopts():
-    """
-    get arguments
-    :return: command line parameters
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path')
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--start',
-                        default=1961,
-                        type=int,
-                        help='Start of the interval to be processed [default: 1961].')
-
-    parser.add_argument('--end',
-                        default=pd.to_datetime('today').year,
-                        type=int,
-                        help='End of the interval to be processed [default: current year].')
-
-    parser.add_argument('--period',
-                        dest='period',
-                        default='WAS',
-                        type=str,
-                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
-                        help='Climatic time period (CTP) of interest. '
-                             'Options: monthly, seasonal, WAS, ESS, JJA, and  annual [default].')
-
-    parser.add_argument('--region',
-                        default='AUT',
-                        type=str,
-                        help='GeoRegion. Options: EUR, AUT (default), SAR, SEA, FBR, '
-                             'Austrian state, or ISO2 code of a european country.')
-
-    parser.add_argument('--parameter',
-                        default='Tx',
-                        type=str,
-                        help='Parameter for which the TEA indices should be calculated'
-                             '[default: Tx].')
-
-    parser.add_argument('--unit',
-                        default='degC',
-                        type=str,
-                        help='Physical unit of chosen parameter.')
-
-    parser.add_argument('--precip',
-                        action='store_true',
-                        help='Set if chosen parameter is a precipitation parameter.')
-
-    parser.add_argument('--threshold',
-                        default=99,
-                        type=float,
-                        help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
-
-    parser.add_argument('--threshold-type',
-                        dest='threshold_type',
-                        type=str,
-                        choices=['perc', 'abs'],
-                        default='perc',
-                        help='Pass "perc" (default) if percentiles should be used as thresholds or '
-                             '"abs" for absolute thresholds.')
-
-    parser.add_argument('--inpath',
-                        default='/data/users/hst/TEA-clean/TEA/dec_indicator_variables/',
-                        type=dir_path,
-                        help='Path of folder where TEA data is located.')
-
-    parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
-                        help='Path of folder where output data should be saved.')
-
-    parser.add_argument('--maskpath',
-                        type=dir_path,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
-                        help='Path of folder where mask file is located.')
-
-    parser.add_argument('--dataset',
-                        dest='dataset',
-                        default='SPARTACUS',
-                        type=str,
-                        choices=['SPARTACUS', 'ERA5', 'ERA5Land'],
-                        help='Input dataset. Options: SPARTACUS (default), ERA5, ERA5Land.')
-
-    myopts = parser.parse_args()
-
-    return myopts
-
 
 def load_data(opts):
     """
@@ -176,6 +82,8 @@ def calc_basis_amplification_factors(data, ref, cc):
         af_cc_ds: AF CC ds
 
     """
+    # only use data with positive values in reference period to avoid inf-values later on
+    ref = ref.where(ref > 0)
 
     af_ds = data / ref
     af_cc_ds = cc / ref
@@ -281,7 +189,8 @@ def save_output(opts, af, af_cc):
         if 'GR' not in vvar:
             ds_out[vvar] = ds_out[vvar].where(mask == 1)
 
-    ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+    ds_out = create_history_from_cfg(cfg_params=opts, ds=ds_out)
+    # ds_out = create_history(cli_params=sys.argv, ds=ds_out)
     path = Path(f'{opts.outpath}amplification/')
     path.mkdir(parents=True, exist_ok=True)
     ds_out.to_netcdf(f'{opts.outpath}amplification/'
@@ -289,8 +198,8 @@ def save_output(opts, af, af_cc):
                      f'_{opts.start}to{opts.end}.nc')
 
 def run():
-    opts = getopts()
-    opts = extend_tea_opts(opts)
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     # load DEC TEA data
     ds = load_data(opts=opts)

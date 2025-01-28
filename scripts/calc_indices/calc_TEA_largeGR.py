@@ -11,7 +11,7 @@ warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
 warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history, compare_to_ref, create_tea_history
+from scripts.general_stuff.general_functions import compare_to_ref, create_tea_history
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
@@ -113,7 +113,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     ctp_path = (f'{opts.outpath}/ctp_indicator_variables/'
                 f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                 f'_{opts.start}to{opts.end}.nc')
-    create_tea_history(cli_params=sys.argv, tea=tea_agr, result_type='CTP')
+    create_tea_history(cfg_params=opts, tea=tea_agr, result_type='CTP')
     tea_agr.apply_mask()
     # TODO: check if var attributes are correct
     tea_agr.save_ctp_results(ctp_path)

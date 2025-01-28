@@ -3,96 +3,14 @@ create region masks for TEA indicator calculation
 author: hst
 """
 
-import argparse
 import geopandas as gpd
 import numpy as np
-import os
 from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
-import sys
 from tqdm import trange
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history, load_opts
-
-
-def get_opts():
-    """
-    get CLI parameter
-
-    Returns:
-        myopts: CLI parameter
-
-    """
-
-    def file(entry):
-        if os.path.isfile(entry):
-            return entry
-        else:
-            raise argparse.ArgumentTypeError(f'{entry} is not a valid file')
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--region', default='AUT', type=str,
-                        help='Region for mask creation.')
-
-    parser.add_argument('--subreg',
-                        type=str,
-                        help='Optional: Only necessary if selected region is not the entire region '
-                             'in the shp file (Austrian states, european countries etc.). '
-                             'In case of Austrian states, give name of state. '
-                             'In case of european country, give ISO2 code of country.')
-
-    parser.add_argument('--target-sys',
-                        dest='target_sys',
-                        default=3416,
-                        type=int,
-                        help='ID of wanted coordinate System (https://epsg.io) which should be '
-                             'used for mask. Default: 3416 (ETRS89 / Austria Lambert).')
-
-    parser.add_argument('--target-ds',
-                        dest='target_ds',
-                        default='SPARTACUS',
-                        type=str,
-                        help='Dataset for which mask should be created. Default: SPARTACUS')
-
-    parser.add_argument('--xy-name',
-                        dest='xy_name',
-                        type=str,
-                        default='x,y',
-                        help='Names of x and y coordinates in testfile, separated by ",". '
-                             'Default: x,y')
-
-    parser.add_argument('--shpfile',
-                        type=file,
-                        help='Shape file of region.')
-
-    parser.add_argument('--testfile',
-                        type=file,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/'
-                                'SPARTACUS-DAILY_Tx_1961.nc',
-                        help='File with coordinate information of target grid.')
-
-    parser.add_argument('--orofile',
-                        type=file,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/'
-                                'SPARTACUSreg_orography.nc',
-                        help='File with orography information of target grid.')
-
-    parser.add_argument('--lsmfile',
-                        type=file,
-                        default='/data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc',
-                        help='File with land sea mask of target grid. Only necessary if mask for '
-                             'EUR should be created.')
-
-    parser.add_argument('--outpath',
-                        dest='outpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
-                        help='Path of folder where output data should be saved.')
-
-    myopts = parser.parse_args()
-
-    return myopts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
 
 def load_shp(opts):
@@ -248,7 +166,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
@@ -325,7 +243,7 @@ def run_eur(opts):
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
     ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
 
@@ -441,15 +359,15 @@ def run_custom_gr(opts):
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-    ds = create_history(cli_params=sys.argv, ds=ds)
+    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
     ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
 
 
 def run():
-    # opts = get_opts()
-    opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     if opts.gr_type != 'polygon':
         run_custom_gr(opts=opts)
@@ -538,7 +456,7 @@ def run():
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
         else:
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-        ds = create_history(cli_params=sys.argv, ds=ds)
+        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
         out_region = opts.region
         if opts.subreg:

@@ -15,10 +15,10 @@ import re
 import sys
 import warnings
 import xarray as xr
+import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import (create_tea_history, extend_tea_opts,
-                                                     load_opts, compare_to_ref)
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, compare_to_ref
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
@@ -29,171 +29,6 @@ from scripts.calc_indices.TEA import TEAIndicators
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
              'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
-
-
-def getopts():
-    """
-    get arguments
-    :return: command line parameters
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
-
-    def float_1pcd(value):
-        if not re.match(r'^\d+(\.\d)?$', value):
-            raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
-                                             'the decimal point.')
-        return float(value)
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--start',
-                        default=1961,
-                        type=int,
-                        help='Start of the interval to be processed [default: 1961].')
-
-    parser.add_argument('--end',
-                        default=pd.to_datetime('today').year,
-                        type=int,
-                        help='End of the interval to be processed [default: current year].')
-
-    parser.add_argument('--period',
-                        dest='period',
-                        default='WAS',
-                        type=str,
-                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA', 'EWS'],
-                        help='Climatic time period (CTP) of interest. '
-                             'Options: monthly, seasonal, WAS, ESS, EWS, JJA, and  annual [default].')
-
-    parser.add_argument('--region',
-                        default='AUT',
-                        type=str,
-                        help='GeoRegion. Options: EUR, AUT (default), SAR, SEA, FBR, '
-                             'Austrian state, or ISO2 code of a european country.')
-
-    parser.add_argument('--parameter',
-                        default='Tx',
-                        type=str,
-                        help='Parameter for which the TEA indices should be calculated'
-                             '[default: Tx].')
-
-    parser.add_argument('--unit',
-                        default='degC',
-                        type=str,
-                        help='Physical unit of chosen parameter.')
-
-    parser.add_argument('--precip',
-                        action='store_true',
-                        help='Set if chosen parameter is a precipitation parameter.')
-
-    parser.add_argument('--threshold',
-                        default=99,
-                        type=float_1pcd,
-                        help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
-
-    parser.add_argument('--threshold-type',
-                        dest='threshold_type',
-                        type=str,
-                        choices=['perc', 'abs'],
-                        default='perc',
-                        help='Pass "perc" (default) if percentiles should be used as thresholds or '
-                             '"abs" for absolute thresholds.')
-
-    parser.add_argument('--low-extreme',
-                        dest='low_extreme',
-                        default=False,
-                        action='store_true',
-                        help='Set if values should be lower than threshold to classify as extreme, '
-                             'e.g. for cold extremes.')
-
-    parser.add_argument('--inpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/',
-                        type=dir_path,
-                        help='Path of folder where data is located.')
-
-    parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
-                        help='Path of folder where output data should be saved.')
-
-    parser.add_argument('--statpath',
-                        type=dir_path,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
-                        help='Path of folder where static file is located.')
-
-    parser.add_argument('--maskpath',
-                        type=dir_path,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
-                        help='Path of folder where mask file is located.')
-
-    parser.add_argument('--tmppath',
-                        type=dir_path,
-                        default='/home/hst/tmp_data/TEAclean/largeGR/',
-                        help='Path of folder where tmp files should be stored. '
-                             'Only relevant if large GR (> 100 areals) are processed with '
-                             'ERA5(-Land) data.')
-
-    parser.add_argument('--dataset',
-                        dest='dataset',
-                        default='SPARTACUS',
-                        type=str,
-                        choices=['SPARTACUS', 'ERA5', 'ERA5Land'],
-                        help='Input dataset. Options: SPARTACUS (default), ERA5, ERA5Land.')
-
-    parser.add_argument('--decadal',
-                        dest='decadal',
-                        default=False,
-                        action='store_true',
-                        help='Set if decadal TEA indicators should also be calculated. '
-                             'Only possible if end - start >= 10.')
-
-    parser.add_argument('--spreads',
-                        dest='spreads',
-                        default=False,
-                        action='store_true',
-                        help='Set if spread estimators of decadal TEA indicators should also '
-                             'be calculated. Default: False.')
-
-    parser.add_argument('--decadal-only',
-                        dest='decadal_only',
-                        default=False,
-                        action='store_true',
-                        help='Set if ONLY decadal TEA indicators should be calculated. '
-                             'Only possible if CTP vars already calculated.')
-    
-    parser.add_argument('--recalc-daily',
-                        dest='recalc_daily',
-                        default=False,
-                        action='store_true',
-                        help='Set if daily basis variables should be recalculated. Default: False - read from file.')
-    
-    parser.add_argument('--recalc-decadal',
-                        dest='recalc_decadal',
-                        default=False,
-                        action='store_true',
-                        help='Set if decadal data should be recalculated. Default: False - read from file.')
-    
-    parser.add_argument('--compare-to-ref',
-                        dest='compare_to_ref',
-                        default=False,
-                        action='store_true',
-                        help='Set if results should be compared to reference file. Default: False.')
-    
-    parser.add_argument('--save-old',
-                        dest='save_old',
-                        default=False,
-                        action='store_true',
-                        help='Set if old output files should be saved. Default: False.')
-
-    myopts = parser.parse_args()
-    
-    # add dataset to inpath
-    myopts.inpath = f'{myopts.inpath}/{myopts.dataset}/'
-
-    return myopts
 
 
 def get_data(opts):
@@ -403,17 +238,9 @@ def run():
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
     
     tea = TEAIndicators()
-
-    # load CLI parameter
-    if len(sys.argv) > 1:
-        # get command line parameters
-        opts = getopts()
-    else:
-        # get parameters from yaml config
-        opts = load_opts(script_name=sys.argv[0].split('/')[-1].split('.py')[0])
-
-    # add necessary strings to opts
-    opts = extend_tea_opts(opts)
+    
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     # check length of input time span
     start = opts.start
