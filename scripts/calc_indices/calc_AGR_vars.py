@@ -59,7 +59,7 @@ def load_data(opts, suppl=False):
     else:
         lat_min = agr_lims[opts.agr][0]
         lat_max = agr_lims[opts.agr][1]
-    ds = ds.sel(lat=slice(lat_min, lat_max))
+    ds = ds.sel(lat=slice(lat_max, lat_min))
 
     lims = [lat_max, lat_min]
 
@@ -75,7 +75,7 @@ def calc_grid_afacs(opts, data):
     ref_avg, cc_avg = calc_ref_cc_mean(data=data)
 
     # calc amplification factors of basis variables
-    bvars = [vvar for vvar in data.data_vars if vvar not in ['TEX', 'ESavg']]
+    bvars = [vvar for vvar in data.data_vars if vvar not in ['TEX', 'ES_avg']]
     af, af_cc = calc_basis_amplification_factors(data=data[bvars], ref=ref_avg[bvars],
                                                  cc=cc_avg[bvars])
 
