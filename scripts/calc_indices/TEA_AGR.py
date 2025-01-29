@@ -291,7 +291,8 @@ class TEAAgr(TEAIndicators):
         """
         generate mask for aggregated GeoRegion
         """
-        lats, lons = self._get_lats_lons()
+        logger.info('Generating AGR mask')
+        lats, lons = self._get_lats_lons(margin=0)
         mask_orig = self.mask
         area_orig = self.area_grid
         res_orig = self.lat_resolution
@@ -308,10 +309,10 @@ class TEAAgr(TEAIndicators):
         
         for llat in mask_agr.lat:
             for llon in mask_agr.lon:
-                cell_orig = mask_orig.sel(lat=slice(llat + res_orig, llat - res_orig),
-                                          lon=slice(llon - res_orig, llon + res_orig))
-                cell_area = area_orig.sel(lat=slice(llat + res_orig, llat - res_orig),
-                                          lon=slice(llon - res_orig, llon + res_orig))
+                cell_orig = mask_orig.sel(lat=slice(llat, llat - res_orig),
+                                          lon=slice(llon, llon + res_orig))
+                cell_area = area_orig.sel(lat=slice(llat, llat - res_orig),
+                                          lon=slice(llon, llon + res_orig))
                 valid_cells = cell_orig.sum()
                 if valid_cells == 0:
                     continue

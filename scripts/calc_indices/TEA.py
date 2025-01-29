@@ -873,7 +873,7 @@ class TEAIndicators:
             period: current climate period: tuple(start year, end year)
         """
         start_year, end_year = period
-        cc_mean = self._calc_gmean(start_year=start_year, end_year=end_year)
+        cc_mean = self._calc_gmean_decadal(start_year=start_year, end_year=end_year)
         for vvar in cc_mean.data_vars:
             cc_mean[vvar].attrs = self.decadal_results[vvar].attrs
             if 'long_name' in cc_mean[vvar].attrs:
@@ -888,7 +888,7 @@ class TEAIndicators:
             period: reference period: tuple(start year, end year)
         """
         start_year, end_year = period
-        ref_mean = self._calc_gmean(start_year=start_year, end_year=end_year)
+        ref_mean = self._calc_gmean_decadal(start_year=start_year, end_year=end_year)
         
         for vvar in ref_mean.data_vars:
             ref_mean[vvar].attrs = self.decadal_results[vvar].attrs
@@ -896,7 +896,7 @@ class TEAIndicators:
                 ref_mean[vvar].attrs['long_name'] = 'Ref mean of ' + ref_mean[vvar].attrs['long_name']
         self._ref_mean = ref_mean
     
-    def _calc_gmean(self, start_year, end_year):
+    def _calc_gmean_decadal(self, start_year, end_year):
         """
         calculate geometric mean for given period
         Args:

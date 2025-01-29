@@ -11,7 +11,7 @@ warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
 warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import compare_to_ref, create_tea_history
+from scripts.general_stuff.general_functions import compare_to_ref, create_tea_history, create_history_from_cfg
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
@@ -80,7 +80,7 @@ def calc_tea_large_gr(opts, data, masks, static):
     
     # load agr mask
     try:
-        agr_mask = xr.open_dataset(f'{opts.statpath}{opts.region}_mask_0p5_{opts.dataset}.nc')
+        agr_mask = xr.open_dataset(f'{opts.statpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
         agr_mask = agr_mask.mask_lt1500
     except FileNotFoundError:
         agr_mask = None
@@ -89,12 +89,16 @@ def calc_tea_large_gr(opts, data, masks, static):
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
                      agr_mask=agr_mask, land_frac_min=land_frac_min, cell_size_lat=cell_size_lat, ctp=opts.period,
                      unit=opts.unit, low_extreme=opts.low_extreme)
+    
+    if agr_mask is None:
+        save_0p5_mask(opts, tea_agr.agr_mask, tea_agr.agr_area)
+    
     tea_agr.calc_daily_basis_vars()
 
     # for testing with only one latitude or debugging
     if False:
-        lons = [38]
-        lat = 47
+        lons = [37]
+        lat = 51
         tea_agr.calc_tea_agr(lats=[lat], lons=lons)
         res = tea_agr.get_ctp_results()
         res = res.sel(lat=lat, lon=slice(lons[0], lons[-1]))
@@ -128,4 +132,25 @@ def calc_tea_large_gr(opts, data, masks, static):
         compare_data = tea_agr.get_ctp_results()
         compare_to_ref(compare_data, ref_data, relative=True)
     return tea_agr
-    
+
+
+def save_0p5_mask(opts, mask_0p5, area_0p5):
+    """
+    save mask on 0.5° grid to netcdf file
+    Args:
+        opts: CLI parameter
+        mask_0p5: mask on 0.5° grid
+        area_0p5: area grid on 0.5° grid
+    """
+    area_0p5 = create_history_from_cfg(cfg_params=opts, ds=area_0p5)
+    try:
+        area_0p5.to_netcdf(f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+    except PermissionError:
+        area_0p5.to_netcdf(f'{opts.outpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+
+    # save 0.5° mask
+    mask_0p5 = create_history_from_cfg(cfg_params=opts, ds=mask_0p5)
+    try:
+        mask_0p5.to_netcdf(f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
+    except PermissionError:
+        mask_0p5.to_netcdf(f'{opts.outpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')

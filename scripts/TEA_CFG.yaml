@@ -68,7 +68,7 @@ calc_TEA:
   recalc_daily: false
   decadal: false
   spreads: false
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
   save_old: false
@@ -97,5 +97,5 @@ calc_AGR_vars:
   <<: *PATHS
   inpath: /home/wegnet/results/TEA_indicators/dec_indicator_variables/
   outpath: /home/wegnet/results/TEA_indicators/amplification/
-  agr: AUT
+  agr: EUR
   spreads: false
