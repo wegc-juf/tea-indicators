@@ -98,10 +98,11 @@ def create_history_from_cfg(cfg_params, ds):
 def create_tea_history(cfg_params, tea, result_type):
     """
     add history to dataset
-    :param cli_params: CLI parameter
+    :param cfg_params: yaml config parameters
     :param tea: TEA object
     :param result_type: result type (e.g. 'CTP')
     """
+    ds = getattr(tea, f'{result_type}_results')
     
     parts = []
     for key, value in vars(cfg_params).items():
