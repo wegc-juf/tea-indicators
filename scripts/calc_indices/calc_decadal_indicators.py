@@ -158,6 +158,3 @@ def calc_amplification_factors(opts, tea):
     # save amplification factors
     logger.info(f'Saving amplification factors to {out_path}')
     tea.save_amplification_factors(out_path)
-
-    save_output(opts=opts, data=dec_data, su=su, sl=sl, suppl=suppl)
-
