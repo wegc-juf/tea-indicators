@@ -524,10 +524,10 @@ def create_0p5_mask(opts, mask_0p25, area_0p25, lats):
 
     for llat in mask_0p5.lat:
         for llon in mask_0p5.lon:
-            cell_0p25 = mask_0p25.sel(lat=slice(llat + 0.25, llat - 0.25),
-                                      lon=slice(llon - 0.25, llon + 0.25))
-            cell_area = area_0p25.sel(lat=slice(llat + 0.25, llat - 0.25),
-                                      lon=slice(llon - 0.25, llon + 0.25))
+            cell_0p25 = mask_0p25.sel(lat=slice(llat, llat - 0.25),
+                                      lon=slice(llon, llon + 0.25))
+            cell_area = area_0p25.sel(lat=slice(llat, llat - 0.25),
+                                      lon=slice(llon, llon + 0.25))
             valid_cells = cell_0p25.sum()
             if valid_cells == 0:
                 continue
