@@ -3,6 +3,7 @@ from matplotlib.ticker import FormatStrFormatter, FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.patches as pat
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 
@@ -10,11 +11,11 @@ def get_data():
     af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/amplification/'
                          'AF_Tx30.0degC_AUT_WAS_SPARTACUS_1961to2024.nc')
 
-    # nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/natural_variability/'
-    #                  'NV_AF_Tx99.0p_AUT.csv',
-    #                  index_col=0)
+    nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/natural_variability/'
+                     'NV_AF_Tx30.0degC_AUT.csv',
+                     index_col=0)
 
-    return af#, nv
+    return af, nv
 
 
 def gr_plot_params(vname):
@@ -67,9 +68,9 @@ def plot_gr_data(ax, data, af_cc, nv):
     xvals = data.ctp
     xticks = np.arange(1961, 2025)
 
-    # nat_var_low = np.ones(len(xvals)) * (1 - nv.loc[props['nv_name'], 'lower'] * 1.645)
-    # nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc[props['nv_name'], 'upper'] * 1.645)
-    # ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=props['col'], alpha=0.2)
+    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc[props['nv_name'], 'lower'] * 1.645)
+    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc[props['nv_name'], 'upper'] * 1.645)
+    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=props['col'], alpha=0.2)
 
     ax.plot(xticks, data, 'o-', color=props['col'], markersize=3, linewidth=2)
 
@@ -116,9 +117,9 @@ def plot_tex_es(ax, data, af_cc, nv):
     xvals = data.ctp
     xticks = np.arange(1961, 2025)
 
-    # nat_var_low = np.ones(len(xvals)) * (1 - nv.loc['TEX', 'lower'] * 1.645)
-    # nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
-    # ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
+    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc['TEX', 'lower'] * 1.645)
+    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
+    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
 
     ax.plot(xticks, data['ESavg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
     ax.plot(xticks, data['TEX_GR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
@@ -241,20 +242,20 @@ def plot_map(fig, ax, data):
 
 
 def run():
-    data = get_data() #, natv
+    data, natv = get_data()
 
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
     gr_vars = ['EF_GR_AF', 'EDavg_GR_AF', 'EMavg_GR_AF', 'EAavg_GR_AF']
     for irow, gr_var in enumerate(gr_vars):
-        plot_gr_data(ax=axs[irow, 0], data=data[gr_var], af_cc=data[f'{gr_var}_CC'], nv=np.nan)
+        plot_gr_data(ax=axs[irow, 0], data=data[gr_var], af_cc=data[f'{gr_var}_CC'], nv=natv)
 
     map_vars = ['EF_AF_CC', 'EDavg_AF_CC', 'EMavg_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
 
     plot_tex_es(ax=axs[3, 1], data=data[['TEX_GR_AF', 'ESavg_GR_AF']],
-                af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=np.nan)
+                af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=natv)
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
     plt.savefig('/nas/home/hst/work/TEAclean/plots/misc/TEA-Indicators_AUT_30degC.png',
