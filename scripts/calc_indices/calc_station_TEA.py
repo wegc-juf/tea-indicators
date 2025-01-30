@@ -39,9 +39,9 @@ def load_data(opts):
 
     """
 
-    if opts.parameter == 'T':
+    if opts.parameter == 'Tx':
         pstr = 'Tmax'
-        rename_dict = {'tmax': 'T'}
+        rename_dict = {'tmax': 'Tx'}
     else:
         pstr = 'RR'
         rename_dict = {'nied': 'P'}
@@ -188,9 +188,6 @@ def calc_ctp_indicators(opts, data):
 def run():
     # load CFG parameter
     opts = load_opts(fname=__file__)
-
-    if opts.parameter == 'T':
-        opts.param_str = f'Tx{opts.threshold:.1f}p'
 
     data = load_data(opts=opts)
 

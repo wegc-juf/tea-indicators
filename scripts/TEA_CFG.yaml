@@ -74,7 +74,7 @@ calc_TEA:
 calc_station_TEA:
   <<: *TIME
   <<: *PARAM
-  station: Graz
+  station: Kremsmuenster
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /data/users/hst/TEA-clean/TEA/
 
@@ -97,3 +97,9 @@ calc_AGR_vars:
   outpath: /data/users/hst/TEA-clean/TEA/
   agr: AUT
   spreads: false
+
+natural_variability:
+  <<: *PARAM
+  <<: *GR
+  inpath: /data/users/hst/TEA-clean/TEA/
+  outpath: /data/users/hst/TEA-clean/TEA/
