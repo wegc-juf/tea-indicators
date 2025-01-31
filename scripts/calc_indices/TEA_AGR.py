@@ -22,8 +22,8 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, land_frac_min=0.5, cell_size_lat=2, ctp=None,
-                 **kwargs):
+                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, agr_area=None,
+                 land_frac_min=0.5, cell_size_lat=2, **kwargs):
         """
         initialize TEA object
         
@@ -37,10 +37,9 @@ class TEAAgr(TEAIndicators):
             land_sea_mask: land-sea mask
             land_frac_min: minimum fraction of land below 1500m
             cell_size_lat: size of AGR cell in latitudinal direction (in degrees)
-            ctp: climatic time period. For definition see TEAIndicators.set_ctp()
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
-                         mask=mask, min_area=min_area, apply_mask=False, ctp=ctp, **kwargs)
+                         mask=mask, min_area=min_area, apply_mask=False, **kwargs)
         if self.area_grid is not None:
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
@@ -56,6 +55,7 @@ class TEAAgr(TEAIndicators):
             self._generate_agr_mask()
         else:
             self.agr_mask = agr_mask
+            self.agr_area = agr_area
         
         # daily basis variables for aggregated GeoRegion
         self.dbv_agr_results = None
