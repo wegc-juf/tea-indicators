@@ -12,7 +12,6 @@ warnings.filterwarnings(action='ignore', message='divide by zero encountered in 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import compare_to_ref, create_tea_history, create_history_from_cfg
-from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
 from scripts.calc_indices.general_TEA_stuff import assign_ctp_coords

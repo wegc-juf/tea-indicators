@@ -220,7 +220,6 @@ class TEAAgr(TEAIndicators):
                 attrs['long_name'] = new_attrs['long_name']
                 self.CTP_results[var].attrs = attrs
         
-        
     def get_ctp_results(self, grid=True, gr=True):
         """
         get CTP results for aggregated GeoRegion

@@ -19,7 +19,6 @@ import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, compare_to_ref
-from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors

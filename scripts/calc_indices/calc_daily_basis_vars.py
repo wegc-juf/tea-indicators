@@ -6,7 +6,6 @@ from pathlib import Path
 import xarray as xr
 import numpy as np
 
-from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.TEA_logger import logger
 from TEA import TEAIndicators
 
