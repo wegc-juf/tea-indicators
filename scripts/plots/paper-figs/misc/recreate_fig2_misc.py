@@ -88,10 +88,15 @@ def map_plot_params(opts, vname):
                            'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
 
-    cb_params = {'AUT': {'vn': 1, 'vx': 6, 'delta': 0.5},
-                 'Niederösterreich': {'vn': 0, 'vx': 3, 'delta': 0.25}}
+    cb_params = {'AUT': {'vn': 0, 'vx': 6, 'delta': 0.5},
+                 'Niederösterreich': {'vn': 0, 'vx': 3, 'delta': 0.25},
+                 'SEA': {'vn': 0, 'vx': 4, 'delta': 0.25}}
+    if opts.region not in cb_params.keys():
+        cb_stuff = cb_params['AUT']
+    else:
+        cb_stuff = cb_params[opts.region]
 
-    return params[vname], cb_params[opts.region]
+    return params[vname], cb_stuff
 
 
 def plot_gr_data(opts, ax, data, af_cc, nv):
@@ -148,9 +153,13 @@ def plot_gr_data(opts, ax, data, af_cc, nv):
 def get_ylims(opts):
 
     values = {'AUT': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5}},
-              'Niederösterreich': {25: {'yn': 0.5, 'yx': 2, 'dy': 0.25}}}
+              'Niederösterreich': {25: {'yn': 0.5, 'yx': 2, 'dy': 0.25}},
+              'SEA': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5}}}
 
-    props = values[opts.region][opts.threshold]
+    try:
+        props = values[opts.region][opts.threshold]
+    except KeyError:
+        props = values['AUT'][30]
     yn, yx, dy = props['yn'], props['yx'], props['dy']
     ticks = np.arange(yn, yx + dy, dy)
 
@@ -160,9 +169,13 @@ def get_ylims(opts):
 def get_ylims_tex(opts):
 
     values = {'AUT': {30: {'yn': 0, 'yx': 9, 'dy': 1}},
-              'Niederösterreich': {25: {'yn': 0, 'yx': 4, 'dy': 0.5}}}
+              'Niederösterreich': {25: {'yn': 0, 'yx': 4, 'dy': 0.5}},
+              'SEA': {30: {'yn': 0, 'yx': 12, 'dy': 2}}}
 
-    props = values[opts.region][opts.threshold]
+    try:
+        props = values[opts.region][opts.threshold]
+    except KeyError:
+        props = values['AUT'][30]
     yn, yx, dy = props['yn'], props['yx'], props['dy']
     ticks = np.arange(yn, yx + dy, dy)
 
@@ -268,15 +281,16 @@ def plot_map(opts, fig, ax, data):
                           'AUT_masks_SPARTACUS.nc')
     ax.contourf(aut.nw_mask, colors='mistyrose')
 
-
     vn, vx = cb_props['vn'], cb_props['vx']
     lvls = np.arange(vn, vx + cb_props['delta'], cb_props['delta'])
     if data.max() > lvls[-1] and data.min() > lvls[0]:
         ext = 'max'
     elif data.max() < lvls[-1] and data.min() > lvls[0]:
         ext = 'neither'
-    else:
+    elif data.max() < lvls[-1] and data.min() < lvls[0]:
         ext = 'min'
+    else:
+        ext = 'both'
 
     range_vals = find_range(data=data)
 
@@ -284,7 +298,7 @@ def plot_map(opts, fig, ax, data):
     if opts.region in ['AUT', 'SEA']:
         ax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
                                    fill=False, linewidth=1))
-        ax.add_patch(pat.Rectangle(xy=(410, 28), height=92, width=125, edgecolor='black',
+        ax.add_patch(pat.Rectangle(xy=(400, 28), height=94, width=132, edgecolor='black',
                                    fill=False, linewidth=1))
 
     ax.axis('off')
