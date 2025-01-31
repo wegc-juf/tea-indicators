@@ -1,6 +1,6 @@
 common_params:
   GeoRegion: &GR
-    region: AUT
+    region: FBR
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -65,7 +65,7 @@ calc_TEA:
   outpath: /data/users/hst/TEA-clean/TEA/
   recalc_daily: true
   decadal: true
-  spreads: false
+  spreads: true
   decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
