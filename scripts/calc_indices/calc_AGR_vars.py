@@ -48,7 +48,7 @@ def load_data(opts, suppl=False):
     else:
         ag_reg = opts.agr
 
-    file = (f'{opts.inpath}{sdir}DEC{sstr}_{opts.param_str}_{ag_reg}_{opts.period}_{opts.dataset}'
+    file = (f'{opts.inpath}/{sdir}/DEC{sstr}_{opts.param_str}_{ag_reg}_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     ds = xr.open_dataset(file)
 
@@ -108,8 +108,8 @@ def calc_agr(opts, vdata, awgts):
     """
 
     # calc mean of ref period (Eq. 26)
-    ref_ds = vdata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
-    ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
+    ref_ds = vdata.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    ref_db = (1 / len(ref_ds.time)) * (np.log10(ref_ds)).sum(dim='time')
     vdata_ref = 10 ** ref_db
 
     # calc X_Ref^AGR and X_s^AGR (Eq. 34_1 and 34_2)
@@ -117,7 +117,7 @@ def calc_agr(opts, vdata, awgts):
     xt_s_agr = (awgts * vdata).sum(dim=('lat', 'lon'))
 
     # calc Xt_ref_db and Xt_ref_agr (Eq. 34_3)
-    x_s_agr_ref = xt_s_agr.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    x_s_agr_ref = xt_s_agr.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
     x_s_agr_ref = x_s_agr_ref.where((x_s_agr_ref > 0).compute(), drop=True)
     xt_ref_db = (10 / 21) * np.log10(x_s_agr_ref).sum()
     xt_ref_agr = 10 ** (xt_ref_db / 10)
@@ -130,7 +130,7 @@ def calc_agr(opts, vdata, awgts):
 
     # add attributes
     x_s_agr = x_s_agr.rename(f'{vdata.name}_AGR')
-    x_s_agr.attrs = get_attrs(opts=opts, vname=f'{vdata.name}_AGR')
+    x_s_agr.attrs = get_attrs(vname=f'{vdata.name}_AGR', data_unit=opts.unit)
 
     return x_ref_agr, x_s_agr
 
@@ -153,40 +153,48 @@ def calc_compound_vars(opts, agr, suppl, refs):
     ct_abl = 0.1507
 
     # REF variables
-    m_ref_agr = refs['EF_AGR'] * refs['EDavg_AGR'] * refs['EMavg_AGR']
-    savg_ref_agr = refs['EDavg_AGR'] * refs['EMavg_AGR'] * refs['EAavg_AGR']
+    m_ref_agr = refs['EF_AGR'] * refs['ED_avg_AGR'] * refs['EM_avg_AGR']
+    savg_ref_agr = refs['ED_avg_AGR'] * refs['EM_avg_AGR'] * refs['EA_avg_AGR']
     tex_ref_agr = refs['EF_AGR'] * savg_ref_agr
-    mmd_ref_agr = refs['EF_AGR'] * refs['EDavg_AGR'] * refs['EMavg_Md_AGR']
+    if 'EM_avg_Md_GR' in refs:
+        mmd_ref_agr = refs['EF_AGR'] * refs['ED_avg_AGR'] * refs['EM_avg_Md_AGR']
+    else:
+        mmd_ref_agr = None
     haehc_ref_agr = ct_abl * tex_ref_agr
 
     # Time series
-    m_s_agr = agr['EF_AGR'] * agr['EDavg_AGR'] * agr['EMavg_AGR']
-    savg_s_agr = agr['EDavg_AGR'] * agr['EMavg_AGR'] * agr['EAavg_AGR']
+    m_s_agr = agr['EF_AGR'] * agr['ED_avg_AGR'] * agr['EM_avg_AGR']
+    savg_s_agr = agr['ED_avg_AGR'] * agr['EM_avg_AGR'] * agr['EA_avg_AGR']
     tex_s_agr = agr['EF_AGR'] * savg_s_agr
     haehc_s_agr = ct_abl * tex_s_agr
-    if 'EMavg_Md_GR' in agr:
-        mmd_s_agr = agr['EF_AGR'] * agr['EDavg_AGR'] * agr['EMavg_Md_AGR']
+    if 'EM_avg_Md_GR' in agr:
+        mmd_s_agr = agr['EF_AGR'] * agr['ED_avg_AGR'] * agr['EM_avg_Md_AGR']
+    elif 'EM_avg_Md_AGR' in suppl:
+        mmd_s_agr = agr['EF_AGR'] * agr['ED_avg_AGR'] * suppl['EM_avg_Md_AGR']
     else:
-        mmd_s_agr = agr['EF_AGR'] * agr['EDavg_AGR'] * suppl['EMavg_Md_AGR']
+        mmd_s_agr = None
 
     # add vars to ds
     refs['EM_AGR'] = m_ref_agr
-    refs['ESavg_AGR'] = savg_ref_agr
+    refs['ES_avg_AGR'] = savg_ref_agr
     refs['TEX_AGR'] = tex_ref_agr
-    refs['EM_Md_AGR'] = mmd_ref_agr
+    if mmd_ref_agr is not None:
+        refs['EM_Md_AGR'] = mmd_ref_agr
     refs['H_AEHC_AGR'] = haehc_ref_agr
 
     suppl['EM_AGR'] = m_s_agr
-    agr['ESavg_AGR'] = savg_s_agr
+    agr['ES_avg_AGR'] = savg_s_agr
     agr['TEX_AGR'] = tex_s_agr
-    suppl['EM_Md_AGR'] = mmd_s_agr
+    if mmd_s_agr is not None:
+        suppl['EM_Md_AGR'] = mmd_s_agr
     suppl['H_AEHC_AGR'] = haehc_s_agr
 
-    for vvar in ['ESavg_AGR', 'TEX_AGR']:
-        agr[vvar].attrs = get_attrs(opts=opts, vname=vvar)
+    for vvar in ['ES_avg_AGR', 'TEX_AGR']:
+        agr[vvar].attrs = get_attrs(vname=vvar, data_unit=opts.unit)
 
     for vvar in ['EM_AGR', 'EM_Md_AGR', 'H_AEHC_AGR']:
-        suppl[vvar].attrs = get_attrs(opts=opts, vname=vvar)
+        if vvar in suppl:
+            suppl[vvar].attrs = get_attrs(vname=vvar, data_unit=opts.unit)
 
     return refs, agr, suppl
 
@@ -200,8 +208,8 @@ def calc_cc_mean(da):
     Returns:
 
     """
-    cc_da = da.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
-    cc_db = (1 / len(cc_da.ctp)) * (np.log10(cc_da)).sum(dim='ctp')
+    cc_da = da.sel(time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
+    cc_db = (1 / len(cc_da.time)) * (np.log10(cc_da)).sum(dim='time')
     da_cc = 10 ** cc_db
 
     return da_cc
@@ -257,33 +265,33 @@ def calc_compound_amplification_factors_grid(opts, af, af_cc):
 
     """
 
-    em_var = 'EMavg_AF'
+    em_var = 'EM_avg_AF'
     if opts.precip:
-        em_var = 'EMavg_Md_AF'
+        em_var = 'EM_avg_Md_AF'
 
     # tEX
-    af_tEX = af['EF_AF'] * af['EDavg_AF'] * af[em_var]
+    af_tEX = af['EF_AF'] * af['ED_avg_AF'] * af[em_var]
     af_tEX = af_tEX.rename('tEX_AF')
-    af_tEX = af_tEX.assign_attrs(get_attrs(opts=opts, vname='tEX_AF'))
-    af_cc_tEX = af_cc['EF_AF_CC'] * af_cc['EDavg_AF_CC'] * af_cc[f'{em_var}_CC']
+    af_tEX = af_tEX.assign_attrs(get_attrs(vname='tEX_AF', data_unit=opts.unit))
+    af_cc_tEX = af_cc['EF_AF_CC'] * af_cc['ED_avg_AF_CC'] * af_cc[f'{em_var}_CC']
     af_cc_tEX = af_cc_tEX.rename('tEX_AF_CC')
-    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(opts=opts, vname='tEX_AF_CC'))
+    af_cc_tEX = af_cc_tEX.assign_attrs(get_attrs(vname='tEX_AF_CC', data_unit=opts.unit))
 
-    # ESavg
-    af_es = af['EDavg_AF'] * af[em_var] * af['EAavg_AF']
-    af_es = af_es.rename('ESavg_AF')
-    af_es = af_es.assign_attrs(get_attrs(opts=opts, vname='ESavg_AF'))
-    af_cc_es = af_cc['EDavg_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EAavg_AF_CC']
-    af_cc_es = af_cc_es.rename('ESavg_AF_CC')
-    af_cc_es = af_cc_es.assign_attrs(get_attrs(opts=opts, vname='ESavg_AF_CC'))
+    # ES_avg
+    af_es = af['ED_avg_AF'] * af[em_var] * af['EA_avg_AF']
+    af_es = af_es.rename('ES_avg_AF')
+    af_es = af_es.assign_attrs(get_attrs(vname='ES_avg_AF', data_unit=opts.unit))
+    af_cc_es = af_cc['ED_avg_AF_CC'] * af_cc[f'{em_var}_CC'] * af_cc['EA_avg_AF_CC']
+    af_cc_es = af_cc_es.rename('ES_avg_AF_CC')
+    af_cc_es = af_cc_es.assign_attrs(get_attrs(vname='ES_avg_AF_CC', data_unit=opts.unit))
 
     # TEX
     af_TEX = af['EF_AF'] * af_es
     af_TEX = af_TEX.rename('TEX_AF')
-    af_TEX = af_TEX.assign_attrs(get_attrs(opts=opts, vname='TEX_AF'))
+    af_TEX = af_TEX.assign_attrs(get_attrs(vname='TEX_AF', data_unit=opts.unit))
     af_cc_TEX = af_cc['EF_AF_CC'] * af_cc_es
     af_cc_TEX = af_cc_TEX.rename('TEX_AF_CC')
-    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(opts=opts, vname='TEX_AF_CC'))
+    af_cc_TEX = af_cc_TEX.assign_attrs(get_attrs(vname='TEX_AF_CC', data_unit=opts.unit))
 
     af = xr.merge([af, af_tEX, af_es, af_TEX])
     af_cc = xr.merge([af_cc, af_cc_tEX, af_cc_es, af_cc_TEX])
@@ -294,7 +302,7 @@ def calc_compound_amplification_factors_grid(opts, af, af_cc):
 def calc_ampl_facs_grid(opts, data, suppl=False):
     ref_avg, cc_avg = calc_ref_cc_mean(data=data)
 
-    bvars = [vvar for vvar in data.data_vars if vvar not in ['TEX', 'ESavg']]
+    bvars = [vvar for vvar in data.data_vars if vvar not in ['TEX', 'ES_avg']]
     af, af_cc = calc_basis_amplification_factors(data=data[bvars], ref=ref_avg[bvars],
                                                  cc=cc_avg[bvars])
     if not suppl:
@@ -361,8 +369,8 @@ def calc_spread_estimates(gdata, data, areas, afacs=False):
         s_low: lower spread ds
     """
 
-    su = xr.Dataset(coords={'ctp': (['ctp'], data.ctp.values)})
-    sl = xr.Dataset(coords={'ctp': (['ctp'], data.ctp.values)})
+    su = xr.Dataset(coords={'time': (['time'], data.time.values)})
+    sl = xr.Dataset(coords={'time': (['time'], data.time.values)})
 
     for vvar in gdata.data_vars:
         data_var = f'{vvar}_AGR'
@@ -431,12 +439,14 @@ def run():
     agrs = xr.Dataset(coords=data.coords)
 
     # define basis vars for which AGR vars should be calculated
-    biv = ['EF', 'EDavg', 'EMavg', 'EAavg']
-    biv_suppl = ['delta_y']
-    if 'EMavg_Md' in data.data_vars:
-        biv.append('EMavg_Md')
-    else:
-        biv_suppl.append('EMavg_Md')
+    biv = ['EF', 'ED_avg', 'EM_avg', 'EA_avg']
+    biv_suppl = ['AEP']
+    if False:
+        # TODO calc median values in CTP
+        if 'EM_avg_Md' in data.data_vars:
+            biv.append('EM_avg_Md')
+        else:
+            biv_suppl.append('EM_avg_Md')
 
     for vvar in biv:
         ref_agr, var_agr = calc_agr(opts=opts, vdata=data[vvar], awgts=wgts)
