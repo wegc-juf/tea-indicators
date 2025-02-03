@@ -88,9 +88,13 @@ def map_plot_params(opts, vname):
                            'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
 
-    cb_params = {'AUT': {'vn': 0, 'vx': 6, 'delta': 0.5},
-                 'Niederösterreich': {'vn': 0, 'vx': 3, 'delta': 0.25},
-                 'SEA': {'vn': 0, 'vx': 4, 'delta': 0.25}}
+    if opts.threshold == 30:
+        cb_params = {'AUT': {'vn': 0, 'vx': 6, 'delta': 0.5},
+                     'Niederösterreich': {'vn': 0, 'vx': 3, 'delta': 0.25},
+                     'SEA': {'vn': 0, 'vx': 6, 'delta': 0.5}}
+    else:
+        cb_params = {'AUT': {'vn': 0, 'vx': 4, 'delta': 0.5},
+                     'SEA': {'vn': 0, 'vx': 4, 'delta': 0.5}}
     if opts.region not in cb_params.keys():
         cb_stuff = cb_params['AUT']
     else:
@@ -152,9 +156,11 @@ def plot_gr_data(opts, ax, data, af_cc, nv):
 
 def get_ylims(opts):
 
-    values = {'AUT': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5}},
+    values = {'AUT': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5},
+                      25: {'yn': 0.5, 'yx': 2, 'dy': 0.5}},
               'Niederösterreich': {25: {'yn': 0.5, 'yx': 2, 'dy': 0.25}},
-              'SEA': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5}}}
+              'SEA': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5},
+                      25: {'yn': 0.5, 'yx': 2, 'dy': 0.25}}}
 
     try:
         props = values[opts.region][opts.threshold]
@@ -168,9 +174,11 @@ def get_ylims(opts):
 
 def get_ylims_tex(opts):
 
-    values = {'AUT': {30: {'yn': 0, 'yx': 9, 'dy': 1}},
+    values = {'AUT': {30: {'yn': 0, 'yx': 9, 'dy': 1},
+                      25: {'yn': 0, 'yx': 4, 'dy': 0.5}},
               'Niederösterreich': {25: {'yn': 0, 'yx': 4, 'dy': 0.5}},
-              'SEA': {30: {'yn': 0, 'yx': 12, 'dy': 2}}}
+              'SEA': {30: {'yn': 0, 'yx': 12, 'dy': 2},
+                      25: {'yn': 0, 'yx': 4, 'dy': 0.5}}}
 
     try:
         props = values[opts.region][opts.threshold]
@@ -223,17 +231,21 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes,
             fontsize=11)
-    ax.text(0.93, ypos_cc_es, r'$\mathcal{A}_\mathrm{CC}^\mathrm{S}$',
-            horizontalalignment='left',
-            verticalalignment='center', transform=ax.transAxes,
-            fontsize=11)
-    if opts.region != 'Niederösterreich':
-        ax.text(0.93, ypos_cc_tex, r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$',
+    if opts.threshold != 25 and opts.region not in ['SEA', 'AUT']:
+        ax.text(0.93, ypos_cc_es, r'$\mathcal{A}_\mathrm{CC}^\mathrm{S}$',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes,
                 fontsize=11)
+        ax.text(0.93, ypos_cc_tex - 0.1, r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$',
+                    horizontalalignment='left',
+                    verticalalignment='center', transform=ax.transAxes,
+                    fontsize=11)
     else:
-        ax.text(0.93, ypos_cc_tex-0.1, r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$',
+        ax.text(0.93, ypos_cc_es - 0.1, r'$\mathcal{A}_\mathrm{CC}^\mathrm{S}$',
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes,
+                fontsize=11)
+        ax.text(0.93, ypos_cc_tex, r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes,
                 fontsize=11)
