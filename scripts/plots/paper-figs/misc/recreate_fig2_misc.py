@@ -292,7 +292,7 @@ def plot_map(opts, fig, ax, data):
 
     aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
                           'AUT_masks_SPARTACUS.nc')
-    ax.contourf(aut.nw_mask, colors='mistyrose')
+    ax.contourf(aut.nw_mask, colors='lightgrey')
 
     vn, vx = cb_props['vn'], cb_props['vx']
     lvls = np.arange(vn, vx + cb_props['delta'], cb_props['delta'])
@@ -359,8 +359,13 @@ def run():
     plot_tex_es(opts=opts, ax=axs[3, 1], data=data[['TEX_GR_AF', 'ESavg_GR_AF']],
                 af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=natv)
 
+    axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+                   horizontalalignment='left', verticalalignment='center',
+                   transform=axs[2, 1].transAxes, backgroundcolor='lightgrey',
+                   fontsize=8)
+
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/'
+    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig2/'
                 f'Fig2_{opts.region}_{opts.threshold}degC.png',
                 bbox_inches='tight', dpi=300)
 
