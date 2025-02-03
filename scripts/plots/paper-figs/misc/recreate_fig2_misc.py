@@ -231,7 +231,8 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes,
             fontsize=11)
-    if opts.threshold != 25 and opts.region not in ['SEA', 'AUT']:
+    if (opts.threshold != 25 and opts.region != 'SEA' or
+            opts.threshold == 25 and opts.region == 'AUT'):
         ax.text(0.93, ypos_cc_es, r'$\mathcal{A}_\mathrm{CC}^\mathrm{S}$',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes,
