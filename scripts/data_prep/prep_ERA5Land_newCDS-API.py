@@ -87,9 +87,19 @@ def calc_altitude(ds_in, orog):
 
     # height
     altitude = ds_geop_aut.z.resample(time='1D').mean() / 9.80665
-    altitude = altitude.rename('altitude')
-
     altitude = altitude[0, :, :]
+
+    # set coords to .1f
+    altitude = xr.DataArray(data=altitude.values, dims=('latitude', 'longitude'),
+                            coords={
+                                'longitude': (['longitude'], (
+                                        np.arange(altitude.longitude[0] * 10,
+                                                  (altitude.longitude[-1] + 0.1) * 10,
+                                                  0.1 * 10) / 10)),
+                                'latitude': (['latitude'], (np.arange(altitude.latitude[-1] * 10,
+                                                            (altitude.latitude[0] + 0.1) * 10,
+                                                            0.1 * 10) / 10)[::-1])},
+                            name='altitude')
 
     return altitude
 

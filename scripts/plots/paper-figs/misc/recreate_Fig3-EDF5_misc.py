@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
-from matplotlib.ticker import FixedLocator, ScalarFormatter, FixedFormatter
+from matplotlib.ticker import FixedLocator, ScalarFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import pandas as pd
@@ -9,16 +9,10 @@ import pyproj
 import xarray as xr
 
 
-def get_data(reg, var, ds):
-    if var == 'Temperature':
-        pstr = 'Tx99.0p'
-    else:
-        pstr = 'P24h_7to7_95.0p'
+def get_data(reg, var, ds, thresh):
 
+    pstr = f'Tx{thresh}.0degC'
     reg_str, gr_str = reg, 'GR'
-    # if 'ERA5' in ds and reg == 'AUT':
-    #     reg_str = f'AGR-{reg}'
-    #     gr_str = 'AGR'
 
     data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/amplification/'
                            f'AF_{pstr}_{reg_str}_WAS_{ds}_1961to2022.nc')
@@ -37,17 +31,12 @@ def get_data(reg, var, ds):
         data[f'tEX_{gr_str}_AF'] = tEX_gr
         data[f'tEX_{gr_str}_AF_CC'] = tEX_gr_cc
 
-    # if reg != 'AUT':
-    if var == 'Temperature':
-        em_var = f'EMavg_AF'
-    else:
-        em_var = f'EMavg_Md_AF'
     tEX = 10 ** (np.log10(data[f'EF_AF'])
                  + np.log10(data[f'EDavg_AF'])
-                 + np.log10(data[em_var]))
+                 + np.log10(data['EMavg_AF']))
     tEX_cc = 10 ** (np.log10(data[f'EF_AF_CC'])
                     + np.log10(data[f'EDavg_AF_CC'])
-                    + np.log10(data[f'{em_var}_CC']))
+                    + np.log10(data['EMavg_AF_CC']))
     data[f'tEX_AF'] = tEX
     data[f'tEX_AF_CC'] = tEX_cc
 
@@ -144,7 +133,7 @@ def plot_maps(fig, spcus, era5, land):
                  fontsize=9)
 
 
-def plot_subplot(ax, spcus, era5, var, reg, land):
+def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
 
     cols = {'EF': 'tab:blue', 'FD': 'tab:purple', 'tEX': 'tab:orange', 'TEX': 'tab:red'}
 
@@ -159,11 +148,8 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
 
     xticks = np.arange(1961, 2023)
 
-    pstr = 'T99.0p'
+    pstr = f'Tx{thresh}.0degC'
     nv_var = 'TEX'
-    if var != 'Temperature':
-        pstr = 'P24h_7to7_95.0p'
-        nv_var = 'tEX'
 
     rstr = 'AUT'
     if reg != 'AUT':
@@ -190,67 +176,37 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         if spcus[f'{pvar}_GR_AF_CC'] < acc:
             acc = spcus[f'{pvar}_GR_AF_CC'].values
 
-    ref_col = 'tab:red'
-    if var == 'Precip24Hsum_7to7':
-        ref_col = 'tab:orange'
-    ax.plot(xticks[0:30], np.ones(len(xticks[0:30])), alpha=0.5, color=ref_col, linewidth=2)
+    ax.plot(xticks[0:30], np.ones(len(xticks[0:30])), alpha=0.5, color='tab:red', linewidth=2)
 
-    if var != 'Precip24Hsum_7to7':
-        ax.set_yscale('log')
-        ax.minorticks_on()
-        ax.grid(color='gray', which='major', linestyle=':')
-        ax.yaxis.set_minor_formatter(FixedFormatter(['0.2', '', '', '0.5', '', '', '', '',
-                                                     '2.0', '', '', '5.0', '', '', '', '', '',
-                                                     '20.0', '30.0']))
-        ax.yaxis.set_minor_locator(FixedLocator([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
-                                                 2, 3, 4, 5, 6, 7, 8, 9, 15, 20, 30]))
-    else:
-        ax.minorticks_on()
-        ax.grid(color='gray', which='major', linestyle=':')
-
-    tvar = var
-    if var != 'Temperature':
-        tvar = 'Precipitation'
-    ax.tick_params(axis='both', which='major', labelsize=10)
-    ax.set_title(f'Extremity amplification {reg} | {tvar}', fontsize=14)
-    ax.set_ylim(ymin, ymax)
-    ax.set_xlim(1960, 2023)
-    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2023)))
-    ax.yaxis.set_major_formatter(ScalarFormatter())
+    ax.minorticks_on()
+    ax.grid(color='gray', which='major', linestyle=':')
 
     e5 = 'E5'
     if land:
         e5 = 'E5L'
-    if var == 'Precip24Hsum_7to7':
-        ax.yaxis.set_major_locator(FixedLocator(np.arange(0.6, 2.2, 0.4)))
-        ax.set_ylabel('F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX amplification', fontsize=10)
-        xpos, ypos = 0.02, 0.28
-        if land:
-            off = 0.36
-        else:
-            off = 0.33
-        xpos_cc, ypos_cc = 0.87, ((acc - ymin) / (ymax - ymin)) + off,
-        cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t}$'
-        box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
-                     + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
-                    + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
-                   + f'{np.round(era5["tEX_GR_AF_CC"], 2):.2f}')
-    else:
-        ax.set_ylabel(
-            'F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX' + r'$\,$|$\,$' + 'TEX amplification',
-            fontsize=10)
-        xpos, ypos = 0.02, 0.26
-        if reg != 'FBR':
-            off = 0.31
-        else:
-            off = 0.34
-        xpos_cc, ypos_cc = 0.83, ((acc - ymin) / (ymax - ymin)) + off,
-        cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t, T}$'
 
-        box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
-                     + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
-                    + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
-                   + f'{np.round(era5[f"TEX_{gr_str}_AF_CC"], 2):.2f}')
+    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.set_title(f'Extremity amplification {reg} | {var} ({e5})', fontsize=12)
+    ax.set_ylim(ymin, ymax)
+    ax.set_xlim(1960, 2025)
+    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
+    ax.yaxis.set_major_formatter(ScalarFormatter())
+
+    ax.set_ylabel(
+        'F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX' + r'$\,$|$\,$' + 'TEX amplification',
+        fontsize=10)
+    xpos, ypos = 0.02, 0.26
+    if reg != 'FBR':
+        off = 0.31
+    else:
+        off = 0.34
+    xpos_cc, ypos_cc = 0.83, ((acc - ymin) / (ymax - ymin)) + off,
+    cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t, T}$'
+
+    box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
+                 + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
+                + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
+               + f'{np.round(era5[f"TEX_{gr_str}_AF_CC"], 2):.2f}')
 
     ax.text(xpos, ypos, r'$\mathcal{A}_\mathrm{Ref}$',
             horizontalalignment='left',
@@ -286,43 +242,31 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = True
-
-    vvars = ['Temperature', 'Precip24Hsum_7to7']
+    threshold = 30
+    era5_land = [True, False]
     regions = ['AUT', 'SEA', 'FBR']
-
-    e5_ds = 'ERA5'
-    if land:
-        e5_ds = f'{e5_ds}Land'
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
 
-    for icol, vvar in enumerate(vvars):
+    for icol, dsets in enumerate(era5_land):
+        e5_ds = 'ERA5'
+        if dsets:
+            e5_ds = f'{e5_ds}Land'
         for irow, reg in enumerate(regions):
-            if vvar == 'Precip24Hsum_7to7' and reg == 'AUT':
-                axs[irow, icol].axis('off')
-                continue
-            e5_data = get_data(reg=reg, var=vvar, ds=e5_ds)
-            sp_data = get_data(reg=reg, var=vvar, ds='SPARTACUS')
-            if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
-                e5_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
-                plot_maps(fig=fig, spcus=sp_data, era5=e5_data, land=land)
-            plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=vvar, reg=reg,
-                         land=land)
+            e5_data = get_data(reg=reg, var=dsets, ds=e5_ds, thresh=threshold)
+            sp_data = get_data(reg=reg, var=dsets, ds='SPARTACUS', thresh=threshold)
+            plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=dsets, reg=reg,
+                         land=era5_land, thresh=threshold)
 
     axs[2, 0].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
     axs[2, 1].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
-    axs[0, 1].set_title('Extremity amplification SEA/FBR | Precipitation', fontsize=14)
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    create_legend(fig=fig, ax=axs[0, 0], land=land)
+    create_legend(fig=fig, ax=axs[0, 0], land=era5_land)
 
-    if land:
-        fstr = 'Figure3'
-    else:
-        fstr = 'EDF5'
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/paper-figs/{fstr}.png', dpi=300)
+    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig3-EDF5/'
+                f'Fig3-EDF5_{threshold}degC.png', dpi=300)
 
 
 if __name__ == '__main__':

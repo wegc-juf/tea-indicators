@@ -14,6 +14,7 @@ import xarray as xr
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
+
 def area_grid(opts, masks):
     """
     creates grid where each grid cell gets assigned the size of each grid cell in
@@ -126,7 +127,8 @@ def load_ref_data(opts, masks, ds_params, gr_size):
             data_param = data_param.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
             # adjust size of DataArray accordingly
             if len(data_param.lon) != len(data_ref.lon) or len(data_param.lat) != len(data_ref.lat):
-                raise ValueError('DataArray size does not match reference size. Please check and rerun.')
+                raise ValueError(
+                    'DataArray size does not match reference size. Please check and rerun.')
                 # TODO if really necessary, make sure this can only be triggered once
                 data_ref = xr.DataArray(data=np.zeros((len(ref_period), len(dys),
                                                        len(data_param[yn]), len(data_param[xn])),
