@@ -225,10 +225,10 @@ def run():
     altitude = calc_altitude(ds_in=files[0], orog=opts.orog)
 
     # Save altitude in separate file
-    altitude = create_history(cli_params=sys.argv, ds=altitude)
-    alt_out = altitude.copy()
-    alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
-    alt_out.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
+    # altitude = create_history(cli_params=sys.argv, ds=altitude)
+    # alt_out = altitude.copy()
+    # alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
+    # alt_out.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
 
     for ifile in trange(len(files), desc='Preparing ERA5Land data'):
         file = files[ifile]
@@ -256,6 +256,8 @@ def run():
                            humidity, altitude])
         ds_out = create_history(cli_params=sys.argv, ds=ds_out)
         ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
+
+        ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
 
         ds_out.to_netcdf(f'{opts.outpath}{filename}')
 

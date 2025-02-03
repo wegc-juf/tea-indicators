@@ -9,25 +9,21 @@ import pyproj
 import xarray as xr
 
 
-def get_data(reg, var, ds, thresh):
+def get_data(reg, ds, thresh):
 
     pstr = f'Tx{thresh}.0degC'
     reg_str, gr_str = reg, 'GR'
 
-    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/amplification/'
-                           f'AF_{pstr}_{reg_str}_WAS_{ds}_1961to2022.nc')
+    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA_no-largeGR/amplification/'
+                           f'AF_{pstr}_{reg_str}_WAS_{ds}_1961to2024.nc')
 
     if 'ERA5' in ds:
-        if var == 'Temperature':
-            em_gr_var = f'EMavg_{gr_str}_AF'
-        else:
-            em_gr_var = f'EMavg_Md_{gr_str}_AF'
         tEX_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
                         + np.log10(data[f'EDavg_{gr_str}_AF'])
-                        + np.log10(data[em_gr_var]))
+                        + np.log10(data[f'EMavg_{gr_str}_AF']))
         tEX_gr_cc = 10 ** (np.log10(data[f'EF_{gr_str}_AF_CC'])
                            + np.log10(data[f'EDavg_{gr_str}_AF_CC'])
-                           + np.log10(data[f'{em_gr_var}_CC']))
+                           + np.log10(data[f'EMavg_{gr_str}_AF_CC']))
         data[f'tEX_{gr_str}_AF'] = tEX_gr
         data[f'tEX_{gr_str}_AF_CC'] = tEX_gr_cc
 
@@ -146,7 +142,7 @@ def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
 
     gr_str = 'GR'
 
-    xticks = np.arange(1961, 2023)
+    xticks = np.arange(1961, 2025)
 
     pstr = f'Tx{thresh}.0degC'
     nv_var = 'TEX'
@@ -168,9 +164,9 @@ def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
         ax.plot(xticks, era5[f'{pvar}_{gr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
                 alpha=0.5)
         ax.plot(xticks, spcus[f'{pvar}_GR_AF'], color=cols[pvar], linewidth=2, markersize=3)
-        ax.plot(xticks[47:], np.ones(len(xticks[47:])) * spcus[f'{pvar}_GR_AF_CC'].values,
+        ax.plot(xticks[49:], np.ones(len(xticks[49:])) * spcus[f'{pvar}_GR_AF_CC'].values,
                 color=cols[pvar], linewidth=2)
-        ax.plot(xticks[47:], np.ones(len(xticks[47:])) * era5[f'{pvar}_{gr_str}_AF_CC'].values,
+        ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{pvar}_{gr_str}_AF_CC'].values,
                 '--',
                 alpha=0.5, color=cols[pvar], linewidth=2)
         if spcus[f'{pvar}_GR_AF_CC'] < acc:
@@ -253,8 +249,8 @@ def run():
         if dsets:
             e5_ds = f'{e5_ds}Land'
         for irow, reg in enumerate(regions):
-            e5_data = get_data(reg=reg, var=dsets, ds=e5_ds, thresh=threshold)
-            sp_data = get_data(reg=reg, var=dsets, ds='SPARTACUS', thresh=threshold)
+            e5_data = get_data(reg=reg, ds=e5_ds, thresh=threshold)
+            sp_data = get_data(reg=reg, ds='SPARTACUS', thresh=threshold)
             plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=dsets, reg=reg,
                          land=era5_land, thresh=threshold)
 
