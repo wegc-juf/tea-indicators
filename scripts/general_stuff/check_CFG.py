@@ -83,6 +83,10 @@ def check_config(opts_dict):
             if param in ['precip', 'low_extreme', 'decadal', 'spreads', 'decadal_only',
                          'recalc_daily', 'orography',
                          'recalc_decadal', 'compare_to_ref', 'save_old']:
+                if opts_dict[param] == 0 or opts_dict[param] == 'false':
+                    opts_dict[param] = False
+                if opts_dict[param] == 1 or opts_dict[param] == 'true':
+                    opts_dict[param] = True
                 bools(param=param, val=opts_dict[param])
             if param in ['region', 'parameter', 'unit', 'subreg', 'target_ds', 'dataset',
                          'xy_name']:

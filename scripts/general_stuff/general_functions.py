@@ -7,6 +7,7 @@ import datetime as dt
 import yaml
 
 from scripts.general_stuff.check_CFG import check_config
+from scripts.general_stuff.cfg_paramter import show_parameters
 
 
 def load_opts(fname):
@@ -29,6 +30,10 @@ def load_opts(fname):
 
     # add name of script
     opts.script = f'{fname}.py'
+
+    # show set parameter
+    show_parameters(opts)
+    opts = check_config(opts_dict=vars(opts))
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
