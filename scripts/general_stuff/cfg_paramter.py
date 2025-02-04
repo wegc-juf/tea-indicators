@@ -4,6 +4,14 @@ import os
 
 
 def show_parameters(opts):
+    """
+    Create a window that lists all currently defined CFG parameter
+    Args:
+        opts: CFG parameter
+
+    Returns:
+
+    """
     # Create a new window
     window = tk.Tk()
     window.title('CFG Parameters')
@@ -12,9 +20,11 @@ def show_parameters(opts):
     frame = tk.Frame(window)
     frame.pack(pady=10)
 
+    # Find height for tree
     num_of_entries = len(vars(opts))
     tree_height = num_of_entries if num_of_entries > 0 else 1
 
+    # Find column widths
     vcol_width = 0
     for ivar in vars(opts):
         if len(ivar) > vcol_width:
@@ -29,10 +39,9 @@ def show_parameters(opts):
     tree = ttk.Treeview(frame, columns=('Parameter', 'Value'), show='headings',
                         height=tree_height)
 
-    # Define the column headings
+    # Define the column headings and the column widths
     tree.heading('Parameter', text='Parameter')
     tree.heading('Value', text='Value')
-
     tree.column('Parameter', width=pcol_width)
     tree.column('Value', width=vcol_width)
 
@@ -64,13 +73,17 @@ def show_parameters(opts):
 
 def edit_parameters(window, opts, yaml_fname):
     """
-        Open a new window to edit parameters.
-        Args:
-            window: The main window to close when finished.
-            opts: Namespace object to edit.
-            yaml_fname: Name of the YAML file to update after editing.
-        """
-    edit_window = tk.Toplevel()  # Create a new window on top of the main window
+    Opens a new window to edit CFG parameter
+    Args:
+        window: old window showing the CFG parameter
+        opts: CFG parameter
+        yaml_fname: Name of yaml (CFG) file
+
+    Returns:
+
+    """
+    # Create a new window on top of the main window
+    edit_window = tk.Toplevel()
     edit_window.title('Edit Parameters')
 
     # Store the variables linked to the entry fields
@@ -79,9 +92,11 @@ def edit_parameters(window, opts, yaml_fname):
     # Create and populate the form with the current parameters and values
     for index, (name, value) in enumerate(vars(opts).items()):
         tk.Label(edit_window, text=name).grid(row=index, column=0)
-        entry_var = tk.StringVar(value=value)  # Create a variable for the entry
-        tk.Entry(edit_window, textvariable=entry_var).grid(row=index, column=1)
-        entries[name] = entry_var  # Store it to retrieve the data later
+        # Create a variable for the entry
+        entry_var = tk.StringVar(value=value)
+        tk.Entry(edit_window, textvariable=entry_var, width=75).grid(row=index, column=1)
+        # Store it to retrieve the data later
+        entries[name] = entry_var
 
     # Confirm Button in the edit window
     def confirm_edit():
@@ -92,12 +107,15 @@ def edit_parameters(window, opts, yaml_fname):
                 # Try to infer the correct type by evaluating the value
                 new_value = eval(new_value)
             except (NameError, SyntaxError):
-                pass  # Keep the value as string if it cannot be evaluated
+                # Keep the value as string if it cannot be evaluated
+                pass
             setattr(opts, name, new_value)
-        update_yaml(yaml_fname, opts)  # Update the YAML file
-        edit_window.destroy()  # Close the edit window
-        window.destroy()  # Close the main window
-        show_parameters(opts)  # Optionally re-open the main window to show updated values
+        # Update the YAML file
+        update_yaml(yaml_fname, opts)
+        # Close all windows and open main window again
+        edit_window.destroy()
+        window.destroy()
+        show_parameters(opts)
 
     tk.Button(edit_window, text='Confirm',
               command=confirm_edit).grid(row=len(entries), column=1)
@@ -110,10 +128,14 @@ def update_yaml(fname, opts):
         fname: File name of the YAML config.
         opts: Namespace containing the updated parameters.
     """
+
+    # Create dict with newly set CFG parameters
     new_params = vars(opts)
 
+    # Create a filename for the new CFG file
     new_name = '../NEW_' + fname.split('/')[1]
 
+    # Open old CFG file and check for new values
     with open(fname, 'r') as original_file, open(new_name, 'w') as new_file:
         # Iterate through each line in the original file
         for line in original_file:
