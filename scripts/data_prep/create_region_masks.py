@@ -397,7 +397,7 @@ def run():
         else:
             dx = set(abs(xvals[1:].values - xvals[:-1].values))
             dy = set(abs(yvals[1:].values - yvals[:-1].values))
-        if len(dx) > 1 or len(dx) > 1 or dx != dy:
+        if len(dx) > 1 or len(dy) > 1 or dx != dy:
             raise ValueError('The given test file does not have a regular grid. '
                              'Provide a file with a regular grid.')
         dx, dy = list(dx)[0], list(dy)[0]

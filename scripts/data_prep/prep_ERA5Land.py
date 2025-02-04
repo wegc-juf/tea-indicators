@@ -258,6 +258,7 @@ def run():
         ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
 
         ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
+        ds_out['lon'] = (np.arange(ds_out.lon[0] * 10, (ds_out.lon[-1] * 10) + 1) / 10)
 
         ds_out.to_netcdf(f'{opts.outpath}{filename}')
 

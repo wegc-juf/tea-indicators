@@ -1,11 +1,7 @@
-import matplotlib
 import matplotlib.pyplot as plt
-import matplotlib.patches as pat
-from matplotlib.ticker import FixedLocator, ScalarFormatter
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import FixedLocator, ScalarFormatter, FixedFormatter
 import numpy as np
 import pandas as pd
-import pyproj
 import xarray as xr
 
 
@@ -46,99 +42,15 @@ def get_data(reg, ds, thresh):
     return data
 
 
-def regrid_era5(ds, grid):
-    """
-    regrid ERA5 data to SPARTACUS grid
-    :param ds: ERA5 data
-    :param grid: destination grid
-    :return: ds_reg
-    """
-
-    x_spar = grid.x.values
-    y_spar = grid.y.values
-
-    projection = pyproj.Proj('EPSG:32633')
-    lon, lat = projection(*np.meshgrid(x_spar, y_spar), inverse=True)
-
-    x = xr.DataArray(lon, dims=["y", "x"], coords={"x": x_spar, "y": y_spar})
-    y = xr.DataArray(lat, dims=["y", "x"], coords={"x": x_spar, "y": y_spar})
-
-    # interpolation
-    ds_reg = ds.interp(lon=x, lat=y, method='linear')
-
-    return ds_reg
-
-
-def plot_maps(fig, spcus, era5, land):
-    if land:
-        e5 = 'ERA5L'
-    else:
-        e5 = 'ERA5'
-
-    levels = np.arange(0.25, 2.25, 0.25)
-
-    era5 = regrid_era5(ds=era5['tEX_AF_CC'], grid=spcus['tEX_AF_CC'])
-
-    params = {
-        'SPARTACUS': {'data': spcus['tEX_AF_CC'], 'ax': fig.add_axes([0.53, 0.69, 0.17, 0.18]),
-                      'title': 'SPCUS-P24H-p95WAS-'
-                               + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$'},
-        'ERA5': {'data': era5, 'ax': fig.add_axes([0.71, 0.69, 0.19, 0.18]),
-                 'title': f'{e5}-P24H-p95WAS-'
-                          + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$'}}
-
-    # create mask
-    mask = spcus['tEX_AF_CC']
-    mask = mask.where(mask.isnull(), 1)
-
-    for ids in ['SPARTACUS', 'ERA5']:
-        acc = params[ids]['data']
-        if ids == 'ERA5':
-            acc = acc * mask
-
-        iax = params[ids]['ax']
-        map_vals = iax.imshow(acc,
-                              cmap=matplotlib.cm.get_cmap('Oranges', len(levels)),
-                              origin='lower', vmin=levels[0], vmax=levels[-1], aspect='auto')
-
-        iax.set_xlim(409, 538)
-        iax.set_ylim(27, 120)
-
-        iax.axis('off')
-        iax.set_title(params[ids]['title'], fontsize=11)
-
-        iax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
-                                    fill=False, linewidth=1))
-        iax.add_patch(pat.Rectangle(xy=(410, 27), height=93, width=128, edgecolor='black',
-                                    fill=False, linewidth=1))
-
-        if ids == 'ERA5':
-            divider = make_axes_locatable(iax)
-            cax = divider.append_axes('right', size='5%', pad=0.15)
-            cb = fig.colorbar(map_vals, cax=cax, orientation='vertical', boundaries=levels,
-                              extend='max')
-            cb.set_label(label='tEX amplification', fontsize=9)
-
-        iax.text(0.85, 0.05, 'SEA',
-                 horizontalalignment='left',
-                 verticalalignment='center', transform=iax.transAxes,
-                 fontsize=9)
-        iax.text(0.7, 0.3, 'FBR',
-                 horizontalalignment='left',
-                 verticalalignment='center', transform=iax.transAxes,
-                 fontsize=9)
-
-
 def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
 
     cols = {'EF': 'tab:blue', 'FD': 'tab:purple', 'tEX': 'tab:orange', 'TEX': 'tab:red'}
+    plot_vars = ['EF', 'FD', 'tEX', 'TEX']
 
-    if var == 'Precip24Hsum_7to7':
-        plot_vars = ['EF', 'FD', 'tEX']
-        ymin, ymax = 0.6, 1.8
-    else:
-        plot_vars = ['EF', 'FD', 'tEX', 'TEX']
+    if thresh == 30:
         ymin, ymax = 2 * 10 ** -1, 30
+    else:
+        ymin, ymax = 5 * 10 ** -1, 5
 
     gr_str = 'GR'
 
@@ -151,13 +63,14 @@ def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
     if reg != 'AUT':
         rstr = 'SEA'
 
-    nv = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/natural_variability/'
-                     f'NV_AF_{pstr}_{rstr}.csv',
-                     index_col=0)
+    if reg != 'L-AUT':
+        nv = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/natural_variability/'
+                         f'NV_AF_{pstr}_{rstr}.csv',
+                         index_col=0)
 
-    nat_var_low = np.ones(len(xticks)) * (1 - nv.loc[nv_var, 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xticks)) * (1 + nv.loc[nv_var, 'upper'] * 1.645)
-    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=cols[nv_var], alpha=0.2)
+        nat_var_low = np.ones(len(xticks)) * (1 - nv.loc[nv_var, 'lower'] * 1.645)
+        nat_var_upp = np.ones(len(xticks)) * (1 + nv.loc[nv_var, 'upper'] * 1.645)
+        ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=cols[nv_var], alpha=0.2)
 
     acc = 100
     for ivar, pvar in enumerate(plot_vars):
@@ -174,15 +87,26 @@ def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
 
     ax.plot(xticks[0:30], np.ones(len(xticks[0:30])), alpha=0.5, color='tab:red', linewidth=2)
 
+    ax.set_yscale('log')
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
-
+    if thresh == 30:
+        ax.yaxis.set_minor_formatter(FixedFormatter(['0.2', '', '', '0.5', '', '', '', '',
+                                                     '2.0', '', '', '5.0', '', '', '', '', '',
+                                                     '20.0', '30.0']))
+        ax.yaxis.set_minor_locator(FixedLocator([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+                                                 2, 3, 4, 5, 6, 7, 8, 9, 15, 20, 30]))
+    else:
+        ax.yaxis.set_minor_formatter(FixedFormatter(['0.5', '', '', '', '',
+                                                     '2.0', '', '', '5.0']))
+        ax.yaxis.set_minor_locator(FixedLocator([0.5, 0.6, 0.7, 0.8, 0.9,
+                                                 2, 3, 4, 5]))
     e5 = 'E5'
     if land:
         e5 = 'E5L'
 
     ax.tick_params(axis='both', which='major', labelsize=10)
-    ax.set_title(f'Extremity amplification {reg} | {var} ({e5})', fontsize=12)
+    ax.set_title(f'Extremity amplification {reg} | {var}', fontsize=14)
     ax.set_ylim(ymin, ymax)
     ax.set_xlim(1960, 2025)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
@@ -199,6 +123,9 @@ def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
     xpos_cc, ypos_cc = 0.83, ((acc - ymin) / (ymax - ymin)) + off,
     cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t, T}$'
 
+    if thresh == 25:
+        ypos_cc = ypos_cc - 0.23
+
     box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
                  + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
                 + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
@@ -213,12 +140,16 @@ def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
             verticalalignment='center', transform=ax.transAxes,
             fontsize=11)
 
-    ax.text(0.02, 0.86, box_txt,
+    ypos_box = 0.86
+    if reg == 'L-AUT':
+        ypos_box = 0.9
+
+    ax.text(0.02, ypos_box, box_txt,
             horizontalalignment='left', verticalalignment='center', transform=ax.transAxes,
             backgroundcolor='whitesmoke', fontsize=9)
 
 
-def create_legend(fig, ax, land):
+def create_legend(fig, ax):
     f, = ax.plot([-9, -9], 'tab:blue', linewidth=2)
     fd, = ax.plot([-9, -9], 'tab:purple', linewidth=2)
     fdm, = ax.plot([-9, -9], 'tab:orange', linewidth=2)
@@ -226,19 +157,15 @@ def create_legend(fig, ax, land):
     spar, = ax.plot([-9, -9], color='tab:gray', linewidth=2)
     era5, = ax.plot([-9, -9], color='tab:gray', linestyle='--', alpha=0.5, linewidth=2)
 
-    if land:
-        e5 = 'ERA5L'
-    else:
-        e5 = 'ERA5'
 
     fig.legend((spar, era5, f, fd, fdm, fdma),
-               ('SPCUS', e5, r'$\mathcal{A}^\mathrm{F}$', r'$\mathcal{A}^\mathrm{FD}$',
+               ('SPCUS', 'ERA5(L)', r'$\mathcal{A}^\mathrm{F}$', r'$\mathcal{A}^\mathrm{FD}$',
                 r'$\mathcal{A}^\mathrm{t}$', r'$\mathcal{A}^\mathrm{T}$'),
                ncol=6, loc=(0.27, 0.01))
 
 
 def run():
-    threshold = 30
+    threshold = 25
     era5_land = [True, False]
     regions = ['AUT', 'SEA', 'FBR']
 
@@ -251,19 +178,44 @@ def run():
         for irow, reg in enumerate(regions):
             e5_data = get_data(reg=reg, ds=e5_ds, thresh=threshold)
             sp_data = get_data(reg=reg, ds='SPARTACUS', thresh=threshold)
-            plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=dsets, reg=reg,
-                         land=era5_land, thresh=threshold)
+            plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=e5_ds, reg=reg,
+                         land=dsets, thresh=threshold)
 
     axs[2, 0].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
     axs[2, 1].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    create_legend(fig=fig, ax=axs[0, 0], land=era5_land)
+    create_legend(fig=fig, ax=axs[0, 0])
 
     plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig3-EDF5/'
-                f'Fig3-EDF5_{threshold}degC.png', dpi=300)
+                f'Fig3-EDF5_{threshold}degC.png', dpi=300, bbox_inches='tight')
 
+
+def run_noe():
+    era5_land = [True, False]
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+
+    for icol, dsets in enumerate(era5_land):
+        e5_ds = 'ERA5'
+        if dsets:
+            e5_ds = f'{e5_ds}Land'
+
+        e5_data = get_data(reg='Niederösterreich', ds=e5_ds, thresh=25)
+        sp_data = get_data(reg='Niederösterreich', ds='SPARTACUS', thresh=25)
+        plot_subplot(ax=axs[icol], spcus=sp_data, era5=e5_data, var=e5_ds, reg='L-AUT',
+                     land=dsets, thresh=25)
+
+        axs[icol].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
+
+    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.2, top=0.9, wspace=0.2, hspace=0.35)
+
+    create_legend(fig=fig, ax=axs[0])
+
+    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig3-EDF5/'
+                f'Fig3-EDF5_Niederösterreich_25degC.png', dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
-    run()
+    # run()
+    run_noe()
