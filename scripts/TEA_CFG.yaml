@@ -1,4 +1,6 @@
 common_params:
+  gui: &GUI
+    no_gui: false
   GeoRegion: &GR
     region: AUT
     gr_type: polygon
@@ -26,6 +28,7 @@ common_params:
     tmppath: /home/hst/tmp_data/TEAclean/largeGR/
 
 regrid_SPARTACUS_to_WEGNext:
+  <<: *GUI
   <<: *PARAM
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   orography: false
@@ -34,6 +37,7 @@ regrid_SPARTACUS_to_WEGNext:
   outpath: /data/users/hst/TEA-clean/TEA/
 
 create_region_masks:
+  <<: *GUI
   <<: *GR
   subreg: null
   target_sys: 3416
@@ -46,6 +50,7 @@ create_region_masks:
   outpath: /data/users/hst/TEA-clean/TEA/
 
 create_static_files:
+  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *DATA
@@ -56,6 +61,7 @@ create_static_files:
   outpath: /data/users/hst/TEA-clean/TEA/
 
 calc_TEA:
+  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
@@ -72,6 +78,7 @@ calc_TEA:
   save_old: false
 
 calc_station_TEA:
+  <<: *GUI
   <<: *TIME
   <<: *PARAM
   station: Graz
@@ -79,6 +86,7 @@ calc_station_TEA:
   outpath: /data/users/hst/TEA-clean/TEA/
 
 calc_amplification_factors:
+  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
@@ -88,6 +96,7 @@ calc_amplification_factors:
   outpath: /data/users/hst/TEA-clean/TEA/
 
 calc_AGR_vars:
+  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME

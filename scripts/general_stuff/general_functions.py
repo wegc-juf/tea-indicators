@@ -31,9 +31,10 @@ def load_opts(fname):
     # add name of script
     opts.script = f'{fname}.py'
 
-    # show set parameter
-    show_parameters(opts)
-    opts = check_config(opts_dict=vars(opts))
+    if not opts.no_gui:
+        # show set parameter
+        show_parameters(opts)
+        opts = check_config(opts_dict=vars(opts))
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:

@@ -1,4 +1,5 @@
 common_params:
+  no_gui: false
   GeoRegion: &GR
     region: AUT
     gr_type: polygon
