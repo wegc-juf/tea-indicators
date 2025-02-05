@@ -250,24 +250,24 @@ def run():
     
     # load static files
     masks, static = load_static_files(opts=opts)
-    agr_mask = None
-    agr_area = None
+    gr_grid_mask = None
+    gr_grid_areas = None
     # check if GR size is larger than 100 areals and switch to AGR if so
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
         # load agr mask
         try:
-            agr_mask = xr.open_dataset(f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
-            agr_mask = agr_mask.mask_lt1500
+            gr_grid_mask = xr.open_dataset(f'{opts.maskpath}/{opts.region}_mask_GRG_0p5_{opts.dataset}.nc')
+            gr_grid_mask = gr_grid_mask.mask_lt1500
         except FileNotFoundError:
-            agr_mask = None
+            gr_grid_mask = None
         
         try:
-            agr_area = xr.open_dataset(f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
-            agr_area = agr_area.area_grid
+            gr_grid_areas = xr.open_dataset(f'{opts.statpath}/area_grid_GRG_0p5_{opts.region}_{opts.dataset}.nc')
+            gr_grid_areas = gr_grid_areas.area_grid
         except FileNotFoundError:
-            agr_area = None
+            gr_grid_areas = None
         
-        tea = TEAAgr(agr_mask=agr_mask, agr_area=agr_area)
+        tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas)
         agr = True
     else:
         tea = TEAIndicators()
@@ -282,10 +282,10 @@ def run():
                 opts.start = pstart
                 opts.end = pend
                 logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
-                tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=agr_mask, agr_area=agr_area)
+                tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
                 gc.collect()
         else:
-            tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=agr_mask, agr_area=agr_area)
+            tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end
@@ -308,8 +308,20 @@ def run():
         # calculate amplification factors
         calc_amplification_factors(opts, tea, outpath_ampl)
     
+        # calculate aggregate GeoRegion means
         if agr:
-            tea.calc_agr_mean()
+            if opts.region != opts.agr:
+                lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+                lat_range = lat_range_dict[opts.agr]
+                outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
+                                   f'DEC_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
+                                   f'_{opts.start}to{opts.end}.nc')
+                outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+                                f'AF_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
+                                f'_{opts.start}to{opts.end}.nc')
+            else:
+                lat_range = None
+            tea.calc_agr_mean(lat_range=lat_range)
             tea.save_decadal_results(outpath_decadal)
             tea.save_amplification_factors(outpath_ampl)
 

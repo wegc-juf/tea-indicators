@@ -22,7 +22,7 @@ class TEAAgr(TEAIndicators):
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
     def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
-                 agr_resolution=0.5, land_sea_mask=None, agr_mask=None, agr_area=None,
+                 gr_grid_res=0.5, land_sea_mask=None, gr_grid_mask=None, gr_grid_areas=None,
                  land_frac_min=0.5, cell_size_lat=2, **kwargs):
         """
         initialize TEA object
@@ -30,13 +30,15 @@ class TEAAgr(TEAIndicators):
         Args:
             input_data_grid: input data grid
             threshold_grid: threshold grid
-            area_grid: area grid
-            mask: mask grid
-            min_area: minimum area for valid grid cells
-            agr_resolution: resolution for aggregated GeoRegion (in degrees)
-            land_sea_mask: land-sea mask
-            land_frac_min: minimum fraction of land below 1500m
-            cell_size_lat: size of AGR cell in latitudinal direction (in degrees)
+            area_grid: area grid containing grid cell areas (needed if grid cells are not equally sized)
+            mask: mask grid (needed if data should be masked out by e.g. country borders)
+            min_area: minimum area for valid grid cells in areals (100 km^2). Default: 0.0001 areals or 10 km^2
+            gr_grid_res: resolution for grid of GeoRegions (in degrees)
+            land_sea_mask: land-sea mask if needed
+            land_frac_min: minimum fraction of land below 1500m. Default: 0.5
+            cell_size_lat: size of GR grid cell in latitudinal direction (in degrees). Default: 2
+            gr_grid_mask: mask for GR grid (will be automatically generated if not provided)
+            gr_grid_areas: areas for GR grid (will be automatically generated if not provided)
         """
         super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
                          mask=mask, min_area=min_area, apply_mask=False, **kwargs)
@@ -44,31 +46,27 @@ class TEAAgr(TEAIndicators):
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
             self.lat_resolution = None
-        self.agr_resolution = agr_resolution
-        self.agr_mask = None
-        self.agr_area = None
+        self.gr_grid_res = gr_grid_res
+        self.gr_grid_mask = None
+        self.gr_grid_areas = None
         self.land_sea_mask = land_sea_mask
         self.land_frac_min = land_frac_min
         self.cell_size_lat = cell_size_lat
         
-        if agr_mask is None and mask is not None and area_grid is not None:
-            self._generate_agr_mask()
+        if gr_grid_mask is None and mask is not None and area_grid is not None:
+            self._generate_gr_grid_mask()
         else:
-            self.agr_mask = agr_mask
-            self.agr_area = agr_area
+            self.gr_grid_mask = gr_grid_mask
+            self.gr_grid_areas = gr_grid_areas
         
-        # daily basis variables for aggregated GeoRegion
-        self.dbv_agr_results = None
+        # daily basis variables for grid of GeoRegions
+        self.dbv_gr_grid_results = None
         
-    def calc_daily_basis_vars(self, grid=True, gr=False):
+    def calc_daily_basis_vars(self):
         """
-        calculate all daily basis variables
-        
-        Args:
-            grid: set if grid cells should be calculated (default: True)
-            gr: set if GeoRegion values should be calculated (default: False)
+        calculate all daily basis variables for grid of GeoRegions
         """
-        super().calc_daily_basis_vars(grid=grid, gr=gr)
+        super().calc_daily_basis_vars(grid=True, gr=False)
         
     @staticmethod
     def _my_rolling_test(data, axis, keep_attrs=True, step=1):
@@ -77,9 +75,9 @@ class TEAAgr(TEAIndicators):
         """
         return data
 
-    def regrid_to_grs(self):
+    def regrid_to_gr_grid(self):
         """
-        regrid daily basis variables to individual georegions
+        regrid daily basis variables to grid of GeoRegions
         """
         # apply custom rolling function
         self.daily_results.rolling(lat=4, lon=4, center=True).reduce(self._my_rolling_test, step=2).compute()
@@ -142,46 +140,29 @@ class TEAAgr(TEAIndicators):
             lon: longitude
             dbv_results: daily basis GR data for point
         """
-        if self.dbv_agr_results is None:
+        if self.dbv_gr_grid_results is None:
             data_vars = [var for var in dbv_results.data_vars]
             var_dict = {}
             lats, lons = self._get_lats_lons()
             for var in data_vars:
                 var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(dbv_results.time),
                                                                            len(lats), len(lons))))
-            self.dbv_agr_results = xr.Dataset(coords=dict(time=dbv_results.time,
-                                                          lon=lons,
-                                                          lat=lats),
-                                              data_vars=var_dict,
-                                              attrs=dbv_results.attrs)
+            self.dbv_gr_grid_results = xr.Dataset(coords=dict(time=dbv_results.time,
+                                                              lon=lons,
+                                                              lat=lats),
+                                                  data_vars=var_dict,
+                                                  attrs=dbv_results.attrs)
         
-        self.dbv_agr_results.loc[dict(lat=lat, lon=lon)] = dbv_results
+        self.dbv_gr_grid_results.loc[dict(lat=lat, lon=lon)] = dbv_results
 
-    def get_dbv_results(self, grid=True, gr=True):
-        """
-        get daily basis variable results for aggregated GeoRegion
-
-        Args:
-            grid: get gridded results. Default: True
-            gr: get GR results. Default: True
-        """
-        gr_vars = [var for var in self.dbv_agr_results.data_vars if 'GR' in var]
-        grid_vars = [var for var in self.dbv_agr_results.data_vars if 'GR' not in var]
-        if not grid:
-            return self.dbv_agr_results.drop_vars(grid_vars)
-        if not gr:
-            return self.dbv_agr_results.drop_vars(gr_vars)
-        else:
-            return self.dbv_agr_results
-    
     def save_dbv_results(self, filepath):
         """
-        save all daily basis variable results to filepath
+        save all daily basis variable results for grid of GeoRegions to filepath
         """
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
-            self.dbv_agr_results.to_netcdf(filepath)
+            self.dbv_gr_grid_results.to_netcdf(filepath)
 
     def set_ctp_results(self, lat, lon, ctp_results):
         """
@@ -218,22 +199,11 @@ class TEAAgr(TEAIndicators):
                 attrs['long_name'] = new_attrs['long_name']
                 self.CTP_results[var].attrs = attrs
         
-    def get_ctp_results(self, grid=True, gr=True):
+    def get_ctp_results(self):
         """
-        get CTP results for aggregated GeoRegion
-
-        Args:
-            grid: get gridded results. Default: True
-            gr: get GR results. Default: True
+        get CTP results for grid of GeoRegions
         """
-        gr_vars = [var for var in self.CTP_results.data_vars if 'GR' in var]
-        grid_vars = [var for var in self.CTP_results.data_vars if 'GR' not in var]
-        if not grid:
-            return self.CTP_results.drop_vars(grid_vars)
-        if not gr:
-            return self.CTP_results.drop_vars(gr_vars)
-        else:
-            return self.CTP_results
+        return self.CTP_results
     
     def save_ctp_results(self, filepath):
         """
@@ -246,16 +216,16 @@ class TEAAgr(TEAIndicators):
     
     def apply_mask(self):
         """
-        apply AGR mask to daily basis variables and CTP results
+        apply GR grid mask to daily basis variables and CTP results
         """
-        if self.dbv_agr_results is not None:
-            self.dbv_agr_results = self.dbv_agr_results.where(self.agr_mask > 0)
+        if self.dbv_gr_grid_results is not None:
+            self.dbv_gr_grid_results = self.dbv_gr_grid_results.where(self.gr_grid_mask > 0)
         if self.CTP_results is not None:
-            self.CTP_results = self.CTP_results.where(self.agr_mask > 0)
+            self.CTP_results = self.CTP_results.where(self.gr_grid_mask > 0)
     
-    def calc_tea_agr(self, lats=None, lons=None):
+    def calc_tea_gr_grid(self, lats=None, lons=None):
         """
-        calculate TEA indicators for all aggregated GeoRegions
+        calculate TEA indicators for all GeoRegions in GeoRegion grid
         Args:
             lats: Latitudes (default: get automatically)
             lons: Longitudes (default: get automatically)
@@ -274,7 +244,7 @@ class TEAAgr(TEAIndicators):
         calculate AGR variables
         """
         # calculate area weights (equation 34_0)
-        awgts = self.agr_area / self.agr_area.sum()
+        awgts = self.gr_grid_areas / self.gr_grid_areas.sum()
         
         # calc X_Ref^AGR and X_s^AGR (equation 34_1 and equation 34_2)
         x_ref_agr = (awgts * self._ref_mean).sum()
@@ -335,35 +305,35 @@ class TEAAgr(TEAIndicators):
             margin = self.cell_size_lat
 
         lats = np.arange(self.input_data_grid.lat.max() - margin,
-                         self.input_data_grid.lat.min() - self.agr_resolution + margin,
-                         -self.agr_resolution)
+                         self.input_data_grid.lat.min() - self.gr_grid_res + margin,
+                         -self.gr_grid_res)
         lons = np.arange(self.input_data_grid.lon.min() + margin,
-                         self.input_data_grid.lon.max() + self.agr_resolution - margin,
-                         self.agr_resolution)
+                         self.input_data_grid.lon.max() + self.gr_grid_res - margin,
+                         self.gr_grid_res)
         return lats, lons
     
-    def _generate_agr_mask(self):
+    def _generate_gr_grid_mask(self):
         """
-        generate mask for aggregated GeoRegion
+        generate mask for grid of GeoRegions
         """
-        logger.info('Generating AGR mask')
+        logger.info(f'Generating GR grid mask with resolution {self.gr_grid_res} degrees')
         lats, lons = self._get_lats_lons(margin=0)
         mask_orig = self.mask
         area_orig = self.area_grid
         res_orig = self.lat_resolution
         
-        mask_agr = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
-                                coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
-                                dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
-        mask_agr = mask_agr.rename('mask_lt1500')
+        gr_grid_mask = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
+                                    coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
+                                    dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
+        gr_grid_mask = gr_grid_mask.rename('mask_lt1500')
         
-        area_agr = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
-                                coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
-                                dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
-        area_agr = area_agr.rename('area_grid')
+        gr_grid_areas = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
+                                     coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
+                                     dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
+        gr_grid_areas = gr_grid_areas.rename('area_grid')
         
-        for llat in mask_agr.lat:
-            for llon in mask_agr.lon:
+        for llat in gr_grid_mask.lat:
+            for llon in gr_grid_mask.lon:
                 cell_orig = mask_orig.sel(lat=slice(llat, llat - res_orig),
                                           lon=slice(llon, llon + res_orig))
                 cell_area = area_orig.sel(lat=slice(llat, llat - res_orig),
@@ -372,15 +342,15 @@ class TEAAgr(TEAIndicators):
                 if valid_cells == 0:
                     continue
                 vcell_frac = valid_cells / cell_orig.size
-                mask_agr.loc[llat, llon] = vcell_frac.values
-                area_agr.loc[llat, llon] = cell_area.sum().values
+                gr_grid_mask.loc[llat, llon] = vcell_frac.values
+                gr_grid_areas.loc[llat, llon] = cell_area.sum().values
         
-        self.agr_mask = mask_agr
-        self.agr_area = area_agr
+        self.gr_grid_mask = gr_grid_mask
+        self.gr_grid_areas = gr_grid_areas
 
     def _calc_tea_lat(self, lat, lons=None):
         """
-        calculate TEA indicators for all longitudes of a latitude
+        calculate TEA indicators of GeoRegion grid cell for all longitudes of a latitude
         Args:
             lat: Latitude
             lons: Longitudes (default: get automatically)
@@ -402,7 +372,7 @@ class TEAAgr(TEAIndicators):
                 continue
             
             # calculate daily basis variables
-            tea_sub.calc_daily_basis_vars(grid=False)
+            tea_sub.calc_daily_basis_vars(grid=False, gr=True)
             # TODO check if this is necessary
             # dbv_results = tea_sub.get_daily_results(gr=True, grid=False).compute()
             # self.set_dbv_results(lat, lon, dbv_results)

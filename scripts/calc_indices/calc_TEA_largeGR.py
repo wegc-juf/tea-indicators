@@ -79,11 +79,11 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     
     tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
-                     agr_mask=agr_mask, agr_area=agr_area, land_frac_min=land_frac_min,
+                     gr_grid_mask=agr_mask, gr_grid_areas=agr_area, land_frac_min=land_frac_min,
                      cell_size_lat=cell_size_lat, ctp=opts.period, unit=opts.unit, low_extreme=opts.low_extreme)
     
     if agr_mask is None:
-        save_0p5_mask(opts, tea_agr.agr_mask, tea_agr.agr_area)
+        save_0p5_mask(opts, tea_agr.gr_grid_mask, tea_agr.gr_grid_areas)
     
     tea_agr.calc_daily_basis_vars()
 
@@ -91,12 +91,12 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     if False:
         lons = [37]
         lat = 51
-        tea_agr.calc_tea_agr(lats=[lat], lons=lons)
+        tea_agr.calc_tea_gr_grid(lats=[lat], lons=lons)
         res = tea_agr.get_ctp_results()
         res = res.sel(lat=lat, lon=slice(lons[0], lons[-1]))
         logger.info(res)
     else:
-        tea_agr.calc_tea_agr()
+        tea_agr.calc_tea_gr_grid()
     
     # save output files
     # TODO do we need these results?
@@ -107,7 +107,7 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     # tea_agr.save_dbv_results(dbv_path)
     
     ctp_path = (f'{opts.outpath}/ctp_indicator_variables/'
-                f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+                f'CTP_{opts.param_str}_GRG-{opts.region}_{opts.period}_{opts.dataset}'
                 f'_{opts.start}to{opts.end}.nc')
     create_tea_history(cfg_params=opts, tea=tea_agr, result_type='CTP')
     tea_agr.apply_mask()
