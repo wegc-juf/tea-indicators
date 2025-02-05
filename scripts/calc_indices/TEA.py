@@ -771,64 +771,79 @@ class TEAIndicators:
     def _calc_decadal_compound_vars(self):
         """
         calculate decadal values for compound variables (equation 23_2)
+        
+        Returns:
+
+        """
+        self.decadal_results = self._calc_compound_vars(self.decadal_results)
+        
+    def _calc_compound_vars(self, data):
+        """
+        calculate values for compound variables (equation 23_2)
+        
+        Args:
+            data: Xarray dataset containing the basic indicators EF, ED, EM, and EA
+        
+        Returns:
+            data: Xarray dataset containing the additional compound indicators ED, EM, EM_Md, EM_Max, ES_avg, and TEX
         """
         
         # calculate cumulative events duration (cf. equation 14_2)
-        ED = self.calc_cumulative_events_duration(f=self.decadal_results['EF'], d=self.decadal_results['ED_avg'])
+        ED = self.calc_cumulative_events_duration(f=data['EF'], d=data['ED_avg'])
         ED.attrs = get_attrs(vname='ED', dec=True)
-        self.decadal_results['ED'] = ED
+        data['ED'] = ED
         
         # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 17_2)
-        EM = self.calc_temporal_events_extremity(ed=self.decadal_results['ED'], m=self.decadal_results['EM_avg'])
+        EM = self.calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg'])
         EM.attrs = get_attrs(vname='EM', dec=True)
-        self.decadal_results['EM'] = EM
+        data['EM'] = EM
         
         # calculate cumulative median exceedance magnitude (cf. equation 19_2)
-        EM_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED'], m=self.decadal_results['EM_avg_Md'])
+        EM_Md = self.calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg_Md'])
         EM_Md.attrs = get_attrs(vname='EM_Md', dec=True)
-        self.decadal_results['EM_Md'] = EM_Md
+        data['EM_Md'] = EM_Md
         
-        if 'EF_GR' in self.decadal_results:
+        if 'EF_GR' in data:
             # calculate cumulative events duration (equation 15_2)
-            ED_GR = self.calc_cumulative_events_duration(f=self.decadal_results['EF_GR'], d=self.decadal_results[
-                'ED_avg_GR'])
+            ED_GR = self.calc_cumulative_events_duration(f=data['EF_GR'], d=data['ED_avg_GR'])
             ED_GR.attrs = get_attrs(vname='ED_GR', dec=True)
-            self.decadal_results['ED_GR'] = ED_GR
+            data['ED_GR'] = ED_GR
             
             # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 18_2)
-            EM_GR = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'],
-                                                        m=self.decadal_results['EM_avg_GR'])
+            EM_GR = self.calc_temporal_events_extremity(ed=data['ED_GR'],
+                                                        m=data['EM_avg_GR'])
             EM_GR.attrs = get_attrs(vname='EM_GR', dec=True)
-            self.decadal_results['EM_GR'] = EM_GR
+            data['EM_GR'] = EM_GR
             
             # calculate cumulative median exceedance magnitude (equation 19_4)
-            EM_GR_Md = self.calc_temporal_events_extremity(ed=self.decadal_results['ED_GR'], m=self.decadal_results[
+            EM_GR_Md = self.calc_temporal_events_extremity(ed=data['ED_GR'], m=data[
                 'EM_avg_GR_Md'])
             EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True)
-            self.decadal_results['EM_GR_Md'] = EM_GR_Md
+            data['EM_GR_Md'] = EM_GR_Md
             
-        if 'EM_avg_Max_GR' in self.decadal_results:
+        if 'EM_avg_Max_GR' in data:
             gvar = '_GR'
         else:
             gvar = ''
             
         # calculate cumulative maximum exceedance magnitude (cf. equation 20_2)
-        EM_Max = self.decadal_results[f'EM_avg_Max{gvar}'] * self.decadal_results[f'ED{gvar}']
+        EM_Max = data[f'EM_avg_Max{gvar}'] * data[f'ED{gvar}']
         EM_Max.attrs = get_attrs(vname=f'EM_Max{gvar}', dec=True)
-        self.decadal_results[f'EM_Max{gvar}'] = EM_Max
+        data[f'EM_Max{gvar}'] = EM_Max
 
         # calculate event severity (cf. equation 21_2)
-        es_avg = self.calc_event_severity(d=self.decadal_results[f'ED_avg{gvar}'], m=self.decadal_results[
+        es_avg = self.calc_event_severity(d=data[f'ED_avg{gvar}'], m=data[
             f'EM_avg{gvar}'],
-                                          a=self.decadal_results[f'EA_avg{gvar}'])
+                                          a=data[f'EA_avg{gvar}'])
         es_avg.attrs = get_attrs(vname=f'ES_avg{gvar}', dec=True)
-        self.decadal_results[f'ES_avg{gvar}'] = es_avg
+        data[f'ES_avg{gvar}'] = es_avg
     
         # calculate total events extremity (cf. equation 21_4)
-        TEX = self.calc_total_events_extremity(f=self.decadal_results[f'EF{gvar}'],
-                                               s=self.decadal_results[f'ES_avg{gvar}'])
+        TEX = self.calc_total_events_extremity(f=data[f'EF{gvar}'],
+                                               s=data[f'ES_avg{gvar}'])
         TEX.attrs = get_attrs(vname=f'TEX{gvar}', dec=True)
-        self.decadal_results[f'TEX{gvar}'] = TEX
+        data[f'TEX{gvar}'] = TEX
+        return data
     
     def calc_spread_estimators(self):
         """
