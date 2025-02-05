@@ -59,7 +59,7 @@ class TEAAgr(TEAIndicators):
         
         # daily basis variables for aggregated GeoRegion
         self.dbv_agr_results = None
-    
+        
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
         calculate all daily basis variables
@@ -270,6 +270,64 @@ class TEAAgr(TEAIndicators):
         
         for lat in lats:
             self._calc_tea_lat(lat, lons=lons)
+    
+    def calc_agr_mean(self):
+        """
+        calculate AGR variables
+        """
+        # calculate area weights (equation 34_0)
+        awgts = self.agr_area / self.agr_area.sum()
+        
+        # calc X_Ref^AGR and X_s^AGR (equation 34_1 and equation 34_2)
+        x_ref_agr = (awgts * self._ref_mean).sum()
+        xt_s_agr = (awgts * self.decadal_results).sum(dim=('lat', 'lon'))
+        
+        # calc Xt_ref_db and Xt_ref_agr (equation 34_3)
+        xt_ref_agr = self._calc_gmean_decadal(start_year=self.ref_period[0], end_year=self.ref_period[1], data=xt_s_agr)
+        
+        # calculate X_s_AGR (equation 34_4)
+        x_s_agr = (x_ref_agr / xt_ref_agr) * xt_s_agr
+        
+        # calculate compound variables (equation 35)
+        x_s_agr = self._calc_compound_vars(x_s_agr)
+        x_ref_agr = self._calc_compound_vars(x_ref_agr)
+        
+        # set values to nan for first and last 5/4 years
+        x_s_agr[dict(time=slice(0, 5))] = np.nan
+        x_s_agr[dict(time=slice(-4, None))] = np.nan
+        
+        # calculate CC period averages (equation 36)
+        x_cc_agr = self._calc_gmean_decadal(start_year=self.cc_period[0], end_year=self.cc_period[1], data=x_s_agr)
+        
+        # calculate amplification factors (equation 37)
+        af_agr = x_s_agr / x_ref_agr
+        af_cc_agr = x_cc_agr / x_ref_agr
+
+        # rename variables
+        rename_dict = {var: f'{var}_AGR_AF' for var in af_agr.data_vars}
+        af_agr = af_agr.rename(rename_dict)
+        rename_dict = {var: f'{var}_AGR_AF_CC' for var in af_cc_agr.data_vars}
+        af_cc_agr = af_cc_agr.rename(rename_dict)
+        
+        # add attributes
+        for vvar in af_agr.data_vars:
+            af_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
+        for vvar in af_cc_agr.data_vars:
+            af_cc_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
+        
+        # join af_agr and af_cc_agr
+        af_agr = xr.merge([af_agr, af_cc_agr])
+
+        # rename variables
+        rename_dict = {var: f'{var}_AGR' for var in x_s_agr.data_vars}
+        x_s_agr = x_s_agr.rename(rename_dict)
+        
+        # add attributes
+        for vvar in x_s_agr.data_vars:
+            x_s_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
+        
+        self.decadal_results = xr.merge([self.decadal_results, x_s_agr])
+        self.amplification_factors = xr.merge([self.amplification_factors, af_agr])
     
     def _get_lats_lons(self, margin=None):
         """

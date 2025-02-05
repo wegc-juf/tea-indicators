@@ -40,7 +40,7 @@ def load_ctp_data(opts, tea):
         else:
             return False
     
-    filenames = (f'{ctppath}CTP_{opts.param_str}_{opts.region}_{opts.period}'
+    filenames = (f'{ctppath}/CTP_{opts.param_str}_{opts.region}_{opts.period}'
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if not 'ref' in file]
@@ -69,19 +69,17 @@ def rolling_decadal_mean(data):
     return data
 
 
-def calc_decadal_indicators(opts, tea):
+def calc_decadal_indicators(opts, tea, outpath):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
     Args:
         opts: CLI parameter
         tea: TEA object
+        outpath: output path
 
     Returns:
 
     """
-    outpath = (f'{opts.outpath}/dec_indicator_variables/'
-                   f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
@@ -124,7 +122,7 @@ def compare_to_ref_decadal(tea, filename_ref):
         logger.warning(f'Reference file {filename_ref} not found.')
 
 
-def calc_amplification_factors(opts, tea):
+def calc_amplification_factors(opts, tea, outpath):
     """
     calculate amplification factors
     Args:
@@ -142,13 +140,10 @@ def calc_amplification_factors(opts, tea):
     
     path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
     path.mkdir(parents=True, exist_ok=True)
-    out_path = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                f'_{opts.start}to{opts.end}.nc')
     
     # compare to reference file
     if opts.compare_to_ref:
-        ref_path = out_path.replace('.nc', '_ref.nc')
+        ref_path = outpath.replace('.nc', '_ref.nc')
         ref_data = xr.open_dataset(ref_path)
         logger.info(f'Comparing amplification factors to reference file {ref_path}')
         with warnings.catch_warnings():
@@ -156,5 +151,5 @@ def calc_amplification_factors(opts, tea):
             compare_to_ref(tea.amplification_factors, ref_data)
     
     # save amplification factors
-    logger.info(f'Saving amplification factors to {out_path}')
-    tea.save_amplification_factors(out_path)
+    logger.info(f'Saving amplification factors to {outpath}')
+    tea.save_amplification_factors(outpath)

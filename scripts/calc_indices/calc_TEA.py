@@ -24,6 +24,7 @@ from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
+from scripts.calc_indices.TEA_AGR import TEAAgr
 
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
@@ -172,23 +173,27 @@ def save_ctp_output(opts, tea):
         compare_to_ctp_ref(tea, path_ref)
 
 
-def calc_ctp_indicators(opts):
+def calc_ctp_indicators(opts, masks, static, agr_mask=None, agr_area=None):
     """
     calculate the TEA indicators for the annual climatic time period
     Args:
         opts: CLI parameter
+        masks: mask files
+        static: static files
+        agr_mask: mask for AGR
+        agr_area: area for AGR
 
     Returns:
 
     """
-
+    
     # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
-    masks, static = load_static_files(opts=opts)
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
         # use European masks
         masks, static = load_static_files(opts=opts, large_gr=True)
         data = get_data(opts=opts)
-        tea_agr = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static)
+        tea_agr = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static, agr_mask=agr_mask,
+                                            agr_area=agr_area)
         return tea_agr
 
     # computation of daily basis variables (Methods chapter 3)
@@ -236,15 +241,38 @@ def run():
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
     
-    tea = TEAIndicators()
-    
     # load CFG parameter
     opts = load_opts(fname=__file__)
 
     # check length of input time span
     start = opts.start
     end = opts.end
-
+    
+    # load static files
+    masks, static = load_static_files(opts=opts)
+    agr_mask = None
+    agr_area = None
+    # check if GR size is larger than 100 areals and switch to AGR if so
+    if 'ERA' in opts.dataset and static['GR_size'] > 100:
+        # load agr mask
+        try:
+            agr_mask = xr.open_dataset(f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
+            agr_mask = agr_mask.mask_lt1500
+        except FileNotFoundError:
+            agr_mask = None
+        
+        try:
+            agr_area = xr.open_dataset(f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+            agr_area = agr_area.area_grid
+        except FileNotFoundError:
+            agr_area = None
+        
+        tea = TEAAgr(agr_mask=agr_mask, agr_area=agr_area)
+        agr = True
+    else:
+        tea = TEAIndicators()
+        agr = False
+    
     if not opts.decadal_only:
         # calculate annual climatic time period indicators
         if end - start > 10 - 1:
@@ -254,19 +282,36 @@ def run():
                 opts.start = pstart
                 opts.end = pend
                 logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
-                tea = calc_ctp_indicators(opts=opts)
+                tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=agr_mask, agr_area=agr_area)
                 gc.collect()
         else:
-            tea = calc_ctp_indicators(opts=opts)
+            tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=agr_mask, agr_area=agr_area)
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end
         
+        if agr:
+            agr_str = 'AGR-'
+        else:
+            agr_str = ''
+        
+        outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
+                           f'DEC_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
+                           f'_{opts.start}to{opts.end}.nc')
+        outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+                        f'AF_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
+                        f'_{opts.start}to{opts.end}.nc')
+        
         # calculate decadal-mean ctp indicator variables
-        calc_decadal_indicators(opts=opts, tea=tea)
+        calc_decadal_indicators(opts=opts, tea=tea, outpath=outpath_decadal)
         
         # calculate amplification factors
-        calc_amplification_factors(opts, tea)
+        calc_amplification_factors(opts, tea, outpath_ampl)
+    
+        if agr:
+            tea.calc_agr_mean()
+            tea.save_decadal_results(outpath_decadal)
+            tea.save_amplification_factors(outpath_ampl)
 
 
 if __name__ == '__main__':

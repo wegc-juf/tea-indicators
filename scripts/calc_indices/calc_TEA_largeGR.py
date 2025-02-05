@@ -42,7 +42,7 @@ def regrid_data_experimental(data):
     pass
 
 
-def calc_tea_large_gr(opts, data, masks, static):
+def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     logger.info(f'Switching to calc_TEA_largeGR because GR > 100 areals.')
     
     if opts.precip:
@@ -77,19 +77,6 @@ def calc_tea_large_gr(opts, data, masks, static):
     full_mask = masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     proc_static = static.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     
-    # load agr mask
-    try:
-        agr_mask = xr.open_dataset(f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
-        agr_mask = agr_mask.mask_lt1500
-    except FileNotFoundError:
-        agr_mask = None
-    
-    try:
-        agr_area = xr.open_dataset(f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
-        agr_area = agr_area.area_grid
-    except FileNotFoundError:
-        agr_area = None
-        
     tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
                      agr_mask=agr_mask, agr_area=agr_area, land_frac_min=land_frac_min,
