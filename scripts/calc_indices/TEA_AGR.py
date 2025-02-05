@@ -100,9 +100,7 @@ class TEAAgr(TEAIndicators):
         lon_off_exact = 1 / np.cos(np.deg2rad(lat)) * lat_off
         size_exact = lon_off_exact * lat_off
         
-        round_coords = True
-        if round_coords:
-            lon_off = np.round(lon_off_exact * 4, 0) / 4.
+        lon_off = np.round(lon_off_exact * 4, 0) / 4.
         size_real = lon_off * lat_off
         area_frac = size_real / size_exact
         
