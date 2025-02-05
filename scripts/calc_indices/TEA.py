@@ -75,7 +75,9 @@ class TEAIndicators:
         
         # Amplification factors
         self._cc_mean = None
+        self.cc_period = None
         self._ref_mean = None
+        self.ref_period = None
         self.amplification_factors = xr.Dataset()
         
         self.null_val = 0
@@ -880,13 +882,16 @@ class TEAIndicators:
             self.decadal_results[vvar + '_slow'] = slow[vvar]
             
     # ### amplification factors ###
-    def _calc_cc(self, period=(2008, 2022)):
+    def _calc_cc(self, period=None):
         """
         calculate geometric mean of CC period
         
         Args:
-            period: current climate period: tuple(start year, end year)
+            period: current climate period: tuple(start year, end year). Default: self.cc_period
         """
+        if period is None:
+            period = self.cc_period
+            
         start_year, end_year = period
         cc_mean = self._calc_gmean_decadal(start_year=start_year, end_year=end_year)
         for vvar in cc_mean.data_vars:
@@ -895,13 +900,16 @@ class TEAIndicators:
                 cc_mean[vvar].attrs['long_name'] = 'CC mean of ' + cc_mean[vvar].attrs['long_name']
         self._cc_mean = cc_mean
     
-    def _calc_ref(self, period=(1961, 1990)):
+    def _calc_ref(self, period=None):
         """
         calculate geometric mean of ref period
         
         Args:
-            period: reference period: tuple(start year, end year)
+            period: reference period: tuple(start year, end year). Default: self.ref_period
         """
+        if period is None:
+            period = self.ref_period
+            
         start_year, end_year = period
         ref_mean = self._calc_gmean_decadal(start_year=start_year, end_year=end_year)
         
@@ -950,13 +958,15 @@ class TEAIndicators:
         calculate amplification factors (equation 26)
         
         Args:
-            ref_period: reference period: tuple(start year, end year)
-            cc_period: current climate period: tuple(start year, end year)
+            ref_period: reference period: tuple(start year, end year). Default: (1961, 1990)
+            cc_period: current climate period: tuple(start year, end year). Default: (2008, 2022)
         """
+        self.ref_period = ref_period
+        self.cc_period = cc_period
         if self._cc_mean is None:
-            self._calc_cc(cc_period)
+            self._calc_cc()
         if self._ref_mean is None:
-            self._calc_ref(ref_period)
+            self._calc_ref()
         cc_mean = self._cc_mean
         ref_mean = self._ref_mean
         amplification_factors = self.decadal_results / ref_mean
