@@ -919,24 +919,28 @@ class TEAIndicators:
                 ref_mean[vvar].attrs['long_name'] = 'Ref mean of ' + ref_mean[vvar].attrs['long_name']
         self._ref_mean = ref_mean
     
-    def _calc_gmean_decadal(self, start_year, end_year):
+    def _calc_gmean_decadal(self, start_year, end_year, data=None):
         """
         calculate geometric mean for given period
         Args:
             start_year: start year of selected period
             end_year: end year of selected period
+            data: data to calculate geometric mean. Default: self.decadal_results
 
         Returns:
-            gmean
+            geometric mean of selected period
         """
+        if data is None:
+            data = self.decadal_results
+            
         start_cy = start_year + 5
         end_cy = end_year - 4
         start_cy_date = f'{start_cy}-01-01'
         end_cy_date = f'{end_cy}-12-31'
-        if start_cy < self.decadal_results.time.min().dt.year or end_cy > self.decadal_results.time.max().dt.year:
+        if start_cy < data.time.min().dt.year or end_cy > data.time.max().dt.year:
             raise ValueError(f"Selected period {start_cy} - {end_cy} not within time range of decadal results")
         
-        period_data = self.decadal_results.sel(time=slice(start_cy_date, end_cy_date))
+        period_data = data.sel(time=slice(start_cy_date, end_cy_date))
         
         period_mean = self.gmean_custom(period_data, dim='time')
         doy_first, doy_last = self._calc_doy_adjustment(doy_first=period_mean.doy_first.values,
