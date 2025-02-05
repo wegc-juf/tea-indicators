@@ -23,18 +23,24 @@ logging.basicConfig(
 
 PARAMS = ref_cc_params()
 
-def load_data(opts):
+def load_data(opts, suppl=False):
     """
     load decadal-mean data
     Args:
         opts: CLI parameter
+        suppl: set if supplementary variables should be loaded
 
     Returns:
 
     """
 
-    file = (f'{opts.inpath}'
-            f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+    sdir, sstr = '', ''
+    if suppl:
+        sdir = 'supplementary/'
+        sstr = 'suppl'
+
+    file = (f'{opts.inpath}{sdir}'
+            f'DEC{sstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
             f'_{opts.start}to{opts.end}.nc')
     data = xr.open_dataset(file)
 
@@ -168,17 +174,23 @@ def calc_compound_amplification_factors(opts, af, af_cc, dm=False):
 
     return af, af_cc
 
-def save_output(opts, af, af_cc):
+def save_output(opts, af, af_cc, suppl=False):
     """
     save amplification data to nc files
     Args:
         opts: CLI parameter
         af: amplification factors ds
         af_cc: CC amplification factors ds
+        suppl: set if supplementary variables are used
 
     Returns:
 
     """
+
+    sdir, sstr = '', ''
+    if suppl:
+        sdir = 'supplementary/'
+        sstr = 'suppl'
 
     ds_out = xr.merge([af, af_cc])
 
@@ -190,11 +202,10 @@ def save_output(opts, af, af_cc):
             ds_out[vvar] = ds_out[vvar].where(mask == 1)
 
     ds_out = create_history_from_cfg(cfg_params=opts, ds=ds_out)
-    # ds_out = create_history(cli_params=sys.argv, ds=ds_out)
-    path = Path(f'{opts.outpath}amplification/')
+    path = Path(f'{opts.outpath}amplification/{sdir}')
     path.mkdir(parents=True, exist_ok=True)
-    ds_out.to_netcdf(f'{opts.outpath}amplification/'
-                     f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+    ds_out.to_netcdf(f'{opts.outpath}amplification/{sdir}'
+                     f'AF{sstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
                      f'_{opts.start}to{opts.end}.nc')
 
 def run():
@@ -217,6 +228,19 @@ def run():
 
     # save output
     save_output(opts=opts, af=af, af_cc=af_cc)
+
+    # calc supplementary variables
+    if opts.supplementary:
+        ds_suppl = load_data(opts=opts, suppl=True)
+
+        # calc mean of REF and CC periods
+        ref_avg, cc_avg = calc_ref_cc_mean(data=ds_suppl)
+
+        # calc amplification factors of supplementary variables
+        af, af_cc = calc_basis_amplification_factors(data=ds_suppl, ref=ref_avg, cc=cc_avg)
+
+        # save output
+        save_output(opts=opts, af=af, af_cc=af_cc, suppl=True)
 
 
 if __name__ == '__main__':

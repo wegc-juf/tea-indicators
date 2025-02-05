@@ -35,6 +35,7 @@ def load_opts(fname):
         # show set parameter
         show_parameters(opts)
         opts = check_config(opts_dict=vars(opts))
+        opts = argparse.Namespace(**opts)
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
