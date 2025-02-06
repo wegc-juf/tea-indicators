@@ -324,8 +324,8 @@ class TEAAgr(TEAIndicators):
         for vvar in x_s_agr.data_vars:
             x_s_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
         
-        self.decadal_results = xr.merge([self.decadal_results, x_s_agr])
-        self.amplification_factors = xr.merge([self.amplification_factors, af_agr])
+        self.decadal_results = xr.merge([x_s_agr, self.decadal_results], compat='override')
+        self.amplification_factors = xr.merge([af_agr, self.amplification_factors], compat='override')
     
     def _get_lats_lons(self, margin=None):
         """
