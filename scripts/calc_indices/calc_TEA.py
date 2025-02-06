@@ -327,6 +327,9 @@ def run():
                 agr_lat_range = None
             tea.calc_agr_mean(lat_range=agr_lat_range)
             logger.info(f'Saving AGR decadal results to {outpath_decadal}')
+            # remove outpath_decadal if it exists
+            if os.path.exists(outpath_decadal):
+                os.remove(outpath_decadal)
             tea.save_decadal_results(outpath_decadal)
             logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
             tea.save_amplification_factors(outpath_ampl)
