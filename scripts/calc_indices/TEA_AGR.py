@@ -239,10 +239,40 @@ class TEAAgr(TEAIndicators):
         for lat in lats:
             self._calc_tea_lat(lat, lons=lons)
     
-    def calc_agr_mean(self):
+    def _filter_agr(self, lat_range, lon_range):
+        """
+        filter GeoRegion grid data to spatial extent of aggregated GeoRegion
+        Args:
+            lat_range: Latitude range (min, max)
+            lon_range: Longitude range (min, max)
+
+        Returns:
+
+        """
+        # TODO check if working correctly
+        if lat_range is None:
+            lat_range = (self.gr_grid_areas.lat.min(), self.gr_grid_areas.lat.max())
+        if lon_range is None:
+            lon_range = (self.gr_grid_areas.lon.min(), self.gr_grid_areas.lon.max())
+            
+        self.gr_grid_areas = self.gr_grid_areas.sel(lat=slice(lat_range[1], lat_range[0]),
+                                                    lon=slice(lon_range[0], lon_range[1]))
+        self._ref_mean = self._ref_mean.sel(lat=slice(lat_range[1], lat_range[0]),
+                                            lon=slice(lon_range[0], lon_range[1]))
+        self.decadal_results = self.decadal_results.sel(lat=slice(lat_range[1], lat_range[0]),
+                                                        lon=slice(lon_range[0], lon_range[1]))
+        self.amplification_factors = self.amplification_factors.sel(lat=slice(lat_range[1], lat_range[0]),
+                                                                    lon=slice(lon_range[0], lon_range[1]))
+
+    def calc_agr_mean(self, lat_range=None, lon_range=None):
         """
         calculate AGR variables
+        lat_range: Latitude range (min, max). Default: Full region
+        lon_range: Longitude range (min, max). Default: Full region
         """
+        if lat_range is not None or lon_range is not None:
+            self._filter_agr(lat_range=lat_range, lon_range=lon_range)
+            
         # calculate area weights (equation 34_0)
         awgts = self.gr_grid_areas / self.gr_grid_areas.sum()
         
