@@ -311,8 +311,8 @@ def run():
         # calculate aggregate GeoRegion means
         if agr:
             if opts.region != opts.agr:
-                lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
-                lat_range = lat_range_dict[opts.agr]
+                agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+                agr_lat_range = agr_lat_range_dict[opts.agr]
                 outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
                                    f'DEC_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
                                    f'_{opts.start}to{opts.end}.nc')
@@ -320,8 +320,8 @@ def run():
                                 f'AF_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
                                 f'_{opts.start}to{opts.end}.nc')
             else:
-                lat_range = None
-            tea.calc_agr_mean(lat_range=lat_range)
+                agr_lat_range = None
+            tea.calc_agr_mean(lat_range=agr_lat_range)
             tea.save_decadal_results(outpath_decadal)
             tea.save_amplification_factors(outpath_ampl)
 
