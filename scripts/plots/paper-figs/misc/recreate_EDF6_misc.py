@@ -18,6 +18,7 @@ from scripts.general_stuff.general_functions import ref_cc_params
 
 PARAMS = ref_cc_params()
 
+
 def preprocess(ds_in):
     ds = ds_in.copy()
     vkeep = ['doy_first', 'doy_last']
@@ -58,35 +59,46 @@ def load_aep_data(ds, thresh, noe=False):
     return aep, aep_af
 
 
-def load_era5_data(ds):
+def load_era5_data(ds, thresh, noe=False):
     """
     load ERA5 energy content data and calc decadal mean
     :param ds: ERA5 or ERA5Land
+    :param thresh: threshold
+    :param noe: set if L-AUT data is used
     :return: det (df of daily exposure time)
     """
-    # check ok (2024-10-11)
-    regs = ['AUT', 'SEA', 'FBR']
-    det = pd.DataFrame(columns=regs)
 
-    for ireg in regs:
-        # output from calc_SupplVars4EnergyContent.py
-        data = pd.read_csv(f'/data/users/hst/cdrDPS/ACTEM_indices/additional_stuff/'
-                           f'energy_content/'
-                           f'SupplVars_EnergyContent_{ireg}_T_99percentile_{ds}.csv', index_col=0)
+    if not noe:
+        regs = ['AUT', 'SEA', 'FBR']
+        det = pd.DataFrame(columns=regs)
+
+        for ireg in regs:
+            # output from calc_SupplVars4EnergyContent.py
+            data = pd.read_csv(f'/data/users/hst/TEA-clean/energy_content/'
+                               f'SupplVars_EnergyContent_{ireg}_Tx_{thresh}.0degC_{ds}.csv',
+                               index_col=0)
+
+            data = data.fillna(0)
+            data = data.rolling(10, center=True).mean()
+
+            det[ireg] = data['h_avg']
+    else:
+        det = pd.DataFrame(columns=['L-AUT'])
+        data = pd.read_csv(f'/data/users/hst/TEA-clean/energy_content/'
+                           f'SupplVars_EnergyContent_Niederösterreich_Tx_{thresh}.0degC_{ds}.csv',
+                           index_col=0)
 
         data = data.fillna(0)
-        # equation 23_1 (check ok)
         data = data.rolling(10, center=True).mean()
 
-        det[ireg] = data['h_avg']
+        det['L-AUT'] = data['h_avg']
 
     return det
 
 
 def ylims_det_aep(e5, thresh):
-
     if e5 == 'ERA5Land' and thresh == 25:
-        props = {0: {'ymax': 6, 'ymin': 1},
+        props = {0: {'ymax': 7, 'ymin': 4},
                  2: {'ymax': 6, 'ymin': 2},
                  4: {'ymax': 7, 'ymin': 3}}
     elif e5 == 'ERA5Land' and thresh == 30:
@@ -94,15 +106,15 @@ def ylims_det_aep(e5, thresh):
                  2: {'ymax': 3, 'ymin': 0},
                  4: {'ymax': 5, 'ymin': 0}}
     elif e5 == 'ERA5' and thresh == 25:
-        props = {0: {'ymax': 6, 'ymin': 1},
+        props = {0: {'ymax': 7, 'ymin': 5},
                  2: {'ymax': 6, 'ymin': 3},
                  4: {'ymax': 7, 'ymin': 3}}
     elif e5 == 'ERA5' and thresh == 30:
         props = {0: {'ymax': 6, 'ymin': 1},
                  2: {'ymax': 4, 'ymin': 0},
                  4: {'ymax': 5, 'ymin': 0}}
-    else: # L-AUT 25°
-        props = {0: {'ymax': 6, 'ymin': 1},
+    else:
+        props = {0: {'ymax': 7, 'ymin': 4},
                  2: {'ymax': 6, 'ymin': 3},
                  4: {'ymax': 7, 'ymin': 3}}
 
@@ -184,6 +196,9 @@ def plot_det_aep(fig, axs, data, nax, e5, thresh, noe=False):
     if nax == 0:
         cc_off = 0.23
 
+    if noe:
+        cc_off = 0.05
+
     axs.text(0.02,
              ((cc_vals[largest_reg]['ref'] - ylims[nax]['ymin']) / (
                      ylims[nax]['ymax'] - ylims[nax]['ymin'])) + ref_off, props[nax]["refn"],
@@ -200,24 +215,29 @@ def plot_det_aep(fig, axs, data, nax, e5, thresh, noe=False):
 
 
 def ylims_af(e5, thresh):
-
     if e5 == 'ERA5Land' and thresh == 25:
-        lims = {3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+        lims = {1: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+                3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
                 5: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125}}
     elif e5 == 'ERA5Land' and thresh == 30:
-        lims = {3: {'yn': 0, 'yx': 9, 'dmaj': 1, 'dmin': 0.5},
+        lims = {1: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+                3: {'yn': 0, 'yx': 9, 'dmaj': 1, 'dmin': 0.5},
                 5: {'yn': 0, 'yx': 4, 'dmaj': 1, 'dmin': 0.25}}
     elif e5 == 'ERA5' and thresh == 25:
-        lims = {3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+        lims = {1: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+                3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
                 5: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125}}
     elif e5 == 'ERA5' and thresh == 30:
-        lims = {3: {'yn': 0.5, 'yx': 3.5, 'dmaj': 0.5, 'dmin': 0.25},
+        lims = {1: {'yn': 0.5, 'yx': 1.75, 'dmaj': 0.25, 'dmin': 0.125},
+                3: {'yn': 0.5, 'yx': 3.5, 'dmaj': 0.5, 'dmin': 0.25},
                 5: {'yn': 0, 'yx': 3.5, 'dmaj': 0.5, 'dmin': 0.25}}
-    else: # L-AUT 25°
-        lims = {3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+    else:  # L-AUT 25°
+        lims = {1: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+                3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
                 5: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125}}
 
     return lims
+
 
 def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
     """
@@ -266,8 +286,9 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
 
         axs.plot(xticks, data[reg] / ref, 'o-', color=colors[ireg], markersize=2)
         if reg == 'AUT':
-            axs.plot(xticks[:30], np.ones(30), color='k',
-                     linewidth=2)
+            axs.plot(xticks[:30], np.ones(30), color='k', linewidth=2)
+        if reg == 'L-AUT':
+            axs.plot(xticks[:30], np.ones(30), color=colors[ireg], linewidth=2)
         axs.plot(xticks[-15:], np.ones(len(xticks[-15:])) * cc_vals[reg], color=colors[ireg],
                  linewidth=2)
 
@@ -312,7 +333,7 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
 
 
 def run():
-    e5_ds = 'ERA5'
+    e5_ds = 'ERA5Land'
     threshold = 25
 
     # load SPARTACUS data
@@ -320,17 +341,14 @@ def run():
 
     # load ERA5(Land) data
     aep_era5, aep_af_era5 = load_aep_data(ds=e5_ds, thresh=threshold)
-    # e5_det = load_era5_data(ds=e5_ds)
+    e5_det = load_era5_data(ds=e5_ds, thresh=threshold)
 
-    # data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
-    data = {0: None, 1: None, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
+    data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
     axs = axs.reshape(-1)
 
     for iax, ax in enumerate(axs):
-        if iax in [0, 1]:
-            continue
         if iax % 2 == 0:
             plot_det_aep(fig=fig, axs=ax, data=data[iax], nax=iax, e5=e5_ds, thresh=threshold)
         else:
@@ -372,17 +390,14 @@ def run_noe():
 
     # load ERA5(Land) data
     aep_era5, aep_af_era5 = load_aep_data(ds=e5_ds, thresh=25, noe=True)
-    # e5_det = load_era5_data(ds=e5_ds)
+    e5_det = load_era5_data(ds=e5_ds, thresh=25, noe=True)
 
-    # data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
-    data = {0: None, 1: None, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
+    data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
     axs = axs.reshape(-1)
 
     for iax, ax in enumerate(axs):
-        if iax in [0, 1]:
-            continue
         if iax % 2 == 0:
             plot_det_aep(fig=fig, axs=ax, data=data[iax], nax=iax, e5=e5_ds, thresh=25, noe=True)
         else:
@@ -411,5 +426,5 @@ def run_noe():
 
 
 if __name__ == '__main__':
-    # run()
-    run_noe()
+    run()
+    # run_noe()
