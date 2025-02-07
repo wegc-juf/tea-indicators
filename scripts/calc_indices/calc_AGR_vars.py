@@ -367,7 +367,7 @@ def calc_spread_estimates(gdata, data, areas, afacs=False):
     for vvar in gdata.data_vars:
         data_var = f'{vvar}_AGR'
         if afacs:
-            data_var = vvar.split('_AGR_AF')[0] + '_AF'
+            data_var = vvar.replace('_AGR', '')
 
         if data_var == 'EM_AF':
             continue
