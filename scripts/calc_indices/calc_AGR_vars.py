@@ -372,9 +372,8 @@ def calc_spread_estimates(gdata, data, areas, afacs=False):
         if data_var == 'EM_AF':
             continue
 
-        if not afacs:
-            if f'{vvar}_AGR' not in data.data_vars:
-                continue
+        if data_var not in data.data_vars:
+            continue
         c_upp = xr.full_like(gdata[vvar], 1)
         c_upp = c_upp.where(gdata[vvar] >= data[data_var], 0)
 
