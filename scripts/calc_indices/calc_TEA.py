@@ -18,7 +18,8 @@ import xarray as xr
 import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, compare_to_ref
+from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
+                                                     compare_to_ref)
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_daily_basis_vars import calc_daily_basis_vars
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
@@ -155,14 +156,14 @@ def save_ctp_output(opts, tea):
         opts: CLI parameters
         tea: TEA object
     """
-    create_tea_history(cli_params=sys.argv, tea=tea, result_type='CTP')
+    create_tea_history(cfg_params=opts, tea=tea, result_type='CTP')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/supplementary/')
     path.mkdir(parents=True, exist_ok=True)
     
     outpath = (f'{opts.outpath}/ctp_indicator_variables/'
-                   f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
+               f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
     
     path_ref = outpath.replace('.nc', '_ref.nc')
     
@@ -211,10 +212,10 @@ def calc_ctp_indicators(opts, masks, static, agr_mask=None, agr_area=None):
         tea = calc_daily_basis_vars(opts=opts, static=static, data=data, mask=mask)
         opts.period = old_period
     else:
-        tea = TEAIndicators()
+        tea = TEAIndicators(area_grid=static['area_grid'])
         
         dbv_filename = (f'{opts.outpath}/daily_basis_variables/DBV_{opts.param_str}_{opts.region}_annual'
-                            f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
+                        f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
 
         logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
                     'set --recalc-daily.')
