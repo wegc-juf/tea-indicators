@@ -593,6 +593,26 @@ class TEAIndicators:
                                           self.CTP_results.EA_avg_GR)
         self.CTP_results['ES_avg_GR'] = es_avg
     
+    def calc_annual_exceedance_heat_content(self):
+        """
+        calculate annual exceedance heat content (equation 22)
+        """
+        if self.CTP_results['ED_avg_GR'] is None:
+            self.calc_event_duration()
+        if self.CTP_results['TEX_GR'] is None:
+            self.calc_annual_total_events_extremity()
+        if self.CTP_results['ES_avg_GR'] is None:
+            self.calc_annual_event_severity()
+        
+        # equation 22
+        H_AEHC_avg_GR, H_AEHC_GR = self.calc_exceedance_heat_content(self.CTP_results.ES_avg_GR,
+                                                                     self.CTP_results.ED_avg_GR,
+                                                                     self.CTP_results.TEX_GR)
+        H_AEHC_avg_GR.attrs = get_attrs(vname='H_AEHC_avg_GR')
+        H_AEHC_GR.attrs = get_attrs(vname='H_AEHC_GR')
+        self.CTP_results['H_AEHC_avg_GR'] = H_AEHC_avg_GR
+        self.CTP_results['H_AEHC_GR'] = H_AEHC_GR
+    
     def calc_event_severity(self, d, m, a):
         """
         calculate event severity (equation 21_2)
@@ -641,6 +661,29 @@ class TEAIndicators:
         tem.rename('EM')
         return tem
     
+    @staticmethod
+    def calc_exceedance_heat_content(s_avg, d_avg, tex):
+        """
+        calculate exceedance heat content (equation 22)
+        
+        Args:
+            s_avg: average event severity
+            d_avg: average event duration
+            tex: total events extremity
+            
+        Returns:
+            H_AEHC_avg_GR: average daily atmospheric boundary layer exceedance heat content
+            H_AEHC_GR: cumulative atmospheric boundary layer exceedance heat content
+        """
+        
+        # approximate atmospheric boundary layer daily exceedance heat energy uptake capacity
+        # [PJ/(areal °C day)] (equation 22_3)
+        ct_abl = 0.1507
+        
+        H_AEHC_avg_GR = ct_abl * s_avg / d_avg
+        H_AEHC_GR = ct_abl * tex
+        return H_AEHC_avg_GR, H_AEHC_GR
+    
     def calc_annual_CTP_indicators(self, ctp=None, drop_daily_results=False):
         """
         calculate all annual Climatic Time Period (CTP) indicators
@@ -664,6 +707,7 @@ class TEAIndicators:
         self.calc_annual_total_events_extremity()
         self.calc_exceedance_area()
         self.calc_annual_event_severity()
+        self.calc_annual_exceedance_heat_content()
         if drop_daily_results:
             del self._daily_results_filtered
             del self.daily_results
@@ -845,8 +889,17 @@ class TEAIndicators:
                                                s=data[f'ES_avg{gvar}'])
         TEX.attrs = get_attrs(vname=f'TEX{gvar}', dec=True)
         data[f'TEX{gvar}'] = TEX
-        return data
     
+        # calculate exceedance heat content (cf. equation 22)
+        H_AEHC_avg, H_AEHC = self.calc_exceedance_heat_content(s_avg=es_avg, d_avg=data[f'ED_avg{gvar}'],
+                                                               tex=TEX)
+        H_AEHC_avg.attrs = get_attrs(vname=f'H_AEHC_avg{gvar}', dec=True)
+        H_AEHC.attrs = get_attrs(vname=f'H_AEHC{gvar}', dec=True)
+        data[f'H_AEHC_avg{gvar}'] = H_AEHC_avg
+        data[f'H_AEHC{gvar}'] = H_AEHC
+        
+        return data
+
     def calc_spread_estimators(self):
         """
         calculate spread estimators (equation 25)

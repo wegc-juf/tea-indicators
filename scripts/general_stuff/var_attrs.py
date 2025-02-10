@@ -62,8 +62,10 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
                         'units': f'areal {data_unit} dys', 'metric_type': 'compound'},
              'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} dys yr^-1', 'metric_type':
                      'compound'},
+             'H_AEHC_avg': {'long_name': 'average daily atmospheric boundary layer exceedance '
+                                         'heat content', 'units': 'PJ day^-1', 'metric_type': 'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
-                                     'heat content', 'units': 'PJ', 'metric_type': 'compound'}
+                                     'heat content', 'units': 'PJ yr^-1', 'metric_type': 'compound'}
              }
     
     # add (A)GR indicators if necessary
