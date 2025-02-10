@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: false
   GeoRegion: &GR
-    region: FBR
+    region: SEA
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -12,7 +12,7 @@ common_params:
   parameter: &PARAM
     parameter: Tx
     precip: false
-    threshold: 25
+    threshold: 30
     threshold_type: abs
     unit: degC
     low_extreme: false
@@ -31,11 +31,10 @@ common_params:
 regrid_SPARTACUS_to_WEGNext:
   <<: *GUI
   <<: *PARAM
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
   orography: false
-  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
   wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
-  outpath: /data/users/hst/TEA-clean/TEA/
 
 create_region_masks:
   <<: *GUI
@@ -44,11 +43,10 @@ create_region_masks:
   target_sys: 4326
   target_ds: ERA5Land
   xy_name: lon,lat
-  shpfile: /data/users/hst/cdrDPS/shapefiles/FBR_polygon.shp
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
   lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
 create_static_files:
   <<: *GUI
@@ -59,7 +57,7 @@ create_static_files:
   season_length: 366
   smoothing: 0
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
 
 calc_TEA:
   <<: *GUI
@@ -69,7 +67,6 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
-  outpath: /data/users/hst/TEA-clean/TEA/
   recalc_daily: true
   decadal: true
   spreads: true
@@ -83,8 +80,7 @@ calc_station_TEA:
   <<: *TIME
   <<: *PARAM
   station: Graz
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
 
 calc_amplification_factors:
   <<: *GUI
@@ -94,8 +90,7 @@ calc_amplification_factors:
   <<: *DATA
   <<: *PATHS
   supplementary: true
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA_no-largeGR/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
 
 calc_AGR_vars:
   <<: *GUI
@@ -104,7 +99,6 @@ calc_AGR_vars:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
   agr: EUR
   spreads: false

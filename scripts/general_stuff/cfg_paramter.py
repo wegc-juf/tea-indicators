@@ -132,8 +132,16 @@ def update_yaml(fname, opts):
     # Create dict with newly set CFG parameters
     new_params = vars(opts)
 
+    # fix threshold_type if 'abs' was selected (somehow gets converted to builtin_function_or_method)
+    if new_params['threshold_type'] not in ['perc', 'abs']:
+        new_params['threshold_type'] = 'abs'
+
     # Create a filename for the new CFG file
     new_name = '../NEW_' + fname.split('/')[1]
+
+    scripts = ['regrid_SPARTACUS_to_WEGNext', 'create_region_masks',
+               'create_static_files', 'calc_TEA', 'calc_station_TEA',
+               'calc_amplification_factors', 'calc_AGR_vars']
 
     # Open old CFG file and check for new values
     with open(fname, 'r') as original_file, open(new_name, 'w') as new_file:
@@ -143,6 +151,8 @@ def update_yaml(fname, opts):
                 new_file.write(line)
                 continue
             key = line.split(':')[0].strip()
+            if key in scripts:
+                sec = key
             ovalue = line.split(':')[1].strip()
 
             if key not in new_params.keys():
@@ -150,6 +160,9 @@ def update_yaml(fname, opts):
                 continue
             nvalue = new_params[key]
             if ovalue != nvalue:
+                if key == 'outpath':
+                    if f'{sec}.py' != new_params['script']:
+                        continue
                 if ovalue == 'null' and nvalue == '':
                     new_file.write(line)
                     continue
