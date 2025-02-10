@@ -312,7 +312,7 @@ def run():
         # calculate amplification factors
         calc_amplification_factors(opts, tea, outpath_ampl)
     
-        # calculate aggregate GeoRegion means
+        # calculate aggregate GeoRegion means and spread estimators
         if agr:
             if opts.region != opts.agr:
                 agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
@@ -325,7 +325,7 @@ def run():
                                 f'_{opts.start}to{opts.end}.nc')
             else:
                 agr_lat_range = None
-            tea.calc_agr_mean(lat_range=agr_lat_range)
+            tea.calc_agr_vars(lat_range=agr_lat_range)
             logger.info(f'Saving AGR decadal results to {outpath_decadal}')
             # remove outpath_decadal if it exists
             if os.path.exists(outpath_decadal):

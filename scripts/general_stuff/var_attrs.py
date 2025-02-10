@@ -65,23 +65,15 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
                                      'heat content', 'units': 'PJ', 'metric_type': 'compound'}
              }
-
+    
     # add (A)GR indicators if necessary
+    vname_dict = vname.replace('_GR', '').replace('_AGR', '').replace('_AF', '').replace('_CC', '')
+    vattrs = attrs[vname_dict]
     if '_GR' in vname:
-        vname_dict = vname.split('_GR')[0]
-        vattrs = attrs[vname_dict]
         vattrs['long_name'] = f'{vattrs["long_name"]} (GR)'
     elif '_AGR' in vname:
-        vname_dict = vname.split('_AGR')[0]
-        vattrs = attrs[vname_dict]
         vattrs['long_name'] = f'{vattrs["long_name"]} (AGR)'
-    else:
-        if 'AF' in vname:
-            vname_dict = vname.split('_AF')[0]
-            vattrs = attrs[vname_dict]
-        else:
-            vattrs = attrs[vname]
-
+        
     # add (CC) amplification if amplification factors are passed and set units to unity
     if 'AF' in vname and 'CC' not in vname:
         vattrs['long_name'] = f'{vattrs["long_name"]} amplification'

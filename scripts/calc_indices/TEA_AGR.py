@@ -249,7 +249,6 @@ class TEAAgr(TEAIndicators):
         Returns:
 
         """
-        # TODO check if working correctly
         if lat_range is None:
             lat_range = (self.gr_grid_areas.lat.min(), self.gr_grid_areas.lat.max())
         if lon_range is None:
@@ -263,16 +262,29 @@ class TEAAgr(TEAIndicators):
                                                         lon=slice(lon_range[0], lon_range[1]))
         self.amplification_factors = self.amplification_factors.sel(lat=slice(lat_range[1], lat_range[0]),
                                                                     lon=slice(lon_range[0], lon_range[1]))
+    
+    def _drop_agr_values(self):
+        """
+        drop old AGR values
+        """
+        agr_vars = [var for var in self.decadal_results.data_vars if 'AGR' in var]
+        self.decadal_results = self.decadal_results.drop_vars(agr_vars)
+        agr_vars = [var for var in self.amplification_factors.data_vars if 'AGR' in var]
+        self.amplification_factors = self.amplification_factors.drop_vars(agr_vars)
 
-    def calc_agr_mean(self, lat_range=None, lon_range=None):
+    def calc_agr_vars(self, lat_range=None, lon_range=None):
         """
         calculate AGR variables
         lat_range: Latitude range (min, max). Default: Full region
         lon_range: Longitude range (min, max). Default: Full region
         """
+        # filter data to spatial extent of aggregated GeoRegion
         if lat_range is not None or lon_range is not None:
             self._filter_agr(lat_range=lat_range, lon_range=lon_range)
-            
+        
+        # drop old AGR values
+        self._drop_agr_values()
+        
         # calculate area weights (equation 34_0)
         awgts = self.gr_grid_areas / self.gr_grid_areas.sum()
         
@@ -294,18 +306,24 @@ class TEAAgr(TEAIndicators):
         x_s_agr[dict(time=slice(0, 5))] = np.nan
         x_s_agr[dict(time=slice(-4, None))] = np.nan
         
+        # calculate spread estimates (equation 38)
+        x_s_spreads = self._calc_agr_spread(data=self.decadal_results, ref=x_s_agr)
+        
         # calculate CC period averages (equation 36)
         x_cc_agr = self._calc_gmean_decadal(start_year=self.cc_period[0], end_year=self.cc_period[1], data=x_s_agr)
         
         # calculate amplification factors (equation 37)
         af_agr = x_s_agr / x_ref_agr
         af_cc_agr = x_cc_agr / x_ref_agr
-
+        
         # rename variables
         rename_dict = {var: f'{var}_AGR_AF' for var in af_agr.data_vars}
         af_agr = af_agr.rename(rename_dict)
         rename_dict = {var: f'{var}_AGR_AF_CC' for var in af_cc_agr.data_vars}
         af_cc_agr = af_cc_agr.rename(rename_dict)
+        
+        # calculate spread estimates (equation 38)
+        af_spreads = self._calc_agr_spread(data=self.amplification_factors, ref=af_agr)
         
         # add attributes
         for vvar in af_agr.data_vars:
@@ -314,7 +332,7 @@ class TEAAgr(TEAIndicators):
             af_cc_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
         
         # join af_agr and af_cc_agr
-        af_agr = xr.merge([af_agr, af_cc_agr])
+        af_agr = xr.merge([af_agr, af_cc_agr, af_spreads])
 
         # rename variables
         rename_dict = {var: f'{var}_AGR' for var in x_s_agr.data_vars}
@@ -323,9 +341,52 @@ class TEAAgr(TEAIndicators):
         # add attributes
         for vvar in x_s_agr.data_vars:
             x_s_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
+        x_s_agr = xr.merge([x_s_agr, x_s_spreads])
         
         self.decadal_results = xr.merge([x_s_agr, self.decadal_results], compat='override')
         self.amplification_factors = xr.merge([af_agr, self.amplification_factors], compat='override')
+        # self.amplification_factors = xr.merge([self.amplification_factors, af_agr], compat='override')
+
+    def _calc_agr_spread(self, data, ref):
+        """
+        calculate spread estimates of grid cell values around AGR mean (equation 38)
+        Args:
+            data: data for spread estimation
+            ref: reference data for spread estimation
+        Returns:
+            xarray dataset with upper and lower spread estimates
+
+        """
+        ref = ref.rename({var: var.replace('_AGR', '') for var in ref.data_vars})
+        
+        areas = self.gr_grid_areas
+        
+        # equation 38_1 and 38_4
+        c_upp = xr.where(data >= ref, 1, 0)
+        
+        # equation 38_2 and 38_5
+        c_upp_sum = (c_upp * areas).sum(dim=('lat', 'lon'))
+        # replace 0 values with nan to avoid division by zero
+        c_upp_sum = c_upp_sum.where(c_upp_sum > 0, c_upp_sum)
+        s_upp = np.sqrt(1 / c_upp_sum * (c_upp * areas * (data - ref) ** 2).sum(dim=('lat', 'lon')))
+
+        # equation 38_3 and 38_6
+        c_low_sum = ((1 - c_upp) * areas).sum(dim=('lat', 'lon'))
+        # replace 0 values with nan to avoid division by zero
+        c_low_sum = c_low_sum.where(c_low_sum > 0, c_low_sum)
+        s_low = np.sqrt(1 / c_low_sum * ((1 - c_upp) * areas * (data - ref) ** 2).sum(dim=('lat', 'lon')))
+        
+        # get attributes for variables and rename them
+        for vvar in s_upp.data_vars:
+            s_upp[vvar].attrs = get_attrs(vname=f'{vvar}_AGR', spread='upper')
+        for vvar in s_low.data_vars:
+            s_low[vvar].attrs = get_attrs(vname=f'{vvar}_AGR', spread='lower')
+        rename_dict_up = {var: f'{var}_AGR_supp' for var in s_upp.data_vars}
+        rename_dict_low = {var: f'{var}_AGR_slow' for var in s_low.data_vars}
+        s_upp = s_upp.rename(rename_dict_up)
+        s_low = s_low.rename(rename_dict_low)
+
+        return xr.merge([s_upp, s_low])
     
     def _get_lats_lons(self, margin=None):
         """
