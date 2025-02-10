@@ -25,7 +25,7 @@ def load_opts(fname):
     with open('../TEA_CFG.yaml', 'r') as stream:
         opts = yaml.safe_load(stream)
         opts = opts[fname]
-        opts = check_config(opts_dict=opts)
+        opts = check_config(opts_dict=opts, fname=fname)
         opts = argparse.Namespace(**opts)
 
     # add name of script
@@ -34,7 +34,7 @@ def load_opts(fname):
     if not opts.no_gui:
         # show set parameter
         show_parameters(opts)
-        opts = check_config(opts_dict=vars(opts))
+        opts = check_config(opts_dict=vars(opts), fname=fname)
         opts = argparse.Namespace(**opts)
 
     # add strings that are often needed to parameters

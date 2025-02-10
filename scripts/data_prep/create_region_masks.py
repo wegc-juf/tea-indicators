@@ -194,7 +194,7 @@ def prep_lsm(opts):
     lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]),
                                 axis=1)
 
-    lsm_lon = np.arange(-180, 180, 0.25).astype('float32')
+    lsm_lon = np.arange(-180, 180, step).astype('float32')
     lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
         'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})
     if opts.target_ds == 'ERA5Land':

@@ -333,7 +333,7 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
 
 
 def run():
-    e5_ds = 'ERA5Land'
+    e5_ds = 'ERA5'
     threshold = 25
 
     # load SPARTACUS data

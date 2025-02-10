@@ -165,7 +165,7 @@ def create_legend(fig, ax):
 
 
 def run():
-    threshold = 25
+    threshold = 30
     era5_land = [True, False]
     regions = ['AUT', 'SEA', 'FBR']
 
@@ -217,5 +217,5 @@ def run_noe():
                 f'Fig3-EDF5_Niederösterreich_25degC.png', dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
-    # run()
-    run_noe()
+    run()
+    # run_noe()

@@ -59,10 +59,10 @@ def ints(param, val):
                                              f'current year.')
 
 
-def check_config(opts_dict):
+def check_config(opts_dict, fname):
     with open('../TEA_CFG_DEFAULTS.yaml', 'r') as stream:
         defaults = yaml.safe_load(stream)
-        defaults = defaults['calc_TEA']
+        defaults = defaults[fname]
 
     choice_vals = {'threshold_type': ['abs', 'perc'],
                    'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
