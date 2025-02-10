@@ -85,6 +85,7 @@ calc_amplification_factors:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
+  supplementary: true
   inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
   outpath: /data/users/hst/TEA-clean/TEA/
 
