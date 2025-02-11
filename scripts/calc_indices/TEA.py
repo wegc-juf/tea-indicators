@@ -40,10 +40,8 @@ class TEAIndicators:
             area_grid = xr.ones_like(threshold_grid)
         self.area_grid = area_grid
         self.mask = mask
-        if mask is not None and apply_mask:
-            self.input_data_grid = input_data_grid * mask
-        else:
-            self.input_data_grid = input_data_grid
+        self.apply_mask = apply_mask
+        self.input_data_grid = None
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
         self.min_area = min_area
@@ -52,6 +50,9 @@ class TEAIndicators:
         
         self.calc_grid = True
         self.calc_gr = True
+        
+        if input_data_grid is not None:
+            self.set_input_data_grid(input_data_grid)
         
         # size of whole GeoRegion
         if area_grid is not None:
@@ -82,7 +83,18 @@ class TEAIndicators:
         
         self.null_val = 0
         
-        if input_data_grid is not None:
+    def set_input_data_grid(self, input_data_grid):
+        """
+        set input data grid
+        Args:
+            input_data_grid: gridded input data (e.g. temperature, precipitation)
+        """
+        if self.mask is not None and self.apply_mask:
+            self.input_data_grid = input_data_grid * self.mask
+        else:
+            self.input_data_grid = input_data_grid
+            
+        if self.input_data_grid is not None:
             # set time index
             if 'days' in input_data_grid.dims:
                 self.input_data_grid = self.input_data_grid.rename({'days': 'time'})
@@ -90,9 +102,9 @@ class TEAIndicators:
                 pass
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
-            if input_data_grid.shape[-2:] != threshold_grid.shape:
+            if input_data_grid.shape[-2:] != self.threshold_grid.shape:
                 raise ValueError("Input data and threshold results must have the same area")
-            if input_data_grid.shape[-2:] != area_grid.shape:
+            if input_data_grid.shape[-2:] != self.area_grid.shape:
                 raise ValueError("Input data and area results must have the same shape")
         
     def calc_DTEC(self):

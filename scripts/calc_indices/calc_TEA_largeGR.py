@@ -110,7 +110,6 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
                 f'_{opts.start}to{opts.end}.nc')
     create_tea_history(cfg_params=opts, tea=tea_agr, result_type='CTP')
     tea_agr.apply_mask()
-    # TODO: check if var attributes are correct
     tea_agr.save_ctp_results(ctp_path)
     
     if opts.compare_to_ref:
