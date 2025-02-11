@@ -228,26 +228,13 @@ def calc_daily_basis_vars(opts, static, mask):
     return tea
 
 
-def calc_ctp_indicators(opts, masks, static, agr_mask=None, agr_area=None):
+def calc_ctp_indicators(tea, opts):
     """
     calculate the TEA indicators for the annual climatic time period
     Args:
+        tea: TEA object
         opts: CLI parameter
-        masks: mask files
-        static: static files
-        agr_mask: mask for AGR
-        agr_area: area for AGR
-
-    Returns:
-
     """
-    
-    # create mask array
-    mask = masks['lt1500_mask'] * masks['mask']
-    
-    # computation of daily basis variables (Methods chapter 3)
-    tea = calc_daily_basis_vars(opts=opts, static=static, mask=mask)
-
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1
@@ -261,7 +248,6 @@ def calc_ctp_indicators(opts, masks, static, agr_mask=None, agr_area=None):
 
     # save output
     save_ctp_output(opts=opts, tea=tea)
-    return tea
 
 
 def run():
@@ -316,11 +302,17 @@ def run():
                 # use European masks
                 masks, static = load_static_files(opts=opts, large_gr=True)
                 data = get_data(opts=opts)
-                tea = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static, agr_mask=agr_mask,
-                                                    agr_area=agr_area)
+                tea = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_area)
             else:
-                tea = calc_ctp_indicators(opts=myopts, masks=masks, static=static, agr_mask=gr_grid_mask,
-                                          agr_area=gr_grid_areas)
+                # create mask array
+                mask = masks['lt1500_mask'] * masks['mask']
+                
+                # computation of daily basis variables (Methods chapter 3)
+                tea = calc_daily_basis_vars(opts=opts, static=static, mask=mask)
+                
+                # calculate CTP indicators
+                calc_ctp_indicators(tea=tea, opts=myopts)
+                
             gc.collect()
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
