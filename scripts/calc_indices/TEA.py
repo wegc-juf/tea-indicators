@@ -52,6 +52,8 @@ class TEAIndicators:
         self.calc_gr = True
         
         if input_data_grid is not None:
+            if self.threshold_grid is None:
+                raise ValueError("Threshold grid must be set together with input data")
             self.set_input_data_grid(input_data_grid)
         
         # size of whole GeoRegion
