@@ -242,15 +242,6 @@ def calc_ctp_indicators(opts, masks, static, agr_mask=None, agr_area=None):
 
     """
     
-    # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
-    if 'ERA' in opts.dataset and static['GR_size'] > 100:
-        # use European masks
-        masks, static = load_static_files(opts=opts, large_gr=True)
-        data = get_data(opts=opts)
-        tea_agr = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static, agr_mask=agr_mask,
-                                            agr_area=agr_area)
-        return tea_agr
-
     # create mask array
     mask = masks['lt1500_mask'] * masks['mask']
     
@@ -319,8 +310,17 @@ def run():
             myopts.start = pstart
             myopts.end = pend
             logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
-            tea = calc_ctp_indicators(opts=myopts, masks=masks, static=static, agr_mask=gr_grid_mask,
-                                      agr_area=gr_grid_areas)
+            
+            # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
+            if 'ERA' in opts.dataset and static['GR_size'] > 100:
+                # use European masks
+                masks, static = load_static_files(opts=opts, large_gr=True)
+                data = get_data(opts=opts)
+                tea = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static, agr_mask=agr_mask,
+                                                    agr_area=agr_area)
+            else:
+                tea = calc_ctp_indicators(opts=myopts, masks=masks, static=static, agr_mask=gr_grid_mask,
+                                          agr_area=gr_grid_areas)
             gc.collect()
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
