@@ -280,19 +280,15 @@ def run():
     
     if not opts.decadal_only:
         # calculate annual climatic time period indicators
-        if end - start > 10 - 1:
-            starts = np.arange(start, end, 10)
-            ends = np.append(np.arange(start + 10 - 1, end, 10), end)
-            for pstart, pend in zip(starts, ends):
-                opts.start = pstart
-                opts.end = pend
-                logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
-                tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask,
-                                          agr_area=gr_grid_areas)
-                gc.collect()
-        else:
+        starts = np.arange(start, end, 10)
+        ends = np.append(np.arange(start + 10 - 1, end, 10), end)
+        for pstart, pend in zip(starts, ends):
+            opts.start = pstart
+            opts.end = pend
+            logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
             tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask,
                                       agr_area=gr_grid_areas)
+            gc.collect()
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end
