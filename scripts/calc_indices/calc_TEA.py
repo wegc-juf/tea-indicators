@@ -287,10 +287,12 @@ def run():
                 opts.start = pstart
                 opts.end = pend
                 logger.info(f'Calculating TEA indicators for years {opts.start}-{opts.end}.')
-                tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
+                tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask,
+                                          agr_area=gr_grid_areas)
                 gc.collect()
         else:
-            tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
+            tea = calc_ctp_indicators(opts=opts, masks=masks, static=static, agr_mask=gr_grid_mask,
+                                      agr_area=gr_grid_areas)
 
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         opts.start, opts.end = start, end

@@ -1,6 +1,7 @@
 common_params:
   GeoRegion: &GR
-    region: EUR
+    region: AUT
+    agr: EUR
     # use full data without land, border, and altitude masks
     full_region: false
     gr_type: polygon
@@ -21,10 +22,12 @@ common_params:
     end: 2024
     period: WAS
   dataset: &DATA
-    dataset: ERA5
+    dataset: SPARTACUS
   paths: &PATHS
-    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    statpath: /home/wegnet/results/static/
+    # maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+    maskpath: /home/wegnet/results/TEA_indicators/static/masks/
+    # statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    statpath: /home/wegnet/results/TEA_indicators/static/
     tmppath: /home/wegnet/results/TEA_indicators/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
@@ -54,8 +57,8 @@ create_static_files:
   <<: *PATHS
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /home/wegnet/results/static/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/v1.5/
+  outpath: /home/wegnet/results/TEA_indicators/static/
 
 calc_TEA:
   <<: *GR
@@ -63,13 +66,13 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/v1.5/
   outpath: /home/wegnet/results/TEA_indicators/
-  recalc_daily: false
-  decadal: false
+  recalc_daily: true
+  decadal: true
   spreads: false
   decadal_only: false
-  recalc_decadal: true
+  recalc_decadal: false
   compare_to_ref: false
   save_old: false
 
@@ -96,6 +99,6 @@ calc_AGR_vars:
   <<: *DATA
   <<: *PATHS
   inpath: /home/wegnet/results/TEA_indicators/dec_indicator_variables/
-  outpath: /home/wegnet/results/TEA_indicators/amplification/
-  agr: EUR
-  spreads: false
+  outpath: /home/wegnet/results/TEA_indicators/
+  agr: S-EUR
+  spreads: true
