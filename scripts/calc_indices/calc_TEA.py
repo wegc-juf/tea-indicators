@@ -174,56 +174,27 @@ def save_ctp_output(opts, tea):
         compare_to_ctp_ref(tea, path_ref)
 
 
-def calc_daily_basis_vars(opts, static, mask):
+def calc_daily_basis_vars(data, threshold_grid, mask=None, area_grid=None, unit='', low_extreme=False):
     """
     compute daily basis variables following chapter 3 of TEA methods
     Args:
-        opts: config parameters
-        static: static ds
-        mask: mask
+        data: input data grid
+        threshold_grid: threshold grid for computing TEA metrics
+        mask: mask grid for masking out certain regions (optional)
+        area_grid: area grid with individual grid cell areas (optional)
+        unit: unit of the input data (default: '')
+        low_extreme: set to True if low extremes are to be calculated (default: False)
 
     Returns:
         TEA: TEA object
-
     """
-    # always calculate annual basis variables to later extract sub-annual values
-    old_period = opts.period
-    opts.period = 'annual'
-    
-    # set filename
-    dbv_outpath = f'{opts.outpath}/daily_basis_variables'
-    dbv_filename = (f'{dbv_outpath}/'
-                    f'DBV_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}.nc')
-    
-    if not opts.recalc_daily and os.path.exists(dbv_filename):
-        # load existing results
-        tea = TEAIndicators(area_grid=static['area_grid'])
-        logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
-                    'set --recalc-daily.')
-        tea.load_daily_results(dbv_filename)
-        return tea
-    
-    # load data
-    data = get_data(opts=opts)
-    
     # create TEA object
-    tea = TEAIndicators(input_data_grid=data, threshold_grid=static['threshold'], area_grid=static['area_grid'],
-                        mask=mask,
+    tea = TEAIndicators(input_data_grid=data, threshold_grid=threshold_grid, area_grid=area_grid, mask=mask,
                         # set min area to < 1 grid cell area so that all exceedance days are considered
-                        min_area=0.0001, low_extreme=opts.low_extreme, unit=opts.unit)
+                        min_area=0.0001,
+                        low_extreme=low_extreme, unit=unit)
     
-    # calculate daily basis variables
-    logger.info('Daily basis variables will be recalculated. Period set to annual.')
     tea.calc_daily_basis_vars()
-    
-    # save results
-    logger.info(f'Saving daily basis variables to {dbv_filename}')
-    if not os.path.exists(dbv_outpath):
-        os.makedirs(dbv_outpath)
-    tea.save_daily_results(dbv_filename)
-    
-    opts.period = old_period
     
     return tea
 
@@ -260,6 +231,17 @@ def run():
 
     # load static files
     masks, static = load_static_files(opts=opts)
+    threshold_grid = static['threshold']
+    area_grid = static['area_grid']
+    
+    # set filenames
+    dbv_outpath = f'{opts.outpath}/daily_basis_variables'
+    dbv_filename = (f'{dbv_outpath}/'
+                    f'DBV_{opts.param_str}_{opts.region}_annual_{opts.dataset}'
+                    f'_{opts.start}to{opts.end}.nc')
+    if not os.path.exists(dbv_outpath):
+        os.makedirs(dbv_outpath)
+
     gr_grid_mask = None
     gr_grid_areas = None
     # check if GR size is larger than 100 areals and switch to AGR if so
@@ -298,17 +280,36 @@ def run():
             logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
             
             # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
-            if 'ERA' in opts.dataset and static['GR_size'] > 100:
+            if 'ERA' in myopts.dataset and static['GR_size'] > 100:
                 # use European masks
-                masks, static = load_static_files(opts=opts, large_gr=True)
-                data = get_data(opts=opts)
-                tea = largeGR.calc_tea_large_gr(opts=opts, data=data, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_area)
+                masks, static = load_static_files(opts=myopts, large_gr=True)
+                data = get_data(opts=myopts)
+                tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_area)
             else:
                 # create mask array
                 mask = masks['lt1500_mask'] * masks['mask']
                 
-                # computation of daily basis variables (Methods chapter 3)
-                tea = calc_daily_basis_vars(opts=opts, static=static, mask=mask)
+                if myopts.recalc_daily or not os.path.exists(dbv_filename):
+                    # always calculate annual basis variables to later extract sub-annual values
+                    old_period = myopts.period
+                    myopts.period = 'annual'
+                    data = get_data(opts=myopts)
+                    
+                    # computation of daily basis variables (Methods chapter 3)
+                    logger.info('Daily basis variables will be recalculated. Period set to annual.')
+                    tea = calc_daily_basis_vars(data=data, threshold_grid=threshold_grid, area_grid=area_grid,
+                                                mask=mask, unit=myopts.unit, low_extreme=myopts.low_extreme)
+                    
+                    # save results
+                    logger.info(f'Saving daily basis variables to {dbv_filename}')
+                    tea.save_daily_results(dbv_filename)
+                    myopts.period = old_period
+                else:
+                    # load existing results
+                    tea = TEAIndicators(area_grid=area_grid)
+                    logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
+                                'set --recalc-daily.')
+                    tea.load_daily_results(dbv_filename)
                 
                 # calculate CTP indicators
                 calc_ctp_indicators(tea=tea, opts=myopts)
