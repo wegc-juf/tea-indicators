@@ -337,18 +337,22 @@ def run():
     
         # calculate aggregate GeoRegion means and spread estimators
         if agr:
-            if opts.region != opts.agr:
-                agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+            agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+            agr_lon_range_dict = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
+            if opts.region in agr_lat_range_dict:
                 agr_lat_range = agr_lat_range_dict[opts.agr]
+                agr_lon_range = agr_lon_range_dict[opts.agr]
+            else:
+                agr_lat_range = None
+                agr_lon_range = None
+            if opts.region != opts.agr:
                 outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
                                    f'DEC_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
                                    f'_{opts.start}to{opts.end}.nc')
                 outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
                                 f'AF_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
                                 f'_{opts.start}to{opts.end}.nc')
-            else:
-                agr_lat_range = None
-            tea.calc_agr_vars(lat_range=agr_lat_range)
+            tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
             logger.info(f'Saving AGR decadal results to {outpath_decadal}')
             # remove outpath_decadal if it exists
             if os.path.exists(outpath_decadal):
