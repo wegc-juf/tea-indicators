@@ -98,7 +98,7 @@ def load_era5_data(ds, thresh, noe=False):
 
 def ylims_det_aep(e5, thresh):
     if e5 == 'ERA5Land' and thresh == 25:
-        props = {0: {'ymax': 7, 'ymin': 4},
+        props = {0: {'ymax': 8, 'ymin': 4},
                  2: {'ymax': 6, 'ymin': 2},
                  4: {'ymax': 7, 'ymin': 3}}
     elif e5 == 'ERA5Land' and thresh == 30:
@@ -106,7 +106,7 @@ def ylims_det_aep(e5, thresh):
                  2: {'ymax': 3, 'ymin': 0},
                  4: {'ymax': 5, 'ymin': 0}}
     elif e5 == 'ERA5' and thresh == 25:
-        props = {0: {'ymax': 7, 'ymin': 5},
+        props = {0: {'ymax': 8, 'ymin': 4},
                  2: {'ymax': 6, 'ymin': 3},
                  4: {'ymax': 7, 'ymin': 3}}
     elif e5 == 'ERA5' and thresh == 30:
@@ -165,8 +165,11 @@ def plot_det_aep(fig, axs, data, nax, e5, thresh, noe=False):
                  linewidth=2)
 
     axs.set_ylim(ylims[nax]['ymin'], ylims[nax]['ymax'])
-    axs.yaxis.set_major_locator(MultipleLocator(1))
-    axs.yaxis.set_minor_locator(MultipleLocator(0.25))
+    mjticks, mnticks = 1, 0.25
+    if ylims[nax]['ymax'] - ylims[nax]['ymin'] >= 10:
+        mjticks, mnticks = 2, 0.5
+    axs.yaxis.set_major_locator(MultipleLocator(mjticks))
+    axs.yaxis.set_minor_locator(MultipleLocator(mnticks))
     axs.set_ylabel(props[nax]['ylbl'], fontsize=12)
 
     axs.set_title(props[nax]['title'], fontsize=14)
@@ -380,6 +383,8 @@ def run():
 
     outpath = f'/nas/home/hst/work/TEAclean/plots/misc/EDF6/EDF6_Tx{threshold}_{e5_ds}.png'
     plt.savefig(outpath, bbox_inches='tight', dpi=300)
+
+    print(f'plot saved to: {outpath}')
 
 
 def run_noe():

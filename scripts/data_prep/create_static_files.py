@@ -251,7 +251,7 @@ def run():
     if opts.threshold_type == 'abs':
         thr_grid = xr.full_like(masks['nw_mask'], opts.threshold)
         thr_grid = thr_grid.where(masks['lt1500_mask'] == 1)
-        if 'ERA' in opts.dataset and gr_size > 100:
+        if 'ERA' in opts.dataset:
             thr_grid = thr_grid
         else:
             thr_grid = thr_grid * masks['mask']
