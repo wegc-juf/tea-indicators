@@ -1035,13 +1035,28 @@ class TEAIndicators:
             period_mean['doy_last_GR'].values = doy_last_gr
         return period_mean
     
-    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024)):
+    @staticmethod
+    def _apply_min_duration(ds, min_duration):
+        """
+        keep only values above min_duration
+        
+        Args:
+            ds: Xarray dataset (must contain 'ED' variable)
+            min_duration: minimum duration in days
+        """
+        for vvar in ds.data_vars:
+            if len(ds[vvar].dims) > 1:
+                ds[vvar] = xr.where(ds.ED >= min_duration, ds[vvar], np.nan)
+                
+    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=0):
         """
         calculate amplification factors (equation 26)
         
         Args:
             ref_period: reference period: tuple(start year, end year). Default: (1961, 1990)
             cc_period: current climate period: tuple(start year, end year). Default: (2008, 2022)
+            min_duration: minimum cumulative event duration over reference period in days. Default: 0. To get
+            statistically robust results set to at least 3 days
         """
         self.ref_period = ref_period
         self.cc_period = cc_period
@@ -1051,8 +1066,13 @@ class TEAIndicators:
             self._calc_ref()
         cc_mean = self._cc_mean
         ref_mean = self._ref_mean
+        if min_duration > 0:
+            self._apply_min_duration(ref_mean, min_duration)
+        
         amplification_factors = self.decadal_results / ref_mean
+        amplification_factors = amplification_factors.where(ref_mean > 0)
         cc_amplification = cc_mean / ref_mean
+        cc_amplification = cc_amplification.where(ref_mean > 0)
         
         # drop all spread variables
         amplification_factors = amplification_factors.drop_vars([vvar for vvar in amplification_factors.data_vars if
