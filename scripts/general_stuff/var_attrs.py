@@ -55,13 +55,13 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
                         'units': f'{data_unit} dys yr^-1', 'metric_type': 'compound'},
              'EM_avg_Max': {'long_name': 'average maximum exceedance magnitude',
                             'units': data_unit, 'metric_type': 'basic'},
-             'EA_avg': {'long_name': 'average exceedance area', 'units': 'areals', 'metric_type': 'basic'},
+             'EA_avg': {'long_name': 'average exceedance area', 'units': '100 km^2', 'metric_type': 'basic'},
              'DM': {'long_name': 'duration-magnitude indicator', 'units': f'{data_unit} dys', 'metric_type':
                     'compound'},
-             'TEX': {'long_name': 'total events extremity', 'units': f'areal {data_unit} dys yr^-1', 'metric_type':
+             'TEX': {'long_name': 'total events extremity', 'units': f'100 km^2 {data_unit} dys yr^-1', 'metric_type':
                      'compound'},
              'ES_avg': {'long_name': 'average event severity',
-                        'units': f'areal {data_unit} dys', 'metric_type': 'compound'},
+                        'units': f'100 km^2 {data_unit} dys', 'metric_type': 'compound'},
              'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} dys yr^-1', 'metric_type':
                      'compound'},
              'H_AEHC_avg': {'long_name': 'average daily atmospheric boundary layer exceedance '
