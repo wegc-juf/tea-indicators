@@ -37,3 +37,14 @@ if __name__ == '__main__':
     # plot cumulative exceedance magnitude (temporal event extremity tEX) for 2024
     tea_obj.CTP_results.EM.sel(time='2024').plot()
     plt.show()
+    
+    # calculate decadal-mean TEA indicators and save to NetCDF file
+    tea_obj.calc_decadal_indicators(calc_spread=True, drop_annual_results=True, )
+    
+    outpath = f'../examples/{ERA5_basename}_TEA_decadal_results.nc'
+    tea_obj.save_decadal_results(outpath)
+    
+    # plot decadal-mean exceedance magnitude (EM) for 2010s
+    tea_obj.decadal_results.EM.sel(time='2014').plot()
+    plt.show()
+
