@@ -53,7 +53,7 @@ if __name__ == '__main__':
     
     # calculate amplification factors and save to NetCDF file
     print('Calculating amplification factors...')
-    tea_obj.calc_amplification_factors()
+    tea_obj.calc_amplification_factors(min_duration=1)
     
     outpath = f'../examples/{ERA5_basename}_TEA_amplification_factors.nc'
     tea_obj.save_amplification_factors(outpath)
