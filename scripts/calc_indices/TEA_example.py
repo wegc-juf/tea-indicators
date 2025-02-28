@@ -27,3 +27,13 @@ if __name__ == '__main__':
     # plot Daily Threshold Exceedance Magnitude (DTEM) for 2024-08-30
     tea_obj.daily_results.DTEM.sel(time='2024-08-30').plot()
     plt.show()
+    
+    # calculate annual TEA indicators for warm season (WAS) and save to NetCDF file
+    tea_obj.calc_annual_CTP_indicators(ctp='WAS', drop_daily_results=True)
+    
+    outpath = f'../examples/{ERA5_basename}_TEA_annual_results.nc'
+    tea_obj.save_CTP_results(outpath)
+    
+    # plot cumulative exceedance magnitude (temporal event extremity tEX) for 2024
+    tea_obj.CTP_results.EM.sel(time='2024').plot()
+    plt.show()
