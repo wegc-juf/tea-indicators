@@ -504,13 +504,13 @@ class TEAIndicators:
             em_avg = xr.where(ed == 0, 0, em_avg)
             
             em.attrs = get_attrs(vname='EM', data_unit=self.unit)
-            em_avg.attrs = get_attrs(vname='EM_avg')
+            em_avg.attrs = get_attrs(vname='EM_avg', data_unit=self.unit)
             self.CTP_results['EM'] = em
             self.CTP_results['EM_avg'] = em_avg
             
             # calc median exceedance magnitude (equation 19_1)
             em_avg_med = self._CTP_resample_median.DTEM
-            em_avg_med.attrs = get_attrs(vname='EM_avg_Md')
+            em_avg_med.attrs = get_attrs(vname='EM_avg_Md', data_unit=self.unit)
 
             # equation 19_2
             em_med = self.CTP_results.ED * em_avg_med
@@ -531,14 +531,14 @@ class TEAIndicators:
         em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
         
         em_gr.attrs = get_attrs(vname='EM_GR', data_unit=self.unit)
-        em_avg_gr.attrs = get_attrs(vname='EM_avg_GR')
+        em_avg_gr.attrs = get_attrs(vname='EM_avg_GR', data_unit=self.unit)
         
         self.CTP_results['EM_GR'] = em_gr
         self.CTP_results['EM_avg_GR'] = em_avg_gr
         
         # calc median exceedance magnitude (equation 19_3)
         em_avg_gr_med = self._CTP_resample_median.DTEM_GR
-        em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md')
+        em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md', data_unit=self.unit)
         self.CTP_results['EM_avg_GR_Md'] = em_avg_gr_med
 
         # equation 19_4
@@ -553,7 +553,7 @@ class TEAIndicators:
         
         # calc average maximum exceedance magnitude (equation 20_1)
         em_gr_avg_max = em_gr_max / self.CTP_results.ED_GR
-        em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR')
+        em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
         self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
     
     def calc_annual_total_events_extremity(self):
