@@ -20,13 +20,14 @@ class TEAIndicators:
     Class to calculate TEA indicators
     """
     
-    def __init__(self, input_data_grid=None, threshold_grid=None, min_area=1., area_grid=None, low_extreme=False,
+    def __init__(self, input_data_grid=None, threshold=None, min_area=1., area_grid=None,
+                 low_extreme=False,
                  unit='', mask=None, apply_mask=True, ctp=None):
         """
         Initialize TEAIndicators object
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
-            threshold_grid: gridded threshold values
+            threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
             area_grid: results containing the area of each results cell, if None, area is assumed to be 1 for each cell
                        nan values mask out the corresponding results cells
             min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
@@ -35,10 +36,19 @@ class TEAIndicators:
             mask: mask grid for input data containing nan values for cells that should be masked. Default: None
             ctp: Climatic Time Period (CTP) to resample to. For allowed values see set_ctp method. Default: None
         """
-        self.threshold_grid = threshold_grid
-        if area_grid is None and threshold_grid is not None:
-            area_grid = xr.ones_like(threshold_grid)
-        self.area_grid = area_grid
+        if threshold is not None and isinstance(threshold, (int, float)):
+            threshold = xr.full_like(input_data_grid[0], threshold)
+        self.threshold_grid = threshold
+        
+        self.area_grid = None
+        if area_grid is None:
+            if input_data_grid is not None:
+                self._create_area_grid(input_data_grid)
+            elif threshold is not None:
+                self.area_grid = xr.ones_like(self.threshold_grid)
+        else:
+            self.area_grid = area_grid
+            
         self.mask = mask
         self.apply_mask = apply_mask
         self.input_data_grid = None
@@ -250,6 +260,7 @@ class TEAIndicators:
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR', data_unit=self.unit)
         dtema_gr = dtem_gr * dtea_gr
+        dtema_gr.attrs = get_attrs(vname='DTEMA_GR', data_unit=self.unit)
         self.daily_results['DTEM_GR'] = dtem_gr
         self.daily_results['DTEMA_GR'] = dtema_gr
     
@@ -1187,6 +1198,23 @@ class TEAIndicators:
             # remove first and last year
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
             self._CTP_resample_median = self._CTP_resample_median.isel(time=slice(1, -1))
+    
+    def _create_area_grid(self, input_data_grid):
+        """
+        create area grid for grid cells out of lat lon info
+        """
+        # circumference of earth at equator
+        c_lon_eq = 40075
+        # circumference of earth though poles
+        c_lat = 40008
+        
+        # size of one grid cell (in km)
+        lat_size = abs(input_data_grid.lat[1] - input_data_grid.lat[0]) * c_lat / 360
+        lon_size = ((input_data_grid.lon[1] - input_data_grid.lon[0]) * c_lon_eq / 360 *
+                    np.cos(np.deg2rad(input_data_grid.lat)))
+        
+        # create area size grid (in areals)
+        self.area_grid = lon_size * (lat_size * xr.ones_like(input_data_grid.lon)) / 100
     
     # ### general functions ###
     def create_history(self, history, result_type):

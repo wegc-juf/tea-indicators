@@ -76,7 +76,7 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     full_mask = masks['lt1500_mask'].sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     proc_static = static.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     
-    tea_agr = TEAAgr(input_data_grid=proc_data, threshold_grid=proc_static['threshold'],
+    tea_agr = TEAAgr(input_data_grid=proc_data, threshold=proc_static['threshold'],
                      area_grid=proc_static['area_grid'], mask=full_mask, min_area=1, land_sea_mask=land_sea_mask,
                      gr_grid_mask=agr_mask, gr_grid_areas=agr_area, land_frac_min=land_frac_min,
                      cell_size_lat=cell_size_lat, ctp=opts.period, unit=opts.unit, low_extreme=opts.low_extreme)

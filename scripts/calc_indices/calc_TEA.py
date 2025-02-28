@@ -189,7 +189,7 @@ def calc_daily_basis_vars(data, threshold_grid, mask=None, area_grid=None, unit=
         TEA: TEA object
     """
     # create TEA object
-    tea = TEAIndicators(input_data_grid=data, threshold_grid=threshold_grid, area_grid=area_grid, mask=mask,
+    tea = TEAIndicators(input_data_grid=data, threshold=threshold_grid, area_grid=area_grid, mask=mask,
                         # set min area to < 1 grid cell area so that all exceedance days are considered
                         min_area=0.0001,
                         low_extreme=low_extreme, unit=unit)

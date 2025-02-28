@@ -21,7 +21,7 @@ class TEAAgr(TEAIndicators):
     """
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
-    def __init__(self, input_data_grid=None, threshold_grid=None, area_grid=None, mask=None, min_area=0.0001,
+    def __init__(self, input_data_grid=None, threshold=None, area_grid=None, mask=None, min_area=0.0001,
                  gr_grid_res=0.5, land_sea_mask=None, gr_grid_mask=None, gr_grid_areas=None,
                  land_frac_min=0.5, cell_size_lat=2, **kwargs):
         """
@@ -29,7 +29,7 @@ class TEAAgr(TEAIndicators):
         
         Args:
             input_data_grid: input data grid
-            threshold_grid: threshold grid
+            threshold: threshold grid
             area_grid: area grid containing grid cell areas (needed if grid cells are not equally sized)
             mask: mask grid (needed if data should be masked out by e.g. country borders)
             min_area: minimum area for valid grid cells in areals (100 km^2). Default: 0.0001 areals or 10 km^2
@@ -40,7 +40,7 @@ class TEAAgr(TEAIndicators):
             gr_grid_mask: mask for GR grid (will be automatically generated if not provided)
             gr_grid_areas: areas for GR grid (will be automatically generated if not provided)
         """
-        super().__init__(input_data_grid=input_data_grid, threshold_grid=threshold_grid, area_grid=area_grid,
+        super().__init__(input_data_grid=input_data_grid, threshold=threshold, area_grid=area_grid,
                          mask=mask, min_area=min_area, apply_mask=False, **kwargs)
         if self.area_grid is not None:
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
