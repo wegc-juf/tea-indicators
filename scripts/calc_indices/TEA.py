@@ -1035,7 +1035,7 @@ class TEAIndicators:
             period_mean['doy_last_GR'].values = doy_last_gr
         return period_mean
     
-    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2022)):
+    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024)):
         """
         calculate amplification factors (equation 26)
         
