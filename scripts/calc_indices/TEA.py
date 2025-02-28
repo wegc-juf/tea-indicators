@@ -837,7 +837,7 @@ class TEAIndicators:
                 # set first and last 5 years to nan
                 self.decadal_results[var][:5] = np.nan
                 self.decadal_results[var][-4:] = np.nan
-                self.decadal_results[var].attrs = get_attrs(vname=var, dec=True)
+                self.decadal_results[var].attrs = get_attrs(vname=var, dec=True, data_unit=self.unit)
         
     def _calc_decadal_compound_vars(self):
         """
@@ -861,35 +861,35 @@ class TEAIndicators:
         
         # calculate cumulative events duration (cf. equation 14_2)
         ED = self.calc_cumulative_events_duration(f=data['EF'], d=data['ED_avg'])
-        ED.attrs = get_attrs(vname='ED', dec=True)
+        ED.attrs = get_attrs(vname='ED', dec=True, data_unit=self.unit)
         data['ED'] = ED
         
         # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 17_2)
         EM = self.calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg'])
-        EM.attrs = get_attrs(vname='EM', dec=True)
+        EM.attrs = get_attrs(vname='EM', dec=True, data_unit=self.unit)
         data['EM'] = EM
         
         # calculate cumulative median exceedance magnitude (cf. equation 19_2)
         EM_Md = self.calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg_Md'])
-        EM_Md.attrs = get_attrs(vname='EM_Md', dec=True)
+        EM_Md.attrs = get_attrs(vname='EM_Md', dec=True, data_unit=self.unit)
         data['EM_Md'] = EM_Md
         
         if 'EF_GR' in data:
             # calculate cumulative events duration (equation 15_2)
             ED_GR = self.calc_cumulative_events_duration(f=data['EF_GR'], d=data['ED_avg_GR'])
-            ED_GR.attrs = get_attrs(vname='ED_GR', dec=True)
+            ED_GR.attrs = get_attrs(vname='ED_GR', dec=True, data_unit=self.unit)
             data['ED_GR'] = ED_GR
             
             # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 18_2)
             EM_GR = self.calc_temporal_events_extremity(ed=data['ED_GR'],
                                                         m=data['EM_avg_GR'])
-            EM_GR.attrs = get_attrs(vname='EM_GR', dec=True)
+            EM_GR.attrs = get_attrs(vname='EM_GR', dec=True, data_unit=self.unit)
             data['EM_GR'] = EM_GR
             
             # calculate cumulative median exceedance magnitude (equation 19_4)
             EM_GR_Md = self.calc_temporal_events_extremity(ed=data['ED_GR'], m=data[
                 'EM_avg_GR_Md'])
-            EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True)
+            EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True, data_unit=self.unit)
             data['EM_GR_Md'] = EM_GR_Md
             
         if 'EM_avg_Max_GR' in data:
@@ -899,27 +899,27 @@ class TEAIndicators:
             
         # calculate cumulative maximum exceedance magnitude (cf. equation 20_2)
         EM_Max = data[f'EM_avg_Max{gvar}'] * data[f'ED{gvar}']
-        EM_Max.attrs = get_attrs(vname=f'EM_Max{gvar}', dec=True)
+        EM_Max.attrs = get_attrs(vname=f'EM_Max{gvar}', dec=True, data_unit=self.unit)
         data[f'EM_Max{gvar}'] = EM_Max
 
         # calculate event severity (cf. equation 21_2)
         es_avg = self.calc_event_severity(d=data[f'ED_avg{gvar}'], m=data[
             f'EM_avg{gvar}'],
                                           a=data[f'EA_avg{gvar}'])
-        es_avg.attrs = get_attrs(vname=f'ES_avg{gvar}', dec=True)
+        es_avg.attrs = get_attrs(vname=f'ES_avg{gvar}', dec=True, data_unit=self.unit)
         data[f'ES_avg{gvar}'] = es_avg
     
         # calculate total events extremity (cf. equation 21_4)
         TEX = self.calc_total_events_extremity(f=data[f'EF{gvar}'],
                                                s=data[f'ES_avg{gvar}'])
-        TEX.attrs = get_attrs(vname=f'TEX{gvar}', dec=True)
+        TEX.attrs = get_attrs(vname=f'TEX{gvar}', dec=True, data_unit=self.unit)
         data[f'TEX{gvar}'] = TEX
     
         # calculate exceedance heat content (cf. equation 22)
         H_AEHC_avg, H_AEHC = self.calc_exceedance_heat_content(s_avg=es_avg, d_avg=data[f'ED_avg{gvar}'],
                                                                tex=TEX)
-        H_AEHC_avg.attrs = get_attrs(vname=f'H_AEHC_avg{gvar}', dec=True)
-        H_AEHC.attrs = get_attrs(vname=f'H_AEHC{gvar}', dec=True)
+        H_AEHC_avg.attrs = get_attrs(vname=f'H_AEHC_avg{gvar}', dec=True, data_unit=self.unit)
+        H_AEHC.attrs = get_attrs(vname=f'H_AEHC{gvar}', dec=True, data_unit=self.unit)
         data[f'H_AEHC_avg{gvar}'] = H_AEHC_avg
         data[f'H_AEHC{gvar}'] = H_AEHC
         
@@ -953,10 +953,10 @@ class TEAIndicators:
             slow.loc[{'time': cy}] = slow_per
         
         for vvar in supp.data_vars:
-            supp[vvar].attrs = get_attrs(vname=vvar, spread='upper')
+            supp[vvar].attrs = get_attrs(vname=vvar, spread='upper', data_unit=self.unit)
             self.decadal_results[vvar + '_supp'] = supp[vvar]
         for vvar in slow.data_vars:
-            slow[vvar].attrs = get_attrs(vname=vvar, spread='lower')
+            slow[vvar].attrs = get_attrs(vname=vvar, spread='lower', data_unit=self.unit)
             self.decadal_results[vvar + '_slow'] = slow[vvar]
             
     # ### amplification factors ###
