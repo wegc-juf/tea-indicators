@@ -284,7 +284,8 @@ def run():
                 # use European masks
                 masks, static = load_static_files(opts=myopts, large_gr=True)
                 data = get_data(opts=myopts)
-                tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static, agr_mask=gr_grid_mask, agr_area=gr_grid_area)
+                tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static,
+                                                agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
             else:
                 # create mask array
                 mask = masks['lt1500_mask'] * masks['mask']
