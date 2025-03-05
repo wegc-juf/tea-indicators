@@ -136,7 +136,7 @@ def calc_amplification_factors(opts, tea, outpath):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         logger.info('Calculating amplification factors.')
-        tea.calc_amplification_factors()
+        tea.calc_amplification_factors(ref_period=opts.ref_period, cc_period=opts.cc_period)
     
     path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
     path.mkdir(parents=True, exist_ok=True)

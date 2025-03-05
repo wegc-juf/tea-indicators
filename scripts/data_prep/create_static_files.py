@@ -14,6 +14,7 @@ import xarray as xr
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
+
 def area_grid(opts, masks):
     """
     creates grid where each grid cell gets assigned the size of each grid cell in
@@ -91,7 +92,7 @@ def load_ref_data(opts, masks, ds_params, gr_size):
 
     xn, yn = ds_params[opts.dataset]['xname'], ds_params[opts.dataset]['yname']
 
-    ref_period = np.arange(1961, 1991)
+    ref_period = np.arange(opts.ref_period[0], opts.ref_period[1] + 1)
     data_ref = xr.DataArray(data=np.zeros((len(ref_period), len(dys),
                                            len(masks[yn]), len(masks[xn])),
                                           dtype='float32') * np.nan,
@@ -167,7 +168,7 @@ def load_ref_data(opts, masks, ds_params, gr_size):
 
 def calc_percentiles(opts, masks, gr_size):
     """
-    caluclate percentile of reference period for each grid point
+    calculate percentile of reference period for each grid point
     Args:
         opts: CLI parameter
         masks: GR masks

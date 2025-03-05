@@ -42,6 +42,12 @@ def load_opts(fname):
             param_str = f'{pstr}{opts.threshold:.1f}{opts.unit}'
 
         opts.param_str = param_str
+        
+    # convert str to int
+    ref_period = opts.ref_period.split('-')
+    opts.ref_period = (int(ref_period[0]), int(ref_period[1]))
+    cc_period = opts.cc_period.split('-')
+    opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
 
     return opts
 

@@ -21,6 +21,10 @@ common_params:
     start: 1961
     end: 2024
     period: WAS
+    # ref period from-to (inclusive)
+    ref_period: 1961-1990
+    # cc period from-to (inclusive)
+    cc_period: 2008-2024
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
@@ -52,6 +56,7 @@ create_region_masks:
 
 create_static_files:
   <<: *GR
+  <<: *TIME
   <<: *PARAM
   <<: *DATA
   <<: *PATHS
