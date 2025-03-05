@@ -128,7 +128,7 @@ class TEAAgr(TEAIndicators):
         
         # TODO: two options: either return data itself and stack to xarray then calculate TEA or return individual TEA
         # objects
-        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=self.min_area, unit=self.unit, ctp=self.CTP)
+        tea_sub_gr = TEAIndicators(area_grid=cell_area_grid, min_area=self._min_area, unit=self.unit, ctp=self.CTP)
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
     

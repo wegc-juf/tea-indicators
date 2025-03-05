@@ -54,17 +54,17 @@ class TEAIndicators:
         self.input_data_grid = None
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
-        self.min_area = min_area
-        self.low_extreme = low_extreme
+        self._min_area = min_area
+        self._low_extreme = low_extreme
         self.unit = unit
         
-        self.calc_grid = True
-        self.calc_gr = True
+        self._calc_grid = True
+        self._calc_gr = True
         
         if input_data_grid is not None:
             if self.threshold_grid is None:
                 raise ValueError("Threshold grid must be set together with input data")
-            self.set_input_data_grid(input_data_grid)
+            self._set_input_data_grid(input_data_grid)
         
         # size of whole GeoRegion
         if area_grid is not None:
@@ -95,7 +95,7 @@ class TEAIndicators:
         
         self.null_val = 0
         
-    def set_input_data_grid(self, input_data_grid):
+    def _set_input_data_grid(self, input_data_grid):
         """
         set input data grid
         Args:
@@ -119,38 +119,38 @@ class TEAIndicators:
             if input_data_grid.shape[-2:] != self.area_grid.shape:
                 raise ValueError("Input data and area results must have the same shape")
         
-    def calc_DTEC(self):
+    def _calc_DTEC(self):
         """
         calculate Daily Threshold Exceedance Count (equation 01)
         """
         if self.daily_results['DTEM'] is None:
-            self.calc_DTEM()
+            self._calc_DTEM()
         dtem = self.daily_results.DTEM
         dtec = xr.where(dtem > 0, 1, dtem)
         dtec.attrs = get_attrs(vname='DTEC')
         self.daily_results['DTEC'] = dtec
     
-    def calc_DTEC_GR(self, min_area=None):
+    def _calc_DTEC_GR(self, min_area=None):
         """
         calculate Daily Threshold Exceedance Count (GR) (equation 03)
 
         @param min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid)
         """
         if min_area is None:
-            min_area = self.min_area
+            min_area = self._min_area
         if 'DTEA_GR' not in self.daily_results:
-            self.calc_DTEA_GR()
+            self._calc_DTEA_GR()
         dtea_gr = self.daily_results.DTEA_GR
         dtec_gr = xr.where(dtea_gr >= min_area, 1, self.null_val)
         dtec_gr.attrs = get_attrs(vname='DTEC_GR')
         self.daily_results['DTEC_GR'] = dtec_gr
     
-    def calc_DTEEC(self):
+    def _calc_DTEEC(self):
         """
         calculate Daily Threshold Exceedance Event Count (equation 04)
         """
         if self.daily_results['DTEC'] is None:
-            self.calc_DTEC()
+            self._calc_DTEC()
         dtec = self.daily_results.DTEC
         
         dteec = xr.full_like(dtec, np.nan)
@@ -167,12 +167,12 @@ class TEAIndicators:
         dteec.attrs = get_attrs(vname='DTEEC')
         self.daily_results['DTEEC'] = dteec
     
-    def calc_DTEEC_GR(self):
+    def _calc_DTEEC_GR(self):
         """
         calculate Daily Threshold Exceedance Event Count (GR) (equation 05)
         """
         if 'DTEC_GR' not in self.daily_results:
-            self.calc_DTEC_GR()
+            self._calc_DTEC_GR()
             
         dtec_gr = self.daily_results.DTEC_GR
         dteec_np = self._calc_dteec_1d(dtec_cell=dtec_gr.values)
@@ -181,12 +181,12 @@ class TEAIndicators:
         dteec_gr.attrs = get_attrs(vname='DTEEC_GR')
         self.daily_results['DTEEC_GR'] = dteec_gr
 
-    def calc_DTEA(self):
+    def _calc_DTEA(self):
         """
         calculate Daily Threshold Exceedance Area (equation 02)
         """
         if 'DTEC' not in self.daily_results:
-            self.calc_DTEC()
+            self._calc_DTEC()
         dtec = self.daily_results.DTEC
         # equation 02_1 not needed (cells with TEC == 0 are already nan)
         # equation 02_2
@@ -194,7 +194,7 @@ class TEAIndicators:
         dtea.attrs = get_attrs(vname='DTEA')
         self.daily_results['DTEA'] = dtea
         
-    def calc_DTEA_GR(self, relative=False):
+    def _calc_DTEA_GR(self, relative=False):
         """
         calculate Daily Threshold Exceedance Area (GR) (equation 06)
         
@@ -202,7 +202,7 @@ class TEAIndicators:
             relative: calculate area relative to full GR area. Default: False
         """
         if 'DTEA' not in self.daily_results:
-            self.calc_DTEA()
+            self._calc_DTEA()
         dtea = self.daily_results.DTEA
         dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
         if relative:
@@ -213,11 +213,11 @@ class TEAIndicators:
         dtea_gr = dtea_gr.rename('DTEA_GR')
         self.daily_results['DTEA_GR'] = dtea_gr
     
-    def calc_DTEM(self):
+    def _calc_DTEM(self):
         """
         calculate Daily Threshold Exceedance Magnitude (equation 07)
         """
-        if self.low_extreme:
+        if self._low_extreme:
             dtem = self.threshold_grid - self.input_data_grid
         else:
             dtem = self.input_data_grid - self.threshold_grid
@@ -225,30 +225,30 @@ class TEAIndicators:
         dtem.attrs = get_attrs(vname='DTEM', data_unit=self.unit)
         self.daily_results['DTEM'] = dtem
         
-    def calc_DTEM_Max_GR(self):
+    def _calc_DTEM_Max_GR(self):
         """
         calculate maximum DTEM for GR (equation 09)
         """
         if 'DTEM' not in self.daily_results:
-            self.calc_DTEM()
+            self._calc_DTEM()
         if 'DTEC_GR' not in self.daily_results:
-            self.calc_DTEC_GR()
+            self._calc_DTEC_GR()
         dtem = self.daily_results.DTEM
         dtem_max = dtem.max(dim=self.area_grid.dims)
         dtem_max = dtem_max.where(self.daily_results.DTEC_GR == 1, self.null_val)
         dtem_max.attrs = get_attrs(vname='DTEM_Max_GR', data_unit=self.unit)
         self.daily_results['DTEM_Max_GR'] = dtem_max
 
-    def calc_DTEM_GR(self):
+    def _calc_DTEM_GR(self):
         """
         calculate Daily Threshold Exceedance Magnitude (GR) (equation 08)
         """
         if 'DTEA_GR' not in self.daily_results:
-            self.calc_DTEA_GR()
+            self._calc_DTEA_GR()
         if 'DTEM' not in self.daily_results:
-            self.calc_DTEM()
+            self._calc_DTEM()
         if 'DTEC_GR' not in self.daily_results:
-            self.calc_DTEC_GR()
+            self._calc_DTEC_GR()
         dtea_gr = self.daily_results.DTEA_GR
         dtem = self.daily_results.DTEM
         dtec_gr = self.daily_results.DTEC_GR
@@ -272,21 +272,21 @@ class TEAIndicators:
             grid: calculate grid variables. Default: True
             gr: calculate GR variables. Default: True
         """
-        self.calc_grid = False
-        self.calc_gr = False
+        self._calc_grid = False
+        self._calc_gr = False
         if grid:
-            self.calc_DTEM()
-            self.calc_DTEC()
-            self.calc_DTEA()
-            self.calc_DTEEC()
-            self.calc_grid = True
+            self._calc_DTEM()
+            self._calc_DTEC()
+            self._calc_DTEA()
+            self._calc_DTEEC()
+            self._calc_grid = True
         if gr:
-            self.calc_DTEA_GR()
-            self.calc_DTEC_GR()
-            self.calc_DTEM_GR()
-            self.calc_DTEM_Max_GR()
-            self.calc_DTEEC_GR()
-            self.calc_gr = True
+            self._calc_DTEA_GR()
+            self._calc_DTEC_GR()
+            self._calc_DTEM_GR()
+            self._calc_DTEM_Max_GR()
+            self._calc_DTEEC_GR()
+            self._calc_gr = True
     
     def save_daily_results(self, filepath):
         """
@@ -332,14 +332,14 @@ class TEAIndicators:
         """
         update the minimum area for a timestep to be considered as exceedance
         """
-        self.min_area = min_area
-        self.calc_DTEC_GR()
-        self.calc_DTEM_GR()
-        self.calc_DTEM_Max_GR()
-        self.calc_DTEEC_GR()
+        self._min_area = min_area
+        self._calc_DTEC_GR()
+        self._calc_DTEM_GR()
+        self._calc_DTEM_Max_GR()
+        self._calc_DTEEC_GR()
         
     # ### Climatic Time Period (CTP) functions ###
-    def set_ctp(self, ctp):
+    def _set_ctp(self, ctp):
         """
         set annual Climatic Time Period (CTP)
 
@@ -360,16 +360,16 @@ class TEAIndicators:
         # TODO: add CF-Convention compatible attributes...
         self.CTP_results.attrs = ctp_attrs
     
-    def calc_event_frequency(self):
+    def _calc_event_frequency(self):
         """
         calculate event frequency (equation 11 and equation 12)
         """
         if self.CTP is None:
             raise ValueError("CTP must be set before calculating event frequency")
         if 'DTEEC' not in self.daily_results:
-            self.calc_DTEEC()
+            self._calc_DTEEC()
         if 'DTEEC_GR' not in self.daily_results:
-            self.calc_DTEEC_GR()
+            self._calc_DTEEC_GR()
             
         if self._CTP_resample_sum is None:
             self._resample_to_CTP()
@@ -388,12 +388,12 @@ class TEAIndicators:
         ef_gr.attrs = get_attrs(vname='EF_GR')
         self.CTP_results['EF_GR'] = ef_gr
     
-    def calc_supplementary_event_vars(self):
+    def _calc_supplementary_event_vars(self):
         """
         calculate supplementary event variables (equation 13)
         """
         if 'EF' not in self.CTP_results and 'EF_GR' not in self.CTP_results:
-            self.calc_event_frequency()
+            self._calc_event_frequency()
         
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
         self._daily_results_filtered.coords['doy'] = ('time', doy)
@@ -445,12 +445,12 @@ class TEAIndicators:
         self.CTP_results['doy_last_GR'] = doy_last_gr
         self.CTP_results['AEP_GR'] = aep_gr
     
-    def calc_event_duration(self):
+    def _calc_event_duration(self):
         """
         calculate event duration (equation 14 and equation 15)
         """
         if 'EF' not in self.CTP_results and 'EF_GR' not in self.CTP_results:
-            self.calc_event_frequency()
+            self._calc_event_frequency()
         
         if 'DTEC' in self._CTP_resample_sum:
             # # process grid data
@@ -483,14 +483,14 @@ class TEAIndicators:
         ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
         self.CTP_results['ED_avg_GR'] = ed_avg_gr
     
-    def calc_exceedance_magnitude(self):
+    def _calc_exceedance_magnitude(self):
         """
         calculate average (EM_avg) and cumulative (tEX=EM) exceedance magnitude (equation 17 and equation 18),
         median exceedance magnitude (equation 19), and maximum exceedance magnitude (equation 20)
         """
         
         if 'ED' not in self.CTP_results and 'ED_GR' not in self.CTP_results:
-            self.calc_event_duration()
+            self._calc_event_duration()
             
         if 'DTEM' in self._CTP_resample_sum:
             # process grid data
@@ -556,7 +556,7 @@ class TEAIndicators:
         em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
         self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
     
-    def calc_annual_total_events_extremity(self):
+    def _calc_annual_total_events_extremity(self):
         """
         calculate annual total events extremity (equation 21_3)
         """
@@ -565,7 +565,7 @@ class TEAIndicators:
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         self.CTP_results['TEX_GR'] = tex
     
-    def calc_total_events_extremity(self, f, d=None, m=None, a=None, s=None):
+    def _calc_total_events_extremity(self, f, d=None, m=None, a=None, s=None):
         """
         calculate total events extremity (equation 21_4)
         
@@ -581,20 +581,20 @@ class TEAIndicators:
         if s is None:
             if d is None or m is None or a is None:
                 raise ValueError("Either f, d, m, and a, or f and s must be provided")
-            s = self.calc_event_severity(d=d, m=m, a=a)
+            s = self._calc_event_severity(d=d, m=m, a=a)
         tex = f * s
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         tex.rename('TEX_GR')
         return tex
     
-    def calc_exceedance_area(self):
+    def _calc_exceedance_area(self):
         """
         calculate exceedance area (equation 21_1)
         """
         if self.CTP_results['TEX_GR'] is None:
-            self.calc_annual_total_events_extremity()
+            self._calc_annual_total_events_extremity()
         if self.CTP_results['EM_GR'] is None:
-            self.calc_exceedance_magnitude()
+            self._calc_exceedance_magnitude()
         
         # equation 21_1
         ea_avg = self.CTP_results.TEX_GR / self.CTP_results.EM_GR
@@ -602,43 +602,43 @@ class TEAIndicators:
         ea_avg.attrs = get_attrs(vname='EA_avg_GR')
         self.CTP_results['EA_avg_GR'] = ea_avg
     
-    def calc_annual_event_severity(self):
+    def _calc_annual_event_severity(self):
         """
         calculate event severity (equation 21_2)
         """
         if self.CTP_results['EA_avg_GR'] is None:
-            self.calc_exceedance_area()
+            self._calc_exceedance_area()
         if self.CTP_results['EM_avg_GR'] is None:
-            self.calc_exceedance_magnitude()
+            self._calc_exceedance_magnitude()
         if self.CTP_results['ED_avg_GR'] is None:
-            self.calc_event_duration()
+            self._calc_event_duration()
         
         # equation 21_2
-        es_avg = self.calc_event_severity(self.CTP_results.ED_avg_GR, self.CTP_results.EM_avg_GR,
-                                          self.CTP_results.EA_avg_GR)
+        es_avg = self._calc_event_severity(self.CTP_results.ED_avg_GR, self.CTP_results.EM_avg_GR,
+                                           self.CTP_results.EA_avg_GR)
         self.CTP_results['ES_avg_GR'] = es_avg
     
-    def calc_annual_exceedance_heat_content(self):
+    def _calc_annual_exceedance_heat_content(self):
         """
         calculate annual exceedance heat content (equation 22)
         """
         if self.CTP_results['ED_avg_GR'] is None:
-            self.calc_event_duration()
+            self._calc_event_duration()
         if self.CTP_results['TEX_GR'] is None:
-            self.calc_annual_total_events_extremity()
+            self._calc_annual_total_events_extremity()
         if self.CTP_results['ES_avg_GR'] is None:
-            self.calc_annual_event_severity()
+            self._calc_annual_event_severity()
         
         # equation 22
-        H_AEHC_avg_GR, H_AEHC_GR = self.calc_exceedance_heat_content(self.CTP_results.ES_avg_GR,
-                                                                     self.CTP_results.ED_avg_GR,
-                                                                     self.CTP_results.TEX_GR)
+        H_AEHC_avg_GR, H_AEHC_GR = self._calc_exceedance_heat_content(self.CTP_results.ES_avg_GR,
+                                                                      self.CTP_results.ED_avg_GR,
+                                                                      self.CTP_results.TEX_GR)
         H_AEHC_avg_GR.attrs = get_attrs(vname='H_AEHC_avg_GR')
         H_AEHC_GR.attrs = get_attrs(vname='H_AEHC_GR')
         self.CTP_results['H_AEHC_avg_GR'] = H_AEHC_avg_GR
         self.CTP_results['H_AEHC_GR'] = H_AEHC_GR
     
-    def calc_event_severity(self, d, m, a):
+    def _calc_event_severity(self, d, m, a):
         """
         calculate event severity (equation 21_2)
         
@@ -653,7 +653,7 @@ class TEAIndicators:
         es_avg.rename('ES_avg_GR')
         return es_avg
     
-    def calc_cumulative_events_duration(self, f, d):
+    def _calc_cumulative_events_duration(self, f, d):
         """
         calculate cumulative events duration (equation 17_2)
         
@@ -666,7 +666,7 @@ class TEAIndicators:
         ced.rename('ED')
         return ced
     
-    def calc_temporal_events_extremity(self, f=None, d=None, ed=None, m=None):
+    def _calc_temporal_events_extremity(self, f=None, d=None, ed=None, m=None):
         """
         calculate temporal events extremity (equation 18_2)
         
@@ -680,14 +680,14 @@ class TEAIndicators:
         if ed is None:
             if f is None or d is None or m is None:
                 raise ValueError("Either f, d, and m, or ed and m must be provided")
-            ed = self.calc_cumulative_events_duration(f, d)
+            ed = self._calc_cumulative_events_duration(f, d)
         tem = ed * m
         tem.attrs = get_attrs(vname='EM', data_unit=self.unit)
         tem.rename('EM')
         return tem
     
     @staticmethod
-    def calc_exceedance_heat_content(s_avg, d_avg, tex):
+    def _calc_exceedance_heat_content(s_avg, d_avg, tex):
         """
         calculate exceedance heat content (equation 22)
         
@@ -724,15 +724,15 @@ class TEAIndicators:
             drop_daily_results: delete daily results after calculation
         """
         if ctp is not None:
-            self.set_ctp(ctp)
-        self.calc_event_frequency()
-        self.calc_supplementary_event_vars()
-        self.calc_event_duration()
-        self.calc_exceedance_magnitude()
-        self.calc_annual_total_events_extremity()
-        self.calc_exceedance_area()
-        self.calc_annual_event_severity()
-        self.calc_annual_exceedance_heat_content()
+            self._set_ctp(ctp)
+        self._calc_event_frequency()
+        self._calc_supplementary_event_vars()
+        self._calc_event_duration()
+        self._calc_exceedance_magnitude()
+        self._calc_annual_total_events_extremity()
+        self._calc_exceedance_area()
+        self._calc_annual_event_severity()
+        self._calc_annual_exceedance_heat_content()
         if drop_daily_results:
             del self._daily_results_filtered
             del self.daily_results
@@ -794,7 +794,7 @@ class TEAIndicators:
         self._calc_decadal_compound_vars()
         # TODO: optional calculation of AEHC
         if calc_spread:
-            self.calc_spread_estimators()
+            self._calc_spread_estimators()
         self.CTP = self.CTP_results.attrs['CTP']
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
         self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=self.CTP)
@@ -860,34 +860,34 @@ class TEAIndicators:
         """
         
         # calculate cumulative events duration (cf. equation 14_2)
-        ED = self.calc_cumulative_events_duration(f=data['EF'], d=data['ED_avg'])
+        ED = self._calc_cumulative_events_duration(f=data['EF'], d=data['ED_avg'])
         ED.attrs = get_attrs(vname='ED', dec=True, data_unit=self.unit)
         data['ED'] = ED
         
         # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 17_2)
-        EM = self.calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg'])
+        EM = self._calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg'])
         EM.attrs = get_attrs(vname='EM', dec=True, data_unit=self.unit)
         data['EM'] = EM
         
         # calculate cumulative median exceedance magnitude (cf. equation 19_2)
-        EM_Md = self.calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg_Md'])
+        EM_Md = self._calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg_Md'])
         EM_Md.attrs = get_attrs(vname='EM_Md', dec=True, data_unit=self.unit)
         data['EM_Md'] = EM_Md
         
         if 'EF_GR' in data:
             # calculate cumulative events duration (equation 15_2)
-            ED_GR = self.calc_cumulative_events_duration(f=data['EF_GR'], d=data['ED_avg_GR'])
+            ED_GR = self._calc_cumulative_events_duration(f=data['EF_GR'], d=data['ED_avg_GR'])
             ED_GR.attrs = get_attrs(vname='ED_GR', dec=True, data_unit=self.unit)
             data['ED_GR'] = ED_GR
             
             # calculate temporal events extremity tEX (equals cumulative exceedance magnitude EM) (cf. equation 18_2)
-            EM_GR = self.calc_temporal_events_extremity(ed=data['ED_GR'],
-                                                        m=data['EM_avg_GR'])
+            EM_GR = self._calc_temporal_events_extremity(ed=data['ED_GR'],
+                                                         m=data['EM_avg_GR'])
             EM_GR.attrs = get_attrs(vname='EM_GR', dec=True, data_unit=self.unit)
             data['EM_GR'] = EM_GR
             
             # calculate cumulative median exceedance magnitude (equation 19_4)
-            EM_GR_Md = self.calc_temporal_events_extremity(ed=data['ED_GR'], m=data[
+            EM_GR_Md = self._calc_temporal_events_extremity(ed=data['ED_GR'], m=data[
                 'EM_avg_GR_Md'])
             EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True, data_unit=self.unit)
             data['EM_GR_Md'] = EM_GR_Md
@@ -903,21 +903,21 @@ class TEAIndicators:
         data[f'EM_Max{gvar}'] = EM_Max
 
         # calculate event severity (cf. equation 21_2)
-        es_avg = self.calc_event_severity(d=data[f'ED_avg{gvar}'], m=data[
+        es_avg = self._calc_event_severity(d=data[f'ED_avg{gvar}'], m=data[
             f'EM_avg{gvar}'],
-                                          a=data[f'EA_avg{gvar}'])
+                                           a=data[f'EA_avg{gvar}'])
         es_avg.attrs = get_attrs(vname=f'ES_avg{gvar}', dec=True, data_unit=self.unit)
         data[f'ES_avg{gvar}'] = es_avg
     
         # calculate total events extremity (cf. equation 21_4)
-        TEX = self.calc_total_events_extremity(f=data[f'EF{gvar}'],
-                                               s=data[f'ES_avg{gvar}'])
+        TEX = self._calc_total_events_extremity(f=data[f'EF{gvar}'],
+                                                s=data[f'ES_avg{gvar}'])
         TEX.attrs = get_attrs(vname=f'TEX{gvar}', dec=True, data_unit=self.unit)
         data[f'TEX{gvar}'] = TEX
     
         # calculate exceedance heat content (cf. equation 22)
-        H_AEHC_avg, H_AEHC = self.calc_exceedance_heat_content(s_avg=es_avg, d_avg=data[f'ED_avg{gvar}'],
-                                                               tex=TEX)
+        H_AEHC_avg, H_AEHC = self._calc_exceedance_heat_content(s_avg=es_avg, d_avg=data[f'ED_avg{gvar}'],
+                                                                tex=TEX)
         H_AEHC_avg.attrs = get_attrs(vname=f'H_AEHC_avg{gvar}', dec=True, data_unit=self.unit)
         H_AEHC.attrs = get_attrs(vname=f'H_AEHC{gvar}', dec=True, data_unit=self.unit)
         data[f'H_AEHC_avg{gvar}'] = H_AEHC_avg
@@ -925,7 +925,7 @@ class TEAIndicators:
         
         return data
 
-    def calc_spread_estimators(self):
+    def _calc_spread_estimators(self):
         """
         calculate spread estimators (equation 25)
         """
@@ -1020,7 +1020,7 @@ class TEAIndicators:
         
         period_data = data.sel(time=slice(start_cy_date, end_cy_date))
         
-        period_mean = self.gmean_custom(period_data, dim='time')
+        period_mean = self._gmean_custom(period_data, dim='time')
         doy_first, doy_last = self._calc_doy_adjustment(doy_first=period_mean.doy_first.values,
                                                         doy_last=period_mean.doy_last.values,
                                                         aep=period_mean.AEP.values)
@@ -1124,7 +1124,7 @@ class TEAIndicators:
         self.amplification_factors = xr.open_dataset(filepath)
     
     @staticmethod
-    def gmean_custom(x, dim):
+    def _gmean_custom(x, dim):
         """
         calculate geometric mean
         """
@@ -1195,12 +1195,12 @@ class TEAIndicators:
         
         """
         if ctp is not None:
-            self.set_ctp(ctp)
+            self._set_ctp(ctp)
         elif self.CTP is None:
             raise ValueError("CTP must be set before resampling")
         
         # drop all non GR variables
-        if not self.calc_grid:
+        if not self._calc_grid:
             self.daily_results = self.daily_results.drop_vars([var for var in self.daily_results.data_vars if 'GR' not
                                                                in var])
         self._filter_CTP()
