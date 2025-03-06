@@ -110,6 +110,8 @@ def load_data(opts):
     ods = xr.open_mfdataset(ofiles, data_vars='minimal')
     if opts.level != 'DBV':
         ods = ods.rename({'ctp': 'time'})
+    else:
+        ods = ods.rename({'days': 'time'})
 
     nfiles = sorted(glob.glob(f'{opts.inpath}{sdir}/{opts.level}_{pstr}_{opts.region}'
                               f'_{perstr}_{opts.dataset}_*.nc'))

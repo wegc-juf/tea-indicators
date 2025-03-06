@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 
-def load_ctp_data(opts, suppl):
+def load_ctp_data(opts, suppl, basis=False):
     """
     load CTP data
     Args:
@@ -53,6 +53,9 @@ def load_ctp_data(opts, suppl):
     syr, eyr = int(files[0].split('_')[-1][:4]), int(files[-1].split('_')[-1][6:10])
     if opts.start != syr or opts.end != eyr:
         data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
+
+    if basis:
+        data = data[['EF', 'EF_GR', 'EDavg', 'EDavg_GR']]
 
     return data
 
@@ -182,6 +185,40 @@ def rolling_decadal_mean(data):
 
     return data
 
+def calc_compound_vars(data, suppl):
+    if 'EM' in data.data_vars:
+        em_var = 'EM'
+    elif 'EM_Md' in data.data_vars:
+        em_var = 'EM_Md'
+
+    cvars = [f'{em_var}', f'{em_var}_GR', 'ESavg_GR', 'TEX_GR', 'ED', 'ED_GR']
+    if suppl:
+        cvars = [f'{em_var}', f'{em_var}_GR', 'EM_Max_GR']
+
+    components = {'ED': ['EF', 'EDavg'],
+                  'EM': ['EF', 'EDavg', 'EMavg'],
+                  'ESavg': ['EDavg', 'EMavg', 'EAavg'],
+                  'TEX': ['EF', 'EDavg', 'EMavg', 'EAavg'],
+                  'EM_Md': ['EF', 'EDavg', 'EM_Md'],
+                  'EM_Max': ['EF', 'EDavg', 'EM_Max']}
+
+    for var in cvars:
+        dname = var
+        if 'GR' in var:
+            dname = var.split('_GR')[0]
+        com = components[dname]
+        if 'GR' in var:
+            com = [f'{ii}_GR' for ii in com]
+
+        compound = data[com[0]]
+        for cvar in com[1:]:
+            compound = compound * data[cvar]
+
+        compound = compound.rename(var)
+        data[var] = compound
+
+    return data
+
 
 def calc_decadal_indicators(opts, suppl=False):
     """
@@ -194,6 +231,10 @@ def calc_decadal_indicators(opts, suppl=False):
 
     """
     data = load_ctp_data(opts=opts, suppl=suppl)
+    if suppl:
+        data_basis = load_ctp_data(opts=opts, suppl=False, basis=True)
+        data = xr.merge([data, data_basis])
+        data_basis.close()
 
     dec_data = data.copy()
 
@@ -203,6 +244,8 @@ def calc_decadal_indicators(opts, suppl=False):
     if 'doy_first' in data.data_vars:
         dec_data = adjust_doy(data=dec_data)
 
+    # calculate compound variables
+    dec_data = calc_compound_vars(data=dec_data, suppl=suppl)
     su, sl = None, None
     if opts.spreads:
         logging.info(f'Calculating spread estimators.')
