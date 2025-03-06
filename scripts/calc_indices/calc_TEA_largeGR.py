@@ -167,8 +167,9 @@ def dbv_to_new_grid(opts, dbv, cell, dbv_ds):
         tmp_ds = tmp_ds.assign_coords({'lat': (['lat'], [cell[0]]), 'lon': (['lon'], [cell[1]])})
         dbv_ds = xr.concat([dbv_ds, tmp_ds], dim='lon')
 
-    # drop time (no idea where this is coming from in the first place...)
-    dbv_ds = dbv_ds.drop_vars('time')
+    # drop time if necessary (no idea where this is coming from in the first place...)
+    if 'time' in dbv_ds.data_vars:
+        dbv_ds = dbv_ds.drop_vars('time')
 
     dbv_ds = create_history_from_cfg(cfg_params=opts, ds=dbv_ds)
 

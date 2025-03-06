@@ -223,7 +223,7 @@ def ylims_af(e5, thresh):
                 3: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
                 5: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125}}
     elif e5 == 'ERA5Land' and thresh == 30:
-        lims = {1: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+        lims = {1: {'yn': 0.5, 'yx': 2.5, 'dmaj': 0.5, 'dmin': 0.25},
                 3: {'yn': 0, 'yx': 9, 'dmaj': 1, 'dmin': 0.5},
                 5: {'yn': 0, 'yx': 4, 'dmaj': 1, 'dmin': 0.25}}
     elif e5 == 'ERA5' and thresh == 25:
@@ -336,7 +336,7 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
 
 
 def run():
-    e5_ds = 'ERA5Land'
+    e5_ds = 'ERA5'
     threshold = 30
 
     # load SPARTACUS data
