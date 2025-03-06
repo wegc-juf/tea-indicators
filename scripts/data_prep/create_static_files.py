@@ -12,7 +12,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_input_filenames
 
 
 def area_grid(opts, masks):

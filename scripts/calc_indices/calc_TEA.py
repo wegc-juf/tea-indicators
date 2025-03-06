@@ -20,7 +20,7 @@ from copy import deepcopy
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                                     compare_to_ref)
+                                                     compare_to_ref, get_input_filenames)
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
@@ -44,19 +44,9 @@ def get_data(opts):
         param_str = f'{opts.parameter}'
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
-
-    # select only files of interest, if chosen period is 'seasonal' append one year in the
-    # beginning to have the first winter fully included
-    filenames = []
-    if opts.period == 'seasonal' and opts.start != '1961':
-        yrs = np.arange(opts.start - 1, opts.end + 1)
-    else:
-        yrs = np.arange(opts.start, opts.end + 1)
-    for iyrs in yrs:
-        year_files = sorted(glob.glob(
-            f'{opts.inpath}*{param_str}_{iyrs}*.nc'))
-        filenames.extend(year_files)
-
+    
+    filenames = get_input_filenames(opts.period, opts.start, opts.end, opts.inpath, param_str)
+    
     # load relevant years
     try:
         ds = xr.open_mfdataset(filenames, combine='by_coords')

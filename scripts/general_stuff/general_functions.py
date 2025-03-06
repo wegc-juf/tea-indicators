@@ -6,6 +6,7 @@ import argparse
 import datetime as dt
 import yaml
 import numpy as np
+import glob
 
 from scripts.general_stuff.check_CFG import check_config
 
@@ -178,3 +179,30 @@ def compare_to_ref(tea_result, tea_ref, relative=False):
             print(f'{vvar} not found in reference file.')
 
 
+def get_input_filenames(period, start, end, inpath, param_str):
+    """
+    get input filenames
+
+    :param period: period of interest
+    :type period: str
+    :param start: start year
+    :type start: int
+    :param end: end year
+    :type end: int
+    :param inpath: input path
+    :param param_str: parameter string
+
+    :return: list of filenames
+    """
+    # select only files of interest, if chosen period is 'seasonal' append one year in the
+    # beginning to have the first winter fully included
+    filenames = []
+    if period == 'seasonal' and start != '1961':
+        yrs = np.arange(start - 1, end + 1)
+    else:
+        yrs = np.arange(start, end + 1)
+    for iyrs in yrs:
+        year_files = sorted(glob.glob(
+            f'{inpath}*{param_str}_{iyrs}*.nc'))
+        filenames.extend(year_files)
+    return filenames
