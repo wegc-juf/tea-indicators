@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: false
   GeoRegion: &GR
-    region: FBR
+    region: SEA
     gr_type: polygon
     sw_corner: null
     ne_corner: null
