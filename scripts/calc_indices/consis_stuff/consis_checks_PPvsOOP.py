@@ -74,7 +74,7 @@ def get_opts():
     parser.add_argument('--level',
                         dest='level',
                         default='DBV',
-                        choices=['DBV', 'CTP', 'DEC'],
+                        choices=['DBV', 'CTP', 'DEC', 'AF'],
                         type=str,
                         help='Level of data to compare.')
 
@@ -94,6 +94,8 @@ def load_data(opts):
         sdir = 'ctp_indicator_variables'
     elif opts.level == 'DEC':
         sdir = 'dec_indicator_variables'
+    elif opts.level == 'AF':
+        sdir = 'amplification'
 
     perstr = opts.period
     if opts.level == 'DBV':
@@ -105,7 +107,7 @@ def load_data(opts):
 
     ofiles = sorted(glob.glob(f'/data/users/hst/TEA-clean/TEA/{sdir}/'
                               f'{opts.level}_{pstr}_{opts.region}_*{opts.dataset}_*.nc'))
-    if opts.level == 'DEC':
+    if opts.level in ['DEC', 'AF']:
         ofiles = ofiles[-1]
     ods = xr.open_mfdataset(ofiles, data_vars='minimal')
     if opts.level != 'DBV':
@@ -158,6 +160,38 @@ def plot_gr_vars(opts, ods, nds):
         plt.show()
 
 
+def plot_gr_af_vars(opts, ods, nds):
+    gr_vars_all = [vvar for vvar in ods.data_vars if 'GR' in vvar
+                   and 'CC' not in vvar and vvar != 'tEX_GR_AF']
+
+    if opts.plot:
+        fig, axs = plt.subplots(3, 3, figsize=(15, 10))
+        axs = axs.reshape(-1)
+
+    nds_vars = {'EF_GR_AF': 'EF_GR_AF', 'ED_GR_AF': 'ED_GR_AF', 'EDavg_GR_AF': 'ED_avg_GR_AF',
+                'EM_GR_AF': 'EM_GR_AF', 'EMavg_GR_AF': 'EM_avg_GR_AF', 'EAavg_GR_AF': 'EA_avg_GR_AF',
+                'TEX_GR_AF': 'TEX_GR_AF', 'ESavg_GR_AF': 'ES_avg_GR_AF'}
+
+    print('-- GR VARIABLES --')
+    iplt, ldiff = 0, 0
+    for ivar, vvar in enumerate(gr_vars_all):
+        if opts.plot:
+            diff = ods[vvar] - nds[nds_vars[vvar]]
+            if diff.max().values != 0:
+                print(vvar, diff.max().values)
+                ldiff += 1
+            axs[iplt].plot(ods[vvar], 'o-', color='tab:grey')
+            axs[iplt].plot(nds[nds_vars[vvar]], 'o-', color='tab:green')
+            axs[iplt].set_title(f'{vvar}; diff_max = {diff.max().values:.2f}')
+            iplt += 1
+
+    if ldiff == 0:
+        print('All GR vars OK.')
+
+    if opts.plot:
+        plt.show()
+
+
 def check_grid_data(opts, ods, nds):
     gvars = ['DTEC', 'DTEM', 'DTEEC']
     if opts.level != 'DBV':
@@ -165,6 +199,24 @@ def check_grid_data(opts, ods, nds):
 
     nds_vars = {'EF': 'EF', 'ED': 'ED', 'EDavg': 'ED_avg', 'EM': 'EM', 'EMavg': 'EM_avg',
                 'DTEC': 'DTEC', 'DTEM': 'DTEM', 'DTEEC': 'DTEEC'}
+
+    print('-- GRID VARIABLES --')
+    ldiff = 0
+    for gvar in gvars:
+        diff = ods[gvar] - nds[nds_vars[gvar]]
+        if diff.max().values != 0:
+            print(gvar, diff.max().values)
+            ldiff += 1
+
+    if ldiff == 0:
+        print('All GRID vars OK.')
+
+
+def check_grid_af_data(opts, ods, nds):
+    gvars = [vvar for vvar in ods.data_vars if 'GR' not in vvar and 'CC' not in vvar]
+
+    nds_vars = {'EF_AF': 'EF_AF', 'ED_AF': 'ED_AF', 'EDavg_AF': 'ED_avg_AF', 'EM_AF': 'EM_AF',
+                'EMavg_AF': 'EM_avg_AF'}
 
     print('-- GRID VARIABLES --')
     ldiff = 0
@@ -186,8 +238,12 @@ def run():
 
     old, new = load_data(opts=opts)
 
-    plot_gr_vars(opts=opts, ods=old, nds=new)
-    check_grid_data(opts=opts, ods=old, nds=new)
+    if opts.level != 'AF':
+        plot_gr_vars(opts=opts, ods=old, nds=new)
+        check_grid_data(opts=opts, ods=old, nds=new)
+    else:
+        plot_gr_af_vars(opts=opts, ods=old, nds=new)
+        check_grid_af_data(opts=opts, ods=old, nds=new)
 
 
 if __name__ == '__main__':
