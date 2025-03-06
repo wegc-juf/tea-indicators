@@ -32,11 +32,18 @@ DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
 
 
-def get_data(opts):
+def get_data(start, end, opts, period='annual'):
     """
-    loads data
-    :param opts: input parameter
-    :return: dataset of daily maximum temperature or precipitation
+    loads data for parameter and period
+    :param start: start year
+    :ptype start: int
+    :param end: end year
+    :ptype end: int
+    :param opts: options
+    :param period: period to load (annual, seasonal, ESS, WAS, JJA); default: annual
+    :ptype period: str
+    
+    :return: dataset of given parameter
     """
 
     param_str = ''
@@ -45,39 +52,58 @@ def get_data(opts):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
     
-    filenames = get_input_filenames(opts.period, opts.start, opts.end, opts.inpath, param_str)
+    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.inpath, param_str=param_str)
     
     # load relevant years
     try:
         ds = xr.open_mfdataset(filenames, combine='by_coords')
     except ValueError:
         ds = xr.open_dataset(filenames[0])
-
-    # select only times of interest
-    if opts.period == 'seasonal' and opts.start != '1961':
-        start = f'{opts.start - 1}-12-01'
-        end = f'{opts.end}-11-30'
-        ds = ds.sel(time=slice(start, end))
-    elif opts.period == 'seasonal' and opts.start == '1961':
-        # if first year is first year of record, exclude first winter (data of Dec 1960 missing)
-        start = f'{opts.start - 1}-03-01'
-        end = f'{opts.end}-11-30'
-        ds = ds.sel(time=slice(start, end))
-
-    if opts.period in ['ESS', 'WAS', 'JJA']:
-        months = {'ESS': np.arange(5, 10), 'WAS': np.arange(4, 11), 'JJA': np.arange(6, 9)}
-        season = ds['time'].dt.month.isin(months[opts.period])
-        ds = ds.sel(time=season)
-
+    
     # select variable
     if opts.dataset == 'SPARTACUS' and opts.parameter == 'P24h_7to7':
         ds = ds.rename({'RR': opts.parameter})
     data = ds[opts.parameter]
-
+    
+    # get only values from selected period
+    data = extract_period(ds=data, period=period, start_year=start)
+    
     if opts.dataset == 'SPARTACUS':
         data = data.drop('lambert_conformal_conic')
 
     return data
+
+
+def extract_period(ds, period, start_year=None):
+    """
+    select only times of interest
+    
+    Args:
+        ds: Dataset
+        period: period of interest (annual, seasonal, ESS, WAS, JJA)
+        start_year: start year of first winter season (optional)
+
+    Returns:
+        ds: Dataset with selected time period
+
+    """
+    if period == 'seasonal':
+        first_year = ds.time[0].dt.year
+        last_year = ds.time[-1].dt.year
+        if start_year is not None and start_year > first_year:
+            start = f'{start_year - 1}-12-01'
+            end = f'{last_year}-11-30'
+            ds = ds.sel(time=slice(start, end))
+        else:
+            # if first year is first year of record, exclude first winter (data of Dec 1960 missing)
+            start = f'{first_year}-03-01'
+            end = f'{last_year}-11-30'
+            ds = ds.sel(time=slice(start, end))
+    if period in ['ESS', 'WAS', 'JJA']:
+        months = {'ESS': np.arange(5, 10), 'WAS': np.arange(4, 11), 'JJA': np.arange(6, 9)}
+        season = ds['time'].dt.month.isin(months[period])
+        ds = ds.sel(time=season)
+    return ds
 
 
 def load_static_files(opts, large_gr=False):
@@ -275,7 +301,7 @@ def run():
             if 'ERA' in myopts.dataset and static['GR_size'] > 100:
                 # use European masks
                 masks, static = load_static_files(opts=myopts, large_gr=True)
-                data = get_data(opts=myopts)
+                data = get_data(start=pstart, end=pend, opts=opts, period=opts.period)
                 tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static,
                                                 agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
             else:
@@ -284,9 +310,8 @@ def run():
                 
                 if myopts.recalc_daily or not os.path.exists(dbv_filename):
                     # always calculate annual basis variables to later extract sub-annual values
-                    old_period = myopts.period
-                    myopts.period = 'annual'
-                    data = get_data(opts=myopts)
+                    period = 'annual'
+                    data = get_data(start=pstart, end=pend, opts=opts, period=period)
                     
                     # computation of daily basis variables (Methods chapter 3)
                     logger.info('Daily basis variables will be recalculated. Period set to annual.')
@@ -296,7 +321,6 @@ def run():
                     # save results
                     logger.info(f'Saving daily basis variables to {dbv_filename}')
                     tea.save_daily_results(dbv_filename)
-                    myopts.period = old_period
                 else:
                     # load existing results
                     tea = TEAIndicators(area_grid=area_grid)
