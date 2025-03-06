@@ -7,6 +7,7 @@ import numpy as np
 import os
 import xarray as xr
 
+
 def get_opts():
     """
     get CLI parameter
@@ -88,7 +89,6 @@ def get_opts():
 
 
 def load_data(opts):
-
     sdir = 'daily_basis_variables'
     if opts.level == 'CTP':
         sdir = 'ctp_indicator_variables'
@@ -103,39 +103,49 @@ def load_data(opts):
     if opts.parameter != 'Tx':
         pstr = f'{opts.parameter}_{opts.threshold:.1f}p'
 
-    ods = xr.open_dataset(f'{opts.inpath}{sdir}/{opts.level}_{pstr}_{opts.region}'
-                          f'_{perstr}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+    ofiles = sorted(glob.glob(f'/data/users/hst/TEA-clean/TEA/{sdir}/'
+                              f'{opts.level}_{pstr}_{opts.region}_*{opts.dataset}_*.nc'))
+    if opts.level == 'DEC':
+        ofiles = ofiles[-1]
+    ods = xr.open_mfdataset(ofiles, data_vars='minimal')
+    if opts.level != 'DBV':
+        ods = ods.rename({'ctp': 'time'})
 
-    nds = xr.open_dataset(f'{opts.inpath}{sdir}/{opts.level}_{pstr}_{opts.region}'
-                          f'_{perstr}_{opts.dataset}_{opts.start}to{opts.end}.nc')
+    nfiles = sorted(glob.glob(f'{opts.inpath}{sdir}/{opts.level}_{pstr}_{opts.region}'
+                              f'_{perstr}_{opts.dataset}_*.nc'))
+    nds = xr.open_mfdataset(nfiles, data_vars='minimal')
 
     return ods, nds
 
 
 def plot_gr_vars(opts, ods, nds):
-
     gr_vars_all = [vvar for vvar in ods.data_vars if 'GR' in vvar]
     if opts.level == 'DBV':
-        gr_vars_all.append('DTEA_frac')
         gr_vars_plt = gr_vars_all
     else:
-        gr_vars_plt = ['EF_GR', 'ED_avg_GR', 'EM_avg_GR', 'EA_avg_GR', 'ES_avg_GR', 'TEX_GR']
+        gr_vars_plt = ['EF_GR', 'EDavg_GR', 'EMavg_GR', 'EAavg_GR', 'ESavg_GR', 'TEX_GR']
 
     if opts.plot:
         fig, axs = plt.subplots(2, 3, figsize=(15, 7))
         axs = axs.reshape(-1)
 
+    nds_vars = {'EF_GR': 'EF_GR', 'ED_GR': 'ED_GR', 'EDavg_GR': 'ED_avg_GR',
+                'EM_GR': 'EM_GR', 'EMavg_GR': 'EM_avg_GR', 'EAavg_GR': 'EA_avg_GR',
+                'TEX_GR': 'TEX_GR', 'ESavg_GR': 'ES_avg_GR', 'DTEA_frac': 'DTEA_frac',
+                'DTEA_GR': 'DTEA_GR', 'DTEC_GR': 'DTEC_GR', 'DTEM_GR': 'DTEM_GR',
+                'DTEEC_GR': 'DTEEC_GR'}
+
     print('-- GR VARIABLES --')
     iplt, ldiff = 0, 0
     for ivar, vvar in enumerate(gr_vars_all):
         if opts.plot:
-            diff = ods[vvar] - nds[vvar]
+            diff = ods[vvar] - nds[nds_vars[vvar]]
             if diff.max().values != 0:
                 print(vvar, diff.max().values)
                 ldiff += 1
             if vvar in gr_vars_plt:
                 axs[iplt].plot(ods[vvar], 'o-', color='tab:grey')
-                axs[iplt].plot(nds[vvar], 'o-', color='tab:green')
+                axs[iplt].plot(nds[nds_vars[vvar]], 'o-', color='tab:green')
                 axs[iplt].set_title(f'{vvar}; diff_max = {diff.max().values:.2f}')
                 iplt += 1
 
@@ -147,21 +157,24 @@ def plot_gr_vars(opts, ods, nds):
 
 
 def check_grid_data(opts, ods, nds):
-
     gvars = ['DTEC', 'DTEM', 'DTEEC']
     if opts.level != 'DBV':
         gvars = [vvar for vvar in ods.data_vars if 'GR' not in vvar]
 
+    nds_vars = {'EF': 'EF', 'ED': 'ED', 'EDavg': 'ED_avg', 'EM': 'EM', 'EMavg': 'EM_avg',
+                'DTEC': 'DTEC', 'DTEM': 'DTEM', 'DTEEC': 'DTEEC'}
+
     print('-- GRID VARIABLES --')
     ldiff = 0
     for gvar in gvars:
-        diff = ods[gvar] - nds[gvar]
+        diff = ods[gvar] - nds[nds_vars[gvar]]
         if diff.max().values != 0:
             print(gvar, diff.max().values)
             ldiff += 1
 
     if ldiff == 0:
         print('All GRID vars OK.')
+
 
 def run():
     opts = get_opts()
