@@ -69,8 +69,6 @@ calc_TEA:
   spreads: false
   decadal_only: false
   recalc_decadal: false
-  compare_to_ref: false
-  save_old: false
 
 calc_station_TEA:
   <<: *TIME
