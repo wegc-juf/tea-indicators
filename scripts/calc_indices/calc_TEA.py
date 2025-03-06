@@ -234,14 +234,6 @@ def run():
     threshold_grid = static['threshold']
     area_grid = static['area_grid']
     
-    # set filenames
-    dbv_outpath = f'{opts.outpath}/daily_basis_variables'
-    dbv_filename = (f'{dbv_outpath}/'
-                    f'DBV_{opts.param_str}_{opts.region}_annual_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}.nc')
-    if not os.path.exists(dbv_outpath):
-        os.makedirs(dbv_outpath)
-
     gr_grid_mask = None
     gr_grid_areas = None
     # check if GR size is larger than 100 areals and switch to AGR if so
@@ -274,10 +266,20 @@ def run():
         myopts = deepcopy(opts)
         starts = np.arange(myopts.start, myopts.end, 10)
         ends = np.append(np.arange(myopts.start + 10 - 1, myopts.end, 10), myopts.end)
+        
+        dbv_outpath = f'{opts.outpath}/daily_basis_variables'
+        if not os.path.exists(dbv_outpath):
+            os.makedirs(dbv_outpath)
+            
         for pstart, pend in zip(starts, ends):
             myopts.start = pstart
             myopts.end = pend
             logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
+            
+            # set filenames
+            dbv_filename = (f'{dbv_outpath}/'
+                            f'DBV_{myopts.param_str}_{myopts.region}_annual_{myopts.dataset}'
+                            f'_{myopts.start}to{myopts.end}.nc')
             
             # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
             if 'ERA' in myopts.dataset and static['GR_size'] > 100:
