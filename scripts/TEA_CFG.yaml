@@ -1,6 +1,6 @@
 common_params:
   gui: &GUI
-    no_gui: true
+    no_gui: false
   GeoRegion: &GR
     region: FBR
     gr_type: polygon
@@ -30,7 +30,7 @@ common_params:
 regrid_SPARTACUS_to_WEGNext:
   <<: *GUI
   <<: *PARAM
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   orography: false
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
   wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
@@ -42,7 +42,7 @@ create_region_masks:
   target_sys: 32633
   target_ds: SPARTACUS
   xy_name: x,y
-  shpfile: /data/users/hst/cdrDPS/shapefiles/FBR_polygon.shp
+  shpfile: /data/users/hst/cdrDPS/shapefiles/SARext_shape.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS2-DAILY_Tx_2003.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
   lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
@@ -56,7 +56,7 @@ create_static_files:
   <<: *PATHS
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
 
 calc_TEA:
@@ -79,7 +79,8 @@ calc_station_TEA:
   <<: *TIME
   <<: *PARAM
   station: Graz
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  outpath: /data/users/hst/TEA-clean/TEA/
 
 calc_amplification_factors:
   <<: *GUI
@@ -89,7 +90,7 @@ calc_amplification_factors:
   <<: *DATA
   <<: *PATHS
   supplementary: true
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/users/hst/TEA-clean/TEA/
 
 calc_AGR_vars:
@@ -99,7 +100,7 @@ calc_AGR_vars:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/users/hst/TEA-clean/TEA/
   agr: EUR
   spreads: false

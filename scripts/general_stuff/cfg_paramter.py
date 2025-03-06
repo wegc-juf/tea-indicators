@@ -162,6 +162,7 @@ def update_yaml(fname, opts):
             if ovalue != nvalue:
                 if key == 'outpath':
                     if f'{sec}.py' != new_params['script']:
+                        new_file.write(line)
                         continue
                 if ovalue == 'null' and nvalue == '':
                     new_file.write(line)
