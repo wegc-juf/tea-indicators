@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: false
   GeoRegion: &GR
-    region: SEA
+    region: FBR
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -21,7 +21,7 @@ common_params:
     end: 2024
     period: WAS
   dataset: &DATA
-    dataset: SPARTACUS
+    dataset: ERA5
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
     statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
@@ -56,7 +56,7 @@ create_static_files:
   <<: *PATHS
   season_length: 366
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
 
 calc_TEA:
@@ -66,12 +66,12 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   outpath: /data/users/hst/TEA-clean/TEA/
   recalc_daily: true
   decadal: true
   spreads: false
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
 
 calc_station_TEA:
@@ -90,7 +90,7 @@ calc_amplification_factors:
   <<: *DATA
   <<: *PATHS
   supplementary: true
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
   outpath: /data/users/hst/TEA-clean/TEA/
 
 calc_AGR_vars:

@@ -46,8 +46,9 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
     area_frac = area_frac.rename('DTEA_frac')
 
     areas = xr.merge([dtea_gr, area_frac])
-    areas.to_netcdf(f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}.nc')
+    areas.to_netcdf(
+        f'{outpath}DTEA{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+        f'_{opts.start}to{opts.end}.nc')
 
     # calculate dtec_gr (continues equation 03)
     dtec_gr = dtec.notnull().any(dim=static['threshold'].dims)
@@ -57,8 +58,9 @@ def calc_dtec_dtea(opts, dtem, static, cstr):
                                     'units': '1'})
 
     dtecs = xr.merge([dtec, dtec_gr])
-    dtecs.to_netcdf(f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                    f'_{opts.start}to{opts.end}.nc')
+    dtecs.to_netcdf(
+        f'{outpath}DTEC{cstr}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+        f'_{opts.start}to{opts.end}.nc')
 
     return dtec, dtec_gr, dtea_gr
 
@@ -141,17 +143,16 @@ def check_tmp_dir(opts):
     def is_directory_empty(directory):
         return not any(os.scandir(directory))
 
-    def delete_files_in_directory(directory):
-        for entry in os.scandir(directory):
-            if entry.is_file():
-                os.remove(entry.path)
-
     tmp_dir = f'{opts.outpath}daily_basis_variables/tmp/'
 
     # Check each directory and interact with the user if necessary
     if not is_directory_empty(tmp_dir):
-        logging.info(f'Tmp directory is not empty, files will be deleted first.')
-        delete_files_in_directory(tmp_dir)
+        logging.info(f'Old files found in tmp directory. Files will be deleted first.')
+        files = sorted(glob.glob(f'{opts.outpath}daily_basis_variables/tmp/'
+                                 f'DTEM*_{opts.param_str}_{opts.region}_{opts.period}'
+                                 f'_{opts.dataset}_{opts.start}to{opts.end}.nc'))
+        for file in files:
+            os.remove(file)
 
 
 def calc_daily_basis_vars(opts, static, data, large_gr=False, cell=None):

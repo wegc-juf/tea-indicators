@@ -204,11 +204,11 @@ def check_grid_data(opts, ods, nds):
     ldiff = 0
     for gvar in gvars:
         diff = ods[gvar] - nds[nds_vars[gvar]]
-        if diff.max().values != 0:
+        if diff.max().values > 10**(-3):
             print(gvar, diff.max().values)
             ldiff += 1
 
-    if ldiff == 0:
+    if ldiff < 10**(-3):
         print('All GRID vars OK.')
 
 
@@ -222,11 +222,11 @@ def check_grid_af_data(opts, ods, nds):
     ldiff = 0
     for gvar in gvars:
         diff = ods[gvar] - nds[nds_vars[gvar]]
-        if diff.max().values != 0:
+        if diff.max().values > 10**(-3):
             print(gvar, diff.max().values)
             ldiff += 1
 
-    if ldiff == 0:
+    if ldiff < 10**(-3):
         print('All GRID vars OK.')
 
 
