@@ -40,7 +40,11 @@ def load_ctp_data(opts, tea):
         else:
             return False
     
-    filenames = (f'{ctppath}/CTP_{opts.param_str}_{opts.region}_{opts.period}'
+    if 'Agr' in str(type(tea)):
+        grg_str = 'GRG-'
+    else:
+        grg_str = ''
+    filenames = (f'{ctppath}/CTP_{opts.param_str}_{grg_str}{opts.region}_{opts.period}'
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if not 'ref' in file]
