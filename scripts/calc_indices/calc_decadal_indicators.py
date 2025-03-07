@@ -55,7 +55,12 @@ def load_ctp_data(opts, suppl, basis=False):
         data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
 
     if basis:
-        data = data[['EF', 'EF_GR', 'EDavg', 'EDavg_GR']]
+        bvars = ['EF', 'EF_GR', 'EDavg', 'EDavg_GR']
+        # check if there are GR variables in data set (AGR datasets don't have these yet)
+        grs = [var for var in data.data_vars if '_GR' in var]
+        if len(grs) == 0:
+            bvars = ['EF', 'EDavg']
+        data = data[bvars]
 
     return data
 
@@ -195,6 +200,13 @@ def calc_compound_vars(data, suppl):
     if suppl:
         cvars = [f'{em_var}', f'{em_var}_GR', 'EM_Max_GR']
 
+    # check if there are GR variables in data set (AGR datasets don't have these yet)
+    grs = [var for var in data.data_vars if '_GR' in var]
+    if len(grs) == 0:
+        cvars = [f'{em_var}', 'ESavg', 'TEX', 'ED']
+        if suppl:
+            cvars = [f'{em_var}', 'EM_Max_GR']
+
     components = {'ED': ['EF', 'EDavg'],
                   'EM': ['EF', 'EDavg', 'EMavg'],
                   'ESavg': ['EDavg', 'EMavg', 'EAavg'],
@@ -207,7 +219,7 @@ def calc_compound_vars(data, suppl):
         if 'GR' in var:
             dname = var.split('_GR')[0]
         com = components[dname]
-        if 'GR' in var:
+        if 'GR' in var and len(grs) > 0:
             com = [f'{ii}_GR' for ii in com]
 
         compound = data[com[0]]
