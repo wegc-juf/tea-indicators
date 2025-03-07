@@ -408,6 +408,7 @@ class TEAAgr(TEAIndicators):
         generate mask for grid of GeoRegions
         """
         logger.info(f'Generating GR grid mask with resolution {self.gr_grid_res} degrees')
+        grg_res = self.gr_grid_res
         lats, lons = self._get_lats_lons(margin=0)
         mask_orig = self.mask
         area_orig = self.area_grid
@@ -425,10 +426,10 @@ class TEAAgr(TEAIndicators):
         
         for llat in gr_grid_mask.lat:
             for llon in gr_grid_mask.lon:
-                cell_orig = mask_orig.sel(lat=slice(llat, llat - res_orig),
-                                          lon=slice(llon, llon + res_orig))
-                cell_area = area_orig.sel(lat=slice(llat, llat - res_orig),
-                                          lon=slice(llon, llon + res_orig))
+                cell_orig = mask_orig.sel(lat=slice(llat, llat - grg_res + res_orig),
+                                          lon=slice(llon, llon + grg_res - res_orig))
+                cell_area = area_orig.sel(lat=slice(llat, llat - grg_res + res_orig),
+                                          lon=slice(llon, llon + grg_res - res_orig))
                 valid_cells = cell_orig.sum()
                 if valid_cells == 0:
                     continue
