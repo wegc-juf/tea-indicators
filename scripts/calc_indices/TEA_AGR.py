@@ -214,7 +214,7 @@ class TEAAgr(TEAIndicators):
             warnings.simplefilter("ignore")
             self.CTP_results.to_netcdf(filepath)
     
-    def apply_mask(self):
+    def apply_gr_grid_mask(self):
         """
         apply GR grid mask to daily basis variables and CTP results
         """
