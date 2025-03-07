@@ -1,8 +1,8 @@
 common_params:
   gui: &GUI
-    no_gui: false
+    no_gui: true
   GeoRegion: &GR
-    region: AUT
+    region: EUR
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -12,41 +12,43 @@ common_params:
   parameter: &PARAM
     parameter: Tx
     precip: false
-    threshold: 27
-    threshold_type: abs
+    threshold: 99
+    threshold_type: perc
     unit: degC
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2024
+    end: 2022
     period: WAS
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-    tmppath: /home/hst/tmp_data/TEAclean/largeGR/
+    statpath: /home/wegnet/results/static/
+#    statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    tmppath: /home/wegnet/results/TEA_indicators_hst/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *GUI
   <<: *PARAM
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   orography: false
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
+  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
   wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  outpath: /home/wegnet/results/TEA_indicators_hst/
 
 create_region_masks:
   <<: *GUI
   <<: *GR
-  subreg: null
-  target_sys: 32633
-  target_ds: SPARTACUS
-  xy_name: x,y
-  shpfile: /data/users/hst/cdrDPS/shapefiles/SARext_shape.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS2-DAILY_Tx_2003.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
-  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+  subreg: custom
+  target_sys: 4326
+  target_ds: ERA5
+  xy_name: lon,lat
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
+  outpath: /home/wegnet/results/TEA_indicators_hst/
 
 create_static_files:
   <<: *GUI
@@ -57,7 +59,7 @@ create_static_files:
   season_length: 366
   smoothing: 0
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+  outpath: /home/wegnet/results/TEA_indicators_hst/static/
 
 calc_TEA:
   <<: *GUI
@@ -67,20 +69,20 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /data/users/hst/TEA-clean/TEA/
-  recalc_daily: true
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+  recalc_daily: false
   decadal: true
   spreads: false
   decadal_only: true
-  recalc_decadal: true
+  recalc_decadal: false
 
 calc_station_TEA:
   <<: *GUI
   <<: *TIME
   <<: *PARAM
   station: Graz
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
 
 calc_amplification_factors:
   <<: *GUI
@@ -90,8 +92,9 @@ calc_amplification_factors:
   <<: *DATA
   <<: *PATHS
   supplementary: true
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /home/wegnet/results/TEA_indicators_hst/dec_indicator_variables/
+  # inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
 
 calc_AGR_vars:
   <<: *GUI
@@ -100,7 +103,9 @@ calc_AGR_vars:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/
-  agr: AUT
-  spreads: false
+  inpath: /home/wegnet/results/TEA_indicators_hst/dec_indicator_variables/
+#  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
+  # outpath: /data/users/hst/TEA-clean/TEA/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+  agr: EUR
+  spreads: true
