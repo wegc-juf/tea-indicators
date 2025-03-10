@@ -1,6 +1,7 @@
 common_params:
   GeoRegion: &GR
     region: AUT
+    agr: AUT
     # use full data without land, border, and altitude masks
     full_region: false
     gr_type: polygon
