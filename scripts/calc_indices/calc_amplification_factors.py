@@ -58,11 +58,18 @@ def calc_ref_cc_mean(data):
         cc: mean values of current climate period
     """
 
-    ref_ds = data.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
-    cc_ds = data.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
+    try:
+        ref_ds = data.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+        cc_ds = data.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
 
-    ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
-    cc_db = (1 / len(cc_ds.ctp)) * (np.log10(cc_ds)).sum(dim='ctp')
+        ref_db = (1 / len(ref_ds.ctp)) * (np.log10(ref_ds)).sum(dim='ctp')
+        cc_db = (1 / len(cc_ds.ctp)) * (np.log10(cc_ds)).sum(dim='ctp')
+    except KeyError:
+        ref_ds = data.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+        cc_ds = data.sel(time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy']))
+
+        ref_db = (1 / len(ref_ds.time)) * (np.log10(ref_ds)).sum(dim='time')
+        cc_db = (1 / len(cc_ds.time)) * (np.log10(cc_ds)).sum(dim='time')
 
     ref = 10 ** ref_db
     cc = 10 ** cc_db
