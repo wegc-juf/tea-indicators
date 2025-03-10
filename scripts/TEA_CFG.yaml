@@ -42,7 +42,7 @@ create_region_masks:
   target_sys: 32633
   target_ds: SPARTACUS
   xy_name: x,y
-  shpfile: /data/users/hst/cdrDPS/shapefiles/SARext_shape.shp
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS2-DAILY_Tx_2003.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
   lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
