@@ -260,17 +260,19 @@ def run():
             gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
             gr_grid_mask = gr_grid_mask.mask_lt1500
         except FileNotFoundError:
-            logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
-            gr_grid_mask = None
+            if opts.decadal_only:
+                logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
+                gr_grid_mask = None
         
         try:
             gr_grid_areas_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
             gr_grid_areas = xr.open_dataset(gr_grid_areas_file)
             gr_grid_areas = gr_grid_areas.area_grid
         except FileNotFoundError:
-            # TODO: make AGR code work without area grid (assuming all grid cells have same area)
-            raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for AGR '
-                                    f'calculations.')
+            if opts.decadal_only:
+                # TODO: make AGR code work without area grid (assuming all grid cells have same area)
+                raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for AGR '
+                                        f'calculations.')
         
         tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas)
         agr = True
