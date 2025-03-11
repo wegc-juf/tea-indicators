@@ -91,7 +91,7 @@ def check_config(opts_dict):
                 float_1pcd(opts_dict[param])
             if param in ['threshold_type', 'period', 'gr_type']:
                 choices(param=param, val=opts_dict[param], poss_vals=choice_vals[param])
-            if param in ['start', 'end', 'target_sys', 'season_length', 'smoothing']:
+            if param in ['start', 'end', 'target_sys', 'smoothing']:
                 ints(param=param, val=opts_dict[param])
 
     return opts_dict
