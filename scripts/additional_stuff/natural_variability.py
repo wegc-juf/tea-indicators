@@ -127,6 +127,8 @@ def rename_juf_data(data):
         if '_avg' in var:
             data = data.rename({var: var.replace('_avg', 'avg')})
 
+    data = data.rename({'EM_GR_Md': 'EM_Md_GR', 'EMavg_GR_Md': 'EMavg_Md_GR'})
+
     return data
 
 
