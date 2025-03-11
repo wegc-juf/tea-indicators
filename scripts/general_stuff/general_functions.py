@@ -179,18 +179,18 @@ def compare_to_ref(tea_result, tea_ref, relative=False):
             print(f'{vvar} not found in reference file.')
 
 
-def get_input_filenames(period, start, end, inpath, param_str):
+def get_input_filenames(start, end, inpath, param_str, period='annual'):
     """
     get input filenames
 
-    :param period: period of interest
-    :type period: str
     :param start: start year
     :type start: int
     :param end: end year
     :type end: int
     :param inpath: input path
     :param param_str: parameter string
+    :param period: period of interest. Default is 'annual'
+    :type period: str
 
     :return: list of filenames
     """
