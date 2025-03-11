@@ -20,7 +20,7 @@ from copy import deepcopy
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                                     compare_to_ref, get_input_filenames)
+                                                     compare_to_ref, get_input_filenames, get_data)
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
@@ -30,80 +30,6 @@ from scripts.calc_indices.TEA_AGR import TEAAgr
 DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
              'ERA5': {'xname': 'lon', 'yname': 'lat'},
              'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
-
-
-def get_data(start, end, opts, period='annual'):
-    """
-    loads data for parameter and period
-    :param start: start year
-    :ptype start: int
-    :param end: end year
-    :ptype end: int
-    :param opts: options
-    :param period: period to load (annual, seasonal, ESS, WAS, JJA); default: annual
-    :ptype period: str
-    
-    :return: dataset of given parameter
-    """
-
-    param_str = ''
-    if opts.dataset == 'SPARTACUS' and not opts.precip:
-        param_str = f'{opts.parameter}'
-    elif opts.dataset == 'SPARTACUS' and opts.precip:
-        param_str = 'RR'
-    
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.inpath, param_str=param_str)
-    
-    # load relevant years
-    try:
-        ds = xr.open_mfdataset(filenames, combine='by_coords')
-    except ValueError:
-        ds = xr.open_dataset(filenames[0])
-    
-    # select variable
-    if opts.dataset == 'SPARTACUS' and opts.parameter == 'P24h_7to7':
-        ds = ds.rename({'RR': opts.parameter})
-    data = ds[opts.parameter]
-    
-    # get only values from selected period
-    data = extract_period(ds=data, period=period, start_year=start)
-    
-    if opts.dataset == 'SPARTACUS':
-        data = data.drop('lambert_conformal_conic')
-
-    return data
-
-
-def extract_period(ds, period, start_year=None):
-    """
-    select only times of interest
-    
-    Args:
-        ds: Dataset
-        period: period of interest (annual, seasonal, ESS, WAS, JJA)
-        start_year: start year of first winter season (optional)
-
-    Returns:
-        ds: Dataset with selected time period
-
-    """
-    if period == 'seasonal':
-        first_year = ds.time[0].dt.year
-        last_year = ds.time[-1].dt.year
-        if start_year is not None and start_year > first_year:
-            start = f'{start_year - 1}-12-01'
-            end = f'{last_year}-11-30'
-            ds = ds.sel(time=slice(start, end))
-        else:
-            # if first year is first year of record, exclude first winter (data of Dec 1960 missing)
-            start = f'{first_year}-03-01'
-            end = f'{last_year}-11-30'
-            ds = ds.sel(time=slice(start, end))
-    if period in ['ESS', 'WAS', 'JJA']:
-        months = {'ESS': np.arange(5, 10), 'WAS': np.arange(4, 11), 'JJA': np.arange(6, 9)}
-        season = ds['time'].dt.month.isin(months[period])
-        ds = ds.sel(time=season)
-    return ds
 
 
 def load_static_files(opts, large_gr=False):
