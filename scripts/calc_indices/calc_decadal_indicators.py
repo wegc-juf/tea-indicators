@@ -11,7 +11,7 @@ import warnings
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.general_stuff.general_functions import compare_to_ref
 from scripts.general_stuff.TEA_logger import logger
-from TEA import TEAIndicators
+from .TEA import TEAIndicators
 
 logging.basicConfig(
     level=logging.INFO,
