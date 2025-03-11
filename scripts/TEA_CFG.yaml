@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: true
   GeoRegion: &GR
-    region: AUT
+    region: FBR
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -39,13 +39,13 @@ create_region_masks:
   <<: *GUI
   <<: *GR
   subreg: null
-  target_sys: 32633
-  target_ds: SPARTACUS
-  xy_name: x,y
-  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS2-DAILY_Tx_2003.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
-  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
+  target_sys: 4326
+  target_ds: ERA5
+  xy_name: lon,lat
+  shpfile: /data/users/hst/cdrDPS/shapefiles/FBR_polygon.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_2003.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
 create_static_files:
