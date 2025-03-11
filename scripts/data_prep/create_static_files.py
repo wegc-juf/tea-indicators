@@ -116,7 +116,7 @@ def load_ref_data(opts, masks, gr_size):
 
     # only select WAS and wet days for precip
     if opts.precip:
-        season = ds['time'].dt.month.isin(np.arange(4, 11))
+        season = data_param['time'].dt.month.isin(np.arange(4, 11))
         data_param = data_param.sel(time=season)
         data_param = data_param.where(data_param > 0.99)
 
