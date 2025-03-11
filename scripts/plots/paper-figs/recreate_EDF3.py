@@ -7,7 +7,7 @@ import numpy as np
 from scipy.stats import gmean
 import xarray as xr
 
-from recreate_fig2 import find_range
+from plot_fig2 import find_range
 
 
 def preprocess(ds_in):
@@ -25,18 +25,18 @@ def preprocess(ds_in):
 
 
 def get_data():
-    dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/dec_indicator_variables/'
-                          'DEC_T99.0p_AUT_WAS_SPARTACUS_1961to2022.nc')
+    dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+                          'DEC_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
 
     ctp = xr.open_mfdataset(
-        sorted(glob.glob('/data/users/hst/TEA-clean/TEA/ctp_indicator_variables/'
-                         'CTP_T99.0p_AUT_WAS_SPARTACUS_*.nc')), data_vars='minimal')
+        sorted(glob.glob('/data/users/hst/TEA-clean/TEA/paper_data/ctp_indicator_variables/'
+                         'CTP_Tx99.0p_AUT_WAS_SPARTACUS_*.nc')), data_vars='minimal')
 
-    supp = xr.open_dataset('/data/users/hst/TEA-clean/TEA/dec_indicator_variables/'
-                           'DEC_sUPP_T99.0p_AUT_WAS_SPARTACUS_1961to2022.nc')
+    supp = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+                           'DEC_sUPP_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
 
-    slow = xr.open_dataset('/data/users/hst/TEA-clean/TEA/dec_indicator_variables/'
-                           'DEC_sLOW_T99.0p_AUT_WAS_SPARTACUS_1961to2022.nc')
+    slow = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+                           'DEC_sLOW_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
 
     return dec, ctp, supp, slow
 
@@ -78,7 +78,7 @@ def gr_plot_params(vname):
 def plot_gr_data(ax, adata, ddata, su, sl):
     props = gr_plot_params(vname=ddata.name)
 
-    xticks = np.arange(1961, 2023)
+    xticks = np.arange(1961, 2025)
 
     ax.fill_between(x=xticks, y1=ddata - sl, y2=ddata + su, color=props['col'], alpha=0.3)
     ax.plot(xticks, ddata, 'o-', color=props['col'], markersize=3, linewidth=2)
@@ -88,8 +88,8 @@ def plot_gr_data(ax, adata, ddata, su, sl):
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    ax.set_xlim(1960, 2023)
-    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2023)))
+    ax.set_xlim(1960, 2025)
+    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
     ax.set_title(props['title'], fontsize=14)
     ax.set_ylim(0, props['yx'])
     ax.yaxis.set_major_locator(FixedLocator(np.arange(0, props['yx'] + props['dy'], props['dy'])))
@@ -167,13 +167,14 @@ def run():
 
     map_vars = ['EF', 'EDavg', 'EMavg']
     for irow, map_var in enumerate(map_vars):
-        mdata = gmean(dec[map_var].sel(ctp=slice('2013-01-01', '2018-12-31')), axis=0)
+        mdata = gmean(dec[map_var].sel(ctp=slice('2015-01-01', '2020-12-31')), axis=0)
         mdata = xr.DataArray(data=mdata, coords={'y': (['y'], dec.y.values),
                                                  'x': (['x'], dec.x.values)}, name=map_var)
         plot_map(fig=fig, ax=axs[irow, 1], data=mdata)
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig('/nas/home/hst/work/TEAclean/plots/paper-figs/EDF3.png', dpi=300)
+    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
+                'ExtDataFig3.png', dpi=300)
 
 
 if __name__ == '__main__':
