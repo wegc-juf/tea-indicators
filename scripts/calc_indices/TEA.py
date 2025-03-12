@@ -102,7 +102,7 @@ class TEAIndicators:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
         """
         if self.mask is not None and self.apply_mask:
-            self.input_data_grid = input_data_grid * self.mask
+            self.input_data_grid = input_data_grid.where(self.mask > 0)
         else:
             self.input_data_grid = input_data_grid
             
