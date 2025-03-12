@@ -200,11 +200,7 @@ def calc_indicators(opts):
         return
 
     # apply mask to data
-    # if opts.region != 'FBR':
-    #     data = data * (masks['lt1500_mask'] * masks['mask'])
-    # else:
-    #     data = data * masks['lt1500_mask']
-    data = data * (masks['lt1500_mask'] * masks['mask'])
+    data = data * (masks['lt1500_mask'] * masks['nw_mask'])
 
     # computation of daily basis variables (Methods chapter 3)
     calc_daily_basis_vars(opts=opts, static=static, data=data)

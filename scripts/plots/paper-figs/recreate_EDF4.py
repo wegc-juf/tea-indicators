@@ -12,9 +12,6 @@ def get_data():
                          'amplification/'
                          'AF_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
 
-    af['tEX_GR_AF'] = af['EF_GR_AF'] * af['ED_avg_GR_AF'] * af['EM_avg_GR_Md_AF']
-    af['tEX_AF_CC'] = af['EF_AF_CC'] * af['ED_avg_AF_CC'] * af['EM_avg_GR_Md_AF_CC']
-
     nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
                      'NV_AF_P24h_7to7_95.0p_SEA.csv',
                      index_col=0)
@@ -56,7 +53,7 @@ def map_plot_params(vname):
                               'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
                               'title': 'Event Duration (ED) amplification (CC2008-2022)',
                            'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
-              'EM_avg_GR_Md_AF_CC': {'cmap': 'Oranges',
+              'EM_avg_Md_AF_CC': {'cmap': 'Oranges',
                               'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
                               'title': 'Exceedance Magnitude (EM) amplification (CC2008-2022)',
                            'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
