@@ -215,8 +215,8 @@ def run_eur(opts):
     Returns:
 
     """
-    if opts.target_ds != 'ERA5':
-        raise AttributeError('EUR mask can only be created for ERA5 data.')
+    if 'ERA5' not in opts.target_ds:
+        raise AttributeError('EUR mask can only be created for ERA5(Land) data.')
 
     # load LSM and only keep cells with more than 50% land in them
     lsm = prep_lsm(opts=opts)

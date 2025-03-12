@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: true
   GeoRegion: &GR
-    region: SEA
+    region: EUR
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -21,7 +21,7 @@ common_params:
     end: 2024
     period: WAS
   dataset: &DATA
-    dataset: SPARTACUS
+    dataset: ERA5Land
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
     statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
@@ -40,12 +40,12 @@ create_region_masks:
   <<: *GR
   subreg: null
   target_sys: 4326
-  target_ds: ERA5
+  target_ds: ERA5Land
   xy_name: lon,lat
-  shpfile: /data/users/hst/cdrDPS/shapefiles/FBR_polygon.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_2003.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
-  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
+  shpfile: /data/users/hst/cdrDPS/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_2003.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
+  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
 create_static_files:
