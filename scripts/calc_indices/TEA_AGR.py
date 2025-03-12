@@ -239,9 +239,9 @@ class TEAAgr(TEAIndicators):
         for lat in lats:
             self._calc_tea_lat(lat, lons=lons)
     
-    def _filter_agr(self, lat_range, lon_range):
+    def _crop_to_rect(self, lat_range, lon_range):
         """
-        filter GeoRegion grid data to spatial extent of aggregated GeoRegion
+        crop GeoRegion grid data to spatial extent of aggregated GeoRegion
         Args:
             lat_range: Latitude range (min, max)
             lon_range: Longitude range (min, max)
@@ -280,7 +280,7 @@ class TEAAgr(TEAIndicators):
         """
         # filter data to spatial extent of aggregated GeoRegion
         if lat_range is not None or lon_range is not None:
-            self._filter_agr(lat_range=lat_range, lon_range=lon_range)
+            self._crop_to_rect(lat_range=lat_range, lon_range=lon_range)
         
         # drop old AGR values
         self._drop_agr_values()
