@@ -94,6 +94,39 @@ class TEAIndicators:
         self.amplification_factors = xr.Dataset()
         
         self.null_val = 0
+    
+    def _crop_to_rect(self, lat_range, lon_range):
+        """
+        crop all grids to a rectangular area
+        Args:
+            lat_range: Latitude range (min, max)
+            lon_range: Longitude range (min, max)
+
+        Returns:
+
+        """
+        self.input_data_grid = self.input_data_grid.sel(lat=slice(lat_range[1], lat_range[0]),
+                                                        lon=slice(lon_range[0], lon_range[1]))
+        self.area_grid = self.area_grid.sel(lat=slice(lat_range[1], lat_range[0]),
+                                            lon=slice(lon_range[0], lon_range[1]))
+        self.mask = self.mask.sel(lat=slice(lat_range[1], lat_range[0]),
+                                  lon=slice(lon_range[0], lon_range[1]))
+        self.threshold_grid = self.threshold_grid.sel(lat=slice(lat_range[1], lat_range[0]),
+                                                      lon=slice(lon_range[0], lon_range[1]))
+    
+    def _crop_to_mask_extents(self):
+        """
+        crop all grids to the mask extents
+        """
+        mask = self.mask
+        idx_with_data = np.where(mask > 0)
+        lon_min = mask.lon[idx_with_data[1]].min().values
+        lon_max = mask.lon[idx_with_data[1]].max().values
+        lat_min = mask.lat[idx_with_data[0]].min().values
+        lat_max = mask.lat[idx_with_data[0]].max().values
+        lat_range = [lat_min, lat_max]
+        lon_range = [lon_min, lon_max]
+        self._crop_to_rect(lat_range, lon_range)
         
     def _set_input_data_grid(self, input_data_grid):
         """
@@ -103,6 +136,7 @@ class TEAIndicators:
         """
         if self.mask is not None and self.apply_mask:
             self.input_data_grid = input_data_grid.where(self.mask > 0)
+            self._crop_to_mask_extents()
         else:
             self.input_data_grid = input_data_grid
             
@@ -114,9 +148,9 @@ class TEAIndicators:
                 pass
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
-            if input_data_grid.shape[-2:] != self.threshold_grid.shape:
+            if self.input_data_grid.shape[-2:] != self.threshold_grid.shape:
                 raise ValueError("Input data and threshold results must have the same area")
-            if input_data_grid.shape[-2:] != self.area_grid.shape:
+            if self.input_data_grid.shape[-2:] != self.area_grid.shape:
                 raise ValueError("Input data and area results must have the same shape")
         
     def _calc_DTEC(self):
