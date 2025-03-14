@@ -162,14 +162,18 @@ def save_0p5_mask(opts, mask_0p5, area_0p5):
         area_0p5: area grid on 0.5° grid
     """
     area_0p5 = create_history_from_cfg(cfg_params=opts, ds=area_0p5)
+    area_grid_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
     try:
-        area_0p5.to_netcdf(f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+        area_0p5.to_netcdf(area_grid_file)
     except PermissionError:
-        area_0p5.to_netcdf(f'{opts.outpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+        os.remove(area_grid_file)
+        area_0p5.to_netcdf(area_grid_file)
 
     # save 0.5° mask
     mask_0p5 = create_history_from_cfg(cfg_params=opts, ds=mask_0p5)
+    mask_file = f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc'
     try:
-        mask_0p5.to_netcdf(f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
+        mask_0p5.to_netcdf(mask_file)
     except PermissionError:
-        mask_0p5.to_netcdf(f'{opts.outpath}/{opts.region}_mask_0p5_{opts.dataset}.nc')
+        os.remove(mask_file)
+        mask_0p5.to_netcdf(mask_file)
