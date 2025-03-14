@@ -403,6 +403,9 @@ class TEAAgr(TEAIndicators):
         lons = np.arange(self.input_data_grid.lon.min() + margin,
                          self.input_data_grid.lon.max() + self.gr_grid_res - margin,
                          self.gr_grid_res)
+        if len(lats) == 0 or len(lons) == 0:
+            raise ValueError(f'Not enough valid cells found for margin {margin} - check size of input data grid and '
+                             f'static files')
         return lats, lons
     
     def _generate_gr_grid_mask(self):
