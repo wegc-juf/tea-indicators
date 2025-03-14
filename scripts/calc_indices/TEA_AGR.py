@@ -46,6 +46,10 @@ class TEAAgr(TEAIndicators):
             self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
         else:
             self.lat_resolution = None
+        if input_data_grid is not None:
+            self.lat_resolution_in = abs(self.input_data_grid.lat.values[0] - self.input_data_grid.lat.values[1])
+        else:
+            self.lat_resolution_in = None
         self.gr_grid_res = gr_grid_res
         self.gr_grid_mask = None
         self.gr_grid_areas = None
@@ -395,13 +399,16 @@ class TEAAgr(TEAIndicators):
         get latitudes and longitudes for GeoRegion grid
         """
         if margin is None:
-            margin = self.cell_size_lat
+            margin = self.cell_size_lat / 2
 
         lats = np.arange(self.input_data_grid.lat.max() - margin,
                          self.input_data_grid.lat.min() - self.gr_grid_res + margin,
                          -self.gr_grid_res)
-        lons = np.arange(self.input_data_grid.lon.min() + margin,
-                         self.input_data_grid.lon.max() + self.gr_grid_res - margin,
+        margin_lon = 1 / np.cos(np.deg2rad(lats[0])) * margin
+        # round margin_lon to resolution of input data grid
+        margin_lon = np.round(np.round(margin_lon / self.lat_resolution_in, 0) * self.lat_resolution_in, 2)
+        lons = np.arange(self.input_data_grid.lon.min() + margin_lon,
+                         self.input_data_grid.lon.max() + self.gr_grid_res - margin_lon,
                          self.gr_grid_res)
         if len(lats) == 0 or len(lons) == 0:
             raise ValueError(f'Not enough valid cells found for margin {margin} - check size of input data grid and '
