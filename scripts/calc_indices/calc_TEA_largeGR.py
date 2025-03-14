@@ -64,12 +64,20 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
             max_lat = float(static.area_grid.lat.max().values)
         if min_lat < 35 - cell_size_lat:
             min_lat = 35 - cell_size_lat
+            
+        min_lon = data.lon[np.where(masks['lt1500_mask'] > 0)[1][0]].values - cell_size_lat
+        if min_lon < static.area_grid.lon.min().values:
+            min_lon = float(static.area_grid.lon.min().values)
+        max_lon = data.lon[np.where(masks['lt1500_mask'] > 0)[1][-1]].values + cell_size_lat
+        if max_lon > static.area_grid.lon.max().values:
+            max_lon = float(static.area_grid.lon.max().values)
     if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
+        min_lon = lons[0] - cell_size_lat
+        max_lon = lons[-1] + cell_size_lat
     else:
+        # TODO check if this is still needed
         lons = np.arange(9, 18, 0.5)
-    min_lon = lons[0] - cell_size_lat
-    max_lon = lons[-1] + cell_size_lat
     proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     # regrid_data(proc_data)
     land_sea_mask = masks['valid_cells'].sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
