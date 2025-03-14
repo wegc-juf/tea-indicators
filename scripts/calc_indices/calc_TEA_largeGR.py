@@ -89,7 +89,7 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
                      gr_grid_mask=agr_mask, gr_grid_areas=agr_area, land_frac_min=land_frac_min,
                      cell_size_lat=cell_size_lat, ctp=opts.period, unit=opts.unit, low_extreme=opts.low_extreme)
     
-    if agr_mask is None:
+    if agr_mask is None or agr_area is None:
         save_0p5_mask(opts, tea_agr.gr_grid_mask, tea_agr.gr_grid_areas)
     
     tea_agr.calc_daily_basis_vars()
