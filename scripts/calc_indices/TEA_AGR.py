@@ -94,6 +94,7 @@ class TEAAgr(TEAIndicators):
             cell_static: static data of cell
         """
         
+        lat_res = self.lat_resolution
         lat_off = self.cell_size_lat / 2
         lon_off_exact = 1 / np.cos(np.deg2rad(lat)) * lat_off
         size_exact = lon_off_exact * lat_off
@@ -104,8 +105,8 @@ class TEAAgr(TEAIndicators):
         
         if self.land_frac_min > 0:
             # get land-sea mask
-            cell_lsm = self.land_sea_mask.sel(lat=slice(lat + lat_off, lat - lat_off),
-                                              lon=slice(lon - lon_off, lon + lon_off))
+            cell_lsm = self.land_sea_mask.sel(lat=slice(lat + lat_off, lat - lat_off + lat_res),
+                                              lon=slice(lon - lon_off, lon + lon_off - lat_res))
             
             # calculate fraction covered by valid cells (land below 1500 m)
             land_frac = cell_lsm.sum() / np.size(cell_lsm)
@@ -113,14 +114,14 @@ class TEAAgr(TEAIndicators):
                 return None
         
         # select data for cell
-        cell_data = self.daily_results.sel(lat=slice(lat + lat_off, lat - lat_off),
-                                           lon=slice(lon - lon_off, lon + lon_off))
+        cell_data = self.daily_results.sel(lat=slice(lat + lat_off, lat - lat_off + lat_res),
+                                           lon=slice(lon - lon_off, lon + lon_off - lat_res))
         # compensate rounding errors
         cell_data['DTEA'] = cell_data['DTEA'] / area_frac
         
         # select static data for cell
-        cell_area_grid = self.area_grid.sel(lat=slice(lat + lat_off, lat - lat_off),
-                                            lon=slice(lon - lon_off, lon + lon_off))
+        cell_area_grid = self.area_grid.sel(lat=slice(lat + lat_off, lat - lat_off + lat_res),
+                                            lon=slice(lon - lon_off, lon + lon_off - lat_res))
         cell_area_grid = cell_area_grid / area_frac
         
         if len(cell_area_grid.lat) == 0:
