@@ -996,7 +996,7 @@ class TEAIndicators:
     # ### amplification factors ###
     def _calc_cc(self, period=None):
         """
-        calculate geometric mean of CC period
+        calculate geometric mean of CC period (equation 26)
         
         Args:
             period: current climate period: tuple(start year, end year). Default: self.cc_period
@@ -1014,7 +1014,7 @@ class TEAIndicators:
     
     def _calc_ref(self, period=None):
         """
-        calculate geometric mean of ref period
+        calculate geometric mean of ref period (equation 26)
         
         Args:
             period: reference period: tuple(start year, end year). Default: self.ref_period
@@ -1084,7 +1084,7 @@ class TEAIndicators:
                 
     def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=0):
         """
-        calculate amplification factors (equation 26)
+        calculate amplification factors (equation 27)
         
         Args:
             ref_period: reference period: tuple(start year, end year). Default: (1961, 1990)
