@@ -92,8 +92,12 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     if agr_mask is None or agr_area is None:
         save_0p5_mask(opts, tea_agr.gr_grid_mask, tea_agr.gr_grid_areas)
     
+    # calculate daily basis variables
+    logger.info('Calculating daily basis variables of input grid...')
     tea_agr.calc_daily_basis_vars()
 
+    # calculate annual CTP indicators for AGR grid
+    logger.info('Calculating annual CTP indicators for destination grid of GRs...')
     # for testing with only one latitude or debugging
     if False:
         lons = [37]
