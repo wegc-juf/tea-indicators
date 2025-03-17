@@ -156,14 +156,14 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         try:
             ax.plot(xticks, era5[f'{pvar}_{lgr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
                     alpha=0.5)
-            ax.plot(xticks, spcus[f'{pvar}_{gr_str}_AF'], color=cols[pvar], linewidth=2, markersize=3)
-            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * spcus[f'{pvar}_GR_AF_CC'].values,
-                    color=cols[pvar], linewidth=2)
             ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{pvar}_{lgr_str}_AF_CC'].values,
                     '--',
                     alpha=0.5, color=cols[pvar], linewidth=2)
         except KeyError:
             pass
+        ax.plot(xticks, spcus[f'{pvar}_{gr_str}_AF'], color=cols[pvar], linewidth=2, markersize=3)
+        ax.plot(xticks[49:], np.ones(len(xticks[49:])) * spcus[f'{pvar}_GR_AF_CC'].values,
+                color=cols[pvar], linewidth=2)
         if spcus[f'{pvar}_{gr_str}_AF_CC'] < acc:
             acc = spcus[f'{pvar}_{gr_str}_AF_CC'].values
 
@@ -208,10 +208,13 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
             off = 0.33
         xpos_cc, ypos_cc = 0.87, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t}$'
-        box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
-                     + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
-                    + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
-                   + f'{np.round(era5["tEX_GR_AF_CC"], 2):.2f}')
+        try:
+            box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
+                         + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
+                        + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
+                       + f'{np.round(era5["tEX_GR_AF_CC"], 2):.2f}')
+        except KeyError:
+            box_txt = ''
     else:
         ax.set_ylabel(
             'F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX' + r'$\,$|$\,$' + 'TEX amplification',
@@ -284,9 +287,9 @@ def run():
                 continue
             e5_data = get_data(reg=reg, var=vvar, ds=e5_ds)
             sp_data = get_data(reg=reg, var=vvar, ds='SPARTACUS')
-            if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
-                e5_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
-                plot_maps(fig=fig, spcus=sp_data, era5=e5_data, land=land)
+            # if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
+            #     e5_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
+            #     plot_maps(fig=fig, spcus=sp_data, era5=e5_data, land=land)
             plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=vvar, reg=reg,
                          land=land)
 
@@ -302,7 +305,7 @@ def run():
         fstr = 'Figure3'
         sdir = 'figure3/'
     else:
-        fstr = 'EDF5'
+        fstr = 'ExtDataFig5'
         sdir = 'ExtDataFigs/'
     plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{sdir}{fstr}.png',
                 dpi=300, bbox_inches='tight')
