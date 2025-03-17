@@ -58,7 +58,6 @@ class TEAAgr(TEAIndicators):
         self.cell_size_lat = cell_size_lat
         
         if (gr_grid_mask is None or gr_grid_areas is None) and mask is not None and area_grid is not None:
-            # TODO: add option to force recalculation
             self._generate_gr_grid_mask()
         else:
             self.gr_grid_mask = gr_grid_mask
