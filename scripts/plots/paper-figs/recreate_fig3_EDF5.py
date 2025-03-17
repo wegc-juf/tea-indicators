@@ -16,45 +16,17 @@ def get_data(reg, var, ds):
         pstr = 'P24h_7to7_95.0p'
 
     reg_str, gr_str = reg, 'GR'
-    # if 'ERA5' in ds and reg == 'AUT':
-    #     reg_str = f'AGR-{reg}'
-    #     gr_str = 'AGR'
+    if 'ERA5' in ds and reg != 'FBR':
+        reg_str = f'AGR-{reg}'
+        gr_str = 'AGR'
 
-    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/amplification/'
-                           f'AF_{pstr}_{reg_str}_WAS_{ds}_1961to2022.nc')
-
-    if 'ERA5' in ds:
-        if var == 'Temperature':
-            em_gr_var = f'EMavg_{gr_str}_AF'
-        else:
-            em_gr_var = f'EMavg_Md_{gr_str}_AF'
-        tEX_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
-                        + np.log10(data[f'EDavg_{gr_str}_AF'])
-                        + np.log10(data[em_gr_var]))
-        tEX_gr_cc = 10 ** (np.log10(data[f'EF_{gr_str}_AF_CC'])
-                           + np.log10(data[f'EDavg_{gr_str}_AF_CC'])
-                           + np.log10(data[f'{em_gr_var}_CC']))
-        data[f'tEX_{gr_str}_AF'] = tEX_gr
-        data[f'tEX_{gr_str}_AF_CC'] = tEX_gr_cc
-
-    # if reg != 'AUT':
-    if var == 'Temperature':
-        em_var = f'EMavg_AF'
-    else:
-        em_var = f'EMavg_Md_AF'
-    tEX = 10 ** (np.log10(data[f'EF_AF'])
-                 + np.log10(data[f'EDavg_AF'])
-                 + np.log10(data[em_var]))
-    tEX_cc = 10 ** (np.log10(data[f'EF_AF_CC'])
-                    + np.log10(data[f'EDavg_AF_CC'])
-                    + np.log10(data[f'{em_var}_CC']))
-    data[f'tEX_AF'] = tEX
-    data[f'tEX_AF_CC'] = tEX_cc
+    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+                           f'amplification/AF_{pstr}_{reg_str}_WAS_{ds}_1961to2024.nc')
 
     fd_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
-                   + np.log10(data[f'EDavg_{gr_str}_AF']))
+                   + np.log10(data[f'ED_avg_{gr_str}_AF']))
     fd_gr_cc = 10 ** (np.log10(data[f'EF_{gr_str}_AF_CC'])
-                      + np.log10(data[f'EDavg_{gr_str}_AF_CC']))
+                      + np.log10(data[f'ED_avg_{gr_str}_AF_CC']))
     data[f'FD_{gr_str}_AF'] = fd_gr
     data[f'FD_{gr_str}_AF_CC'] = fd_gr_cc
 
@@ -155,11 +127,13 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         plot_vars = ['EF', 'FD', 'tEX', 'TEX']
         ymin, ymax = 2 * 10 ** -1, 30
 
-    gr_str = 'GR'
+    gr_str, lgr_str = 'GR', 'AGR'
+    if reg == 'FBR':
+        lgr_str = 'GR'
 
-    xticks = np.arange(1961, 2023)
+    xticks = np.arange(1961, 2025)
 
-    pstr = 'T99.0p'
+    pstr = 'Tx99.0p'
     nv_var = 'TEX'
     if var != 'Temperature':
         pstr = 'P24h_7to7_95.0p'
@@ -169,7 +143,7 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
     if reg != 'AUT':
         rstr = 'SEA'
 
-    nv = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/natural_variability/'
+    nv = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
                      f'NV_AF_{pstr}_{rstr}.csv',
                      index_col=0)
 
@@ -179,16 +153,19 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
 
     acc = 100
     for ivar, pvar in enumerate(plot_vars):
-        ax.plot(xticks, era5[f'{pvar}_{gr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
-                alpha=0.5)
-        ax.plot(xticks, spcus[f'{pvar}_GR_AF'], color=cols[pvar], linewidth=2, markersize=3)
-        ax.plot(xticks[47:], np.ones(len(xticks[47:])) * spcus[f'{pvar}_GR_AF_CC'].values,
-                color=cols[pvar], linewidth=2)
-        ax.plot(xticks[47:], np.ones(len(xticks[47:])) * era5[f'{pvar}_{gr_str}_AF_CC'].values,
-                '--',
-                alpha=0.5, color=cols[pvar], linewidth=2)
-        if spcus[f'{pvar}_GR_AF_CC'] < acc:
-            acc = spcus[f'{pvar}_GR_AF_CC'].values
+        try:
+            ax.plot(xticks, era5[f'{pvar}_{lgr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
+                    alpha=0.5)
+            ax.plot(xticks, spcus[f'{pvar}_{gr_str}_AF'], color=cols[pvar], linewidth=2, markersize=3)
+            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * spcus[f'{pvar}_GR_AF_CC'].values,
+                    color=cols[pvar], linewidth=2)
+            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{pvar}_{lgr_str}_AF_CC'].values,
+                    '--',
+                    alpha=0.5, color=cols[pvar], linewidth=2)
+        except KeyError:
+            pass
+        if spcus[f'{pvar}_{gr_str}_AF_CC'] < acc:
+            acc = spcus[f'{pvar}_{gr_str}_AF_CC'].values
 
     ref_col = 'tab:red'
     if var == 'Precip24Hsum_7to7':
@@ -214,8 +191,8 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.set_title(f'Extremity amplification {reg} | {tvar}', fontsize=14)
     ax.set_ylim(ymin, ymax)
-    ax.set_xlim(1960, 2023)
-    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2023)))
+    ax.set_xlim(1960, 2025)
+    ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
     ax.yaxis.set_major_formatter(ScalarFormatter())
 
     e5 = 'E5'
@@ -247,10 +224,13 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         xpos_cc, ypos_cc = 0.83, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t, T}$'
 
-        box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
-                     + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
-                    + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
-                   + f'{np.round(era5[f"TEX_{gr_str}_AF_CC"], 2):.2f}')
+        try:
+            box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
+                         + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
+                        + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
+                       + f'{np.round(era5[f"TEX_{gr_str}_AF_CC"], 2):.2f}')
+        except KeyError:
+            box_txt = ''
 
     ax.text(xpos, ypos, r'$\mathcal{A}_\mathrm{Ref}$',
             horizontalalignment='left',
@@ -286,7 +266,7 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = True
+    land = False
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']
@@ -320,9 +300,12 @@ def run():
 
     if land:
         fstr = 'Figure3'
+        sdir = 'figure3/'
     else:
         fstr = 'EDF5'
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/paper-figs/{fstr}.png', dpi=300)
+        sdir = 'ExtDataFigs/'
+    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{sdir}{fstr}.png',
+                dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
