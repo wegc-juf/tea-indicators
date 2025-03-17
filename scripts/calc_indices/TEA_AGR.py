@@ -14,7 +14,7 @@ import time
 
 from scripts.general_stuff.var_attrs import get_attrs, equal_vars
 from scripts.general_stuff.TEA_logger import logger
-from TEA import TEAIndicators
+from .TEA import TEAIndicators
 
 
 class TEAAgr(TEAIndicators):
