@@ -1135,12 +1135,24 @@ class TEAIndicators:
                                                           period=self.CTP)
         self.amplification_factors.attrs = get_attrs(vname='amplification_global_attrs',
                                                      period=self.CTP)
-        # duplicate vars that have multiple possible names
-        for vvar in self.amplification_factors.data_vars:
+        self.amplification_factors = self._duplicate_vars(self.amplification_factors)
+    
+    @staticmethod
+    def _duplicate_vars(ds):
+        """
+        duplicate vars that have multiple possible names
+        
+        Args:
+            ds: Xarray dataset
+        Returns:
+            ds: Xarray dataset with duplicated vars
+        """
+        for vvar in ds.data_vars:
             # loop through equal_vars dict
             for equal_var, repl_var in equal_vars.items():
                 if equal_var in vvar and 'avg' not in vvar and 'Md' not in vvar and 'Max' not in vvar:
-                    self.amplification_factors[vvar.replace(equal_var, repl_var)] = self.amplification_factors[vvar]
+                    ds[vvar.replace(equal_var, repl_var)] = ds[vvar]
+        return ds
     
     def save_amplification_factors(self, filepath):
         """
