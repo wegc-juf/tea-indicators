@@ -4,7 +4,6 @@
 @author: hst
 
 """
-import argparse
 import os
 import glob
 import numpy as np
@@ -300,7 +299,7 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
 def run():
     # load CFG parameter
     opts = load_opts(fname=__file__)
-
+    # TODO: check why NV precip SEA doesn't work properly
     data, st_ampl = load_data(opts=opts)
     gr_ref, gr_cc, gr_ampl, gr_cc_ampl, std_ref_gr = get_gr_vals(opts=opts)
     nv, facs = calc_nat_var(opts=opts, st_data=data, std_gr=std_ref_gr)

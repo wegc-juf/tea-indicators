@@ -1,4 +1,6 @@
 common_params:
+  gui: &GUI
+    no_gui: false
   GeoRegion: &GR
     region: SEA
     # use full data without land, border, and altitude masks
@@ -86,6 +88,13 @@ calc_station_TEA:
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /data/users/hst/TEA-clean/TEA/paper_data/station_indices/
+
+natural_variability:
+  <<: *GUI
+  <<: *PARAM
+  <<: *GR
+  inpath: /data/users/hst/TEA-clean/TEA/paper_data/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
 
 calc_amplification_factors:
   <<: *GR
