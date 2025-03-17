@@ -405,8 +405,8 @@ class TEAAgr(TEAIndicators):
                          self.input_data_grid.lat.min() - self.gr_grid_res + margin,
                          -self.gr_grid_res)
         margin_lon = 1 / np.cos(np.deg2rad(lats[0])) * margin
-        # round margin_lon to resolution of input data grid
-        margin_lon = np.round(np.round(margin_lon / self.lat_resolution_in, 0) * self.lat_resolution_in, 2)
+        # round margin_lon to resolution of gr grid
+        margin_lon = np.round(np.round(margin_lon / self.gr_grid_res, 0) * self.gr_grid_res, 2)
         lons = np.arange(self.input_data_grid.lon.min() + margin_lon,
                          self.input_data_grid.lon.max() + self.gr_grid_res - margin_lon,
                          self.gr_grid_res)
