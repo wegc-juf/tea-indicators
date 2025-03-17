@@ -181,8 +181,8 @@ def run():
     # check if GR size is larger than 100 areals and switch to AGR if so
     if 'ERA' in opts.dataset and static['GR_size'] > 100:
         # load agr mask
+        gr_grid_mask_file = f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc'
         try:
-            gr_grid_mask_file = f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc'
             gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
             gr_grid_mask = gr_grid_mask.mask_lt1500
         except FileNotFoundError:
@@ -190,15 +190,15 @@ def run():
                 logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
                 gr_grid_mask = None
         
+        gr_grid_areas_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
         try:
-            gr_grid_areas_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
             gr_grid_areas = xr.open_dataset(gr_grid_areas_file)
             gr_grid_areas = gr_grid_areas.area_grid
         except FileNotFoundError:
             if opts.decadal_only:
                 # TODO: make AGR code work without area grid (assuming all grid cells have same area)
-                raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for AGR '
-                                        f'calculations.')
+                raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for '
+                                        f'AGR calculations.')
         
         tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas)
         agr = True
