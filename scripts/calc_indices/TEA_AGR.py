@@ -338,7 +338,8 @@ class TEAAgr(TEAIndicators):
         
         # join af_agr and af_cc_agr
         af_agr = xr.merge([af_agr, af_cc_agr, af_spreads])
-
+        af_agr = self._duplicate_vars(af_agr)
+        
         # rename variables
         rename_dict = {var: f'{var}_AGR' for var in x_s_agr.data_vars}
         x_s_agr = x_s_agr.rename(rename_dict)
