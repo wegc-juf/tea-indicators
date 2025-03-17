@@ -91,6 +91,8 @@ def calc_percentiles(opts, masks, gr_size):
     params = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
               'ERA5': {'xname': 'lon', 'yname': 'lat'},
               'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
+    xname = params[opts.dataset]['xname']
+    yname = params[opts.dataset]['yname']
 
     data = get_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
     # TODO: get rid of precip option and use parameter instead
@@ -109,8 +111,8 @@ def calc_percentiles(opts, masks, gr_size):
         percent_smooth = percent.copy()
     else:
         percent_smooth_arr = np.full_like(percent.values, np.nan)
-        y_size = len(data[params[opts.dataset]['yname']])
-        x_size = len(data[params[opts.dataset]['xname']])
+        y_size = len(data[xname])
+        x_size = len(data[yname])
         percent_tmp = np.zeros((y_size + 2 * radius, x_size + 2 * radius),
                                dtype='float32') * np.nan
         percent_tmp[radius:radius + y_size, radius:radius + x_size] = percent
@@ -131,6 +133,10 @@ def calc_percentiles(opts, masks, gr_size):
         percent_smooth = xr.full_like(percent, np.nan)
         percent_smooth[:, :] = percent_smooth_arr
 
+    if percent_smooth[xname].dtype != masks[xname].dtype:
+        percent_smooth[xname] = percent_smooth[xname].astype(masks[xname].dtype)
+        percent_smooth[yname] = percent_smooth[yname].astype(masks[yname].dtype)
+        
     vname = f'{opts.parameter}-p{opts.threshold}ANN Ref1961-1990'
     if opts.precip:
         vname = f'{opts.parameter}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
