@@ -1,8 +1,8 @@
 common_params:
-  gui: &GUI
-    no_gui: true
   GeoRegion: &GR
-    region: EUR
+    region: SEA
+    # use full data without land, border, and altitude masks
+    full_region: false
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -20,94 +20,89 @@ common_params:
     start: 1961
     end: 2024
     period: WAS
+    # ref period from-to (inclusive)
+    ref_period: 1961-1990
+    # cc period from-to (inclusive)
+    cc_period: 2008-2024
   dataset: &DATA
-    dataset: ERA5Land
+    dataset: SPARTACUS
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+    # maskpath: /home/wegnet/results/TEA_indicators/static/masks/
     statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    # statpath: /home/wegnet/results/TEA_indicators/static/
     tmppath: /home/hst/tmp_data/TEAclean/largeGR/
 
 regrid_SPARTACUS_to_WEGNext:
-  <<: *GUI
   <<: *PARAM
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/users/hst/TEA-clean/SPARTACUS/
   orography: false
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
+  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
   wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
 
 create_region_masks:
-  <<: *GUI
   <<: *GR
-  subreg: null
+  subreg: custom
   target_sys: 4326
-  target_ds: ERA5Land
+  target_ds: ERA5
   xy_name: lon,lat
-  shpfile: /data/users/hst/cdrDPS/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_2003.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
-  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
 create_static_files:
-  <<: *GUI
   <<: *GR
+  <<: *TIME
   <<: *PARAM
   <<: *DATA
   <<: *PATHS
-  season_length: 366
-  smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  season_length: 214
+  smoothing: 7
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
 
 calc_TEA:
-  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
   recalc_daily: true
   decadal: true
   spreads: false
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
+  compare_to_ref: false
+  save_old: true
 
 calc_station_TEA:
-  <<: *GUI
   <<: *TIME
   <<: *PARAM
-  station: BadGleichenberg
+  station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
-
-natural_variability:
-  <<: *GUI
-  <<: *PARAM
-  <<: *GR
-  inpath: /data/users/hst/TEA-clean/TEA/paper_data/
-  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/station_indices/
 
 calc_amplification_factors:
-  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  supplementary: true
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
 
 calc_AGR_vars:
-  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
   agr: AUT
   spreads: false
