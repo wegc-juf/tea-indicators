@@ -1246,7 +1246,9 @@ class TEAIndicators:
         for var in ['DTEM', 'DTEM_GR']:
             if var in self._daily_results_filtered:
                 self._daily_results_filtered[var].load()
-                resampler = self._daily_results_filtered[var].resample(time=self.CTP_freqs[self.CTP])
+                # equation 19_1 and equation 19_3
+                daily_results_gt0 = self._daily_results_filtered[var].where(self._daily_results_filtered[var] > 0)
+                resampler = daily_results_gt0.resample(time=self.CTP_freqs[self.CTP])
                 self._CTP_resample_median[var] = resampler.median('time')
         if self.CTP in self._overlap_ctps:
             # remove first and last year
