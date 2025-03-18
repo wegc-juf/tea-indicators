@@ -43,7 +43,7 @@ class TEAAgr(TEAIndicators):
         super().__init__(input_data_grid=input_data_grid, threshold=threshold, area_grid=area_grid,
                          mask=mask, min_area=min_area, apply_mask=False, **kwargs)
         if self.area_grid is not None:
-            self.lat_resolution = abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1])
+            self.lat_resolution = round(abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1]), 4)
         else:
             self.lat_resolution = None
         if input_data_grid is not None:
