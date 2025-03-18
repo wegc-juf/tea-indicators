@@ -88,6 +88,7 @@ def plot_maps(fig, spcus, era5, land):
                               cmap=matplotlib.cm.get_cmap('Oranges', len(levels)),
                               origin='lower', vmin=levels[0], vmax=levels[-1], aspect='auto')
 
+        # TODO: adjust borders and boxes, SEA and FBR are shifted to the south in new data
         iax.set_xlim(409, 538)
         iax.set_ylim(27, 120)
 
