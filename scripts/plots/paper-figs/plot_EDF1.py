@@ -33,22 +33,22 @@ def load_data(perc, temp=False):
     return data
 
 
-def get_lims(_param, _reg):
+def get_lims(param, reg):
     """
     set limits of target region
-    :param _reg: SAF, SCN, or IBE
+    :param param: T or P
+    :param reg: SAF, SCN, or IBE
     :return: lims for lat and lon and center of target region
     """
-    # check ok
 
-    if _param == 'T':
+    if param == 'T':
         fac = 1
     else:
         fac = 0.5
 
-    if _reg == 'SAF':
+    if reg == 'SAF':
         center = [15.5, 47]
-    elif _reg == 'SCN':
+    elif reg == 'SCN':
         center = [26, 62]
     else:
         center = [-6, 38]
@@ -58,35 +58,6 @@ def get_lims(_param, _reg):
                center[0] + (fac / np.cos(np.deg2rad(center[1])))]
 
     return lat_lim, lon_lim, center
-
-
-def load_lsm():
-    """
-    loads land sea mask for ERA5 data and prepares it
-    :return: lsm
-    """
-
-    data = xr.open_dataset('/data/users/hst/cdrDPS/ERA5/ERA5_altitude.nc')
-    data = data.altitude[0, :, :]
-
-    lsm_raw = xr.open_dataset('/data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc')
-
-    lsm_e = lsm_raw.sel(longitude=slice(180.25, 360))
-    lsm_w = lsm_raw.sel(longitude=slice(0, 180))
-    lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]),
-                                axis=1)
-
-    lsm_lon = np.arange(-180, 180, 0.25)
-
-    lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
-        'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})
-
-    lsm = lsm.sel(lat=data.lat.values, lon=data.lon.values)
-
-    lsm = lsm.where(lsm > 0.5)
-    lsm = lsm.where(lsm.isnull(), 1)
-
-    return lsm
 
 
 def plot_map(_fig, _ax, _data, _levels, _temp=False):
@@ -145,7 +116,7 @@ def plot_eur_thresh():
     axs.set_extent([-10, 40, 30, 75])
 
     for reg in ['SAF', 'IBE', 'SCN']:
-        lat_lim, lon_lim, center = get_lims(_param='T', _reg=reg)
+        lat_lim, lon_lim, center = get_lims(param='T', reg=reg)
         geom = geometry.box(minx=lon_lim[0], maxx=lon_lim[1], miny=lat_lim[0], maxy=lat_lim[1])
         axs.add_geometries([geom], crs=ccrs.PlateCarree(),
                            edgecolor='black', facecolor='None', linewidth=1.5)
@@ -317,5 +288,5 @@ def plot_sea_spartacus():
 
 if __name__ == '__main__':
     plot_eur_thresh()
-    # plot_aut_era5land()
-    # plot_sea_spartacus()
+    plot_aut_era5land()
+    plot_sea_spartacus()

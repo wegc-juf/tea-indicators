@@ -223,10 +223,10 @@ def plot_map(fig, ax, data):
     map_vals = ax.contourf(data, cmap=props['cmap'], extend=ext, levels=props['lvls'],
                            vmin=props['vn'], vmax=props['vx'])
 
-    ax.add_patch(pat.Rectangle(xy=(465, 56), height=20, width=25, edgecolor='black',
-                               fill=False, linewidth=1))
-    ax.add_patch(pat.Rectangle(xy=(402, 28), height=97, width=129, edgecolor='black',
-                               fill=False, linewidth=1))
+    ax.add_patch(pat.Rectangle(xy=(470, 74), height=20, width=25, edgecolor='black',
+                                fill=False, linewidth=1))
+    ax.add_patch(pat.Rectangle(xy=(402, 42), height=97, width=135, edgecolor='black',
+                                fill=False, linewidth=1))
     ax.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
