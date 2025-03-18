@@ -7,7 +7,6 @@ Plot script for ExtDataFig1
 import cartopy.crs as ccrs
 import cartopy.feature as cfea
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-import glob
 import matplotlib.patches as pat
 import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
