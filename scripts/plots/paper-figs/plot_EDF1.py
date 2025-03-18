@@ -128,6 +128,7 @@ def plot_eur_thresh():
     im = thr.plot.imshow(ax=axs, transform=ccrs.PlateCarree(), colors=cmap, vmin=10, vmax=40,
                          levels=levels, cbar_kwargs={'label': 'Ref-p99ANN Temperature (°C)',
                                                      'ticks': np.arange(10, 45, 5)})
+    axs.set_title('')
 
     axs.add_feature(cfea.BORDERS)
     axs.coastlines()
@@ -194,7 +195,7 @@ def plot_eur_thresh():
              verticalalignment='center', transform=axs.transAxes, backgroundcolor='whitesmoke',
              fontsize=10)
 
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/'
+    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/EDF1/'
                 'ExtDataFig1a.png',
                 bbox_inches='tight', dpi=300)
 
@@ -259,7 +260,7 @@ def plot_aut_era5land():
              verticalalignment='center', transform=axs.transAxes, backgroundcolor='whitesmoke',
              fontsize=10)
 
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/'
+    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/EDF1/'
                 'ExtDataFig1b.png', bbox_inches='tight', dpi=300)
 
 
@@ -308,7 +309,7 @@ def plot_sea_spartacus():
 
         panels = {'Tx': 'c', 'P24h_7to7': 'd'}
 
-        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/'
+        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/EDF1/'
                     f'ExtDataFig1{panels[par]}.png',
                     bbox_inches='tight', dpi=300)
         plt.close()
