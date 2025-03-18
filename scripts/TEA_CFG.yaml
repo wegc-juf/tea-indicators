@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: false
   GeoRegion: &GR
-    region: AUT
+    region: SEA
     # use full data without land, border, and altitude masks
     full_region: false
     gr_type: polygon

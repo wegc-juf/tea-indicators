@@ -287,9 +287,9 @@ def run():
                 continue
             e5_data = get_data(reg=reg, var=vvar, ds=e5_ds)
             sp_data = get_data(reg=reg, var=vvar, ds='SPARTACUS')
-            # if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
-            #     e5_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
-            #     plot_maps(fig=fig, spcus=sp_data, era5=e5_data, land=land)
+            if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
+                e5_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
+                plot_maps(fig=fig, spcus=sp_data, era5=e5_data, land=land)
             plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=vvar, reg=reg,
                          land=land)
 
