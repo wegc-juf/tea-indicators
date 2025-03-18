@@ -106,6 +106,15 @@ class TEAIndicators:
         Returns:
 
         """
+        rename_dict_inv = {}
+        if 'lon' not in self.input_data_grid.dims:
+            rename_dict = {'x': 'lon', 'y': 'lat'}
+            self.input_data_grid = self.input_data_grid.rename(rename_dict)
+            self.area_grid = self.area_grid.rename(rename_dict)
+            self.mask = self.mask.rename(rename_dict)
+            self.threshold_grid = self.threshold_grid.rename(rename_dict)
+            rename_dict_inv = {'lon': 'x', 'lat': 'y'}
+            
         self.input_data_grid = self.input_data_grid.sel(lat=slice(lat_range[1], lat_range[0]),
                                                         lon=slice(lon_range[0], lon_range[1]))
         self.area_grid = self.area_grid.sel(lat=slice(lat_range[1], lat_range[0]),
@@ -114,18 +123,28 @@ class TEAIndicators:
                                   lon=slice(lon_range[0], lon_range[1]))
         self.threshold_grid = self.threshold_grid.sel(lat=slice(lat_range[1], lat_range[0]),
                                                       lon=slice(lon_range[0], lon_range[1]))
-    
+        if rename_dict_inv:
+            self.input_data_grid = self.input_data_grid.rename(rename_dict_inv)
+            self.area_grid = self.area_grid.rename(rename_dict_inv)
+            self.mask = self.mask.rename(rename_dict_inv)
+            self.threshold_grid = self.threshold_grid.rename(rename_dict_inv)
+        
     def _crop_to_mask_extents(self):
         """
         crop all grids to the mask extents
         """
         mask = self.mask
+        if 'lon' not in mask.dims:
+            mask = mask.rename({'x': 'lon', 'y': 'lat'})
         idx_with_data = np.where(mask > 0)
         lon_min = mask.lon[idx_with_data[1]].min().values
         lon_max = mask.lon[idx_with_data[1]].max().values
         lat_min = mask.lat[idx_with_data[0]].min().values
         lat_max = mask.lat[idx_with_data[0]].max().values
-        lat_range = [lat_min, lat_max]
+        if 'lon' in self.mask.dims:
+            lat_range = [lat_min, lat_max]
+        else:
+            lat_range = [lat_max, lat_min]
         lon_range = [lon_min, lon_max]
         self._crop_to_rect(lat_range, lon_range)
         
