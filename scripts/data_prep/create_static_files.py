@@ -111,8 +111,8 @@ def calc_percentiles(opts, masks, gr_size):
         percent_smooth = percent.copy()
     else:
         percent_smooth_arr = np.full_like(percent.values, np.nan)
-        y_size = len(data[xname])
-        x_size = len(data[yname])
+        y_size = len(data[yname])
+        x_size = len(data[xname])
         percent_tmp = np.zeros((y_size + 2 * radius, x_size + 2 * radius),
                                dtype='float32') * np.nan
         percent_tmp[radius:radius + y_size, radius:radius + x_size] = percent
