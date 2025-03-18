@@ -200,7 +200,11 @@ def run():
                 raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for '
                                         f'AGR calculations.')
         
-        tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas)
+        if opts.precip:
+            cell_size_lat = 1
+        else:
+            cell_size_lat = 2
+        tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas, cell_size_lat=cell_size_lat)
         agr = True
     else:
         tea = TEAIndicators()
