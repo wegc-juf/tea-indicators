@@ -442,7 +442,7 @@ class TEAAgr(TEAIndicators):
         """
         logger.info(f'Generating GR grid mask with resolution {self.gr_grid_res} degrees')
         grg_res = self.gr_grid_res
-        lats, lons = self._get_lats_lons(margin=0)
+        lats, lons = self._get_lats_lons()
         mask_orig = self.mask
         area_orig = self.area_grid
         res_orig = self.lat_resolution
