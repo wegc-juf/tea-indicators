@@ -208,13 +208,11 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
             off = 0.33
         xpos_cc, ypos_cc = 0.87, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t}$'
-        try:
-            box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
-                         + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
-                        + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
-                       + f'{np.round(era5["tEX_GR_AF_CC"], 2):.2f}')
-        except KeyError:
-            box_txt = ''
+        e5_var = f'tEX_{lgr_str}_AF_CC'
+        box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
+                     + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
+                    + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
+                   + f'{np.round(era5[e5_var], 2):.2f}')
     else:
         ax.set_ylabel(
             'F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX' + r'$\,$|$\,$' + 'TEX amplification',
@@ -226,14 +224,11 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
             off = 0.34
         xpos_cc, ypos_cc = 0.83, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t, T}$'
-
-        try:
-            box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
-                         + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
-                        + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
-                       + f'{np.round(era5[f"TEX_{gr_str}_AF_CC"], 2):.2f}')
-        except KeyError:
-            box_txt = ''
+        e5_var = f'TEX_{lgr_str}_AF_CC'
+        box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
+                     + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
+                    + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
+                   + f'{np.round(era5[e5_var], 2):.2f}')
 
     ax.text(xpos, ypos, r'$\mathcal{A}_\mathrm{Ref}$',
             horizontalalignment='left',
