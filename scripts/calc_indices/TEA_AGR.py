@@ -276,6 +276,10 @@ class TEAAgr(TEAIndicators):
         self.decadal_results = self.decadal_results.drop_vars(agr_vars)
         agr_vars = [var for var in self.amplification_factors.data_vars if 'AGR' in var]
         self.amplification_factors = self.amplification_factors.drop_vars(agr_vars)
+        agr_vars = [var for var in self._ref_mean.data_vars if 'AGR' in var]
+        self._ref_mean = self._ref_mean.drop_vars(agr_vars)
+        agr_vars = [var for var in self._cc_mean.data_vars if 'AGR' in var]
+        self._cc_mean = self._cc_mean.drop_vars(agr_vars)
 
     def calc_agr_vars(self, lat_range=None, lon_range=None):
         """
@@ -329,7 +333,20 @@ class TEAAgr(TEAIndicators):
         
         # calculate spread estimates (equation 38)
         af_spreads = self._calc_agr_spread(data=self.amplification_factors, ref=af_agr)
+        af_spreads = af_spreads.rename({var: var.replace('AF_AGR', 'AGR_AF') for var in af_spreads.data_vars})
+        # TODO check why first and last values are not set to nan
         
+        # calculate spread estimates for CC period (equation 39)
+        # # select only variables containing 'CC' in name of self.amplification_factors
+        af_cc = self.amplification_factors[[var for var in self.amplification_factors.data_vars if 'CC' in var]]
+        af_cc_spreads = self._calc_agr_spread(data=af_cc, ref=af_cc_agr)
+        af_cc_spreads = af_cc_spreads.rename({var: var.replace('AF_CC_AGR', 'AGR_AF_CC') for var in
+                                              af_cc_spreads.data_vars})
+        x_cc_spreads = self._calc_agr_spread(data=self._cc_mean, ref=x_cc_agr)
+        
+        # calculate spread estimates for reference period (equation 40)
+        x_ref_spreads = self._calc_agr_spread(data=self._ref_mean, ref=x_ref_agr)
+
         # add attributes
         for vvar in af_agr.data_vars:
             af_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
@@ -337,19 +354,23 @@ class TEAAgr(TEAIndicators):
             af_cc_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
         
         # join af_agr and af_cc_agr
-        af_agr = xr.merge([af_agr, af_cc_agr, af_spreads])
+        af_agr = xr.merge([af_agr, af_cc_agr, af_spreads, af_cc_spreads])
         af_agr = self._duplicate_vars(af_agr)
         
         # rename variables
         rename_dict = {var: f'{var}_AGR' for var in x_s_agr.data_vars}
         x_s_agr = x_s_agr.rename(rename_dict)
+        rename_dict = {var: var.replace('AGR', 'AGR_CC') for var in x_cc_spreads.data_vars}
+        x_cc_spreads = x_cc_spreads.rename(rename_dict)
+        rename_dict = {var: var.replace('AGR', 'AGR_ref') for var in x_ref_spreads.data_vars}
+        x_ref_spreads = x_ref_spreads.rename(rename_dict)
         
         # add attributes
         for vvar in x_s_agr.data_vars:
             x_s_agr[vvar].attrs = get_attrs(vname=vvar, data_unit=self.unit)
         x_s_agr = xr.merge([x_s_agr, x_s_spreads])
         
-        self.decadal_results = xr.merge([x_s_agr, self.decadal_results], compat='override')
+        self.decadal_results = xr.merge([x_s_agr, x_ref_spreads, x_cc_spreads, self.decadal_results], compat='override')
         self.amplification_factors = xr.merge([af_agr, self.amplification_factors], compat='override')
         # self.amplification_factors = xr.merge([self.amplification_factors, af_agr], compat='override')
 
