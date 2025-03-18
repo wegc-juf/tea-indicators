@@ -6,6 +6,7 @@ Equation numbers refer to Supplementary Notes
 """
 import warnings
 
+import os
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -843,6 +844,8 @@ class TEAIndicators:
         """
         save all decadal results to filepath
         """
+        if os.path.exists(filepath):
+            os.remove(filepath)
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
