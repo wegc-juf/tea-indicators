@@ -79,13 +79,14 @@ def create_cmap():
     return cmap
 
 
-def set_plot_props(ax, reg, acc, refv):
+def set_plot_props(ax, reg, acc, refv, tpoint):
     """
     set props of plot (figure 4b)
     :param ax: axis
     :param reg: region
     :param acc: Amplification in CC
     :param refv: threshold value
+    :param tpoint: point to annotate for A_s^T(t)
     :return: props
     """
 
@@ -94,32 +95,12 @@ def set_plot_props(ax, reg, acc, refv):
     ax.set_xticks(np.arange(xmin, xmax + 1, 1))
     ax.set_yticks(np.arange(ymin, ymax + 1, 1))
 
-    ref_pos = {'IBE': {'x': 0.3, 'y': 0.1},
-               'SAF': {'x': 0.3, 'y': 0.1},
-               'SCN': {'x': 0.3, 'y': 0.1}}
-    traj_pos = {'IBE': {'x': 0.37, 'y': 0.51},
-                'SAF': {'x': 0.45, 'y': 0.5},
-                'SCN': {'x': 0.43, 'y': 0.25}}
-    cc_pos = {'IBE': {'x': 0.65, 'y': 0.72},
-              'SAF': {'x': 0.8, 'y': 0.775},
-              'SCN': {'x': 0.07, 'y': 0.45}}
-
-    ax.text(ref_pos[reg]['x'], ref_pos[reg]['y'],
-            r'$\mathcal{A}_\mathrm{Ref} = 1$', horizontalalignment='left',
-            verticalalignment='center', transform=ax.transAxes,
-            fontsize=10)
-
-    ax.text(cc_pos[reg]['x'], cc_pos[reg]['y'],
-            r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
-            + f'{(acc[0] * acc[1]):.1f}',
-            horizontalalignment='left',
-            verticalalignment='center', transform=ax.transAxes,
-            fontsize=10)
-
-    ax.text(traj_pos[reg]['x'], traj_pos[reg]['y'],
-            r'$\mathcal{A}_\mathrm{s}^\mathrm{T}(t)$', horizontalalignment='left',
-            verticalalignment='center', transform=ax.transAxes,
-            fontsize=10)
+    ax.annotate(r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ' + f'{(acc[0] * acc[1]):.1f}',
+                xy=(acc[0], acc[1]), textcoords='offset points', xytext=(10, -4))
+    ax.annotate(r'$\mathcal{A}_\mathrm{Ref} = 1$',
+                xy=(1, 1), textcoords='offset points', xytext=(15, -4))
+    ax.annotate(r'$\mathcal{A}_\mathrm{s}^\mathrm{T}(t)$',
+                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(-35, -4))
 
     ax.text(0.03, 0.94,
             'ERA5-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{s|CC}^\mathrm{T}$' + '\n'
@@ -158,7 +139,9 @@ def plot_scatter(fig, ax, ef, es, reg, ref):
     ax.scatter(acc[0], acc[1], s=70, linewidth=1,
                facecolors='tab:red', edgecolors='black', zorder=4)
 
-    set_plot_props(ax=ax, reg=reg, acc=acc, refv=ref)
+    traj_point = [ef.sel(time='2003-04-01').values, es.sel(time='2003-04-01').values]
+
+    set_plot_props(ax=ax, reg=reg, acc=acc, refv=ref, tpoint=traj_point)
 
     subtitles = {'SAF': 'C-Europe Region SAF', 'IBE': 'S-Europe Region IBE',
                  'SCN': 'N-Europe Region SCN'}
@@ -192,7 +175,7 @@ def run():
                              'static_Tx99.0p_EUR_ERA5.nc')
     thresh = thresh.threshold
 
-    regions = ['IBE', 'SAF', 'SCN']
+    regions = ['SAF', 'IBE', 'SCN']
     for ireg, reg in enumerate(regions):
         lat_lim, lon_lim, center = get_lims(reg=reg)
         rdata = data.sel(lat=slice(lat_lim[1], lat_lim[0]), lon=slice(lon_lim[0], lon_lim[1]))
@@ -211,7 +194,7 @@ def run():
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'figure4b.png', dpi=300)
+                'figure4b.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
