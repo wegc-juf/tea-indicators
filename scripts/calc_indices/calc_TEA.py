@@ -116,31 +116,6 @@ def save_ctp_output(opts, tea):
         compare_to_ctp_ref(tea, path_ref)
 
 
-def calc_daily_basis_vars(data, threshold_grid, mask=None, area_grid=None, unit='', low_extreme=False):
-    """
-    compute daily basis variables following chapter 3 of TEA methods
-    Args:
-        data: input data grid
-        threshold_grid: threshold grid for computing TEA metrics
-        mask: mask grid for masking out certain regions (optional)
-        area_grid: area grid with individual grid cell areas (optional)
-        unit: unit of the input data (default: '')
-        low_extreme: set to True if low extremes are to be calculated (default: False)
-
-    Returns:
-        TEA: TEA object
-    """
-    # create TEA object
-    tea = TEAIndicators(input_data_grid=data, threshold=threshold_grid, area_grid=area_grid, mask=mask,
-                        # set min area to < 1 grid cell area so that all exceedance days are considered
-                        min_area=0.0001,
-                        low_extreme=low_extreme, unit=unit)
-    
-    tea.calc_daily_basis_vars()
-    
-    return tea
-
-
 def calc_ctp_indicators(tea, opts):
     """
     calculate the TEA indicators for the annual climatic time period
@@ -226,7 +201,20 @@ def calc_tea_indicators(opts):
         calc_amplification_factors(opts, tea, outpath_ampl)
 
 
-def cal_dbv_indicators(area_grid, mask, opts, start, end, threshold_grid):
+def cal_dbv_indicators(start, end, threshold_grid, opts, area_grid=None, mask=None):
+    """
+    calculate daily basis variables for a given time period
+    Args:
+        start: start year
+        end: end year
+        threshold_grid: grid file with threshold values
+        opts: options
+        area_grid: grid file with cell areas
+        mask: mask grid (optional)
+
+    Returns:
+
+    """
     dbv_outpath = f'{opts.outpath}/daily_basis_variables'
     if not os.path.exists(dbv_outpath):
         os.makedirs(dbv_outpath)
@@ -242,8 +230,12 @@ def cal_dbv_indicators(area_grid, mask, opts, start, end, threshold_grid):
         
         # computation of daily basis variables (Methods chapter 3)
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
-        tea = calc_daily_basis_vars(data=data, threshold_grid=threshold_grid, area_grid=area_grid,
-                                    mask=mask, unit=opts.unit, low_extreme=opts.low_extreme)
+        tea = TEAIndicators(input_data_grid=data, threshold=threshold_grid, area_grid=area_grid, mask=mask,
+                            # set min area to < 1 grid cell area so that all exceedance days are considered
+                            min_area=0.0001,
+                            low_extreme=opts.low_extreme, unit=opts.unit)
+        
+        tea.calc_daily_basis_vars()
         
         # save results
         logger.info(f'Saving daily basis variables to {dbv_filename}')
