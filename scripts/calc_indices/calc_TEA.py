@@ -190,7 +190,9 @@ def calc_tea_indicators(opts):
     masks, static = load_static_files(opts=opts)
     threshold_grid = static['threshold']
     area_grid = static['area_grid']
-    
+    # create mask array
+    mask = masks['lt1500_mask'] * masks['mask']
+
     if not opts.decadal_only:
         # calculate annual climatic time period indicators
         starts = np.arange(opts.start, opts.end, 10)
@@ -198,8 +200,8 @@ def calc_tea_indicators(opts):
         
         for pstart, pend in zip(starts, ends):
             # calculate daily basis variables
-            tea = cal_dbv_indicators(area_grid=area_grid, masks=masks, opts=opts, start=pstart, end=pend,
-                               threshold_grid=threshold_grid)
+            tea = cal_dbv_indicators(area_grid=area_grid, mask=mask, opts=opts, start=pstart, end=pend,
+                                     threshold_grid=threshold_grid)
             
             # calculate CTP indicators
             calc_ctp_indicators(tea=tea, opts=opts)
@@ -224,7 +226,7 @@ def calc_tea_indicators(opts):
         calc_amplification_factors(opts, tea, outpath_ampl)
 
 
-def cal_dbv_indicators(area_grid, masks, opts, start, end, threshold_grid):
+def cal_dbv_indicators(area_grid, mask, opts, start, end, threshold_grid):
     dbv_outpath = f'{opts.outpath}/daily_basis_variables'
     if not os.path.exists(dbv_outpath):
         os.makedirs(dbv_outpath)
@@ -233,8 +235,6 @@ def cal_dbv_indicators(area_grid, masks, opts, start, end, threshold_grid):
     dbv_filename = (f'{dbv_outpath}/'
                     f'DBV_{opts.param_str}_{opts.region}_annual_{opts.dataset}'
                     f'_{start}to{end}.nc')
-    # create mask array
-    mask = masks['lt1500_mask'] * masks['mask']
     if opts.recalc_daily or not os.path.exists(dbv_filename):
         # always calculate annual basis variables to later extract sub-annual values
         period = 'annual'
