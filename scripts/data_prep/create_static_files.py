@@ -181,6 +181,7 @@ def run():
         thr_grid = thr_grid.rename('threshold')
         thr_grid.attrs = {'units': opts.unit, 'abs_threshold': f'{opts.threshold}{opts.unit}'}
     else:
+        print('Calculating percentiles...')
         thr_grid = calc_percentiles(opts=opts, masks=masks, gr_size=gr_size)
 
     # combine to single dataset
