@@ -175,8 +175,8 @@ def calc_tea_indicators(opts):
         
         for pstart, pend in zip(starts, ends):
             # calculate daily basis variables
-            tea = cal_dbv_indicators(area_grid=area_grid, mask=mask, opts=opts, start=pstart, end=pend,
-                                     threshold_grid=threshold_grid)
+            tea = calc_dbv_indicators(area_grid=area_grid, mask=mask, opts=opts, start=pstart, end=pend,
+                                      threshold=threshold_grid)
             
             # calculate CTP indicators
             calc_ctp_indicators(tea=tea, opts=opts)
@@ -201,16 +201,17 @@ def calc_tea_indicators(opts):
         calc_amplification_factors(opts, tea, outpath_ampl)
 
 
-def cal_dbv_indicators(start, end, threshold_grid, opts, area_grid=None, mask=None):
+def calc_dbv_indicators(start, end, threshold, opts, area_grid=None, mask=None):
     """
     calculate daily basis variables for a given time period
     Args:
         start: start year
         end: end year
-        threshold_grid: grid file with threshold values
+        threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
         opts: options
-        area_grid: grid file with cell areas
-        mask: mask grid (optional)
+        area_grid: grid containing the area of each results cell, if None, area is assumed to be 1 for each cell
+                   nan values mask out the corresponding results cells (optional)
+        mask: mask grid for input data containing nan values for cells that should be masked. (optional)
 
     Returns:
 
@@ -230,7 +231,7 @@ def cal_dbv_indicators(start, end, threshold_grid, opts, area_grid=None, mask=No
         
         # computation of daily basis variables (Methods chapter 3)
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
-        tea = TEAIndicators(input_data_grid=data, threshold=threshold_grid, area_grid=area_grid, mask=mask,
+        tea = TEAIndicators(input_data_grid=data, threshold=threshold, area_grid=area_grid, mask=mask,
                             # set min area to < 1 grid cell area so that all exceedance days are considered
                             min_area=0.0001,
                             low_extreme=opts.low_extreme, unit=opts.unit)
@@ -250,6 +251,8 @@ def cal_dbv_indicators(start, end, threshold_grid, opts, area_grid=None, mask=No
 
 
 def calc_tea_indicators_agr(opts):
+    # TODO: make AGR code optional and not dependent on ERA5 or GR size
+    # TODO: run only last step as AGR, all other code should be the same?
     # load static files
     gr_grid_mask = None
     gr_grid_areas = None

@@ -29,9 +29,10 @@ class TEAIndicators:
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
             threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
-            area_grid: results containing the area of each results cell, if None, area is assumed to be 1 for each cell
+            area_grid: grid containing the area of each results cell, if None, area is assumed to be 1 for each cell
                        nan values mask out the corresponding results cells
             min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
+                      (1 areal according to equation 03)
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
             unit: unit of the input data. Default: ''
             mask: mask grid for input data containing nan values for cells that should be masked. Default: None
