@@ -193,7 +193,7 @@ def run():
         if vvar == 'TEX_AF_CC':
             im = data[vvar].plot.imshow(ax=axs, transform=ccrs.PlateCarree(), cmap=cmap_tex,
                                         vmin=0, vmax=cmax_tex, add_colorbar=False)
-            fig_str, sdir = 'Figure4a', 'figure4/panels/'
+            outname = 'figure4/panels/Figure4a'
             cx = cmax_tex
             dc = 5
         else:
@@ -201,7 +201,8 @@ def run():
                                         vmin=0.5, vmax=cmax, add_colorbar=False)
             cx = cmax
             dc = 0.5
-            fig_str, sdir = 'ExtDataFig7', 'ExtDataFigs/panels/EDF7/'
+            vstr = vvar.split('_')[0]
+            outname = f'ExtDataFigs/panels/EDF7/ExtDataFig7_{vstr}'
         ext = 'neither'
         if data[vvar].max() > cx:
             ext = 'max'
@@ -229,9 +230,7 @@ def run():
         add_clutter(axs=axs)
 
         plt.title(props['title'], fontsize=14)
-        vstr = vvar.split('_')[0]
-        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{sdir}'
-                    f'{fig_str}_{vstr}.png',
+        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}.png',
                     dpi=300, bbox_inches='tight')
 
 
