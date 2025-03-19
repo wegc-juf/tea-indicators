@@ -88,16 +88,11 @@ def plot_maps(fig, spcus, era5, land):
                               cmap=matplotlib.cm.get_cmap('Oranges', len(levels)),
                               origin='lower', vmin=levels[0], vmax=levels[-1], aspect='auto')
 
-        # TODO: adjust borders and boxes, SEA and FBR are shifted to the south in new data
-        iax.set_xlim(409, 538)
-        iax.set_ylim(27, 120)
-
         iax.axis('off')
         iax.set_title(params[ids]['title'], fontsize=11)
-
-        iax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
+        iax.add_patch(pat.Rectangle(xy=(0, 0), height=97, width=135, edgecolor='black',
                                     fill=False, linewidth=1))
-        iax.add_patch(pat.Rectangle(xy=(410, 27), height=93, width=128, edgecolor='black',
+        iax.add_patch(pat.Rectangle(xy=(63, 29), height=20, width=25, edgecolor='black',
                                     fill=False, linewidth=1))
 
         if ids == 'ERA5':
@@ -265,7 +260,7 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = False
+    land = True
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']
