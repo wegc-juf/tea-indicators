@@ -22,8 +22,6 @@ def get_data():
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                           'DEC_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
 
-    dec['tEX_GR'] = dec['EF_GR'] * dec['ED_avg_GR'] * dec['EM_avg_GR_Md']
-
     return af, nv, dec
 
 
