@@ -853,6 +853,7 @@ class TEAIndicators:
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
         self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=self.CTP)
         self.decadal_results.attrs['CTP'] = self.CTP
+        self.decadal_results = self._duplicate_vars(self.decadal_results)
 
         if drop_annual_results:
             del self.CTP_results
