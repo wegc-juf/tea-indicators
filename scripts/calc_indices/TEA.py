@@ -76,7 +76,7 @@ class TEAIndicators:
         # Climatic Time Period (CTP) variables
         self.CTP = ctp
         pd_major, pd_minor = pd.__version__.split('.')[:2]
-        if int(pd_major) >= 2 or int(pd_minor) >= 2:
+        if int(pd_major) > 2 or (int(pd_major) == 2 and int(pd_minor) >= 2):
             self.CTP_freqs = {'annual': 'YS', 'seasonal': 'QS-DEC', 'WAS': 'YS-APR', 'ESS': 'YS-MAY', 'JJA': 'YS-JUN',
                               'DJF': 'YS-DEC', 'EWS': 'YS-NOV', 'monthly': 'MS'}
         else:

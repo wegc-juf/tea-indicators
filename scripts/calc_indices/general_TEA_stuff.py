@@ -16,7 +16,7 @@ def assign_ctp_coords(opts, data):
     """
     
     pd_major, pd_minor = pd.__version__.split('.')[:2]
-    if int(pd_major) >= 2 or int(pd_minor) >= 2:
+    if int(pd_major) > 2 or (int(pd_major) == 2 and int(pd_minor) >= 2):
         freqs = {'annual': 'YS', 'seasonal': '3MS', 'WAS': 'YS-APR', 'ESS': 'YS-MAY', 'JJA': 'YS-JUN',
                  'monthly': 'MS', 'EWS': 'YS-NOV'}
     else:
