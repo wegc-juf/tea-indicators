@@ -105,5 +105,4 @@ calc_AGR_vars:
   <<: *PATHS
   inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
   outpath: /home/wegnet/results/TEA_indicators/
-  agr: AUT
   spreads: false
