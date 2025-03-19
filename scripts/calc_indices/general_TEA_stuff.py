@@ -15,8 +15,8 @@ def assign_ctp_coords(opts, data):
 
     """
 
-    freqs = {'annual': 'AS', 'seasonal': '3MS', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
-             'monthly': 'MS', 'EWS': 'AS-NOV'}
+    freqs = {'annual': 'YS', 'seasonal': '3MS', 'WAS': 'YS-APR', 'ESS': 'YS-MAY', 'JJA': 'YS-JUN',
+             'monthly': 'MS', 'EWS': 'YS-NOV'}
     freq = freqs[opts.period]
 
     pstarts = pd.date_range(data.time[0].values, data.time[-1].values,

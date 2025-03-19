@@ -75,8 +75,8 @@ class TEAIndicators:
         
         # Climatic Time Period (CTP) variables
         self.CTP = ctp
-        self.CTP_freqs = {'annual': 'AS', 'seasonal': 'QS-DEC', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
-                          'DJF': 'AS-DEC', 'EWS': 'AS-NOV', 'monthly': 'MS'}
+        self.CTP_freqs = {'annual': 'YS', 'seasonal': 'QS-DEC', 'WAS': 'YS-APR', 'ESS': 'YS-MAY', 'JJA': 'YS-JUN',
+                          'DJF': 'YS-DEC', 'EWS': 'YS-NOV', 'monthly': 'MS'}
         self._overlap_ctps = ['EWS', 'DJF']
         self.CTP_months = {'WAS': [4, 5, 6, 7, 8, 9, 10], 'ESS': [5, 6, 7, 8, 9], 'EWS': [11, 12, 1, 2, 3],
                            'JJA': [6, 7, 8], 'DJF': [12, 1, 2]}
