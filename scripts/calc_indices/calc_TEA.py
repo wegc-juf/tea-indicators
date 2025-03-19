@@ -170,89 +170,45 @@ def run():
     
     # load CFG parameter
     opts = load_opts(fname=__file__)
+    
+    if 'ERA' in opts.dataset and static['GR_size'] > 100:
+        calc_tea_indicators_agr(opts)
+    else:
+        calc_tea_indicators(opts)
 
+
+def calc_tea_indicators(opts):
+    """
+    calculate TEA indicators for normal GeoRegion
+    Args:
+        opts:
+
+    Returns:
+
+    """
     # load static files
     masks, static = load_static_files(opts=opts)
     threshold_grid = static['threshold']
     area_grid = static['area_grid']
     
-    gr_grid_mask = None
-    gr_grid_areas = None
-    # check if GR size is larger than 100 areals and switch to AGR if so
-    if 'ERA' in opts.dataset and static['GR_size'] > 100:
-        gr_grid_areas, gr_grid_mask = load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts)
-        
-        if opts.precip:
-            cell_size_lat = 1
-        else:
-            cell_size_lat = 2
-        tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas, cell_size_lat=cell_size_lat)
-        agr = True
-    else:
-        tea = TEAIndicators()
-        agr = False
-    
     if not opts.decadal_only:
         # calculate annual climatic time period indicators
-        myopts = deepcopy(opts)
-        starts = np.arange(myopts.start, myopts.end, 10)
-        ends = np.append(np.arange(myopts.start + 10 - 1, myopts.end, 10), myopts.end)
+        starts = np.arange(opts.start, opts.end, 10)
+        ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
         
-        dbv_outpath = f'{opts.outpath}/daily_basis_variables'
-        if not os.path.exists(dbv_outpath):
-            os.makedirs(dbv_outpath)
-            
         for pstart, pend in zip(starts, ends):
-            myopts.start = pstart
-            myopts.end = pend
-            logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
+            # calculate daily basis variables
+            tea = cal_dbv_indicators(area_grid=area_grid, masks=masks, opts=opts, start=pstart, end=pend,
+                               threshold_grid=threshold_grid)
             
-            # set filenames
-            dbv_filename = (f'{dbv_outpath}/'
-                            f'DBV_{myopts.param_str}_{myopts.region}_annual_{myopts.dataset}'
-                            f'_{myopts.start}to{myopts.end}.nc')
+            # calculate CTP indicators
+            calc_ctp_indicators(tea=tea, opts=opts)
             
-            # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
-            if 'ERA' in myopts.dataset and static['GR_size'] > 100:
-                # use European masks
-                masks, static = load_static_files(opts=myopts, large_gr=True)
-                data = get_data(start=pstart, end=pend, opts=opts, period=opts.period)
-                tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static,
-                                                agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
-            else:
-                # create mask array
-                mask = masks['lt1500_mask'] * masks['mask']
-                
-                if myopts.recalc_daily or not os.path.exists(dbv_filename):
-                    # always calculate annual basis variables to later extract sub-annual values
-                    period = 'annual'
-                    data = get_data(start=pstart, end=pend, opts=opts, period=period)
-                    
-                    # computation of daily basis variables (Methods chapter 3)
-                    logger.info('Daily basis variables will be recalculated. Period set to annual.')
-                    tea = calc_daily_basis_vars(data=data, threshold_grid=threshold_grid, area_grid=area_grid,
-                                                mask=mask, unit=myopts.unit, low_extreme=myopts.low_extreme)
-                    
-                    # save results
-                    logger.info(f'Saving daily basis variables to {dbv_filename}')
-                    tea.save_daily_results(dbv_filename)
-                else:
-                    # load existing results
-                    tea = TEAIndicators(area_grid=area_grid)
-                    logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
-                                'set --recalc-daily.')
-                    tea.load_daily_results(dbv_filename)
-                
-                # calculate CTP indicators
-                calc_ctp_indicators(tea=tea, opts=myopts)
-                
             gc.collect()
-
+            
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
-        if agr:
-            agr_str = 'AGR-'
-        else:
-            agr_str = ''
+        tea = TEAIndicators()
+        agr_str = ''
         
         outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
                            f'DEC_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
@@ -266,32 +222,122 @@ def run():
         
         # calculate amplification factors
         calc_amplification_factors(opts, tea, outpath_ampl)
+
+
+def cal_dbv_indicators(area_grid, masks, opts, start, end, threshold_grid):
+    dbv_outpath = f'{opts.outpath}/daily_basis_variables'
+    if not os.path.exists(dbv_outpath):
+        os.makedirs(dbv_outpath)
+    logger.info(f'Calculating TEA indicators for years {start}-{end}.')
+    # set filenames
+    dbv_filename = (f'{dbv_outpath}/'
+                    f'DBV_{opts.param_str}_{opts.region}_annual_{opts.dataset}'
+                    f'_{start}to{end}.nc')
+    # create mask array
+    mask = masks['lt1500_mask'] * masks['mask']
+    if opts.recalc_daily or not os.path.exists(dbv_filename):
+        # always calculate annual basis variables to later extract sub-annual values
+        period = 'annual'
+        data = get_data(start=start, end=end, opts=opts, period=period)
+        
+        # computation of daily basis variables (Methods chapter 3)
+        logger.info('Daily basis variables will be recalculated. Period set to annual.')
+        tea = calc_daily_basis_vars(data=data, threshold_grid=threshold_grid, area_grid=area_grid,
+                                    mask=mask, unit=opts.unit, low_extreme=opts.low_extreme)
+        
+        # save results
+        logger.info(f'Saving daily basis variables to {dbv_filename}')
+        tea.save_daily_results(dbv_filename)
+    else:
+        # load existing results
+        tea = TEAIndicators(area_grid=area_grid)
+        logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
+                    'set --recalc-daily.')
+        tea.load_daily_results(dbv_filename)
+    return tea
+
+
+def calc_tea_indicators_agr(opts):
+    # load static files
+    gr_grid_mask = None
+    gr_grid_areas = None
+    # check if GR size is larger than 100 areals and switch to AGR if so
+    gr_grid_areas, gr_grid_mask = load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts)
     
+    if opts.precip:
+        cell_size_lat = 1
+    else:
+        cell_size_lat = 2
+    tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas, cell_size_lat=cell_size_lat)
+    
+    if not opts.decadal_only:
+        # calculate annual climatic time period indicators
+        myopts = deepcopy(opts)
+        starts = np.arange(myopts.start, myopts.end, 10)
+        ends = np.append(np.arange(myopts.start + 10 - 1, myopts.end, 10), myopts.end)
+        
+        dbv_outpath = f'{opts.outpath}/daily_basis_variables'
+        if not os.path.exists(dbv_outpath):
+            os.makedirs(dbv_outpath)
+        
+        for pstart, pend in zip(starts, ends):
+            myopts.start = pstart
+            myopts.end = pend
+            logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
+            
+            # set filenames
+            dbv_filename = (f'{dbv_outpath}/'
+                            f'DBV_{myopts.param_str}_{myopts.region}_annual_{myopts.dataset}'
+                            f'_{myopts.start}to{myopts.end}.nc')
+            
+            # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
+            # use European masks
+            masks, static = load_static_files(opts=myopts, large_gr=True)
+            data = get_data(start=pstart, end=pend, opts=opts, period=opts.period)
+            tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static,
+                                            agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
+            gc.collect()
+            
+    if opts.decadal or opts.decadal_only or opts.recalc_decadal:
+        agr_str = 'AGR-'
+        
+        outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
+                           f'DEC_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
+                           f'_{opts.start}to{opts.end}.nc')
+        outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+                        f'AF_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
+                        f'_{opts.start}to{opts.end}.nc')
+        
+        # calculate decadal-mean ctp indicator variables
+        calc_decadal_indicators(opts=opts, tea=tea, outpath=outpath_decadal)
+        
+        # calculate amplification factors
+        calc_amplification_factors(opts, tea, outpath_ampl)
+        
         # calculate aggregate GeoRegion means and spread estimators
-        if agr:
-            agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
-            agr_lon_range_dict = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
-            if opts.region in agr_lat_range_dict:
-                agr_lat_range = agr_lat_range_dict[opts.agr]
-                agr_lon_range = agr_lon_range_dict[opts.agr]
-            else:
-                agr_lat_range = None
-                agr_lon_range = None
-            if opts.region != opts.agr:
-                outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
-                                   f'DEC_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
-                                   f'_{opts.start}to{opts.end}.nc')
-                outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                                f'AF_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
-                                f'_{opts.start}to{opts.end}.nc')
-            tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
-            logger.info(f'Saving AGR decadal results to {outpath_decadal}')
-            # remove outpath_decadal if it exists
-            if os.path.exists(outpath_decadal):
-                os.remove(outpath_decadal)
-            tea.save_decadal_results(outpath_decadal)
-            logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
-            tea.save_amplification_factors(outpath_ampl)
+        agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+        agr_lon_range_dict = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
+        if opts.region in agr_lat_range_dict:
+            agr_lat_range = agr_lat_range_dict[opts.agr]
+            agr_lon_range = agr_lon_range_dict[opts.agr]
+        else:
+            agr_lat_range = None
+            agr_lon_range = None
+        if opts.region != opts.agr:
+            outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
+                               f'DEC_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
+                               f'_{opts.start}to{opts.end}.nc')
+            outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+                            f'AF_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
+                            f'_{opts.start}to{opts.end}.nc')
+        tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
+        logger.info(f'Saving AGR decadal results to {outpath_decadal}')
+        # remove outpath_decadal if it exists
+        if os.path.exists(outpath_decadal):
+            os.remove(outpath_decadal)
+        tea.save_decadal_results(outpath_decadal)
+        logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
+        tea.save_amplification_factors(outpath_ampl)
 
 
 def load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts):
