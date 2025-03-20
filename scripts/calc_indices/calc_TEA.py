@@ -91,12 +91,14 @@ def compare_to_ctp_ref(tea, ctp_filename_ref):
         logger.warning(f'Reference file {ctp_filename_ref} not found.')
     
     
-def save_ctp_output(opts, tea):
+def save_ctp_output(opts, tea, start, end):
     """
     save CTP results to netcdf file
     Args:
         opts: CLI parameters
         tea: TEA object
+        start: start year
+        end: end year
     """
     create_tea_history(cfg_params=opts, tea=tea, result_type='CTP')
 
@@ -105,7 +107,7 @@ def save_ctp_output(opts, tea):
     
     outpath = (f'{opts.outpath}/ctp_indicator_variables/'
                f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-               f'_{opts.start}to{opts.end}.nc')
+               f'_{start}to{end}.nc')
     
     path_ref = outpath.replace('.nc', '_ref.nc')
     
@@ -116,16 +118,18 @@ def save_ctp_output(opts, tea):
         compare_to_ctp_ref(tea, path_ref)
 
 
-def calc_ctp_indicators(tea, opts):
+def calc_ctp_indicators(tea, opts, start, end):
     """
     calculate the TEA indicators for the annual climatic time period
     Args:
         tea: TEA object
         opts: CLI parameter
+        start: start year
+        end: end year
     """
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)
-    dtea_min = 1
+    dtea_min = 1  # according to equation 03
     tea.update_min_area(dtea_min)
     
     # calculate annual climatic time period indicators
@@ -135,7 +139,7 @@ def calc_ctp_indicators(tea, opts):
         tea.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
 
     # save output
-    save_ctp_output(opts=opts, tea=tea)
+    save_ctp_output(opts=opts, tea=tea, start=start, end=end)
 
 
 def run():
@@ -179,7 +183,7 @@ def calc_tea_indicators(opts):
                                       threshold=threshold_grid)
             
             # calculate CTP indicators
-            calc_ctp_indicators(tea=tea, opts=opts)
+            calc_ctp_indicators(tea=tea, opts=opts, start=pstart, end=pend)
             
             gc.collect()
             
