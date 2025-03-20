@@ -46,13 +46,13 @@ def getopts():
 
     parser.add_argument('--folder-input',
                         dest='folder_input',
-                        default='/data/users/hst/TEA-clean/TEA/daily_basis_variables/',
+                        default='/data/users/hst/TEA-clean/TEA/paper_data/daily_basis_variables/',
                         type=dir_path,
                         help='Path of folder where data is located.')
 
     parser.add_argument('--folder-output',
                         dest='outpath',
-                        default='/data/users/hst/TEA-clean/energy_content/',
+                        default='/data/users/hst/TEA-clean/paper_data/energy_content/',
                         help='Path of folder where output data should be saved.')
 
     myopts = parser.parse_args()
@@ -155,7 +155,7 @@ def load_tea_data(opts):
     """
 
     files = sorted(glob.glob(
-        f'{opts.folder_input}DBV_Tx{opts.threshold}.0degC_{opts.region}_WAS_{opts.dataset}_*.nc'))
+        f'{opts.folder_input}DBV_Tx{opts.threshold}.0p_annual_{opts.region}_{opts.dataset}_*.nc'))
 
     data = xr.open_mfdataset(files, data_vars='minimal')
     for ivar in data.data_vars:
