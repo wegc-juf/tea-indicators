@@ -16,10 +16,6 @@ def get_data(reg, var, ds):
         pstr = 'P24h_7to7_95.0p'
 
     reg_str, gr_str = reg, 'GR'
-    if 'ERA5' in ds and reg != 'FBR':
-        reg_str = f'AGR-{reg}'
-        gr_str = 'AGR'
-
     data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                            f'amplification/AF_{pstr}_{reg_str}_WAS_{ds}_1961to2024.nc')
 
@@ -123,9 +119,7 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         plot_vars = ['EF', 'FD', 'tEX', 'TEX']
         ymin, ymax = 2 * 10 ** -1, 30
 
-    gr_str, lgr_str = 'GR', 'AGR'
-    if reg == 'FBR':
-        lgr_str = 'GR'
+    gr_str = 'GR'
 
     xticks = np.arange(1961, 2025)
 
@@ -150,9 +144,9 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
     acc = 100
     for ivar, pvar in enumerate(plot_vars):
         try:
-            ax.plot(xticks, era5[f'{pvar}_{lgr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
+            ax.plot(xticks, era5[f'{pvar}_{gr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
                     alpha=0.5)
-            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{pvar}_{lgr_str}_AF_CC'].values,
+            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{pvar}_{gr_str}_AF_CC'].values,
                     '--',
                     alpha=0.5, color=cols[pvar], linewidth=2)
         except KeyError:
@@ -204,7 +198,7 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
             off = 0.33
         xpos_cc, ypos_cc = 0.87, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t}$'
-        e5_var = f'tEX_{lgr_str}_AF_CC'
+        e5_var = f'tEX_{gr_str}_AF_CC'
         box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
                      + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
                     + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
@@ -220,7 +214,7 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
             off = 0.34
         xpos_cc, ypos_cc = 0.83, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t, T}$'
-        e5_var = f'TEX_{lgr_str}_AF_CC'
+        e5_var = f'TEX_{gr_str}_AF_CC'
         box_txt = ((('SPCUS-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
                      + f'{np.round(spcus["TEX_GR_AF_CC"], 2):.2f}\n')
                     + f'{e5}-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ')
