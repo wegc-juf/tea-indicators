@@ -12,11 +12,11 @@ common_params:
     we_len: null
     ns_len: null
   parameter: &PARAM
-    parameter: P24h_7to7
+    parameter: Tx
     precip: true
-    threshold: 95
+    threshold: 99
     threshold_type: perc
-    unit: mm
+    unit: degC
     low_extreme: false
   time_params: &TIME
     start: 1961
@@ -84,6 +84,7 @@ calc_TEA:
   save_old: true
 
 calc_station_TEA:
+  <<: *GUI
   <<: *TIME
   <<: *PARAM
   station: Graz
