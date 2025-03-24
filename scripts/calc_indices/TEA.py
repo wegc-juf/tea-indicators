@@ -314,6 +314,8 @@ class TEAIndicators:
         dtec_gr = self.daily_results.DTEC_GR
         # replace 0 values with nan to avoid division by 0
         dtec_gr = dtec_gr.where(dtec_gr > 0, np.nan)
+        if self.area_grid is None:
+            self._create_area_grid(dtem)
         area_fac = self.area_grid / dtea_gr
         dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
         dtem_gr = dtem_gr.where(dtec_gr == 1, self.null_val)
@@ -813,7 +815,8 @@ class TEAIndicators:
         """
         load all CTP results from filepath
         """
-        self.CTP_results = xr.open_mfdataset(filepath)
+        logger.info(f"Loading CTP results from {filepath}")
+        self.CTP_results = xr.open_mfdataset(filepath, combine='nested')
         if 'units' not in self.CTP_results.EM_avg.attrs:
             logger.warning("No unit attribute found in CTP results. Please set the unit attribute manually.")
         else:
@@ -852,7 +855,6 @@ class TEAIndicators:
         
         self._calc_decadal_mean()
         self._calc_decadal_compound_vars()
-        # TODO: optional calculation of AEHC
         if calc_spread:
             self._calc_spread_estimators()
         self.CTP = self.CTP_results.attrs['CTP']
@@ -1111,14 +1113,14 @@ class TEAIndicators:
             if len(ds[vvar].dims) > 1:
                 ds[vvar] = xr.where(ds.ED >= min_duration, ds[vvar], np.nan)
                 
-    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=0):
+    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=1):
         """
         calculate amplification factors (equation 27)
         
         Args:
             ref_period: reference period: tuple(start year, end year). Default: (1961, 1990)
             cc_period: current climate period: tuple(start year, end year). Default: (2008, 2022)
-            min_duration: minimum cumulative event duration over reference period in days. Default: 0. To get
+            min_duration: minimum cumulative event duration over reference period in days. Default: 1. To get
             statistically robust results set to at least 3 days
         """
         self.ref_period = ref_period
