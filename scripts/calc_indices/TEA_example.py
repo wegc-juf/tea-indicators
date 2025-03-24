@@ -1,8 +1,14 @@
+#!/usr/bin/env python
 """
 Example for using the TEA class
 """
+import sys
+import os
 import xarray as xr
 import matplotlib.pyplot as plt
+
+# TODO: restructure so that this is obsolete
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from TEA import TEAIndicators
 
@@ -23,6 +29,7 @@ if __name__ == '__main__':
     
     ERA5_basename = ERA5_file.split('.')[0]
     outpath = f'../examples/{ERA5_basename}_TEA_daily_results.nc'
+    print(f'Saving daily results to {outpath}...')
     tea_obj.save_daily_results(outpath)
     
     # plot Daily Threshold Exceedance Magnitude (DTEM) for 2024-08-30
@@ -34,6 +41,7 @@ if __name__ == '__main__':
     tea_obj.calc_annual_CTP_indicators(ctp='WAS', drop_daily_results=True)
     
     outpath = f'../examples/{ERA5_basename}_TEA_annual_results.nc'
+    print(f'Saving annual results to {outpath}...')
     tea_obj.save_CTP_results(outpath)
     
     # plot cumulative exceedance magnitude (temporal event extremity tEX) for 2024
@@ -45,6 +53,7 @@ if __name__ == '__main__':
     tea_obj.calc_decadal_indicators(calc_spread=True, drop_annual_results=True, )
     
     outpath = f'../examples/{ERA5_basename}_TEA_decadal_results.nc'
+    print(f'Saving decadal results to {outpath}...')
     tea_obj.save_decadal_results(outpath)
     
     # plot decadal-mean exceedance magnitude (EM) for 2010s
@@ -56,6 +65,7 @@ if __name__ == '__main__':
     tea_obj.calc_amplification_factors(min_duration=1)
     
     outpath = f'../examples/{ERA5_basename}_TEA_amplification_factors.nc'
+    print(f'Saving amplification factors to {outpath}...')
     tea_obj.save_amplification_factors(outpath)
     
     # plot amplification factor for exceedance magnitude (EM) for current climate period (CC=2008-2024)
