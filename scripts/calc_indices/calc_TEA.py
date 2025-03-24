@@ -20,7 +20,7 @@ from copy import deepcopy
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                                     compare_to_ref, get_input_filenames, get_data)
+                                                     compare_to_ref, get_data)
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
@@ -150,7 +150,7 @@ def run():
     # load CFG parameter
     opts = load_opts(fname=__file__)
     
-    if 'ERA' in opts.dataset and static['GR_size'] > 100:
+    if 'agr' in opts:
         calc_tea_indicators_agr(opts)
     else:
         calc_tea_indicators(opts)
@@ -165,12 +165,18 @@ def calc_tea_indicators(opts):
     Returns:
 
     """
-    # load static files
-    masks, static = load_static_files(opts=opts)
-    threshold_grid = static['threshold']
-    area_grid = static['area_grid']
-    # create mask array
-    mask = masks['lt1500_mask'] * masks['mask']
+    if 'statpath' in opts or 'maskpath' in opts:
+        # TODO split area grid, threshold grid and mask grid
+        # load static files
+        masks, static = load_static_files(opts=opts)
+        threshold_grid = static['threshold']
+        area_grid = static['area_grid']
+        # create mask array
+        mask = masks['lt1500_mask'] * masks['mask']
+    else:
+        threshold_grid = opts.threshold
+        area_grid = None
+        mask = None
 
     if not opts.decadal_only:
         # calculate annual climatic time period indicators
