@@ -1,7 +1,4 @@
 # Default ignored files
 /shelf/
 /workspace.xml
-scripts/examples/ref
-scripts/examples/dec_indicator_variables/*.nc
-scripts/examples/ctp_indicator_variables
-*scripts/examples/daily_basis_variables/*.nc
+/*.xml
