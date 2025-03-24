@@ -9,7 +9,7 @@ import yaml
 
 
 def dir_path(path):
-    if os.path.isdir(path):
+    if os.path.isdir(path) or os.path.exists(path):
         return path
     else:
         raise argparse.ArgumentTypeError(f'{path} is not a valid path.')

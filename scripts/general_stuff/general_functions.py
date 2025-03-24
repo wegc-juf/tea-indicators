@@ -7,9 +7,11 @@ import datetime as dt
 import yaml
 import numpy as np
 import glob
+import os
 import xarray as xr
 
 from scripts.general_stuff.check_CFG import check_config
+from .TEA_logger import logger
 
 
 def load_opts(fname):
@@ -32,6 +34,11 @@ def load_opts(fname):
 
     # add name of script
     opts.script = f'{fname}.py'
+    
+    if 'compare_to_ref' not in opts:
+        opts.compare_to_ref = None
+    if 'spreads' not in opts:
+        opts.spreads = None
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
@@ -195,6 +202,10 @@ def get_input_filenames(start, end, inpath, param_str, period='annual'):
 
     :return: list of filenames
     """
+    # check if inpath is file
+    if os.path.isfile(inpath):
+        return inpath
+    
     # select only files of interest, if chosen period is 'seasonal' append one year in the
     # beginning to have the first winter fully included
     filenames = []
@@ -264,6 +275,7 @@ def get_data(start, end, opts, period='annual'):
     filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.inpath, param_str=param_str)
     
     # load relevant years
+    logger.info(f'Loading data from {filenames}...')
     try:
         ds = xr.open_mfdataset(filenames, combine='by_coords')
     except ValueError:
