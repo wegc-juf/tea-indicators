@@ -417,7 +417,6 @@ class TEAAgr(TEAIndicators):
         # calculate spread estimates (equation 38)
         af_spreads = self._calc_agr_spread(data=self.amplification_factors, ref=af_agr)
         af_spreads = af_spreads.rename({var: var.replace('AF_AGR', 'AGR_AF') for var in af_spreads.data_vars})
-        # TODO  check why first and last values are not set to nan
         
         # calculate spread estimates for CC period (equation 39)
         # # select only variables containing 'CC' in name of self.amplification_factors
@@ -430,14 +429,14 @@ class TEAAgr(TEAIndicators):
         # calculate spread estimates for reference period (equation 40)
         x_ref_spreads = self._calc_agr_spread(data=self._ref_mean, ref=x_ref_agr)
         
-        # calculate error estimates for AGR mean (equation 41)
+        # calculate error estimates for AGR mean (equation 42TODEFINE)
         r_earth = 6371
         u_earth = 2 * np.pi * r_earth
         # # size of grid cell in 100 km^2
         A_GR_full = (u_earth / 360 * self.cell_size_lat) ** 2 / 100
         N_dof = int(A_AGR / A_GR_full)
         
-        # add p5 and p95 values
+        # add p5 and p95 values (equation 41TODEFINE)
         self._calc_agr_percentiles(data=self.decadal_results)
         self._calc_agr_percentiles(data=self.amplification_factors)
 
@@ -467,6 +466,8 @@ class TEAAgr(TEAIndicators):
         # add number of degrees of freedom for AGR mean
         x_s_agr['N_dof_AGR'] = N_dof
         x_s_agr['N_dof_AGR'].attrs = {'long_name': 'Number of degrees of freedom for AGR mean'}
+        af_agr['N_dof_AGR'] = N_dof
+        af_agr['N_dof_AGR'].attrs = {'long_name': 'Number of degrees of freedom for AGR mean'}
 
         self.decadal_results = xr.merge([x_s_agr, x_ref_spreads, x_cc_spreads, self.decadal_results], compat='override')
         self.amplification_factors = xr.merge([af_agr, self.amplification_factors], compat='override')
@@ -492,7 +493,7 @@ class TEAAgr(TEAIndicators):
         # equation 38_2 and 38_5
         c_upp_sum = (c_upp * areas).sum(dim=('lat', 'lon'))
         # replace 0 values with nan to avoid division by zero
-        c_upp_sum = c_upp_sum.where(c_upp_sum > 0, c_upp_sum)
+        c_upp_sum = c_upp_sum.where(c_upp_sum > 0)
         s_upp = np.sqrt(1 / c_upp_sum * (c_upp * areas * (data - ref) ** 2).sum(dim=('lat', 'lon')))
 
         # equation 38_3 and 38_6
