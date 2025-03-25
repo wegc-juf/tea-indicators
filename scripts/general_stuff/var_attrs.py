@@ -91,7 +91,9 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
         vattrs['long_name'] = f'decadal-mean {vattrs["long_name"]}'
 
     # add upper/lower spread estimator for spreads
-    if spread:
+    if spread == 'upper' or spread == 'lower':
         vattrs['long_name'] = f'{vattrs["long_name"]} {spread} spread estimator'
+    elif spread:
+        vattrs['long_name'] = f'{vattrs["long_name"]} {spread}'
 
     return vattrs

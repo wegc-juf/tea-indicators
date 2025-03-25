@@ -280,7 +280,89 @@ class TEAAgr(TEAIndicators):
         self._ref_mean = self._ref_mean.drop_vars(agr_vars)
         agr_vars = [var for var in self._cc_mean.data_vars if 'AGR' in var]
         self._cc_mean = self._cc_mean.drop_vars(agr_vars)
+    
+    @staticmethod
+    def _calc_weighted_perc(data, areas):
+        """
+        calculate weighted percentiles
+        :param data: data
+        :param areas: area sizes
+        :return:
+        """
+        # remove values where data is nan
+        areas_3d = xr.full_like(data, 1) * areas
+        areas_3d = areas_3d.where(np.isfinite(data))
+        
+        wgts = areas_3d / areas_3d.sum(dim=('lat', 'lon'))
+        
+        if 'time' not in data.dims:
+            pval005, pval095 = TEAAgr._calc_weighted_perc_single(data.values, wgts.values)
+            return pval005, pval095
+        
+        perc005 = xr.DataArray(data=np.ones(len(data.time)) * np.nan,
+                               coords={'time': (['time'], data.time.data)})
+        perc095 = xr.DataArray(data=np.ones(len(data.time)) * np.nan,
+                               coords={'time': (['time'], data.time.data)})
+        
+        for iyr, yr in enumerate(data.time):
+            if iyr < 5:
+                continue
+            avals = data[iyr, :, :].values
+            wgts_iyr = wgts[iyr, :, :].values
+            
+            pval005, pval095 = TEAAgr._calc_weighted_perc_single(avals, wgts_iyr)
+            
+            perc005[iyr] = pval005
+            perc095[iyr] = pval095
+        
+        return perc005, perc095
+    
+    @staticmethod
+    def _calc_weighted_perc_single(avals, wgts):
+        """
+        calculate weighted percentiles for a single timestep
+        Args:
+            avals: data
+            wgts: weights
 
+        Returns:
+            pval005, pval095: 5th and 95th percentile
+
+        """
+        # stack arrays along a new dimension and reshape to a 2D array
+        # (rows contain two values to sort together)
+        
+        combined = np.stack((avals, wgts), axis=-1)
+        combined_reshaped = combined.reshape(-1, 2)
+        # sort combined array by avals
+        combined_sorted = combined_reshaped[combined_reshaped[:, 0].argsort()]
+        # split the sorted array back into separate ones
+        avals_ordered = combined_sorted[:, 0]
+        wgts_ordered = combined_sorted[:, 1]
+        # calculate cumsum of weights to find percentiles
+        wgts_cumsum = np.cumsum(wgts_ordered)
+        wgts_diff_005 = np.abs(wgts_cumsum - 0.05)
+        wgts_diff_095 = np.abs(wgts_cumsum - 0.95)
+        # find index of wgts_cumsum that is closest to 0.05 (but smaller or equal than 0.05)
+        try:
+            p005_index = np.nanargmin(wgts_diff_005)
+            if wgts_cumsum[p005_index] > 0.05:
+                while wgts_cumsum[p005_index] > 0.05:
+                    p005_index -= 1
+            pval005 = avals_ordered[p005_index]
+        except ValueError:
+            pval005 = np.nan
+        # find index of wgts_cumsum that is closest to 0.95 (but greater or equal than 0.95)
+        try:
+            p095_index = np.nanargmin(wgts_diff_095)
+            if wgts_cumsum[p095_index] < 0.95:
+                while wgts_cumsum[p095_index] < 0.95:
+                    p095_index += 1
+            pval095 = avals_ordered[p095_index]
+        except ValueError:
+            pval095 = np.nan
+        return pval005, pval095
+    
     def calc_agr_vars(self, lat_range=None, lon_range=None):
         """
         calculate AGR variables
@@ -354,6 +436,10 @@ class TEAAgr(TEAIndicators):
         # # size of grid cell in 100 km^2
         A_GR_full = (u_earth / 360 * self.cell_size_lat) ** 2 / 100
         N_dof = int(A_AGR / A_GR_full)
+        
+        # add p5 and p95 values
+        self._calc_agr_percentiles(data=self.decadal_results)
+        self._calc_agr_percentiles(data=self.amplification_factors)
 
         # add attributes
         for vvar in af_agr.data_vars:
@@ -427,6 +513,37 @@ class TEAAgr(TEAIndicators):
 
         return xr.merge([s_upp, s_low])
     
+    def _calc_agr_percentiles(self, data):
+        """
+        calculate spread estimates of grid cell values around AGR mean (equation 38)
+        Args:
+            data: data for spread estimation
+            ref: reference data for spread estimation
+        Returns:
+            xarray dataset with upper and lower spread estimates
+
+        """
+        logger.info(f'Calculating 5th and 95th percentiles')
+        areas = self.gr_grid_areas
+        
+        for var in data.data_vars:
+            # calculate 5th and 95th percentiles for each variable
+            
+            # standard method (gives only slightly different results to weighted method)
+            # p5_std = data[var].quantile(0.05, dim=('lat', 'lon'))
+            # p95_std = data[var].quantile(0.95, dim=('lat', 'lon'))
+            
+            p5, p95 = self._calc_weighted_perc(data[var], areas)
+            
+            if 'AF' in var:
+                var = var.replace('AF', 'AGR_AF')
+            else:
+                var = f'{var}_AGR'
+            data[f'{var}_p05'] = p5
+            data[f'{var}_p95'] = p95
+            data[f'{var}_p05'].attrs = get_attrs(vname=f'{var}', spread='5th percentile')
+            data[f'{var}_p95'].attrs = get_attrs(vname=f'{var}', spread='95th percentile')
+
     def _get_lats_lons(self, margin=None):
         """
         get latitudes and longitudes for GeoRegion grid
