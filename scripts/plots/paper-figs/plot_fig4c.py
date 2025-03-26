@@ -24,38 +24,35 @@ def run():
              color='tab:grey', linestyle='--')
 
     cc_vals = {}
-    bar_off = 0.5
+    xv = -4
     for ireg, reg in enumerate(regs):
         data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                                f'amplification/AF_Tx99.0p_AGR-{reg}_WAS_ERA5_1961to2024.nc')
         if reg == 'EUR':
-            # TODO: exchange with p05 and p95
             axs.fill_between(x=xticks[1:],
-                             y1=data['TEX_AGR_AF_slow'],
-                             y2=data['TEX_AGR_AF_supp'],
+                             y1=data['TEX_AGR_AF_p05'],
+                             y2=data['TEX_AGR_AF_p95'],
                              color=cols[reg],
                              alpha=0.1, zorder=2)
             lw, ms = 2.5, 3.5
-            vline_x = xticks[-4] + 0.4
+            vline_x = xticks[xv]
         else:
             lw, ms = 2, 3
-            bar_off -= 0.5
-            vline_x = xticks[-2] + bar_off
+            xv += 1
+            vline_x = xticks[xv]
 
-        cc_low = (data['TEX_AGR_AF_CC']
-                  - gmean(data['TEX_AGR_AF_slow'].sel(time=slice(
-                    PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])).values))
-        cc_upp = (data['TEX_AGR_AF_CC']
-                  + gmean(data['TEX_AGR_AF_supp'].sel(time=slice(
-                    PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])).values))
-        cc_vals[reg] = {'mean': data['TEX_AGR_AF_CC'].values, 'low': cc_low, 'upp': cc_upp}
+        cc_vals[reg] = {'mean': data['TEX_AGR_AF_CC'].values,
+                        'low': data['TEX_AGR_AF_CC_p05'],
+                        'upp': data['TEX_AGR_AF_CC_p95']}
 
-        # TODO: exchange with mean of p05 and p95
-        axs.vlines(x=vline_x, ymin=cc_low * 1.645,
-                   ymax=cc_upp * 1.645,
+        axs.vlines(x=vline_x, ymin=data['TEX_AGR_AF_CC_p05'], ymax=data['TEX_AGR_AF_CC_p95'],
                    colors=cols[reg],
                    linewidth=3, alpha=0.35)
 
+        cc_low = (data['TEX_AGR_AF_CC']
+                  - data['TEX_AGR_AF_CC_slow'] * (1 / np.sqrt(data['N_dof_AGR'])) * 1.645)
+        cc_upp = (data['TEX_AGR_AF_CC']
+                  + data['TEX_AGR_AF_CC_supp'] * (1 / np.sqrt(data['N_dof_AGR'])) * 1.645)
         axs.vlines(x=vline_x, ymin=cc_low,
                    ymax=cc_upp,
                    colors=cols[reg],
@@ -95,7 +92,7 @@ def run():
     axs.minorticks_on()
     axs.grid(color='gray', which='major', linestyle=':')
     axs.set_xlim(1960, 2025)
-    axs.set_ylim(0, 25)
+    axs.set_ylim(0, 60)
     axs.xaxis.set_minor_locator(mticker.FixedLocator(np.arange(1960, 2025)))
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
