@@ -91,8 +91,8 @@ def load_tea_data():
             cc = gmean(pddata['TEX_AGR'])
             ccs[per][reg] = cc
             # scaling factor because of very non-gaussian distribution (s. Methods p38 bottom)
-            upp_std = gmean(pdata['TEX_AGR_AF_supp']) / (np.sqrt(reg_sizes[reg] / 49457))
-            low_std = gmean(pdata['TEX_AGR_AF_slow']) / (np.sqrt(reg_sizes[reg] / 49457))
+            upp_std = gmean(pdata['TEX_AGR_AF_supp']) / (np.sqrt(pdata['N_dof_AGR']))
+            low_std = gmean(pdata['TEX_AGR_AF_slow']) / (np.sqrt(pdata['N_dof_AGR']))
             uc = [low_std, upp_std]
             stdevs[per][reg] = uc
 
