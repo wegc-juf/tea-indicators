@@ -8,20 +8,22 @@ import xarray as xr
 def get_props(var, pvar):
     if pvar == 'P24h_7to7':
         pstr = 'P24H'
+        yx_f, yx_m, yx_fm = 45, 50, 2000
     else:
         pstr = 'Px1H'
+        yx_f, yx_m, yx_fm = 45, 35, 1250
     props = {
         'EF_GR': {'title': 'Event Frequency (Annual)', 'ylbl': 'F [1/yr]',
                   'bref': r'$\mathrm{F^{GR}_{Ref}}$', 'bcc': r'$\mathrm{F^{GR}_{CC}}$',
-                  'btitle': f'{pstr}-p95WAS-F', 'unit': '1/yr', 'yn': 0, 'yx': 45, 'dy': 5,
+                  'btitle': f'{pstr}-p95WAS-F', 'unit': '1/yr', 'yn': 0, 'yx': yx_f, 'dy': 5,
                   'af': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$'},
         'EMavg_GR': {'title': 'Average Exceedance Magnitude (daily-median)', 'ylbl': 'M [mm]',
                      'bref': r'$\mathrm{M^{GR}_{Ref}}$', 'bcc': r'$\mathrm{M^{GR}_{CC}}$',
-                     'btitle': f'{pstr}-p95WAS-M', 'unit': 'mm', 'yn': 0, 'yx': 50, 'dy': 5,
+                     'btitle': f'{pstr}-p95WAS-M', 'unit': 'mm', 'yn': 0, 'yx': yx_m, 'dy': 5,
                      'af': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$'},
         'FM_GR': {'title': 'Compound Frequency-Magnitude (Annual)', 'ylbl': 'FM [mm/yr]',
                   'bref': r'$\mathrm{FM^{GR}_{Ref}}$', 'bcc': r'$\mathrm{FM^{GR}_{CC}}$',
-                  'btitle': f'{pstr}-p95WAS-FM', 'unit': 'mm/yr', 'yn': 0, 'yx': 2000, 'dy': 250,
+                  'btitle': f'{pstr}-p95WAS-FM', 'unit': 'mm/yr', 'yn': 0, 'yx': yx_fm, 'dy': 250,
                   'af': r'$\mathcal{A}_\mathrm{CC}^\mathrm{FM}$'}}
 
     return props[var]
@@ -99,7 +101,7 @@ def set_plot_props(axs, vvars, ref, cc, pvar):
 
 
 def run():
-    pvar = 'P24h_7to7'
+    pvar = 'Px1h_7to7'
     fig, axs = plt.subplots(1, 3, figsize=(16, 4.5))
 
     regions = ['AUT', 'SEA']

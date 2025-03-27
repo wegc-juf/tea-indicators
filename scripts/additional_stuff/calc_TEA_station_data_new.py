@@ -345,7 +345,7 @@ def calc_af(data, region, pvar):
 
 def run():
     region = 'SEA'
-    pvar = 'P24h_7to7'
+    pvar = 'Px1h_7to7'
 
     data, p95 = load_data(region=region, pvar=pvar)
 
