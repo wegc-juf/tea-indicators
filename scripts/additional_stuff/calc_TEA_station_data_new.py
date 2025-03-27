@@ -19,7 +19,7 @@ from scripts.calc_indices.calc_daily_basis_vars import calc_dteec_1d
 PARAMS = ref_cc_params()
 
 
-def load_data(region):
+def load_data(region, pvar):
     """
     load station data
     Args:
@@ -64,9 +64,14 @@ def load_data(region):
     # shift data by 7h to get 7to7 data
     data = data.shift(-7, freq='H')
 
-    # resample to daily data and only keep wet days
-    data = data.resample('D').sum()
-    data = data.where(data >= 0.1)
+    if pvar == 'P24h_7to7':
+        # resample to daily data and only keep wet days
+        data = data.resample('D').sum()
+        data = data.where(data >= 1)
+    else:
+        # resample to daily data and only keep wet hours
+        data = data.resample('D').max()
+        data = data.where(data >= 0.3)
 
     # calculate threshold value
     ref_data = data[(data.index.year >= int(PARAMS['REF']['start'][:4]))
@@ -201,7 +206,7 @@ def assign_ctp_coords(data):
     return data, data_per
 
 
-def calc_ctp_indicators(data, region):
+def calc_ctp_indicators(data, region, pvar):
 
     pdata = data.sum('days')
 
@@ -257,12 +262,12 @@ def calc_ctp_indicators(data, region):
     history = f'{dt.datetime.now():%FT%H:%M:%S} calc_TEA_station_data.py'
     ctp.attrs['history'] = history
     ctp.to_netcdf(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/data/TEA/'
-                  f'CTP_{region}_P24h_7to7.nc')
+                  f'CTP_{region}_{pvar}.nc')
 
     return ctp
 
 
-def calc_dec_indicators(data, region):
+def calc_dec_indicators(data, region, pvar):
     # drop compund vars
     data = data.drop_vars(['tEX', 'tEX_GR', 'FM', 'FM_GR'])
     weights = xr.DataArray([1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dims=['window']) / 10
@@ -293,12 +298,12 @@ def calc_dec_indicators(data, region):
     history = f'{dt.datetime.now():%FT%H:%M:%S} calc_TEA_station_data.py'
     data.attrs['history'] = history
     data.to_netcdf(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/data/TEA/'
-                   f'DEC_{region}_P24h_7to7.nc')
+                   f'DEC_{region}_{pvar}.nc')
 
     return data
 
 
-def calc_af(data, region):
+def calc_af(data, region, pvar):
     ref_ds = data.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
     
     af = xr.full_like(data, np.nan)
@@ -335,26 +340,27 @@ def calc_af(data, region):
     history = f'{dt.datetime.now():%FT%H:%M:%S} calc_TEA_station_data.py'
     af.attrs['history'] = history
     af.to_netcdf(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/data/TEA/'
-                 f'AF_{region}_P24h_7to7.nc')
+                 f'AF_{region}_{pvar}.nc')
 
 
 def run():
-    region = 'AUT'
+    region = 'SEA'
+    pvar = 'P24h_7to7'
 
-    data, p95 = load_data(region=region)
+    data, p95 = load_data(region=region, pvar=pvar)
 
     # calc DBV variables
     dbv = calc_daily_basis_vars(data=data, thresh=p95)
     dbv, dbv_per = assign_ctp_coords(data=dbv)
 
     # calc CTP variables
-    ctp = calc_ctp_indicators(data=dbv_per, region=region)
+    ctp = calc_ctp_indicators(data=dbv_per, region=region, pvar=pvar)
     
     # calc DEC variables
-    dec = calc_dec_indicators(data=ctp, region=region)
+    dec = calc_dec_indicators(data=ctp, region=region, pvar=pvar)
 
     # calc AF
-    calc_af(data=dec, region=region)
+    calc_af(data=dec, region=region, pvar=pvar)
 
 
 if __name__ == '__main__':

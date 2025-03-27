@@ -1,29 +1,33 @@
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FormatStrFormatter, FixedLocator, MultipleLocator
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 from scipy.stats import gmean
 import xarray as xr
 
 
-def get_props(var):
+def get_props(var, pvar):
+    if pvar == 'P24h_7to7':
+        pstr = 'P24H'
+    else:
+        pstr = 'Px1H'
     props = {
         'EF_GR': {'title': 'Event Frequency (Annual)', 'ylbl': 'F [1/yr]',
                   'bref': r'$\mathrm{F^{GR}_{Ref}}$', 'bcc': r'$\mathrm{F^{GR}_{CC}}$',
-                  'btitle': f'P24H-p95WAS-F', 'unit': '1/yr', 'yn': 0, 'yx': 45, 'dy': 5,
+                  'btitle': f'{pstr}-p95WAS-F', 'unit': '1/yr', 'yn': 0, 'yx': 45, 'dy': 5,
                   'af': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$'},
         'EMavg_GR': {'title': 'Average Exceedance Magnitude (daily-median)', 'ylbl': 'M [mm]',
                      'bref': r'$\mathrm{M^{GR}_{Ref}}$', 'bcc': r'$\mathrm{M^{GR}_{CC}}$',
-                     'btitle': f'P24H-p95WAS-M', 'unit': 'mm', 'yn': 0, 'yx': 50, 'dy': 5,
+                     'btitle': f'{pstr}-p95WAS-M', 'unit': 'mm', 'yn': 0, 'yx': 50, 'dy': 5,
                      'af': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$'},
         'FM_GR': {'title': 'Compound Frequency-Magnitude (Annual)', 'ylbl': 'FM [mm/yr]',
                   'bref': r'$\mathrm{FM^{GR}_{Ref}}$', 'bcc': r'$\mathrm{FM^{GR}_{CC}}$',
-                  'btitle': f'P24H-p95WAS-FM', 'unit': 'mm/yr', 'yn': 0, 'yx': 2000, 'dy': 250,
+                  'btitle': f'{pstr}-p95WAS-FM', 'unit': 'mm/yr', 'yn': 0, 'yx': 2000, 'dy': 250,
                   'af': r'$\mathcal{A}_\mathrm{CC}^\mathrm{FM}$'}}
 
     return props[var]
 
 
-def plot_timeseries(fig, axs, reg, data):
+def plot_timeseries(fig, axs, reg, data, pvar):
     col = '#6baed6'
     if reg == 'AUT':
         col = '#08519c'
@@ -47,7 +51,7 @@ def plot_timeseries(fig, axs, reg, data):
         axs[ivar].plot(cc_yrs, np.ones(len(cc_yrs)) * cc, color=col, alpha=0.5,
                        linewidth=2)
 
-        props = get_props(var=vvar)
+        props = get_props(var=vvar, pvar=pvar)
         axs[ivar].text(0.25, (
                 (ref - props['yn']) / (props['yx'] - props['yn'])) + 0.04,
                        props['bref'],
@@ -65,9 +69,9 @@ def plot_timeseries(fig, axs, reg, data):
     return ref_vals, cc_vals
 
 
-def set_plot_props(axs, vvars, ref, cc):
+def set_plot_props(axs, vvars, ref, cc, pvar):
     for ivar, vvar in enumerate(vvars):
-        props = get_props(var=vvar)
+        props = get_props(var=vvar, pvar=pvar)
 
         axs[ivar].tick_params(axis='both', labelsize=10)
         axs[ivar].minorticks_on()
@@ -95,17 +99,19 @@ def set_plot_props(axs, vvars, ref, cc):
 
 
 def run():
+    pvar = 'P24h_7to7'
     fig, axs = plt.subplots(1, 3, figsize=(16, 4.5))
 
     regions = ['AUT', 'SEA']
     ref_vals, cc_vals = {}, {}
     for reg in regions:
         data = xr.open_dataset(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/'
-                               f'data/TEA/DEC_{reg}_P24h_7to7.nc')
-        ref, cc = plot_timeseries(fig, axs, reg=reg, data=data)
+                               f'data/TEA/DEC_{reg}_{pvar}.nc')
+        ref, cc = plot_timeseries(fig, axs, reg=reg, data=data, pvar=pvar)
         ref_vals[reg], cc_vals[reg] = ref, cc
 
-    set_plot_props(axs=axs, vvars=['EF_GR', 'EMavg_GR', 'FM_GR'], ref=ref_vals, cc=cc_vals)
+    set_plot_props(axs=axs, vvars=['EF_GR', 'EMavg_GR', 'FM_GR'], ref=ref_vals, cc=cc_vals,
+                   pvar=pvar)
 
     aleg, = axs[0].plot([-9, -9], 'o-', markersize=3, color='#6baed6')
     sleg, = axs[0].plot([-9, -9], 'o-', markersize=3, color='#08519c')
@@ -113,7 +119,7 @@ def run():
 
     fig.subplots_adjust(bottom=0.25, left=0.05, right=0.95, wspace=0.2)
 
-    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/misc/Annual_FM_P24h_7to7.png',
+    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/misc/Annual_FM_{pvar}.png',
                 bbox_inches='tight', dpi=300)
     # plt.show()
 
