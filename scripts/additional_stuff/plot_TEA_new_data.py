@@ -123,7 +123,6 @@ def run():
 
     plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/misc/Annual_FM_{pvar}.png',
                 bbox_inches='tight', dpi=300)
-    # plt.show()
 
 
 if __name__ == '__main__':

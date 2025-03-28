@@ -126,9 +126,9 @@ def plot_panel1(axs, af, uc, ref, cc):
             axs[0].errorbar(x=xval, y=data[ixval], yerr=std[ixval], marker='o', linestyle='',
                             markersize=5, capsize=4, color=colors[iper][ixval])
 
-    axs[0].set_title(f'AHC gain | Global to NH-Midlat', fontsize=14-2)
+    axs[0].set_title(f'AHC gain | Global to NH-Midlat', fontsize=12)
     axs[0].set_xticklabels(['GLOBAL\n(ANN)', 'NH20-90N\n(ANN)', 'NH35-70N\n(WAS)'],
-                           fontsize=12-4)
+                           fontsize=8)
     axs[0].set_xlim(0, 6)
     axs[0].xaxis.set_major_locator(mticker.FixedLocator(xvals))
     axs[0].set_ylabel('Amplification factor (1)')
@@ -136,26 +136,27 @@ def plot_panel1(axs, af, uc, ref, cc):
     axs[0].set_ylim(-0.55, 12)
     axs[0].plot(np.arange(0, 9), np.ones(9), color='tab:gray', alpha=0.5)
     axs[0].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]))
-    axs[0].yaxis.set_minor_locator(mticker.MultipleLocator(0.5))
+    axs[0].yaxis.set_minor_locator(mticker.FixedLocator(np.arange(0, 12.5, 0.5)))
+    axs[0].tick_params(axis='y', which='major', labelsize=8)
 
     for ireg, reg in enumerate(['GLOB', 'NH20to90N', 'NH35to70N']):
         axs[0].text(xvals[ireg] / 6, 0.09, f'{np.round(ref[reg] / (10 ** 18), 1)}',
                     horizontalalignment='center',
                     verticalalignment='center', transform=axs[0].transAxes,
                     backgroundcolor='whitesmoke',
-                    fontsize=8-2, zorder=1)
+                    fontsize=6, zorder=1)
 
     axs[0].text(0.5, 0.045, f'AHCg'+r'$_\mathrm{Ref}$'+' (EJ/yr)',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
-                transform=axs[0].transAxes, fontsize=8-2)
+                transform=axs[0].transAxes, fontsize=6)
 
-    axs[0].text(0.7, 0.88, f'   ERA5 AHC gain AHCg'+r'$_\mathrm{CC}$'+' (EJ/yr)   \n\n\n\n',
+    axs[0].text(0.73, 0.88, f'   ERA5 AHC gain AHCg'+r'$_\mathrm{CC}$'+' (EJ/yr)   \n\n\n\n',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
-                transform=axs[0].transAxes, fontsize=8-2)
+                transform=axs[0].transAxes, fontsize=6)
 
-    axs[0].text(0.94, 0.86,
+    axs[0].text(0.97, 0.86,
                 f'GLOBAL (ANN) AHCg' + r'$_\mathrm{CC}$ = '
                 + f'{np.round(cc["GLOB"] / (10 ** 18), 1)}\n'
                   f'NH20-90N (ANN) AHCg' + r'$_\mathrm{CC}$ = '
@@ -164,7 +165,7 @@ def plot_panel1(axs, af, uc, ref, cc):
                 + f'{np.round(cc["NH35to70N"] / (10 ** 18), 1)}',
                 horizontalalignment='right',
                 verticalalignment='center', backgroundcolor='whitesmoke',
-                transform=axs[0].transAxes, fontsize=8-2)
+                transform=axs[0].transAxes, fontsize=6)
     
 
 def plot_panel2(axs, af, uc, ref, ccs):
@@ -198,35 +199,35 @@ def plot_panel2(axs, af, uc, ref, ccs):
             axs[1].errorbar(x=xval, y=data[ixval], yerr=errors * 1.645, marker='o', linestyle='',
                             markersize=5, capsize=4, color=colors[iper][ixval])
 
-    axs[1].set_title('AEHC | EUR & Europe regions', fontsize=14-2)
+    axs[1].set_title('AEHC | EUR & Europe regions', fontsize=12)
     axs[1].set_xlim(0, 8)
     axs[1].xaxis.set_major_locator(mticker.FixedLocator(xvals))
-    axs[1].set_xticklabels(['EUR', 'C-EUR', 'S-EUR', 'N-EUR'], fontsize=12-4)
+    axs[1].set_xticklabels(['EUR', 'C-EUR', 'S-EUR', 'N-EUR'], fontsize=8)
 
-    # axs[1].set_ylim(-0.55, 12)
-    axs[1].set_ylim(-0.55, 22)
+    axs[1].set_ylim(-2.5, 25)
     axs[1].plot(np.arange(0, 9), np.ones(9), color='tab:gray', alpha=0.5)
+    axs[1].tick_params(axis='y', which='major', labelsize=8)
 
-    axs[1].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]))
-    axs[1].yaxis.set_minor_locator(mticker.MultipleLocator(0.5))
+    axs[1].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 5, 10, 15, 20, 25]))
+    axs[1].yaxis.set_minor_locator(mticker.FixedLocator(np.arange(0, 26)))
 
     for ireg, reg in enumerate(['EUR', 'C-EUR', 'S-EUR', 'N-EUR']):
         axs[1].text(xvals[ireg] / 8, 0.086, f'{np.round(ref[reg] * 0.1507, 1):.1f}',
                     horizontalalignment='center',
                     verticalalignment='center', transform=axs[1].transAxes,
                     backgroundcolor='whitesmoke',
-                    fontsize=8-2, zorder=2)
+                    fontsize=6, zorder=2)
 
     axs[1].text(0.5, 0.041, r'AEHC$_\mathrm{Ref}$ (PJ/yr)',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
-                transform=axs[1].transAxes, fontsize=8-2)
+                transform=axs[1].transAxes, fontsize=6)
 
     axs[1].text(0.715, 0.86, r'ERA5-TMax-p99ANN-AEHC$_\mathrm{CC}$ (PJ/yr)'
                 + '\n\n\n\n\n',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
-                transform=axs[1].transAxes, fontsize=8-2)
+                transform=axs[1].transAxes, fontsize=6)
 
     axs[1].text(0.89, 0.84, f'EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
@@ -239,7 +240,7 @@ def plot_panel2(axs, af, uc, ref, ccs):
                 + f'{np.round(ccs["0822"]["N-EUR"] * 0.1507, 2):.1f}',
                 horizontalalignment='right',
                 verticalalignment='center', backgroundcolor='whitesmoke',
-                transform=axs[1].transAxes, fontsize=8-2)
+                transform=axs[1].transAxes, fontsize=6)
 
 
 def run():
