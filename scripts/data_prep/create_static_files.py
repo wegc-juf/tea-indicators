@@ -12,7 +12,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_data
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_input_filenames, get_data
 
 
 def area_grid(opts, masks):
@@ -196,9 +196,9 @@ def run():
 
     # save output
     if opts.full_region:
-        outname = f'{opts.statpath}/static_{opts.param_str}_{opts.region}_{opts.dataset}_full.nc'
+        outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}_full.nc'
     else:
-        outname = f'{opts.statpath}/static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
+        outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
 
     ds_out.to_netcdf(outname)
 

@@ -28,12 +28,10 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-    statpath: &statpath /home/wegnet/results/static/
-    outpath: &outpath /home/wegnet/results/TEA_indicators/
-
-    maskpath: !join [*statpath, /masks/]
-    tmppath: !join [*outpath, tmp/]
+    #maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+    maskpath: /home/wegnet/results/static/masks/
+    statpath: /home/wegnet/results/static/
+    tmppath: /home/wegnet/results/TEA_indicators/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
@@ -62,6 +60,8 @@ create_static_files:
   <<: *DATA
   <<: *PATHS
   smoothing: 0
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  outpath: /home/wegnet/results/static/
 
 calc_TEA:
   <<: *GR
@@ -69,11 +69,15 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  outpath: /home/wegnet/results/TEA_indicators/
   recalc_daily: true
-  decadal: true
+  decadal: false
+  spreads: false
   decadal_only: false
-  recalc_decadal: true
+  recalc_decadal: false
   compare_to_ref: false
+  save_old: false
 
 calc_station_TEA:
   <<: *TIME
@@ -88,8 +92,8 @@ calc_amplification_factors:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  impath: !join [*outpath, /dec_indicator_variables/]
-  outpath: !join [*outpath, /amplification/]
+  inpath: /home/wegnet/results/TEA_indicators/dec_indicator_variables/
+  outpath: /home/wegnet/results/TEA_indicators/amplification/
 
 calc_AGR_vars:
   <<: *GR
@@ -97,5 +101,6 @@ calc_AGR_vars:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  impath: !join [*outpath, /dec_indicator_variables/]
-  outpath: *outpath
+  inpath: /home/wegnet/results/TEA_indicators/dec_indicator_variables/
+  outpath: /home/wegnet/results/TEA_indicators/
+  spreads: true
