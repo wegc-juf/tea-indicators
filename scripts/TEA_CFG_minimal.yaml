@@ -28,5 +28,5 @@ calc_TEA:
   <<: *PATHS
   recalc_daily: true
   decadal: true
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
