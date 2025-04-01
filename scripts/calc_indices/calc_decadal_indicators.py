@@ -49,8 +49,14 @@ def load_ctp_data(opts, tea):
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if 'ref' not in file]
+    
+    # TODO: optimize tea._calc_spread_estimators
+    if opts.spreads:
+        use_dask = False
+    else:
+        use_dask = True
 
-    tea.load_CTP_results(files)
+    tea.load_CTP_results(files, use_dask=use_dask)
 
 
 def rolling_decadal_mean(data):

@@ -811,12 +811,16 @@ class TEAIndicators:
             warnings.simplefilter("ignore")
             self.CTP_results.to_netcdf(filepath)
         
-    def load_CTP_results(self, filepath):
+    def load_CTP_results(self, filepath, use_dask):
         """
         load all CTP results from filepath
         """
         logger.info(f"Loading CTP results from {filepath}")
         self.CTP_results = xr.open_mfdataset(filepath, combine='nested')
+        # TODO: optimize code in TEA._calc_spread_estimators
+        if not use_dask:
+            # avoid using dask when calculating spreads
+            self.CTP_results.load()
         if 'units' not in self.CTP_results.EM_avg.attrs:
             logger.warning("No unit attribute found in CTP results. Please set the unit attribute manually.")
         else:
@@ -1015,6 +1019,9 @@ class TEAIndicators:
             clow_sum = clow_sum.where(clow_sum > 0, 1)
             slow_per = np.sqrt(1 / clow_sum * (((1 - cupp) * (one_decade - center_val)**2).sum(dim='time')))
             
+            print(f"DEBUG: assigning spread values for {cy.values} to decadal results")
+            # TODO: optimize this code for dask!
+            
             supp.loc[{'time': cy}] = supp_per
             slow.loc[{'time': cy}] = slow_per
         
@@ -1124,6 +1131,7 @@ class TEAIndicators:
             min_duration: minimum cumulative event duration over reference period in days. Default: 1. To get
             statistically robust results set to at least 3 days
         """
+        # TODO: write ref and cc period to output file
         self.ref_period = ref_period
         self.cc_period = cc_period
         if self._cc_mean is None:
