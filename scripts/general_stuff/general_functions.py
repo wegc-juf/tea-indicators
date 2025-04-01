@@ -39,6 +39,8 @@ def load_opts(fname):
         opts.compare_to_ref = None
     if 'spreads' not in opts:
         opts.spreads = None
+    if 'mask_sub' not in opts:
+        opts.mask_sub = 'masks'
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
@@ -276,7 +278,7 @@ def get_data(start, end, opts, period='annual'):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
     
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.inpath, param_str=param_str)
+    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.data_path, param_str=param_str)
     
     # load relevant years
     logger.info(f'Loading data from {filenames}...')

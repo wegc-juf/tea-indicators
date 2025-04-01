@@ -18,7 +18,7 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    inpath: ../examples/ERA5_Tx_1956-2024_CH.nc
+    data_path: ../examples/ERA5_Tx_1956-2024_CH.nc
     outpath: ../examples/
 calc_TEA:
   <<: *GR
@@ -28,5 +28,5 @@ calc_TEA:
   <<: *PATHS
   recalc_daily: true
   decadal: true
-  decadal_only: false
+  decadal_only: true
   recalc_decadal: true

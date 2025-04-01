@@ -174,7 +174,7 @@ def save_0p5_mask(opts, mask_0p5, area_0p5):
 
     # save 0.5° mask
     mask_0p5 = create_history_from_cfg(cfg_params=opts, ds=mask_0p5)
-    mask_file = f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc'
+    mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_0p5_{opts.dataset}.nc'
     try:
         mask_0p5.to_netcdf(mask_file)
     except PermissionError:

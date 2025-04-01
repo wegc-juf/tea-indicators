@@ -49,7 +49,7 @@ def load_static_files(opts, large_gr=False):
         full_str = '_full'
     else:
         full_str = ''
-    masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
+    masks = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
 
     if 'LSM_EUR' in masks.data_vars:
         valid_cells = masks['lt1500_mask_EUR'].where(masks['LSM_EUR'].notnull())
@@ -347,7 +347,7 @@ def calc_tea_indicators_agr(opts):
 
 def load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts):
     # load agr mask
-    gr_grid_mask_file = f'{opts.maskpath}/{opts.region}_mask_0p5_{opts.dataset}.nc'
+    gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_0p5_{opts.dataset}.nc'
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
         gr_grid_mask = gr_grid_mask.mask_lt1500

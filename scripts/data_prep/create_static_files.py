@@ -165,7 +165,7 @@ def run():
     opts = load_opts(fname=__file__)
 
     # load GR masks
-    masks = xr.open_dataset(f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc')
+    masks = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
 
     # create area grid
     area, gr_size = area_grid(opts=opts, masks=masks)
