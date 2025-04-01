@@ -107,53 +107,54 @@ def calc_percentiles(opts, masks, gr_size):
     # points within the given radius)
     radius = opts.smoothing
 
-    if radius == 0:
-        percent_smooth = percent.copy()
-    else:
-        percent_smooth_arr = np.full_like(percent.values, np.nan)
-        y_size = len(data[yname])
-        x_size = len(data[xname])
-        percent_tmp = np.zeros((y_size + 2 * radius, x_size + 2 * radius),
-                               dtype='float32') * np.nan
-        percent_tmp[radius:radius + y_size, radius:radius + x_size] = percent
-
-        rad_circ = radius + 0.5
-        x_vec = np.arange(0, x_size + 2 * radius)
-        y_vec = np.arange(0, y_size + 2 * radius)
-        iy_new = 0
-        for iy in range(radius, y_size):
-            ix_new = 0
-            for ix in range(radius, x_size):
-                circ_mask = (x_vec[np.newaxis, :] - ix) ** 2 + (y_vec[:, np.newaxis] - iy) ** 2 \
-                            < rad_circ ** 2
-                percent_smooth_arr[iy_new, ix_new] = np.nanmean(percent_tmp[circ_mask])
-                ix_new += 1
-            iy_new += 1
-
-        percent_smooth = xr.full_like(percent, np.nan)
-        percent_smooth[:, :] = percent_smooth_arr
-
-    if percent_smooth[xname].dtype != masks[xname].dtype:
-        percent_smooth[xname] = percent_smooth[xname].astype(masks[xname].dtype)
-        percent_smooth[yname] = percent_smooth[yname].astype(masks[yname].dtype)
+    if radius > 0:
+        x_size = len(percent[xname])
+        y_size = len(percent[yname])
+        percent_smooth = smooth_data(percent, radius, x_size, y_size)
+        percent = percent_smooth
+    
+    if percent[xname].dtype != masks[xname].dtype:
+        percent[xname] = percent[xname].astype(masks[xname].dtype)
+        percent[yname] = percent[yname].astype(masks[yname].dtype)
         
     vname = f'{opts.parameter}-p{opts.threshold}ANN Ref1961-1990'
     if opts.precip:
         vname = f'{opts.parameter}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
 
-    percent_smooth = percent_smooth.drop('quantile')
+    percent = percent.drop('quantile')
 
     # apply GR mask
     if not opts.full_region:
         if 'ERA' in opts.dataset and opts.region != 'EUR' and gr_size > 100:
-            percent_smooth = percent_smooth.where(masks['lt1500_mask_EUR'] == 1)
+            percent = percent.where(masks['lt1500_mask_EUR'] == 1)
         else:
-            percent_smooth = percent_smooth.where(masks['lt1500_mask'] == 1)
-            percent_smooth = percent_smooth.where(masks['mask'] > 0)
-    percent_smooth = percent_smooth.rename('threshold')
-    percent_smooth.attrs = {'units': opts.unit, 'methods_variable_name': vname,
-                            'percentile': f'{opts.threshold}p'}
+            percent = percent.where(masks['lt1500_mask'] == 1)
+            percent = percent.where(masks['mask'] > 0)
+    percent = percent.rename('threshold')
+    percent.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}p'}
 
+    return percent
+
+
+def smooth_data(data, radius, x_size, y_size):
+    percent_smooth_arr = np.full_like(data.values, np.nan)
+    percent_tmp = np.zeros((y_size + 2 * radius, x_size + 2 * radius),
+                           dtype='float32') * np.nan
+    percent_tmp[radius:radius + y_size, radius:radius + x_size] = data
+    rad_circ = radius + 0.5
+    x_vec = np.arange(0, x_size + 2 * radius)
+    y_vec = np.arange(0, y_size + 2 * radius)
+    iy_new = 0
+    for iy in range(radius, y_size):
+        ix_new = 0
+        for ix in range(radius, x_size):
+            circ_mask = (x_vec[np.newaxis, :] - ix) ** 2 + (y_vec[:, np.newaxis] - iy) ** 2 \
+                        < rad_circ ** 2
+            percent_smooth_arr[iy_new, ix_new] = np.nanmean(percent_tmp[circ_mask])
+            ix_new += 1
+        iy_new += 1
+    percent_smooth = xr.full_like(data, np.nan)
+    percent_smooth[:, :] = percent_smooth_arr
     return percent_smooth
 
 
