@@ -75,32 +75,24 @@ def area_grid(opts, masks):
     return agrid, gr_size
 
 
-def calc_percentiles(opts, masks, gr_size):
+def calc_percentiles(opts, threshold_min=None):
     """
     calculate percentile of reference period for each grid point
     Args:
         opts: CLI parameter
-        masks: GR masks
-        gr_size: size of GR in areals
+        threshold_min: minimum data value for threshold calculation (e.g. 0.99 for precip); optional
 
     Returns:
         thresh: threshold (percentile) grid
 
     """
 
-    params = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
-              'ERA5': {'xname': 'lon', 'yname': 'lat'},
-              'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
-    xname = params[opts.dataset]['xname']
-    yname = params[opts.dataset]['yname']
-
     data = get_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
-    # TODO: get rid of precip option and use parameter instead
-    if opts.precip:
-        data = data.where(data > 0.99)
+    
+    if threshold_min is not None:
+        data = data.where(data > threshold_min)
 
     # calc the chosen percentile for each grid point as threshold
-    # (TMax-p99ANN AllDOYs Ref1961-1990 & P24H-p95WAS WetDOYs > 1 mm Ref1961-1990).
     percent = data.chunk(dict(time=-1)).quantile(q=opts.threshold / 100, dim='time')
 
     # smooth SPARTACUS precip percentiles (for each grid point calculate the average of all grid
@@ -108,35 +100,16 @@ def calc_percentiles(opts, masks, gr_size):
     radius = opts.smoothing
 
     if radius > 0:
-        x_size = len(percent[xname])
-        y_size = len(percent[yname])
-        percent_smooth = smooth_data(percent, radius, x_size, y_size)
+        percent_smooth = smooth_data(percent, radius)
         percent = percent_smooth
     
-    if percent[xname].dtype != masks[xname].dtype:
-        percent[xname] = percent[xname].astype(masks[xname].dtype)
-        percent[yname] = percent[yname].astype(masks[yname].dtype)
-        
-    vname = f'{opts.parameter}-p{opts.threshold}ANN Ref1961-1990'
-    if opts.precip:
-        vname = f'{opts.parameter}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
-
     percent = percent.drop('quantile')
-
-    # apply GR mask
-    if not opts.full_region:
-        if 'ERA' in opts.dataset and opts.region != 'EUR' and gr_size > 100:
-            percent = percent.where(masks['lt1500_mask_EUR'] == 1)
-        else:
-            percent = percent.where(masks['lt1500_mask'] == 1)
-            percent = percent.where(masks['mask'] > 0)
-    percent = percent.rename('threshold')
-    percent.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}p'}
-
+    
     return percent
 
 
-def smooth_data(data, radius, x_size, y_size):
+def smooth_data(data, radius):
+    y_size, x_size = data.shape
     percent_smooth_arr = np.full_like(data.values, np.nan)
     percent_tmp = np.zeros((y_size + 2 * radius, x_size + 2 * radius),
                            dtype='float32') * np.nan
@@ -173,9 +146,10 @@ def run():
 
     # calculate thresholds
     if opts.threshold_type == 'abs':
+        # TODO: get rid of this
         thr_grid = xr.full_like(masks['nw_mask'], opts.threshold)
         thr_grid = thr_grid.where(masks['lt1500_mask'] == 1)
-        if 'ERA' in opts.dataset and gr_size > 100:
+        if opts.agr:
             thr_grid = thr_grid
         else:
             thr_grid = thr_grid * masks['mask']
@@ -183,8 +157,35 @@ def run():
         thr_grid.attrs = {'units': opts.unit, 'abs_threshold': f'{opts.threshold}{opts.unit}'}
     else:
         print('Calculating percentiles...')
-        thr_grid = calc_percentiles(opts=opts, masks=masks, gr_size=gr_size)
-
+        if opts.precip:
+            # TODO: get rid of precip option and use parameter instead
+            threshold_min = 0.99
+        else:
+            threshold_min = None
+        thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min)
+        
+        vname = f'{opts.parameter}-p{opts.threshold}ANN Ref1961-1990'
+        if opts.precip:
+            vname = f'{opts.parameter}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
+        
+        thr_grid = thr_grid.rename('threshold')
+        thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}p'}
+        
+        # apply GR mask
+        if not opts.full_region:
+            if 'ERA' in opts.dataset and opts.region != 'EUR' and opts.agr:
+                mask = masks['lt1500_mask_EUR']
+            else:
+                mask = masks['lt1500_mask'] * masks['mask']
+                
+            for dim in thr_grid.dims:
+                if dim not in mask.dims:
+                    continue
+                if thr_grid[dim].dtype != mask[dim].dtype:
+                    thr_grid[dim] = thr_grid[dim].astype(mask[dim].dtype)
+            
+            thr_grid = thr_grid.where(mask > 0)
+        
     # combine to single dataset
     ds_out = xr.merge([area, gr_size, thr_grid], join='left')
     del ds_out.attrs['units']

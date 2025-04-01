@@ -27,10 +27,6 @@ import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
 from scripts.calc_indices.TEA_AGR import TEAAgr
 
-DS_PARAMS = {'SPARTACUS': {'xname': 'x', 'yname': 'y'},
-             'ERA5': {'xname': 'lon', 'yname': 'lat'},
-             'ERA5Land': {'xname': 'lon', 'yname': 'lat'}}
-
 
 def load_static_files(opts, large_gr=False):
     """
