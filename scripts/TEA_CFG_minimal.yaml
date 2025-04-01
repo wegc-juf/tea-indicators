@@ -29,4 +29,5 @@ calc_TEA:
   recalc_daily: true
   decadal: true
   decadal_only: false
+  spreads: false
   recalc_decadal: true
