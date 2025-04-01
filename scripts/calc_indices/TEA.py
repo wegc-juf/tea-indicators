@@ -864,6 +864,7 @@ class TEAIndicators:
         self.decadal_results = self._duplicate_vars(self.decadal_results)
 
         if drop_annual_results:
+            self.CTP_results.close()
             del self.CTP_results
             del self._CTP_resampler
             del self._CTP_resample_sum
