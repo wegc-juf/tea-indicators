@@ -1019,7 +1019,7 @@ class TEAIndicators:
             clow_sum = clow_sum.where(clow_sum > 0, 1)
             slow_per = np.sqrt(1 / clow_sum * (((1 - cupp) * (one_decade - center_val)**2).sum(dim='time')))
             
-            print(f"DEBUG: assigning spread values for {cy.values} to decadal results")
+            logger.debug(f"assigning spread values for {cy.values} to decadal results")
             # TODO: optimize this code for dask!
             
             supp.loc[{'time': cy}] = supp_per
