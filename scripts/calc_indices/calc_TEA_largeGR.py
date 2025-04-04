@@ -89,8 +89,8 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     logger.info('Calculating annual CTP indicators for destination grid of GRs...')
     # for testing with only one latitude or debugging
     if False:
-        lons = [37]
-        lat = 51
+        lons = [24]
+        lat = 53
         tea_agr.calc_tea_gr_grid(lats=[lat], lons=lons)
         res = tea_agr.get_ctp_results()
         res = res.sel(lat=lat, lon=slice(lons[0], lons[-1]))
