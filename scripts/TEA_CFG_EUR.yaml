@@ -20,7 +20,7 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: WAS
+    period: annual
     # ref period from-to (inclusive)
     ref_period: 1961-1990
     # cc period from-to (inclusive)
@@ -70,13 +70,12 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: *result_path
-  recalc_daily: false
-  decadal: false
+  recalc_daily: true
+  decadal: true
   spreads: false
-  decadal_only: true
-  recalc_decadal: false
+  decadal_only: false
+  recalc_decadal: true
   compare_to_ref: false
-  save_old: false
 
 calc_station_TEA:
   <<: *TIME
