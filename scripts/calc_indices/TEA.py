@@ -1121,7 +1121,7 @@ class TEAIndicators:
             if len(ds[vvar].dims) > 1:
                 ds[vvar] = xr.where(ds.ED >= min_duration, ds[vvar], np.nan)
                 
-    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=1):
+    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=0):
         """
         calculate amplification factors (equation 27)
         
