@@ -34,14 +34,6 @@ common_params:
     mask_sub: masks/
     result_path: &result_path /home/wegnet/results/TEA_indicators/
 
-regrid_SPARTACUS_to_WEGNext:
-  <<: *PARAM
-  inpath: /data/users/hst/TEA-clean/SPARTACUS/
-  orography: false
-  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
-  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-
 create_region_masks:
   <<: *GR
   subreg: custom

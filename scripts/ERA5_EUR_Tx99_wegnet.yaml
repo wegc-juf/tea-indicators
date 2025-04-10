@@ -28,30 +28,11 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    #maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    maskpath: /home/wegnet/results/TEA_indicators_test/masks/
-    statpath: /home/wegnet/results/TEA_indicators_test/static/
-    tmppath: /home/wegnet/results/TEA_indicators_test/tmp/
-
-regrid_SPARTACUS_to_WEGNext:
-  <<: *PARAM
-  inpath: /data/users/hst/TEA-clean/SPARTACUS/
-  orography: false
-  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
-  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-
-create_region_masks:
-  <<: *GR
-  subreg: custom
-  target_sys: 4326
-  target_ds: ERA5
-  xy_name: lon,lat
-  shpfile: /data/users/hst/cdrDPS/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
-  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    statpath: &statpath /home/wegnet/results/TEA_indicators_test/static/
+    maskpath: /home/wegnet/results/TEA_indicators_test/
+    mask_sub: masks/
+    result_path: &result_path /home/wegnet/results/TEA_indicators_test/
 
 create_static_files:
   <<: *GR
@@ -60,8 +41,7 @@ create_static_files:
   <<: *DATA
   <<: *PATHS
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /home/wegnet/results/TEA_indicators_test/static/
+  outpath: *statpath
 
 calc_TEA:
   <<: *GR
@@ -69,15 +49,13 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /home/wegnet/results/TEA_indicators_test/
+  outpath: *result_path
   recalc_daily: true
   decadal: true
   spreads: false
   decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
-  save_old: false
 
 calc_station_TEA:
   <<: *TIME
@@ -85,22 +63,3 @@ calc_station_TEA:
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /home/wegnet/results/TEA_indicators/station_indices/
-
-calc_amplification_factors:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/paper_data/amplification/
-
-calc_AGR_vars:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
-  outpath: /home/wegnet/results/TEA_indicators/
-  spreads: true
