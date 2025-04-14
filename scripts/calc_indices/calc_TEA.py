@@ -278,7 +278,6 @@ def calc_dbv_indicators(start, end, threshold, opts, area_grid=None, mask=None):
 
 
 def calc_tea_indicators_agr(opts):
-    # TODO: make AGR code optional and not dependent on ERA5 or GR size
     # TODO: run only last step as AGR, all other code should be the same?
     # load static files
     gr_grid_mask = None
