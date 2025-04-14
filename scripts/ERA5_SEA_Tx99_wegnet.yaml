@@ -23,9 +23,9 @@ common_params:
     ref_period: 1961-1990
     cc_period: 2010-2024
   dataset: &DATA
-    dataset: SPARTACUS
+    dataset: ERA5
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
@@ -58,7 +58,7 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: /home/wegnet/results/TEA_indicators_test/
-  recalc_daily: true
+  recalc_daily: false
   decadal: true
   spreads: false
   decadal_only: false

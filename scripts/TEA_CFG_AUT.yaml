@@ -25,7 +25,7 @@ common_params:
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/v1.5/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
@@ -49,7 +49,7 @@ create_static_files:
   <<: *PATHS
   <<: *TIME
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/v1.5/
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: *statpath
 
 calc_TEA:
