@@ -97,13 +97,16 @@ def calc_percentiles(opts, threshold_min=None):
 
     # smooth SPARTACUS precip percentiles (for each grid point calculate the average of all grid
     # points within the given radius)
-    radius = opts.smoothing
+    if 'smoothing' in opts:
+        radius = opts.smoothing
+    else:
+        radius = 0
 
     if radius > 0:
         percent_smooth = smooth_data(percent, radius)
         percent = percent_smooth
     
-    percent = percent.drop('quantile')
+    percent = percent.drop_vars('quantile')
     
     return percent
 
@@ -146,15 +149,7 @@ def run():
 
     # calculate thresholds
     if opts.threshold_type == 'abs':
-        # TODO: get rid of this
-        thr_grid = xr.full_like(masks['nw_mask'], opts.threshold)
-        thr_grid = thr_grid.where(masks['lt1500_mask'] == 1)
-        if opts.agr:
-            thr_grid = thr_grid
-        else:
-            thr_grid = thr_grid * masks['mask']
-        thr_grid = thr_grid.rename('threshold')
-        thr_grid.attrs = {'units': opts.unit, 'abs_threshold': f'{opts.threshold}{opts.unit}'}
+        thr_grid = None
     else:
         print('Calculating percentiles...')
         if opts.precip:
@@ -173,7 +168,7 @@ def run():
         
         # apply GR mask
         if not opts.full_region:
-            if 'ERA' in opts.dataset and opts.region != 'EUR' and opts.agr:
+            if 'ERA' in opts.dataset and opts.region != 'EUR' and 'agr' in opts:
                 mask = masks['lt1500_mask_EUR']
             else:
                 mask = masks['lt1500_mask'] * masks['mask']
@@ -187,7 +182,10 @@ def run():
             thr_grid = thr_grid.where(mask > 0)
         
     # combine to single dataset
-    ds_out = xr.merge([area, gr_size, thr_grid], join='left')
+    if thr_grid is not None:
+        ds_out = xr.merge([area, gr_size, thr_grid], join='left')
+    else:
+        ds_out = xr.merge([area, gr_size], join='left')
     del ds_out.attrs['units']
     ds_out = create_history_from_cfg(cfg_params=opts, ds=ds_out)
 
