@@ -138,13 +138,34 @@ def calc_ctp_indicators(tea, opts, start, end):
     save_ctp_output(opts=opts, tea=tea, start=start, end=end)
 
 
+def getopts():
+    """
+    get arguments
+    :return: command line parameters
+    """
+    
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--config-file', '-cf',
+                        dest='config_file',
+                        type=str,
+                        default='../TEA_CFG.yaml',
+                        help='TEA configuration file (default: TEA_CFG.yaml)')
+    
+    myopts = parser.parse_args()
+    
+    return myopts
+
+
 def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
     
+    cmd_opts = getopts()
+    
     # load CFG parameter
-    opts = load_opts(fname=__file__)
+    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
     
     if 'agr' in opts:
         calc_tea_indicators_agr(opts)
