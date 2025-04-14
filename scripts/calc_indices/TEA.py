@@ -224,6 +224,8 @@ class TEAIndicators:
                 continue
             dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
             dteec[:, iy, :] = dteec_row
+        if self.mask is not None and self.apply_mask:
+            dteec = dteec.where(self.mask > 0)
         dteec.attrs = get_attrs(vname='DTEEC')
         self.daily_results['DTEEC'] = dteec
     
@@ -439,7 +441,11 @@ class TEAIndicators:
         if 'DTEEC' in self._CTP_resample_sum:
             # # process grid data
             ef = self._CTP_resample_sum.DTEEC
+            event_count = self._CTP_resample_sum.DTEC
             ef = ef.where(ef.notnull(), 0)
+            # filter out nan values (masked cells)
+            ef = ef.where(event_count.notnull())
+            
             ef.attrs = get_attrs(vname='EF')
             self.CTP_results['EF'] = ef
             
@@ -1291,7 +1297,7 @@ class TEAIndicators:
                                                                in var])
         self._filter_CTP()
         self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
-        self._CTP_resample_sum = self._CTP_resampler.sum('time')
+        self._CTP_resample_sum = self._CTP_resampler.sum('time', skipna=False)
         
         # dask does not support median for resampling so resample only what is necessary
         self._CTP_resample_median = xr.Dataset()
@@ -1301,7 +1307,7 @@ class TEAIndicators:
                 # equation 19_1 and equation 19_3
                 daily_results_gt0 = self._daily_results_filtered[var].where(self._daily_results_filtered[var] > 0)
                 resampler = daily_results_gt0.resample(time=self.CTP_freqs[self.CTP])
-                self._CTP_resample_median[var] = resampler.median('time')
+                self._CTP_resample_median[var] = resampler.median('time', skipna=False)
         if self.CTP in self._overlap_ctps:
             # remove first and last year
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
