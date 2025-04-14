@@ -1,6 +1,6 @@
 common_params:
   GeoRegion: &GR
-    region: AUT
+    region: SEA
     # use full data without land, border, and altitude masks
     full_region: false
     gr_type: polygon
@@ -25,7 +25,7 @@ common_params:
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/v1.5/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
