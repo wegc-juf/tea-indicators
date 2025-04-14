@@ -14,11 +14,12 @@ from scripts.general_stuff.check_CFG import check_config
 from .TEA_logger import logger
 
 
-def load_opts(fname):
+def load_opts(fname, config_file='../TEA_CFG.yaml'):
     """
     load parameters from CFG file and put them into a Namespace object
     Args:
         fname: name of executed script
+        config_file: path to CFG file
 
     Returns:
         opts: CFG parameter
@@ -26,7 +27,7 @@ def load_opts(fname):
     """
 
     fname = fname.split('/')[-1].split('.py')[0]
-    with open('../TEA_CFG.yaml', 'r') as stream:
+    with open(config_file, 'r') as stream:
         opts = yaml.safe_load(stream)
         opts = opts[fname]
         opts = check_config(opts_dict=opts)
