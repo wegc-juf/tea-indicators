@@ -58,7 +58,8 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: /home/wegnet/results/TEA_indicators_test/
-  recalc_daily: false
+  recalc_threshold: false
+  recalc_daily: true
   decadal: true
   spreads: false
   decadal_only: false

@@ -151,20 +151,7 @@ def run():
     if opts.threshold_type == 'abs':
         thr_grid = None
     else:
-        print('Calculating percentiles...')
-        if opts.precip:
-            # TODO: get rid of precip option and use parameter instead
-            threshold_min = 0.99
-        else:
-            threshold_min = None
-        thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min)
-        
-        vname = f'{opts.parameter}-p{opts.threshold}ANN Ref1961-1990'
-        if opts.precip:
-            vname = f'{opts.parameter}-p{opts.threshold}WAS WetDOYs > 1 mm Ref1961-1990'
-        
-        thr_grid = thr_grid.rename('threshold')
-        thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}p'}
+        thr_grid = create_threshold_grid(opts)
         
         # apply GR mask
         if not opts.full_region:
@@ -201,6 +188,31 @@ def run():
         outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
 
     ds_out.to_netcdf(outname)
+
+
+def create_threshold_grid(opts):
+    """
+    create threshold grid for the given parameter and reference period
+    Args:
+        opts: options
+
+    Returns:
+        thr_grid: threshold grid
+    """
+    if opts.precip:
+        threshold_min = 0.99
+    else:
+        threshold_min = None
+    thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min)
+    thr_grid = thr_grid.rename('threshold')
+    
+    if opts.precip:
+        ref_str = 'WetDays > 1 mm Ref'
+    else:
+        ref_str = 'Ref'
+    vname = f'{opts.parameter}-p{opts.threshold}{opts.period} {ref_str}{opts.ref_period[0]}-{opts.ref_period[1]}'
+    thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}'}
+    return thr_grid
 
 
 if __name__ == '__main__':

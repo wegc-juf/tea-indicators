@@ -26,6 +26,7 @@ from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
 from scripts.calc_indices.TEA_AGR import TEAAgr
+from scripts.data_prep.create_static_files import create_threshold_grid
 
 
 def load_static_files(opts, large_gr=False):
@@ -186,14 +187,25 @@ def calc_tea_indicators(opts):
         # TODO split area grid, threshold grid and mask grid
         # load static files
         masks, static = load_static_files(opts=opts)
-        threshold_grid = static['threshold']
         area_grid = static['area_grid']
         # create mask array
         mask = masks['lt1500_mask'] * masks['mask']
     else:
-        threshold_grid = opts.threshold
         area_grid = None
         mask = None
+    
+    if opts.threshold_type == 'abs':
+        threshold_grid = opts.threshold
+    else:
+        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.dataset}.nc'
+        if opts.recalc_threshold or not os.path.exists(threshold_file):
+            logger.info('Calculating percentiles...')
+            threshold_grid = create_threshold_grid(opts=opts)
+            logger.info(f'Saving threshold grid to {threshold_file}')
+            threshold_grid.to_netcdf(threshold_file)
+        else:
+            logger.info(f'Loading threshold grid from {threshold_file}')
+            threshold_grid = xr.open_dataset(threshold_file).threshold
 
     if not opts.decadal_only:
         # calculate annual climatic time period indicators
