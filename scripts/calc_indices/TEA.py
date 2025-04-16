@@ -42,6 +42,9 @@ class TEAIndicators:
             threshold = xr.full_like(input_data_grid[0], threshold)
         self.threshold_grid = threshold
         
+        self.mask = mask
+        self.apply_mask = apply_mask
+        
         self.area_grid = None
         if area_grid is None:
             if input_data_grid is not None:
@@ -50,9 +53,7 @@ class TEAIndicators:
                 self.area_grid = xr.ones_like(self.threshold_grid)
         else:
             self.area_grid = area_grid
-            
-        self.mask = mask
-        self.apply_mask = apply_mask
+        
         self.input_data_grid = None
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
@@ -255,6 +256,7 @@ class TEAIndicators:
         dtea = dtec * self.area_grid
         dtea.attrs = get_attrs(vname='DTEA')
         self.daily_results['DTEA'] = dtea
+        self.daily_results['area_grid'] = self.area_grid
         
     def _calc_DTEA_GR(self, relative=False):
         """
@@ -366,6 +368,7 @@ class TEAIndicators:
         load all variables from filepath
         """
         self.daily_results = xr.open_dataset(filepath)
+        self.area_grid = self.daily_results.area_grid
         self.unit = self.daily_results.DTEM.attrs['units']
         
     def set_daily_results(self, daily_results):
@@ -1313,7 +1316,7 @@ class TEAIndicators:
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
             self._CTP_resample_median = self._CTP_resample_median.isel(time=slice(1, -1))
     
-    def _create_area_grid(self, input_data_grid):
+    def _create_area_grid_lat_lon(self, input_data_grid):
         """
         create area grid for grid cells out of lat lon info
         """
@@ -1330,6 +1333,41 @@ class TEAIndicators:
         # create area size grid (in areals)
         self.area_grid = lon_size * (lat_size * xr.ones_like(input_data_grid.lon)) / 100
     
+    def _create_area_grid_regular_cartesian(self, input_data_grid):
+        """
+        create area grid for regular cartesian grid
+        Args:
+            input_data_grid:
+
+        Returns:
+
+        """
+        area_grid = xr.full_like(input_data_grid[0, :, :], 1)
+        # get size of one grid cell (in km2)
+        x_size = abs(input_data_grid.x[1] - input_data_grid.x[0]) / 1000
+        y_size = abs(input_data_grid.y[1] - input_data_grid.y[0]) / 1000
+        cell_area = x_size * y_size
+        
+        # create area size grid (in areals)
+        area_grid = area_grid * cell_area / 100
+        self.area_grid = area_grid
+    
+    def _create_area_grid(self, input_data_grid):
+        """
+        create area grid for grid cells
+        """
+        if 'lat' in input_data_grid.dims and 'lon' in input_data_grid.dims:
+            # calculate area grid out of lat lon info
+            self._create_area_grid_lat_lon(input_data_grid)
+        elif 'x' in input_data_grid.dims and 'y' in input_data_grid.dims:
+            # calculate equal area grid
+            self._create_area_grid_regular_cartesian(input_data_grid)
+        else:
+            raise ValueError("Input data grid must contain lat lon or x y dimensions")
+        
+        if self.mask is not None and self.apply_mask:
+            self.area_grid = self.area_grid * self.mask
+
     # ### general functions ###
     def create_history(self, history, result_type):
         """

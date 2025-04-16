@@ -184,14 +184,12 @@ def calc_tea_indicators(opts):
 
     """
     if 'statpath' in opts or 'maskpath' in opts:
-        # TODO split area grid, threshold grid and mask grid
+        # TODO: split area grid, threshold grid and mask grid
         # load static files
         masks, static = load_static_files(opts=opts)
-        area_grid = static['area_grid']
         # create mask array
         mask = masks['lt1500_mask'] * masks['mask']
     else:
-        area_grid = None
         mask = None
     
     if opts.threshold_type == 'abs':
@@ -214,8 +212,7 @@ def calc_tea_indicators(opts):
         
         for pstart, pend in zip(starts, ends):
             # calculate daily basis variables
-            tea = calc_dbv_indicators(area_grid=area_grid, mask=mask, opts=opts, start=pstart, end=pend,
-                                      threshold=threshold_grid)
+            tea = calc_dbv_indicators(mask=mask, opts=opts, start=pstart, end=pend, threshold=threshold_grid)
             
             # calculate CTP indicators
             calc_ctp_indicators(tea=tea, opts=opts, start=pstart, end=pend)
@@ -240,7 +237,7 @@ def calc_tea_indicators(opts):
         calc_amplification_factors(opts, tea, outpath_ampl)
 
 
-def calc_dbv_indicators(start, end, threshold, opts, area_grid=None, mask=None):
+def calc_dbv_indicators(start, end, threshold, opts, mask=None):
     """
     calculate daily basis variables for a given time period
     Args:
@@ -270,10 +267,9 @@ def calc_dbv_indicators(start, end, threshold, opts, area_grid=None, mask=None):
         
         # computation of daily basis variables (Methods chapter 3)
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
-        tea = TEAIndicators(input_data_grid=data, threshold=threshold, area_grid=area_grid, mask=mask,
+        tea = TEAIndicators(input_data_grid=data, threshold=threshold, mask=mask,
                             # set min area to < 1 grid cell area so that all exceedance days are considered
-                            min_area=0.0001,
-                            low_extreme=opts.low_extreme, unit=opts.unit)
+                            min_area=0.0001, low_extreme=opts.low_extreme, unit=opts.unit)
         
         tea.calc_daily_basis_vars()
         
