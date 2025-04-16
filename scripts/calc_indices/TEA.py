@@ -825,7 +825,7 @@ class TEAIndicators:
         load all CTP results from filepath
         """
         logger.info(f"Loading CTP results from {filepath}")
-        self.CTP_results = xr.open_mfdataset(filepath, combine='nested')
+        self.CTP_results = xr.open_mfdataset(filepath)
         # TODO: optimize code in TEA._calc_spread_estimators
         if not use_dask:
             # avoid using dask when calculating spreads
