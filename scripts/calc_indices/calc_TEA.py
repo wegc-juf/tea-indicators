@@ -67,6 +67,22 @@ def load_static_files(opts, large_gr=False):
     return masks, static
 
 
+def load_mask_file(opts):
+    """
+    load GR mask
+    Args:
+        opts: options
+
+    Returns:
+        mask: GR mask (ds)
+
+    """
+    
+    mask = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc')
+    
+    return mask
+
+
 def compare_to_ctp_ref(tea, ctp_filename_ref):
     """
     compare results to reference file
@@ -178,20 +194,16 @@ def calc_tea_indicators(opts):
     """
     calculate TEA indicators for normal GeoRegion
     Args:
-        opts:
-
-    Returns:
-
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
     """
-    if 'statpath' in opts or 'maskpath' in opts:
-        # TODO: split area grid, threshold grid and mask grid
-        # load static files
-        masks, static = load_static_files(opts=opts)
-        # create mask array
-        mask = masks['lt1500_mask'] * masks['mask']
+    
+    # load mask if needed
+    if 'maskpath' in opts:
+        mask = load_mask_file(opts)
     else:
         mask = None
     
+    # load threshold grid or set threshold value
     if opts.threshold_type == 'abs':
         threshold_grid = opts.threshold
     else:
@@ -204,9 +216,9 @@ def calc_tea_indicators(opts):
         else:
             logger.info(f'Loading threshold grid from {threshold_file}')
             threshold_grid = xr.open_dataset(threshold_file).threshold
-
+    
+    # calculate annual climatic time period indicators
     if not opts.decadal_only:
-        # calculate annual climatic time period indicators
         starts = np.arange(opts.start, opts.end, 10)
         ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
         
@@ -219,6 +231,7 @@ def calc_tea_indicators(opts):
             
             gc.collect()
             
+    # calculate decadal indicators and amplification factors
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         tea = TEAIndicators()
         agr_str = ''
