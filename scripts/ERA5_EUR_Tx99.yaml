@@ -43,9 +43,9 @@ regrid_SPARTACUS_to_WEGNext:
 
 create_region_masks:
   <<: *GR
+  <<: *DATA
   subreg: custom
   target_sys: 4326
-  target_ds: ERA5
   xy_name: lon,lat
   shpfile: /data/users/hst/cdrDPS/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc

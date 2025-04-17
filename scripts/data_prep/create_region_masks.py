@@ -61,9 +61,9 @@ def create_cell_polygons(opts, xvals, yvals, offset):
     if opts.subreg:
         out_region = opts.subreg
 
-    path = Path(f'{opts.outpath}polygons/{out_region}_EPSG{opts.target_sys}_{opts.target_ds}/')
+    path = Path(f'{opts.outpath}polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
     path.mkdir(parents=True, exist_ok=True)
-    fname = f'{path}/{out_region}_cells_EPSG{opts.target_sys}_{opts.target_ds}.shp'
+    fname = f'{path}/{out_region}_cells_EPSG{opts.target_sys}_{opts.dataset}.shp'
 
     try:
         gdf = gpd.read_file(fname)
@@ -121,7 +121,7 @@ def create_lt1500m_mask(opts, da_nwmask):
 
     # TODO: needs adjusting if worldwide applicable
     lt1500_eur = None
-    if 'ERA5' in opts.target_ds:
+    if 'ERA5' in opts.dataset:
         lt1500_eur = orog.where(orog < 1500)
         lt1500_eur = lt1500_eur.where(lt1500_eur.isnull(), 1)
         lt1500_eur = lt1500_eur.rename('lt1500_mask_EUR')
@@ -142,8 +142,8 @@ def run_sea(opts):
     """
 
     try:
-        aut = xr.open_dataset(f'{opts.outpath}AUT_masks_{opts.target_ds}.nc')
-        sar = xr.open_dataset(f'{opts.outpath}SAR_masks_{opts.target_ds}.nc')
+        aut = xr.open_dataset(f'{opts.outpath}AUT_masks_{opts.dataset}.nc')
+        sar = xr.open_dataset(f'{opts.outpath}SAR_masks_{opts.dataset}.nc')
     except FileNotFoundError:
         raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
 
@@ -160,7 +160,7 @@ def run_sea(opts):
     lt1500_mask.attrs = {'long_name': 'below 1500m mask',
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
-    if 'ERA5' in opts.target_ds:
+    if 'ERA5' in opts.dataset:
         lsm = aut['LSM_EUR'].copy()
         lt1500_eur = aut['lt1500_mask_EUR'].copy()
         ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
@@ -168,7 +168,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
+    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.dataset}.nc')
 
 
 def prep_lsm(opts):
@@ -186,7 +186,7 @@ def prep_lsm(opts):
     data = data.altitude
 
     step = 0.25
-    if opts.target_ds == 'ERA5Land':
+    if opts.dataset == 'ERA5Land':
         step = 0.1
 
     lsm_e = lsm_raw.sel(longitude=slice(180 + step, 360))
@@ -213,7 +213,7 @@ def run_eur(opts):
     Returns:
 
     """
-    if opts.target_ds != 'ERA5':
+    if opts.dataset != 'ERA5':
         raise AttributeError('EUR mask can only be created for ERA5 data.')
 
     # load LSM and only keep cells with more than 50% land in them
@@ -245,7 +245,7 @@ def run_eur(opts):
     ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.target_ds}.nc')
+    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.dataset}.nc')
 
 
 def find_closest(coords, corner_val, direction):
@@ -284,7 +284,7 @@ def run_custom_gr(opts):
         sw_coords = [center_coords[0] - float(opts.we_len), center_coords[1] - float(opts.ns_len)]
         ne_coords = [center_coords[0] + float(opts.we_len), center_coords[1] + float(opts.ns_len)]
 
-    if 'ERA5' in opts.target_ds:
+    if 'ERA5' in opts.dataset:
         xn, xx = sw_coords[0], ne_coords[0]
         yn, yx = ne_coords[1], sw_coords[1]
         yidxn, yidxx = -1, 0
@@ -319,7 +319,7 @@ def run_custom_gr(opts):
         da_mask.attrs['long_name'] = 'non weighted mask'
     else:
         # Find the closest x and y for the corners and calculate fractions of cell area
-        if 'ERA5' in opts.target_ds:
+        if 'ERA5' in opts.dataset:
             closest_sw_y = find_closest(dummy[y][::-1], yn, direction=1)
             closest_ne_y = find_closest(dummy[y][::-1], yx, direction=-1)
             s_frac = (closest_sw_y - yn) / dy
@@ -350,7 +350,7 @@ def run_custom_gr(opts):
 
     lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
-    if 'ERA5' in opts.target_ds:
+    if 'ERA5' in opts.dataset:
         lsm = prep_lsm(opts=opts)
         lsm = lsm.where(lsm > 0.5)
         lsm = lsm.rename('LSM_EUR')
@@ -362,7 +362,7 @@ def run_custom_gr(opts):
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
-    ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
+    ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.dataset}.nc')
 
 
 def run():
@@ -389,7 +389,7 @@ def run():
 
         # Get grid spacing
         # Coordinates of ERA5(Land) have some precision trouble
-        if opts.target_ds in ['ERA5', 'ERA5Land']:
+        if opts.dataset in ['ERA5', 'ERA5Land']:
             dx = set(abs(np.round(xvals[1:].values - xvals[:-1].values, 2)))
             dy = set(abs(np.round(yvals[1:].values - yvals[:-1].values, 2)))
         else:
@@ -447,7 +447,7 @@ def run():
         lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
         # add EUR LSM if ERA5(Land) data is used
-        if 'ERA5' in opts.target_ds:
+        if 'ERA5' in opts.dataset:
             lsm = prep_lsm(opts=opts)
             lsm = lsm.where(lsm > 0.5)
             lsm = lsm.rename('LSM_EUR')
@@ -462,7 +462,11 @@ def run():
         if opts.subreg:
             out_region = opts.subreg
 
-        ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.target_ds}.nc')
+        ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.dataset}.nc')
+        
+        # TODO: create simple mask without different variables
+        simple_mask = lt1500_mask * da_mask
+        simple_mask.to_netcdf(f'{opts.outpath}{out_region}_mask_{opts.dataset}.nc')
 
 
 if __name__ == '__main__':

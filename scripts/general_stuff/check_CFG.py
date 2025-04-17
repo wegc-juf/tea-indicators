@@ -84,8 +84,7 @@ def check_config(opts_dict):
                          'recalc_daily', 'orography',
                          'recalc_decadal', 'compare_to_ref', 'save_old']:
                 bools(param=param, val=opts_dict[param])
-            if param in ['region', 'parameter', 'unit', 'subreg', 'target_ds', 'dataset',
-                         'xy_name']:
+            if param in ['region', 'parameter', 'unit', 'subreg', 'dataset', 'xy_name']:
                 strs(param=param, val=opts_dict[param])
             if param == 'threshold':
                 float_1pcd(opts_dict[param])

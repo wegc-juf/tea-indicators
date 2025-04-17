@@ -32,15 +32,13 @@ common_params:
 
 create_region_masks:
   <<: *GR
-  subreg: custom
+  <<: *PATHS
+  <<: *DATA
+  # subreg: custom
   target_sys: 4326
-  target_ds: ERA5
   xy_name: lon,lat
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
-  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+  # orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
 
 create_static_files:
   <<: *GR
@@ -58,7 +56,8 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: /home/wegnet/results/TEA_indicators_test/
-  recalc_daily: true
+  recalc_threshold: false
+  recalc_daily: false
   decadal: true
   spreads: false
   decadal_only: false
