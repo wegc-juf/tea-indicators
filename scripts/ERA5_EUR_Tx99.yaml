@@ -45,7 +45,6 @@ create_region_masks:
   <<: *GR
   <<: *DATA
   subreg: custom
-  xy_name: lon,lat
   shpfile: /data/users/hst/cdrDPS/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc

@@ -37,7 +37,6 @@ create_region_masks:
   <<: *GR
   <<: *DATA
   subreg: null
-  xy_name: x,y
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc

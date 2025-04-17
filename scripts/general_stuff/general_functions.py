@@ -49,6 +49,13 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.target_sys = 4326
         else:
             raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
+    if 'xy_name' not in opts:
+        if opts.dataset == 'SPARTACUS':
+            opts.xy_name = 'x,y'
+        elif opts.dataset == 'ERA5':
+            opts.xy_name = 'lon,lat'
+        else:
+            raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
