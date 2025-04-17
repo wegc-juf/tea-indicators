@@ -61,7 +61,7 @@ def create_cell_polygons(opts, xvals, yvals, offset):
     if opts.subreg:
         out_region = opts.subreg
 
-    path = Path(f'{opts.outpath}polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
+    path = Path(f'{opts.maskpath}/{opts.mask_sub}/polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
     path.mkdir(parents=True, exist_ok=True)
     fname = f'{path}/{out_region}_cells_EPSG{opts.target_sys}_{opts.dataset}.shp'
 
@@ -168,7 +168,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.dataset}.nc')
+    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
 
 
 def prep_lsm(opts):
@@ -245,7 +245,7 @@ def run_eur(opts):
     ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    ds.to_netcdf(f'{opts.outpath}{opts.region}_masks_{opts.dataset}.nc')
+    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
 
 
 def find_closest(coords, corner_val, direction):
@@ -362,7 +362,7 @@ def run_custom_gr(opts):
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
-    ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.dataset}.nc')
+    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
 
 
 def run():
@@ -462,11 +462,11 @@ def run():
         if opts.subreg:
             out_region = opts.subreg
 
-        ds.to_netcdf(f'{opts.outpath}{out_region}_masks_{opts.dataset}.nc')
+        ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
         
         # TODO: create simple mask without different variables
         simple_mask = lt1500_mask * da_mask
-        simple_mask.to_netcdf(f'{opts.outpath}{out_region}_mask_{opts.dataset}.nc')
+        simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
 
 
 if __name__ == '__main__':
