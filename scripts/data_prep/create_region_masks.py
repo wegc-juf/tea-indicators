@@ -170,7 +170,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
+    save_output(ds, opts)
 
 
 def prep_lsm(opts):
@@ -247,7 +247,7 @@ def run_eur(opts):
     ds = xr.merge([mask, nwmask, lt1500_mask])
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
+    save_output(ds, opts)
 
 
 def find_closest(coords, corner_val, direction):
@@ -364,7 +364,7 @@ def run_custom_gr(opts):
     ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
-    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
+    save_output(ds, opts, out_region)
 
 
 def run():
@@ -465,12 +465,27 @@ def run():
         out_region = opts.region
         if opts.subreg:
             out_region = opts.subreg
-
-        ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
         
-        simple_mask = lt1500_mask * da_mask
-        simple_mask.name = 'mask'
-        simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
+        save_output(ds, opts, out_region)
+
+
+def save_output(ds, opts, out_region=None):
+    """
+    save output to netcdf files
+    Args:
+        ds: dataset
+        opts: options
+        out_region: region acronym (default: opts.region)
+
+    Returns:
+
+    """
+    if out_region is None:
+        out_region = opts.region
+    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
+    simple_mask = ds.lt1500_mask * ds.mask
+    simple_mask.name = 'mask'
+    simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
 
 
 if __name__ == '__main__':
