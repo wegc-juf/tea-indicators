@@ -291,7 +291,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
-        tea = TEAIndicators(area_grid=area_grid)
+        tea = TEAIndicators()
         logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
                     'set --recalc-daily.')
         tea.load_daily_results(dbv_filename)
