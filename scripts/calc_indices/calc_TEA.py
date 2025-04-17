@@ -31,6 +31,7 @@ from scripts.data_prep.create_static_files import create_threshold_grid
 
 def load_static_files(opts, large_gr=False):
     """
+    # TODO: make this function obsolete
     load GR masks and static file
     Args:
         opts: CLI parameter
@@ -78,9 +79,9 @@ def load_mask_file(opts):
 
     """
     
-    mask = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc')
+    mask_file = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc')
     
-    return mask
+    return mask_file.mask
 
 
 def compare_to_ctp_ref(tea, ctp_filename_ref):
