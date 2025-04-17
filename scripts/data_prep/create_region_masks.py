@@ -464,8 +464,8 @@ def run():
 
         ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
         
-        # TODO: create simple mask without different variables
         simple_mask = lt1500_mask * da_mask
+        simple_mask.name = 'mask'
         simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
 
 
