@@ -83,23 +83,3 @@ calc_station_TEA:
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /data/users/hst/TEA-clean/TEA/paper_data/station_indices/
-
-calc_amplification_factors:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
-  outpath: /home/wegnet/results/TEA_indicators/amplification/
-
-calc_AGR_vars:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/
-  outpath: /home/wegnet/results/TEA_indicators/
-  agr: AUT
-  spreads: false

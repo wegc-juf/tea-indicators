@@ -79,19 +79,3 @@
 | *inpath*  | Path of input directory.                                                                               | path | /data/users/hst/cdrDPS/station_data/  |
 | *outpath* | Path of output directory.                                                                              | path | /data/users/hst/TEA-clean/TEA/        |
 | *station* | Name of station; Graz, Innsbruck, Wien, Salzburg, BadGleichenberg, Kremsmuenster, or Deutschlandsberg. | str  | Graz                                  |
-
-
-## calc_amplification_factors
-| NAME             | DESCRIPTION               | TYPE  | DEFAULT                                                 |
-|------------------|---------------------------|-------|---------------------------------------------------------|
-| *inpath*         | Path of input directory.  | path  | /data/users/hst/TEA-clean/TEA/dec_indicator_variables/  |
-| *outpath*        | Path of output directory. | path  | /data/users/hst/TEA-clean/TEA/                          |
-
-
-## calc_AGR_vars
-| NAME       | DESCRIPTION                                                                          | TYPE | DEFAULT                                                  |
-|------------|--------------------------------------------------------------------------------------|------|----------------------------------------------------------|
-| *inpath*   | Path of input directory.                                                             | path | /data/users/hst/TEA-clean/TEA/dec_indicator_variables/   |
-| *outpath*  | Path of output directory.                                                            | path | /data/users/hst/TEA-clean/TEA/                           |
-| *agr*      | Name of aggregate GeoRegion; EUR, S-EUR, C-EUR, N-EUR, AUT, or ISO2-code of country. | str  | EUR                                                      |
-| *spreads*  | Set if spread estimators of decadal TEA indicators should also be calculated.        | bool | false                                                    |

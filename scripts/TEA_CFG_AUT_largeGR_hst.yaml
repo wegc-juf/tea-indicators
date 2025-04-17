@@ -78,30 +78,3 @@ calc_TEA:
   recalc_decadal: true
   compare_to_ref: false
   save_old: true
-
-calc_station_TEA:
-  <<: *TIME
-  <<: *PARAM
-  station: Graz
-  inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /home/wegnet/results/TEA_indicators/station_indices/
-
-calc_amplification_factors:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/code_review/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/code_review/
-
-calc_AGR_vars:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/code_review/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/code_review/
-  agr: AUT
-  spreads: false
