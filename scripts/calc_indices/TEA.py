@@ -1310,7 +1310,7 @@ class TEAIndicators:
                 # equation 19_1 and equation 19_3
                 daily_results_gt0 = self._daily_results_filtered[var].where(self._daily_results_filtered[var] > 0)
                 resampler = daily_results_gt0.resample(time=self.CTP_freqs[self.CTP])
-                self._CTP_resample_median[var] = resampler.median('time', skipna=False)
+                self._CTP_resample_median[var] = resampler.median('time', skipna=True)
         if self.CTP in self._overlap_ctps:
             # remove first and last year
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
