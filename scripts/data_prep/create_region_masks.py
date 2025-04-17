@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 create region masks for TEA indicator calculation
 author: hst
@@ -11,6 +12,7 @@ from tqdm import trange
 import xarray as xr
 
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_data
+from scripts.calc_indices.calc_TEA import getopts
 
 
 def load_shp(opts):
@@ -366,8 +368,10 @@ def run_custom_gr(opts):
 
 
 def run():
+    cmd_opts = getopts()
+    
     # load CFG parameter
-    opts = load_opts(fname=__file__)
+    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
 
     if opts.gr_type != 'polygon':
         run_custom_gr(opts=opts)
