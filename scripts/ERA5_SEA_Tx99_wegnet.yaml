@@ -3,12 +3,6 @@ common_params:
     region: SEA
     # use full data without land, border, and altitude masks
     full_region: false
-    gr_type: polygon
-    sw_corner: null
-    ne_corner: null
-    center: null
-    we_len: null
-    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -36,6 +30,7 @@ create_region_masks:
   <<: *DATA
   <<: *PARAM
   <<: *TIME
+  gr_type: polygon
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
