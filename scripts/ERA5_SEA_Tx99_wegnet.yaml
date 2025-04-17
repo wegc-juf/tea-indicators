@@ -32,13 +32,13 @@ common_params:
 
 create_region_masks:
   <<: *GR
+  <<: *PATHS
   <<: *DATA
-  subreg: custom
+  <<: *PARAM
+  <<: *TIME
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
 create_static_files:
   <<: *GR
