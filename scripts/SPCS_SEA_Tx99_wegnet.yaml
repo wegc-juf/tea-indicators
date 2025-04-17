@@ -24,25 +24,6 @@ common_params:
     maskpath: *statpath
     mask_sub: masks/
 
-create_region_masks:
-  <<: *GR
-  <<: *PATHS
-  <<: *DATA
-  <<: *PARAM
-  <<: *TIME
-  gr_type: polygon
-  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
-
-create_static_files:
-  <<: *GR
-  <<: *PARAM
-  <<: *DATA
-  <<: *PATHS
-  <<: *TIME
-  smoothing: 0
-  outpath: *statpath
-
 calc_TEA:
   <<: *GR
   <<: *PARAM
@@ -57,3 +38,14 @@ calc_TEA:
   decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
+
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  gr_type: polygon
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
+
