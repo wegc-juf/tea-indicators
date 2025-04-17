@@ -1,7 +1,6 @@
 common_params:
   GeoRegion: &GR
     region: SEA
-    # use full data without land, border, and altitude masks
     full_region: false
   parameter: &PARAM
     parameter: Tx
@@ -37,7 +36,6 @@ calc_TEA:
   spreads: false
   decadal_only: false
   recalc_decadal: true
-  compare_to_ref: false
 
 create_region_masks:
   <<: *GR
@@ -48,4 +46,3 @@ create_region_masks:
   gr_type: polygon
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
-
