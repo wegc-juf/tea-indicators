@@ -42,6 +42,13 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
         opts.spreads = None
     if 'mask_sub' not in opts:
         opts.mask_sub = 'masks'
+    if 'target_sys' not in opts:
+        if opts.dataset == 'SPARTACUS':
+            opts.target_sys = 3416
+        elif opts.dataset == 'ERA5':
+            opts.target_sys = 4326
+        else:
+            raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
@@ -56,10 +63,11 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
         opts.param_str = param_str
         
     # convert str to int
-    ref_period = opts.ref_period.split('-')
-    opts.ref_period = (int(ref_period[0]), int(ref_period[1]))
-    cc_period = opts.cc_period.split('-')
-    opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
+    if 'ref_period' in opts:
+        ref_period = opts.ref_period.split('-')
+        opts.ref_period = (int(ref_period[0]), int(ref_period[1]))
+        cc_period = opts.cc_period.split('-')
+        opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
 
     return opts
 

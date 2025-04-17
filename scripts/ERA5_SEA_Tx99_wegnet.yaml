@@ -34,7 +34,6 @@ create_region_masks:
   <<: *GR
   <<: *DATA
   subreg: custom
-  target_sys: 4326
   xy_name: lon,lat
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
