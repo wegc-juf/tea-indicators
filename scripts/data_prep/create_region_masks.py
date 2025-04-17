@@ -10,7 +10,7 @@ from shapely.geometry import Polygon, MultiPolygon
 from tqdm import trange
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_data
 
 
 def load_shp(opts):
@@ -142,8 +142,8 @@ def run_sea(opts):
     """
 
     try:
-        aut = xr.open_dataset(f'{opts.outpath}AUT_masks_{opts.dataset}.nc')
-        sar = xr.open_dataset(f'{opts.outpath}SAR_masks_{opts.dataset}.nc')
+        aut = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/AUT_masks_{opts.dataset}.nc')
+        sar = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/SAR_masks_{opts.dataset}.nc')
     except FileNotFoundError:
         raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
 
@@ -266,11 +266,11 @@ def find_closest(coords, corner_val, direction):
 
 def run_custom_gr(opts):
     # load testfile
-    dummy = xr.open_dataset(opts.testfile)
+    template_file = get_data(opts.start, opts.start+1, opts)
     xy = opts.xy_name.split(',')
     x, y = xy[0], xy[1]
-    dx = dummy[x][1] - dummy[x][0]
-    dy = abs(dummy[y][1] - dummy[y][0])
+    dx = template_file[x][1] - template_file[x][0]
+    dy = abs(template_file[y][1] - template_file[y][0])
 
     # get corners from CFG file
     if opts.gr_type == 'corners':
@@ -294,22 +294,22 @@ def run_custom_gr(opts):
         yidxn, yidxx = 0, -1
 
     # check if corners are within grid
-    if any(xv < dummy[x][0] for xv in [xn, xx]) or any(xv > dummy[x][-1] for xv in [xn, xx]):
+    if any(xv < template_file[x][0] for xv in [xn, xx]) or any(xv > template_file[x][-1] for xv in [xn, xx]):
         raise KeyError('Passed corner(s) are outside of target grid!')
-    if any(yv < dummy[y][yidxn] for yv in [yn, yx]) or any(yv > dummy[y][yidxx] for yv in [yn, yx]):
+    if any(yv < template_file[y][yidxn] for yv in [yn, yx]) or any(yv > template_file[y][yidxx] for yv in [yn, yx]):
         raise KeyError('Passed corner(s) are outside of target grid!')
 
     # create non weighted mask array
-    nw_mask_arr = np.full((len(dummy[y]), len(dummy[x])), np.nan)
-    da_nwmask = xr.DataArray(data=nw_mask_arr, coords={y: ([y], dummy[y].data),
-                                                       x: ([x], dummy[x].data)},
+    nw_mask_arr = np.full((len(template_file[y]), len(template_file[x])), np.nan)
+    da_nwmask = xr.DataArray(data=nw_mask_arr, coords={y: ([y], template_file[y].data),
+                                                       x: ([x], template_file[x].data)},
                              attrs={'long_name': 'non weighted mask',
                                     'coordinate_sys': f'EPSG:{opts.target_sys}'},
                              name='nw_mask')
 
     # check if corners are identical with grid points on target grid
-    xvals_check = all(xv in dummy[x] for xv in [xn, xx])
-    yvals_check = all(yv in dummy[y] for yv in [yn, yx])
+    xvals_check = all(xv in template_file[x] for xv in [xn, xx])
+    yvals_check = all(yv in template_file[y] for yv in [yn, yx])
 
     # set values in non-weighted mask within GR to 1 and create weighted mask
     if xvals_check and yvals_check:
@@ -320,17 +320,17 @@ def run_custom_gr(opts):
     else:
         # Find the closest x and y for the corners and calculate fractions of cell area
         if 'ERA5' in opts.dataset:
-            closest_sw_y = find_closest(dummy[y][::-1], yn, direction=1)
-            closest_ne_y = find_closest(dummy[y][::-1], yx, direction=-1)
+            closest_sw_y = find_closest(template_file[y][::-1], yn, direction=1)
+            closest_ne_y = find_closest(template_file[y][::-1], yx, direction=-1)
             s_frac = (closest_sw_y - yn) / dy
             n_frac = (yx - closest_ne_y) / dy
         else:
-            closest_sw_y = find_closest(dummy[y], yn, direction=-1)
-            closest_ne_y = find_closest(dummy[y], yx, direction=1)
+            closest_sw_y = find_closest(template_file[y], yn, direction=-1)
+            closest_ne_y = find_closest(template_file[y], yx, direction=1)
             s_frac = (yn - closest_sw_y) / dy
             n_frac = (closest_ne_y - yx) / dy
-        closest_sw_x = find_closest(dummy[x], xn, direction=-1)
-        closest_ne_x = find_closest(dummy[x], xx, direction=1)
+        closest_sw_x = find_closest(template_file[x], xn, direction=-1)
+        closest_ne_x = find_closest(template_file[x], xx, direction=1)
         w_frac = (xn - closest_sw_x) / dx
         e_frac = (closest_ne_x - xx) / dx
 
@@ -376,8 +376,8 @@ def run():
     elif opts.region == 'EUR':
         run_eur(opts=opts)
     else:
-        # Load dummy file
-        dummy = xr.open_dataset(opts.testfile)
+        # Load template file
+        template_file = get_data(opts.start, opts.start + 1, opts)
         xy = opts.xy_name.split(',')
         x, y = xy[0], xy[1]
 
@@ -385,7 +385,7 @@ def run():
         shp = load_shp(opts=opts)
 
         # Define the cell grid
-        xvals, yvals = dummy[x], dummy[y]
+        xvals, yvals = template_file[x], template_file[y]
 
         # Get grid spacing
         # Coordinates of ERA5(Land) have some precision trouble

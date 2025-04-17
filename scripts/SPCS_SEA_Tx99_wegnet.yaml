@@ -34,6 +34,8 @@ create_region_masks:
   <<: *GR
   <<: *PATHS
   <<: *DATA
+  <<: *PARAM
+  <<: *TIME
   # subreg: custom
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   # orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
