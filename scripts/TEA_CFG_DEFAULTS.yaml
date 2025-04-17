@@ -20,7 +20,7 @@ common_params:
     dataset: SPARTACUS
   paths: &PATHS
     data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-    statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/
     mask_sub: masks/
 
