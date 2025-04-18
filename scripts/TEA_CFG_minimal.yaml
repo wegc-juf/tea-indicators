@@ -20,6 +20,7 @@ common_params:
   paths: &PATHS
     data_path: ../examples/ERA5_Tx_1956-2024_CH.nc
     outpath: ../examples/
+
 calc_TEA:
   <<: *GR
   <<: *PARAM
@@ -29,5 +30,5 @@ calc_TEA:
   recalc_daily: true
   decadal: true
   decadal_only: false
-  spreads: false
+  spreads: true
   recalc_decadal: true
