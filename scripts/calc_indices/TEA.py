@@ -1137,8 +1137,8 @@ class TEAIndicators:
         Args:
             ref_period: reference period: tuple(start year, end year). Default: (1961, 1990)
             cc_period: current climate period: tuple(start year, end year). Default: (2008, 2022)
-            min_duration: minimum cumulative event duration over reference period in days. Default: 1. To get
-            statistically robust results set to at least 3 days
+            min_duration: minimum cumulative event duration (10-yr average) during reference period in days. Default: 0.
+             To get statistically robust results set to at least 3 days
         """
         # TODO: write ref and cc period to output file
         self.ref_period = ref_period

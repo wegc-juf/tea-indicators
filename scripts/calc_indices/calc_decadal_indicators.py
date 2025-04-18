@@ -147,7 +147,12 @@ def calc_amplification_factors(opts, tea, outpath):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         logger.info('Calculating amplification factors.')
-        tea.calc_amplification_factors(ref_period=opts.ref_period, cc_period=opts.cc_period)
+        if opts.threshold_type == 'abs':
+            # set min duration to 1 day
+            min_duration = 1
+        else:
+            min_duration = 0
+        tea.calc_amplification_factors(ref_period=opts.ref_period, cc_period=opts.cc_period, min_duration=min_duration)
     
     path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
     path.mkdir(parents=True, exist_ok=True)
