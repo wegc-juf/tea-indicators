@@ -270,6 +270,25 @@ def find_closest(coords, corner_val, direction):
                 return coords[i]
 
 
+def save_output(ds, opts, out_region=None):
+    """
+    save output to netcdf files
+    Args:
+        ds: dataset
+        opts: options
+        out_region: region acronym (default: opts.region)
+
+    Returns:
+
+    """
+    if out_region is None:
+        out_region = opts.region
+    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
+    simple_mask = ds.lt1500_mask * ds.mask
+    simple_mask.name = 'mask'
+    simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
+
+
 def run_custom_gr(opts):
     # load testfile
     template_file = get_data(opts.start, opts.start+1, opts)
@@ -471,25 +490,6 @@ def run():
             out_region = opts.subreg
         
         save_output(ds, opts, out_region)
-
-
-def save_output(ds, opts, out_region=None):
-    """
-    save output to netcdf files
-    Args:
-        ds: dataset
-        opts: options
-        out_region: region acronym (default: opts.region)
-
-    Returns:
-
-    """
-    if out_region is None:
-        out_region = opts.region
-    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
-    simple_mask = ds.lt1500_mask * ds.mask
-    simple_mask.name = 'mask'
-    simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
 
 
 if __name__ == '__main__':
