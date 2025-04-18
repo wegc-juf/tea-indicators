@@ -141,6 +141,7 @@ def calc_ctp_indicators(tea, opts, start, end):
         start: start year
         end: end year
     """
+    
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
     # dtea_min is given in areals (1 areal = 100 km2)
     dtea_min = 1  # according to equation 03
@@ -223,32 +224,24 @@ def calc_tea_indicators(opts):
         starts = np.arange(opts.start, opts.end, 10)
         ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
         
-        for pstart, pend in zip(starts, ends):
+        for p_start, p_end in zip(starts, ends):
             # calculate daily basis variables
-            tea = calc_dbv_indicators(mask=mask, opts=opts, start=pstart, end=pend, threshold=threshold_grid)
+            tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
             # calculate CTP indicators
-            calc_ctp_indicators(tea=tea, opts=opts, start=pstart, end=pend)
+            calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
             gc.collect()
             
     # calculate decadal indicators and amplification factors
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
         tea = TEAIndicators()
-        agr_str = ''
-        
-        outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
-                           f'DEC_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
-                           f'_{opts.start}to{opts.end}.nc')
-        outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                        f'AF_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
-                        f'_{opts.start}to{opts.end}.nc')
         
         # calculate decadal-mean ctp indicator variables
-        calc_decadal_indicators(opts=opts, tea=tea, outpath=outpath_decadal)
+        calc_decadal_indicators(opts=opts, tea=tea)
         
         # calculate amplification factors
-        calc_amplification_factors(opts, tea, outpath_ampl)
+        calc_amplification_factors(opts=opts, tea=tea)
 
 
 def calc_dbv_indicators(start, end, threshold, opts, mask=None):
@@ -259,22 +252,27 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         end: end year
         threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
         opts: options
-        area_grid: grid containing the area of each results cell, if None, area is assumed to be 1 for each cell
-                   nan values mask out the corresponding results cells (optional)
-        mask: mask grid for input data containing nan values for cells that should be masked. (optional)
+        mask: mask grid for input data containing nan values for cells that should be masked. Fractions of 1 are
+        interpreted as area fractions for the given cell. (optional)
 
     Returns:
+        tea: TEA object with daily basis variables
 
     """
+    # check and create output path
     dbv_outpath = f'{opts.outpath}/daily_basis_variables'
     if not os.path.exists(dbv_outpath):
         os.makedirs(dbv_outpath)
+        
     logger.info(f'Calculating TEA indicators for years {start}-{end}.')
     # set filenames
     dbv_filename = (f'{dbv_outpath}/'
                     f'DBV_{opts.param_str}_{opts.region}_annual_{opts.dataset}'
                     f'_{start}to{end}.nc')
+    
+    # recalculate daily basis variables if needed
     if opts.recalc_daily or not os.path.exists(dbv_filename):
+        
         # always calculate annual basis variables to later extract sub-annual values
         period = 'annual'
         data = get_data(start=start, end=end, opts=opts, period=period)
@@ -323,9 +321,9 @@ def calc_tea_indicators_agr(opts):
         if not os.path.exists(dbv_outpath):
             os.makedirs(dbv_outpath)
         
-        for pstart, pend in zip(starts, ends):
-            myopts.start = pstart
-            myopts.end = pend
+        for p_start, p_end in zip(starts, ends):
+            myopts.start = p_start
+            myopts.end = p_end
             logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
             
             # set filenames
@@ -336,7 +334,7 @@ def calc_tea_indicators_agr(opts):
             # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
             # use European masks
             masks, static = load_static_files(opts=myopts, large_gr=True)
-            data = get_data(start=pstart, end=pend, opts=opts, period=opts.period)
+            data = get_data(start=p_start, end=p_end, opts=opts, period=opts.period)
             tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static,
                                             agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
             gc.collect()

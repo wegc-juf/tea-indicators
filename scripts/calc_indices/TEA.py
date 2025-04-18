@@ -820,7 +820,7 @@ class TEAIndicators:
             warnings.simplefilter("ignore")
             self.CTP_results.to_netcdf(filepath)
         
-    def load_CTP_results(self, filepath, use_dask):
+    def load_CTP_results(self, filepath, use_dask=True):
         """
         load all CTP results from filepath
         """
@@ -1223,6 +1223,7 @@ class TEAIndicators:
         """
         calculate geometric mean
         """
+        # noinspection PyArgumentList
         return np.exp((np.log(x).mean(dim=dim)))
     
     @staticmethod
