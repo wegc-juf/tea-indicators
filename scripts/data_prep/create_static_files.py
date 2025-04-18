@@ -134,6 +134,31 @@ def smooth_data(data, radius):
     return percent_smooth
 
 
+def create_threshold_grid(opts):
+    """
+    create threshold grid for the given parameter and reference period
+    Args:
+        opts: options
+
+    Returns:
+        thr_grid: threshold grid
+    """
+    if opts.precip:
+        threshold_min = 0.99
+    else:
+        threshold_min = None
+    thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min)
+    thr_grid = thr_grid.rename('threshold')
+    
+    if opts.precip:
+        ref_str = 'WetDays > 1 mm Ref'
+    else:
+        ref_str = 'Ref'
+    vname = f'{opts.parameter}-p{opts.threshold}{opts.period} {ref_str}{opts.ref_period[0]}-{opts.ref_period[1]}'
+    thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}'}
+    return thr_grid
+
+
 def run():
     warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
     warnings.filterwarnings(action='ignore', message='Mean of empty slice')
@@ -188,31 +213,6 @@ def run():
         outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
 
     ds_out.to_netcdf(outname)
-
-
-def create_threshold_grid(opts):
-    """
-    create threshold grid for the given parameter and reference period
-    Args:
-        opts: options
-
-    Returns:
-        thr_grid: threshold grid
-    """
-    if opts.precip:
-        threshold_min = 0.99
-    else:
-        threshold_min = None
-    thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min)
-    thr_grid = thr_grid.rename('threshold')
-    
-    if opts.precip:
-        ref_str = 'WetDays > 1 mm Ref'
-    else:
-        ref_str = 'Ref'
-    vname = f'{opts.parameter}-p{opts.threshold}{opts.period} {ref_str}{opts.ref_period[0]}-{opts.ref_period[1]}'
-    thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}'}
-    return thr_grid
 
 
 if __name__ == '__main__':
