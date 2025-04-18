@@ -4,12 +4,16 @@ create region masks for TEA indicator calculation
 author: hst
 """
 
+import os
+import sys
 import geopandas as gpd
 import numpy as np
 from pathlib import Path
 from shapely.geometry import Polygon, MultiPolygon
 from tqdm import trange
 import xarray as xr
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_data
 from scripts.calc_indices.calc_TEA import getopts
