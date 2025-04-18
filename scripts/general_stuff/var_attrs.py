@@ -42,30 +42,30 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
              'doy_first': {'long_name': 'day of first event occurrence', 'units': '1', 'metric_type': 'basic'},
              'doy_last': {'long_name': 'day of last event occurrence', 'units': '1', 'metric_type': 'basic'},
              'AEP': {'long_name': 'annual exposure period', 'units': 'months', 'metric_type': 'basic'},
-             'ED': {'long_name': 'cumulative events duration', 'units': f'dys yr^-1', 'metric_type': 'compound'},
-             'ED_avg': {'long_name': 'average events duration', 'units': 'dys', 'metric_type': 'basic'},
-             'EM': {'long_name': 'cumulative exceedance magnitude', 'units': f'{data_unit} dys yr^-1',
+             'ED': {'long_name': 'cumulative events duration', 'units': f'd yr^-1', 'metric_type': 'compound'},
+             'ED_avg': {'long_name': 'average events duration', 'units': 'd', 'metric_type': 'basic'},
+             'EM': {'long_name': 'cumulative exceedance magnitude', 'units': f'{data_unit} d yr^-1',
                     'description': 'expresses the temporal events extremity (tEX)', 'metric_type': 'compound'},
              'EM_avg': {'long_name': 'average exceedance magnitude', 'units': data_unit, 'metric_type': 'basic'},
              'EM_avg_Md': {'long_name': 'average daily-median exceedance magnitude',
                            'units': data_unit, 'metric_type': 'basic'},
              'EM_Md': {'long_name': 'cumulative daily-median exceedance magnitude',
-                       'units': f'{data_unit} dys yr^-1', 'metric_type': 'compound'},
+                       'units': f'{data_unit} d yr^-1', 'metric_type': 'compound'},
              'EM_Max': {'long_name': 'cumulative maximum exceedance magnitude',
-                        'units': f'{data_unit} dys yr^-1', 'metric_type': 'compound'},
+                        'units': f'{data_unit} d yr^-1', 'metric_type': 'compound'},
              'EM_avg_Max': {'long_name': 'average maximum exceedance magnitude',
                             'units': data_unit, 'metric_type': 'basic'},
              'EA_avg': {'long_name': 'average exceedance area', 'units': '100 km^2', 'metric_type': 'basic'},
-             'DM': {'long_name': 'duration-magnitude indicator', 'units': f'{data_unit} dys', 'metric_type':
+             'DM': {'long_name': 'duration-magnitude indicator', 'units': f'{data_unit} d', 'metric_type':
                     'compound'},
-             'TEX': {'long_name': 'total events extremity', 'units': f'100 km^2 {data_unit} dys yr^-1', 'metric_type':
+             'TEX': {'long_name': 'total events extremity', 'units': f'100 km^2 {data_unit} d yr^-1', 'metric_type':
                      'compound'},
              'ES_avg': {'long_name': 'average event severity',
-                        'units': f'100 km^2 {data_unit} dys', 'metric_type': 'compound'},
-             'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} dys yr^-1', 'metric_type':
+                        'units': f'100 km^2 {data_unit} d', 'metric_type': 'compound'},
+             'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} d yr^-1', 'metric_type':
                      'compound'},
              'H_AEHC_avg': {'long_name': 'average daily atmospheric boundary layer exceedance '
-                                         'heat content', 'units': 'PJ day^-1', 'metric_type': 'compound'},
+                                         'heat content', 'units': 'PJ d^-1', 'metric_type': 'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
                                      'heat content', 'units': 'PJ yr^-1', 'metric_type': 'compound'}
              }
