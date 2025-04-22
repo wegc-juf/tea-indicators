@@ -2,7 +2,7 @@ common_params:
   gui: &GUI
     no_gui: false
   GeoRegion: &GR
-    region: SEA
+    region: AUT
     # use full data without land, border, and altitude masks
     full_region: false
     gr_type: polygon
@@ -47,12 +47,12 @@ create_region_masks:
   <<: *GUI
   <<: *GR
   subreg: false
-  target_sys: 4326
-  target_ds: ERA5Land
-  xy_name: lon,lat
+  target_sys: 32633
+  target_ds: SPARTACUS
+  xy_name: x,y
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS2-DAILY_Tx_2019.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
   lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
