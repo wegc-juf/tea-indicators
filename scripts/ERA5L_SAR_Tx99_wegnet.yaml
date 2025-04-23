@@ -1,6 +1,6 @@
 common_params:
   GeoRegion: &GR
-    region: SEA
+    region: SAR
     full_region: false
   parameter: &PARAM
     parameter: Tx
@@ -16,9 +16,9 @@ common_params:
     ref_period: 1961-1990
     cc_period: 2010-2024
   dataset: &DATA
-    dataset: SPARTACUS
+    dataset: ERA5Land
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
@@ -33,7 +33,7 @@ calc_TEA:
   recalc_threshold: false
   recalc_daily: false
   decadal: true
-  spreads: false
+  spreads: true
   decadal_only: false
   recalc_decadal: true
 
@@ -43,6 +43,7 @@ create_region_masks:
   <<: *DATA
   <<: *PARAM
   <<: *TIME
-  # use UTM33N for SPARTACUS, because it has been regridded to WEGN grid
-  target_sys: 32633
   gr_type: polygon
+  shpfile: /data/arsclisys/backup/clim-hydro/TEA-Indicators/shapefiles/SARext_shape.shp
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
+  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc

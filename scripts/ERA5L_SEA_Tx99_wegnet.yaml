@@ -31,7 +31,7 @@ calc_TEA:
   <<: *PATHS
   outpath: /home/wegnet/results/TEA_indicators_test/
   recalc_threshold: false
-  recalc_daily: false
+  recalc_daily: true
   decadal: true
   spreads: true
   decadal_only: false
@@ -44,6 +44,6 @@ create_region_masks:
   <<: *PARAM
   <<: *TIME
   gr_type: polygon
-  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  shpfile: /data/arsclisys/backup/clim-hydro/TEA-Indicators/shapefiles/SARext_shape.shp
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_orography.nc
   lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/ERA5Land_LSM.nc
