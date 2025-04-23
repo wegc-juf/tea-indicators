@@ -15,10 +15,10 @@ def load_data(city, param):
     :return:
     """
 
-    path = '/data/users/hst/TEA-clean/TEA/station_indices/'
+    path = '/data/users/hst/TEA-clean/TEA/paper_data/station_indices/'
 
-    if param == 'T':
-        pstr = 'T99.0p'
+    if param == 'Tx':
+        pstr = 'Tx99.0p'
         mvar = 'EMavg'
     else:
         pstr = 'P24h_7to7_95.0p'
@@ -146,7 +146,7 @@ def plot_subplot(axs, data, ii, nv, rdata, param, region, sfac, no_facs):
         props = get_props()
         scalings = pd.read_csv(
             f'/data/users/hst/TEA-clean/TEA/natural_variability/'
-            f'SFACS_T99.0p_{region}.csv', index_col=0)
+            f'SFACS_Tx99.0p_{region}.csv', index_col=0)
     else:
         props = get_p_props()
         scalings = pd.read_csv(
@@ -259,8 +259,8 @@ def set_subplot_props(axs, ii):
 
 
 def run():
-    reg = 'SEA'
-    param = 'P'
+    reg = 'AUT'
+    param = 'Tx'
 
     no_facs = False
 
@@ -268,8 +268,8 @@ def run():
     if reg == 'SEA':
         cities = ['Graz', 'Deutschlandsberg', 'BadGleichenberg']
 
-    if param == 'T':
-        pstr = 'T99.0p'
+    if param == 'Tx':
+        pstr = 'Tx99.0p'
     else:
         pstr = 'P24h_7to7_95.0p'
 
@@ -277,8 +277,8 @@ def run():
     for ict in cities:
         data[ict] = load_data(city=ict, param=param)
 
-    nat_var = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/natural_variability/'
-                          f'NV_AF_{pstr}_{reg}.csv', index_col=0)
+    nat_var = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/paper_data/'
+                          f'natural_variability/NV_AF_{pstr}_{reg}.csv', index_col=0)
     fac = nat_var.loc['SFAC', 'lower']
 
     fig, axs = plt.subplots(3, 2, figsize=(14, 12))
@@ -302,11 +302,12 @@ def run():
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
 
-    if reg == 'AUT' and param == 'T':
-        outname = 'EDF2'
+    if reg == 'AUT' and param == 'Tx':
+        outname = 'ExtDataFig2'
     else:
-        outname = f'EDF2-{reg}-{param}'
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/paper-figs/{outname}.png', dpi=300)
+        outname = f'misc-EDF2-{reg}-{param}'
+    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
+                f'{outname}.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

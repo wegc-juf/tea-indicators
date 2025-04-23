@@ -1,5 +1,6 @@
 common_params:
-  no_gui: false
+  gui: &GUI
+    no_gui: false
   GeoRegion: &GR
     region: AUT
     gr_type: polygon
@@ -76,6 +77,13 @@ calc_station_TEA:
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /data/users/hst/TEA-clean/TEA/
+
+natural_variability:
+  <<: *GUI
+  <<: *PARAM
+  <<: *GR
+  inpath: /data/users/hst/TEA-clean/TEA/paper_data/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
 
 calc_amplification_factors:
   <<: *GR

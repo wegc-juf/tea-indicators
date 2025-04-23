@@ -4,7 +4,6 @@
 @author: hst
 
 """
-import argparse
 import os
 import glob
 import numpy as np
@@ -45,6 +44,8 @@ def load_data(opts):
     for ifile, file in enumerate(files):
         basename = os.path.basename(file)
         station_abbr = basename.split('_')[-1].split('.nc')[0].upper()[:4]
+        # if station_abbr != 'WIEN':
+        #     continue
         if station_abbr not in stations:
             continue
         # load data
@@ -110,6 +111,25 @@ def load_data(opts):
 
     return data, ampl
 
+def rename_juf_data(data):
+    """
+    rename juf according to hst convention
+    Args:
+        data: dataset
+
+    Returns:
+
+    """
+
+    dvars = data.data_vars
+    for var in dvars:
+        if '_avg' in var:
+            data = data.rename({var: var.replace('_avg', 'avg')})
+
+    data = data.rename({'EM_GR_Md': 'EM_Md_GR', 'EMavg_GR_Md': 'EMavg_Md_GR'})
+
+    return data
+
 
 def get_gr_vals(opts):
     """
@@ -127,7 +147,9 @@ def get_gr_vals(opts):
         em_var = 'EMavg_Md_GR'
 
     ref_data = xr.open_dataset(f'{opts.inpath}dec_indicator_variables/'
-                               f'DEC_{opts.param_str}_{opts.region}_WAS_SPARTACUS_1961to2024.nc')
+                               f'DEC_{opts.param_str}_{opts.region}_annual_SPARTACUS_1961to2024.nc')
+
+    ref_data = rename_juf_data(data=ref_data)
 
     vkeep = ['EF_GR', 'EDavg_GR', em_var, 'EAavg_GR']
     vdrop = [vvar for vvar in ref_data.data_vars if vvar not in vkeep]
@@ -146,7 +168,10 @@ def get_gr_vals(opts):
     cc_ampl['tEX'] = cc_ampl['EF_GR_AF_CC'] * cc_ampl['EDavg_GR_AF_CC'] * cc_ampl[f'{em_var}_AF_CC']
 
     # calc std of ref period
-    s_ref = ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
+    try:
+        s_ref = ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
+    except KeyError:
+        s_ref = ampl.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
 
     return ref_vals, cc_vals, ampl, cc_ampl, s_ref
 
@@ -235,15 +260,24 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
     else:
         em_var = 'EMavg_Md_GR_AF'
 
-    gr_ampl_ref = gr_ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    try:
+        gr_ampl_ref = gr_ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    except KeyError:
+        gr_ampl_ref = gr_ampl.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
 
     # calc DM
     gr_ampl_ref['DM_AF'] = gr_ampl_ref['EDavg_GR_AF'] * gr_ampl_ref[em_var]
 
     # Eq. 33_1 and 33_2
-    s_a_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
-        dim='ctp'))
-    s_dm_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(dim='ctp'))
+    try:
+        s_a_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
+            dim='ctp'))
+        s_dm_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(dim='ctp'))
+    except AttributeError:
+        s_a_ref = np.sqrt((1/len(gr_ampl_ref.time)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
+            dim='time'))
+        s_dm_ref = np.sqrt((1/len(gr_ampl_ref.time)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(
+            dim='time'))
 
     # Eq. 33_3 - 33_8
     natvar.loc['EA', 'lower'] = ((s_a_ref/s_dm_ref) * natvar.loc['DM', 'lower']).values
@@ -265,7 +299,6 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
 def run():
     # load CFG parameter
     opts = load_opts(fname=__file__)
-
     data, st_ampl = load_data(opts=opts)
     gr_ref, gr_cc, gr_ampl, gr_cc_ampl, std_ref_gr = get_gr_vals(opts=opts)
     nv, facs = calc_nat_var(opts=opts, st_data=data, std_gr=std_ref_gr)

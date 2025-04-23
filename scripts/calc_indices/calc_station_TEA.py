@@ -44,7 +44,7 @@ def load_data(opts):
         rename_dict = {'tmax': 'Tx'}
     else:
         pstr = 'RR'
-        rename_dict = {'nied': 'P'}
+        rename_dict = {'nied': 'RR'}
 
     # read csv file of station data and set time as index of df
     filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'

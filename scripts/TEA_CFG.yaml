@@ -21,7 +21,7 @@ common_params:
     end: 2022
     period: WAS
   dataset: &DATA
-    dataset: ERA5
+    dataset: SPARTACUS
   paths: &PATHS
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
     statpath: /home/wegnet/results/static/
@@ -29,9 +29,8 @@ common_params:
     tmppath: /home/wegnet/results/TEA_indicators_hst/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
-  <<: *GUI
   <<: *PARAM
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  inpath: /data/users/hst/TEA-clean/SPARTACUS/
   orography: false
   orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
   wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
@@ -51,8 +50,8 @@ create_region_masks:
   outpath: /home/wegnet/results/TEA_indicators_hst/
 
 create_static_files:
-  <<: *GUI
   <<: *GR
+  <<: *TIME
   <<: *PARAM
   <<: *DATA
   <<: *PATHS
@@ -62,7 +61,6 @@ create_static_files:
   outpath: /home/wegnet/results/TEA_indicators_hst/static/
 
 calc_TEA:
-  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
@@ -85,7 +83,6 @@ calc_station_TEA:
   outpath: /home/wegnet/results/TEA_indicators_hst/
 
 calc_amplification_factors:
-  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
@@ -97,7 +94,6 @@ calc_amplification_factors:
   outpath: /home/wegnet/results/TEA_indicators_hst/
 
 calc_AGR_vars:
-  <<: *GUI
   <<: *GR
   <<: *PARAM
   <<: *TIME
