@@ -1,6 +1,6 @@
 common_params:
   gui: &GUI
-    no_gui: false
+    no_gui: true
   GeoRegion: &GR
     region: AUT
     # use full data without land, border, and altitude masks
@@ -21,11 +21,11 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: WAS
+    period: annual
     # ref period from-to (inclusive)
     ref_period: 1961-1990
     # cc period from-to (inclusive)
-    cc_period: 2008-2024
+    cc_period: 2010-2024
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
@@ -87,9 +87,9 @@ calc_station_TEA:
   <<: *GUI
   <<: *TIME
   <<: *PARAM
-  station: Graz
+  station: Deutschlandsberg
   inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /data/users/hst/TEA-clean/TEA/paper_data/station_indices/
+  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
 
 natural_variability:
   <<: *GUI

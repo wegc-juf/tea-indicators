@@ -147,7 +147,7 @@ def get_gr_vals(opts):
         em_var = 'EMavg_Md_GR'
 
     ref_data = xr.open_dataset(f'{opts.inpath}dec_indicator_variables/'
-                               f'DEC_{opts.param_str}_{opts.region}_WAS_SPARTACUS_1961to2024.nc')
+                               f'DEC_{opts.param_str}_{opts.region}_annual_SPARTACUS_1961to2024.nc')
 
     ref_data = rename_juf_data(data=ref_data)
 

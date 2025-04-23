@@ -139,7 +139,7 @@ def plot_scatter(fig, ax, ef, es, reg, ref):
     ax.scatter(acc[0], acc[1], s=70, linewidth=1,
                facecolors='tab:red', edgecolors='black', zorder=4)
 
-    traj_point = [ef.sel(time='2003-04-01').values, es.sel(time='2003-04-01').values]
+    traj_point = [ef.sel(time='2003-01-01').values, es.sel(time='2003-01-01').values]
 
     set_plot_props(ax=ax, reg=reg, acc=acc, refv=ref, tpoint=traj_point)
 
@@ -170,7 +170,7 @@ def run():
     fig, axs = plt.subplots(1, 3, figsize=(fw, fh), dpi=dpi)
 
     data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                           'amplification/AF_Tx99.0p_AGR-EUR_WAS_ERA5_1961to2024.nc')
+                           'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     thresh = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
                              'static_Tx99.0p_EUR_ERA5.nc')
     thresh = thresh.threshold

@@ -29,14 +29,14 @@ def preprocess(ds_in):
 
 def get_data():
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                          'DEC_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
+                          'DEC_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
     ctp = xr.open_mfdataset(
         sorted(glob.glob('/data/users/hst/TEA-clean/TEA/paper_data/ctp_indicator_variables/'
-                         'CTP_Tx99.0p_AUT_WAS_SPARTACUS_*.nc')), data_vars='minimal')
+                         'CTP_Tx99.0p_AUT_annual_SPARTACUS_*.nc')), data_vars='minimal')
 
     af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                         'amplification/AF_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
+                         'amplification/AF_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
     return dec, ctp, af
 
@@ -135,15 +135,15 @@ def plot_gr_data(ax, adata, ddata, afdata, su, sl):
 def map_plot_params(vname):
     params = {'EF': {'cmap': 'Blues',
                      'lbl': r'EF$_\mathrm{CC}$(i,j) (ev/yr)',
-                     'title': 'Event Frequency (Annual) (CC2008-2022',
+                     'title': 'Event Frequency (Annual) (CC2010-2024)',
                      'lvls': np.arange(1, 11)},
               'ED_avg': {'cmap': 'Purples',
                         'lbl': r'ED$_\mathrm{CC}$(i,j) (days)',
-                        'title': 'Avarage Event Duration (CC2008-2022)',
+                        'title': 'Avarage Event Duration (CC2010-2024)',
                         'lvls': np.arange(1, 3.75, 0.25)},
               'EM_avg': {'cmap': 'Oranges',
                         'lbl': r'EM$_\mathrm{CC}$(i,j) (°C)',
-                        'title': 'Average Exceedance Magnitude (CC2008-2022)',
+                        'title': 'Average Exceedance Magnitude (CC2010-2024)',
                         'lvls': np.arange(1, 2.6, 0.2)}
               }
 
@@ -155,6 +155,7 @@ def plot_map(fig, ax, data):
 
     aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
                           'AUT_masks_SPARTACUS.nc')
+    aut = aut.sel(x=data.x, y=data.y)
     ax.contourf(aut.nw_mask, colors='mistyrose')
 
     data = data.where(data > 0)
