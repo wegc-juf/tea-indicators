@@ -15,10 +15,10 @@ PARAMS = ref_cc_params()
 def get_data():
     af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                          'amplification/'
-                         'AF_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
+                         'AF_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                          'DEC_Tx99.0p_AUT_WAS_SPARTACUS_1961to2024.nc')
+                          'DEC_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
     nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
                      'NV_AF_Tx99.0p_AUT.csv',
@@ -59,13 +59,13 @@ def gr_plot_params(vname):
 def map_plot_params(vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
-                           'title': f'Event Frequency (EF) amplification (CC2008-2022)'},
+                           'title': f'Event Frequency (EF) amplification (CC2010-2024)'},
               'EDavg_AF_CC': {'cmap': 'Purples',
                               'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                              'title': f'Event Duration (ED) amplification (CC2008-2022)'},
+                              'title': f'Event Duration (ED) amplification (CC2010-2024)'},
               'EMavg_AF_CC': {'cmap': 'Oranges',
                               'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                              'title': f'Exceedance Magnitude (EM) amplification (CC2008-2022)'}
+                              'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
 
     return params[vname]
@@ -232,6 +232,7 @@ def plot_map(fig, ax, data):
 
     aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
                           'AUT_masks_SPARTACUS.nc')
+    aut = aut.sel(x=data.x, y=data.y)
     ax.contourf(aut.nw_mask, colors='mistyrose')
 
     lvls = np.arange(1, 4.25, 0.25)
@@ -246,9 +247,9 @@ def plot_map(fig, ax, data):
 
     map_vals = ax.contourf(data, cmap=props['cmap'], extend=ext, levels=lvls, vmin=1, vmax=4)
 
-    ax.add_patch(pat.Rectangle(xy=(473, 76), height=20, width=25, edgecolor='black',
+    ax.add_patch(pat.Rectangle(xy=(473, 55), height=20, width=25, edgecolor='black',
                                fill=False, linewidth=1))
-    ax.add_patch(pat.Rectangle(xy=(410, 48), height=92, width=125, edgecolor='black',
+    ax.add_patch(pat.Rectangle(xy=(410, 27), height=92, width=125, edgecolor='black',
                                fill=False, linewidth=1))
     ax.axis('off')
     divider = make_axes_locatable(ax)
