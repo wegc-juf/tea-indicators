@@ -184,12 +184,8 @@ def run():
                 mask = masks['lt1500_mask_EUR']
             else:
                 mask = masks['lt1500_mask'] * masks['mask']
-                
-            for dim in thr_grid.dims:
-                if dim not in mask.dims:
-                    continue
-                if thr_grid[dim].dtype != mask[dim].dtype:
-                    thr_grid[dim] = thr_grid[dim].astype(mask[dim].dtype)
+            
+            match_dimension_dtypes(src=mask, dest=thr_grid)
             
             thr_grid = thr_grid.where(mask > 0)
         
@@ -213,6 +209,14 @@ def run():
         outname = f'{opts.outpath}static_{opts.param_str}_{opts.region}_{opts.dataset}.nc'
 
     ds_out.to_netcdf(outname)
+
+
+def match_dimension_dtypes(src, dest):
+    for dim in dest.dims:
+        if dim not in src.dims:
+            continue
+        if dest[dim].dtype != src[dim].dtype:
+            dest[dim] = np.round(dest[dim].astype(src[dim].dtype), decimals=5)
 
 
 if __name__ == '__main__':

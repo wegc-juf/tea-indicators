@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_data
 from scripts.calc_indices.calc_TEA import getopts
+from scripts.data_prep.create_static_files import match_dimension_dtypes
 
 
 def load_shp(opts):
@@ -195,16 +196,17 @@ def prep_lsm(opts):
     if opts.dataset == 'ERA5Land':
         step = 0.1
 
+    # split to eastern and western hemisphere (from 0 ... 360 to -180 .. 180)
     lsm_e = lsm_raw.sel(longitude=slice(180 + step, 360))
     lsm_w = lsm_raw.sel(longitude=slice(0, 180))
-    lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]),
-                                axis=1)
+    lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]), axis=1)
 
     lsm_lon = np.arange(-180, 180, step).astype('float32')
+    lsm_lat = lsm_raw.latitude.values
 
     lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
-        'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_raw.latitude.values)})
-
+        'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_lat)})
+    
     lsm = lsm.sel(lat=data.lat.values, lon=data.lon.values)
 
     return lsm
@@ -476,6 +478,9 @@ def run():
         # add EUR LSM if ERA5(Land) data is used
         if 'ERA5' in opts.dataset:
             lsm = prep_lsm(opts=opts)
+            if lsm.lon.dtype != da_mask.lon.dtype or lsm.lat.dtype != da_mask.lat.dtype:
+                print('Warning: LSM File has different coordinate dtype than mask file. Matching dtypes...')
+                match_dimension_dtypes(da_mask, lsm)
             lsm = lsm.where(lsm > 0.5)
             lsm = lsm.rename('LSM_EUR')
             lsm.attrs = {'long_name': 'land sea mask (EUR)',
