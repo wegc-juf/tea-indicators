@@ -1,15 +1,9 @@
 common_params:
   GeoRegion: &GR
     region: EUR
-    agr: EUR
+    agr: S-EUR
     # use full data without land, border, and altitude masks
     full_region: false
-    gr_type: polygon
-    sw_corner: null
-    ne_corner: null
-    center: null
-    we_len: null
-    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -34,14 +28,6 @@ common_params:
     mask_sub: masks/
     result_path: &result_path /home/wegnet/results/TEA_indicators_test/
 
-create_static_files:
-  <<: *GR
-  <<: *TIME
-  <<: *PARAM
-  <<: *DATA
-  <<: *PATHS
-  smoothing: 0
-  outpath: *statpath
 
 calc_TEA:
   <<: *GR
@@ -50,16 +36,19 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: *result_path
-  recalc_daily: true
+  recalc_threshold: false
+  recalc_daily: false
   decadal: true
-  spreads: false
-  decadal_only: false
+  spreads: true
+  decadal_only: true
   recalc_decadal: true
-  compare_to_ref: false
 
-calc_station_TEA:
-  <<: *TIME
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
   <<: *PARAM
-  station: Graz
-  inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /home/wegnet/results/TEA_indicators/station_indices/
+  <<: *TIME
+  # use UTM33N for SPARTACUS, because it has been regridded to WEGN grid
+  target_sys: 32633
+  gr_type: polygon
