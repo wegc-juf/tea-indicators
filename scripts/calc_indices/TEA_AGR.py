@@ -268,17 +268,17 @@ class TEAAgr(TEAIndicators):
         self.amplification_factors = self.amplification_factors.sel(lat=slice(lat_range[1], lat_range[0]),
                                                                     lon=slice(lon_range[0], lon_range[1]))
     
-    def _drop_agr_values(self):
+    def _drop_agr_values_and_spreads(self):
         """
-        drop old AGR values
+        drop old AGR values and spreads
         """
-        agr_vars = [var for var in self.decadal_results.data_vars if 'AGR' in var]
+        agr_vars = [var for var in self.decadal_results.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
         self.decadal_results = self.decadal_results.drop_vars(agr_vars)
-        agr_vars = [var for var in self.amplification_factors.data_vars if 'AGR' in var]
+        agr_vars = [var for var in self.amplification_factors.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
         self.amplification_factors = self.amplification_factors.drop_vars(agr_vars)
-        agr_vars = [var for var in self._ref_mean.data_vars if 'AGR' in var]
+        agr_vars = [var for var in self._ref_mean.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
         self._ref_mean = self._ref_mean.drop_vars(agr_vars)
-        agr_vars = [var for var in self._cc_mean.data_vars if 'AGR' in var]
+        agr_vars = [var for var in self._cc_mean.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
         self._cc_mean = self._cc_mean.drop_vars(agr_vars)
     
     @staticmethod
@@ -373,8 +373,8 @@ class TEAAgr(TEAIndicators):
         if lat_range is not None or lon_range is not None:
             self._crop_to_rect(lat_range=lat_range, lon_range=lon_range)
         
-        # drop old AGR values
-        self._drop_agr_values()
+        # drop old AGR values and spreads
+        self._drop_agr_values_and_spreads()
         
         # calculate area weights (equation 34_0)
         A_AGR = self.gr_grid_areas.sum()
