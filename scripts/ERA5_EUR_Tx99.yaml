@@ -1,15 +1,8 @@
 common_params:
   GeoRegion: &GR
     region: EUR
-    agr: EUR
-    # use full data without land, border, and altitude masks
+    agr: S-EUR
     full_region: false
-    gr_type: polygon
-    sw_corner: null
-    ne_corner: null
-    center: null
-    we_len: null
-    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -20,46 +13,16 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: WAS
-    # ref period from-to (inclusive)
+    period: annual
     ref_period: 1961-1990
-    # cc period from-to (inclusive)
     cc_period: 2010-2024
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    #maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-    tmppath: /home/hst/tmp_data/TEAclean/largeGR/
-
-regrid_SPARTACUS_to_WEGNext:
-  <<: *PARAM
-  inpath: /data/users/hst/TEA-clean/SPARTACUS/
-  orography: false
-  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
-  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-
-create_region_masks:
-  <<: *GR
-  <<: *DATA
-  subreg: custom
-  shpfile: /data/users/hst/cdrDPS/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
-  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-
-create_static_files:
-  <<: *GR
-  <<: *TIME
-  <<: *PARAM
-  <<: *DATA
-  <<: *PATHS
-  smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ # *statpath
+    mask_sub: masks/
 
 calc_TEA:
   <<: *GR
@@ -67,11 +30,20 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
   outpath: /data/users/hst/TEA-clean/TEA/paper_data/
-  recalc_daily: true
+  recalc_threshold: false
+  recalc_daily: false
   decadal: true
-  spreads: false
-  decadal_only: false
+  spreads: true
+  decadal_only: true
   recalc_decadal: true
-  compare_to_ref: false
+
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  # use UTM33N for SPARTACUS, because it has been regridded to WEGN grid
+  target_sys: 32633
+  gr_type: polygon
