@@ -12,12 +12,14 @@ import xarray as xr
 def get_data(reg, var, ds):
     if var == 'Temperature':
         pstr = 'Tx99.0p'
+        season = 'annual'
     else:
         pstr = 'P24h_7to7_95.0p'
+        season = 'WAS'
 
     reg_str, gr_str = reg, 'GR'
     data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                           f'amplification/AF_{pstr}_{reg_str}_WAS_{ds}_1961to2024.nc')
+                           f'amplification/AF_{pstr}_{reg_str}_{season}_{ds}_1961to2024.nc')
 
     fd_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
                    + np.log10(data[f'ED_avg_{gr_str}_AF']))
@@ -254,7 +256,7 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = True
+    land = False
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']

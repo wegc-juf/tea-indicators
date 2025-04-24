@@ -19,10 +19,10 @@ def load_aep_data(ds):
     for reg in regs:
         data = xr.open_dataset(
             f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-            f'DEC_Tx99.0p_{reg}_WAS_{ds}_1961to2024.nc')
+            f'DEC_Tx99.0p_{reg}_annual_{ds}_1961to2024.nc')
         data_af = xr.open_dataset(
             f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/amplification/'
-            f'AF_Tx99.0p_{reg}_WAS_{ds}_1961to2024.nc')
+            f'AF_Tx99.0p_{reg}_annual_{ds}_1961to2024.nc')
 
         aep[reg] = data['AEP_GR']
         aep_af[reg] = data_af['AEP_GR_AF']

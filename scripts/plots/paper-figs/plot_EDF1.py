@@ -24,8 +24,7 @@ def load_data(perc, temp=False):
         temp = ''
 
     path = '/data/arsclisys/backup/clim-hydro/gcci_ewm/actea_input/static/thresholds/'
-    file = 'threshold_grid_AUT_{perc}percentile{temp}_SPARTACUSreg.npy'.format(perc=perc,
-                                                                               temp=temp)
+    file = f'threshold_grid_AUT_{perc}percentile{temp}_SPARTACUSreg.npy'
 
     data = np.load(path + file)
 
