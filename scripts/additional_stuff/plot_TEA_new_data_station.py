@@ -8,7 +8,7 @@ import xarray as xr
 def get_props(var, pvar):
     if pvar == 'P24h_7to7':
         pstr = 'P24H'
-        yx_f, yx_d, yx_m, yx_tex = 8, 1.6, 30, 150
+        yx_f, yx_d, yx_m, yx_tex = 8, 1.6, 30, 140
         dy_f, dy_d, dy_m, dy_tex = 2, 0.2, 5, 20
     else:
         pstr = 'Px1H'
@@ -145,7 +145,7 @@ def set_plot_props(axs, vvars, ref, cc, pvar, reg):
 
 def run():
     pvar = 'P24h_7to7'
-    region = 'SEA'
+    region = 'AUT'
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     axs = axs.reshape(-1)
 
