@@ -23,8 +23,8 @@ common_params:
     dataset: ERA5
   paths: &PATHS
     data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
-    statpath: &statpath /home/wegnet/results/TEA_indicators_test/static/
-    maskpath: /home/wegnet/results/TEA_indicators_test/
+    statpath: &statpath /home/wegnet/results/static/
+    maskpath: *statpath
     mask_sub: masks/
     result_path: &result_path /home/wegnet/results/TEA_indicators_test/
 
