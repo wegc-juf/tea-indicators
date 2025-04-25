@@ -1,7 +1,7 @@
 common_params:
   GeoRegion: &GR
     region: EUR
-    agr: S-EUR
+    agr: EUR
     # use full data without land, border, and altitude masks
     full_region: false
   parameter: &PARAM
@@ -14,7 +14,7 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: WAS
+    period: annual
     # ref period from-to (inclusive)
     ref_period: 1961-1990
     # cc period from-to (inclusive)
@@ -36,11 +36,11 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: *result_path
-  recalc_threshold: false
-  recalc_daily: false
+  recalc_threshold: true
+  recalc_daily: true
   decadal: true
   spreads: true
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
 
 create_region_masks:
