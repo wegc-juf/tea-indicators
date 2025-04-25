@@ -59,8 +59,9 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
         min_lat, min_lon, max_lat, max_lon = calc_lat_lon_range(cell_size_lat, data, masks, static)
     if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
-        min_lon = lons[0] - cell_size_lat
-        max_lon = lons[-1] + cell_size_lat
+        cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
+        min_lon = math.floor(lons[0] - cell_size_lon / 2)
+        max_lon = math.ceil(lons[-1] + cell_size_lon / 2)
     else:
         # TODO check if this is still needed
         lons = np.arange(9, 18, 0.5)
@@ -147,10 +148,11 @@ def calc_lat_lon_range(cell_size_lat, data, masks, static):
         # TODO: get rid of this
         logger.warning('Region is too far south. Setting minimum latitude to 35°N.')
         min_lat = 35 - cell_size_lat
-    min_lon = math.floor(data.lon[np.where(masks['lt1500_mask'] > 0)[1][0]].values - cell_size_lat)
+    cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
+    min_lon = math.floor(data.lon[np.where(masks['lt1500_mask'] > 0)[1][0]].values - cell_size_lon / 2)
     if min_lon < static.area_grid.lon.min().values:
         min_lon = float(static.area_grid.lon.min().values)
-    max_lon = math.ceil(data.lon[np.where(masks['lt1500_mask'] > 0)[1][-1]].values + cell_size_lat)
+    max_lon = math.ceil(data.lon[np.where(masks['lt1500_mask'] > 0)[1][-1]].values + cell_size_lon / 2)
     if max_lon > static.area_grid.lon.max().values:
         max_lon = float(static.area_grid.lon.max().values)
     return min_lat, min_lon, max_lat, max_lon
