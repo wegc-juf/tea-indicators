@@ -265,21 +265,21 @@ def extract_period(ds, period, start_year=None, end_year=None):
     if period == 'seasonal':
         first_year = ds.time[0].dt.year
         if start_year is not None and start_year > first_year:
-            start = f'{start_year - 1}-12-01'
-            end = f'{end_year}-11-30'
+            start = f'{start_year - 1}-12-01 00:00'
+            end = f'{end_year}-11-30 23:59'
             ds = ds.sel(time=slice(start, end))
         else:
             # if first year is first year of record, exclude first winter (data of Dec 1960 missing)
-            start = f'{first_year}-03-01'
-            end = f'{last_year}-11-30'
+            start = f'{first_year}-03-01 00:00'
+            end = f'{last_year}-11-30 23:59'
             ds = ds.sel(time=slice(start, end))
     elif period in ['ESS', 'WAS', 'JJA']:
         months = {'ESS': np.arange(5, 10), 'WAS': np.arange(4, 11), 'JJA': np.arange(6, 9)}
         season = ds['time'].dt.month.isin(months[period])
         ds = ds.sel(time=season)
     elif start_year is not None and end_year is not None:
-        start = f'{start_year}-01-01'
-        end = f'{end_year}-12-31'
+        start = f'{start_year}-01-01 00:00'
+        end = f'{end_year}-12-31 23:59'
         ds = ds.sel(time=slice(start, end))
     return ds
 
