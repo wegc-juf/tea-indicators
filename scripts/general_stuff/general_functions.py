@@ -207,7 +207,7 @@ def compare_to_ref(tea_result, tea_ref, relative=False):
             print(f'{vvar} not found in reference file.')
 
 
-def get_input_filenames(start, end, inpath, param_str, period='annual'):
+def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=False):
     """
     get input filenames
 
@@ -219,12 +219,20 @@ def get_input_filenames(start, end, inpath, param_str, period='annual'):
     :param param_str: parameter string
     :param period: period of interest. Default is 'annual'
     :type period: str
+    :param hourly: if True, return hourly data filenames
+    :type hourly: bool
 
     :return: list of filenames
     """
     # check if inpath is file
     if os.path.isfile(inpath):
         return inpath
+    
+    if hourly:
+        inpath = f'{inpath}/hourly/'
+        h_string = 'hourly_'
+    else:
+        h_string = ''
     
     # select only files of interest, if chosen period is 'seasonal' append one year in the
     # beginning to have the first winter fully included
@@ -233,9 +241,9 @@ def get_input_filenames(start, end, inpath, param_str, period='annual'):
         yrs = np.arange(start - 1, end + 1)
     else:
         yrs = np.arange(start, end + 1)
-    for iyrs in yrs:
+    for yr in yrs:
         year_files = sorted(glob.glob(
-            f'{inpath}*{param_str}_{iyrs}*.nc'))
+            f'{inpath}*{param_str}_{h_string}{yr}*.nc'))
         filenames.extend(year_files)
     return filenames
 
@@ -276,7 +284,7 @@ def extract_period(ds, period, start_year=None, end_year=None):
     return ds
 
 
-def get_data(start, end, opts, period='annual'):
+def get_data(start, end, opts, period='annual', hourly=False):
     """
     loads data for parameter and period
     :param start: start year
@@ -286,17 +294,26 @@ def get_data(start, end, opts, period='annual'):
     :param opts: options
     :param period: period to load (annual, seasonal, ESS, WAS, JJA); default: annual
     :ptype period: str
+    :param hourly: if True, load hourly data
+    :ptype hourly: bool
 
     :return: dataset of given parameter
     """
     
     param_str = ''
+    parameter = opts.parameter
+    if hourly:
+        # use correct parameter for hourly data
+        if opts.parameter == 'Tx':
+            parameter = 'T'
+            
     if opts.dataset == 'SPARTACUS' and not opts.precip:
-        param_str = f'{opts.parameter}'
+        param_str = f'{parameter}'
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
     
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.data_path, param_str=param_str)
+    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.data_path, param_str=param_str,
+                                    hourly=hourly)
     
     # load relevant years
     logger.info(f'Loading data from {filenames}...')
@@ -306,9 +323,9 @@ def get_data(start, end, opts, period='annual'):
         ds = xr.open_dataset(filenames[0])
     
     # select variable
-    if opts.dataset == 'SPARTACUS' and opts.parameter == 'P24h_7to7':
-        ds = ds.rename({'RR': opts.parameter})
-    data = ds[opts.parameter]
+    if opts.dataset == 'SPARTACUS' and parameter == 'P24h_7to7':
+        ds = ds.rename({'RR': parameter})
+    data = ds[parameter]
     
     # get only values from selected period
     data = extract_period(ds=data, period=period, start_year=start, end_year=end)
