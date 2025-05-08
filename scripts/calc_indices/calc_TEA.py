@@ -228,6 +228,10 @@ def calc_tea_indicators(opts):
             # calculate daily basis variables
             tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
+            # calculate hourly indicators
+            if opts.hourly:
+                calc_hourly_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
+            
             # calculate CTP indicators
             calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
@@ -290,13 +294,33 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
-        tea = TEAIndicators()
+        tea = TEAIndicators(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit)
         logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
                     'set --recalc-daily.')
         tea.load_daily_results(dbv_filename)
     return tea
 
 
+def calc_hourly_indicators(tea, opts, start, end):
+    """
+    calculate hourly indicators for a given time period
+    Args:
+        tea: TEA object with daily basis variables
+        opts: options
+        start: start year
+        end: end year
+
+    Returns:
+        tea: TEA object with hourly indicators
+
+    """
+    # load data
+    data = get_data(start=start, end=end, opts=opts, hourly=True)
+    
+    # calculate hourly indicators
+    tea.calc_hourly_indicators(input_data=data)
+    
+    
 def calc_tea_indicators_agr(opts):
     # TODO: run only last step as AGR, all other code should be the same?
     # load static files

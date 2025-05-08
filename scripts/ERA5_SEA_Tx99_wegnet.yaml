@@ -32,7 +32,8 @@ calc_TEA:
   outpath: /home/wegnet/results/TEA_indicators_test/
   recalc_threshold: false
   recalc_daily: false
-  decadal: true
+  hourly: true
+  decadal: false
   spreads: false
   decadal_only: false
   recalc_decadal: true

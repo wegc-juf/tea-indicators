@@ -57,6 +57,10 @@ class TEAIndicators:
         self.input_data_grid = None
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
+        
+        # temporary storage for hourly results
+        self._hourly_results = xr.Dataset()
+        
         self._min_area = min_area
         self._low_extreme = low_extreme
         self.unit = unit
@@ -187,9 +191,22 @@ class TEAIndicators:
         if self.daily_results['DTEM'] is None:
             self._calc_DTEM()
         dtem = self.daily_results.DTEM
-        dtec = xr.where(dtem > 0, 1, dtem)
+        dtec = self._calc_TEC(dtem)
         dtec.attrs = get_attrs(vname='DTEC')
         self.daily_results['DTEC'] = dtec
+    
+    def _calc_TEC(self, tem):
+        """
+        calculate Threshold Exceedance Count (equation 01)
+        Args:
+            tem: Threshold Exceedance Magnitude
+
+        Returns:
+            tec: Threshold Exceedance Count
+
+        """
+        tec = xr.where(tem > 0, 1, tem)
+        return tec
     
     def _calc_DTEC_GR(self, min_area=None):
         """
@@ -251,13 +268,20 @@ class TEAIndicators:
         if 'DTEC' not in self.daily_results:
             self._calc_DTEC()
         dtec = self.daily_results.DTEC
-        # equation 02_1 not needed (cells with TEC == 0 are already nan)
-        # equation 02_2
-        dtea = dtec * self.area_grid
+        dtea = self._calc_TEA(dtec)
         dtea.attrs = get_attrs(vname='DTEA')
         self.daily_results['DTEA'] = dtea
         self.daily_results['area_grid'] = self.area_grid
-        
+    
+    def _calc_TEA(self, tec):
+        """
+        calculate Threshold Exceedance Area (equation 02)
+        """
+        # equation 02_1 not needed (cells with TEC == 0 are already nan)
+        # equation 02_2
+        tea = tec * self.area_grid
+        return tea
+    
     def _calc_DTEA_GR(self, relative=False):
         """
         calculate Daily Threshold Exceedance Area (GR) (equation 06)
@@ -281,14 +305,24 @@ class TEAIndicators:
         """
         calculate Daily Threshold Exceedance Magnitude (equation 07)
         """
-        if self._low_extreme:
-            dtem = self.threshold_grid - self.input_data_grid
-        else:
-            dtem = self.input_data_grid - self.threshold_grid
-        dtem = xr.where(dtem <= 0, 0, dtem)
+        dtem = self._calc_TEM()
         dtem.attrs = get_attrs(vname='DTEM', data_unit=self.unit)
         self.daily_results['DTEM'] = dtem
-        
+    
+    def _calc_TEM(self):
+        """
+        calculate Threshold Exceedance Magnitude (equation 07)
+        Returns:
+            tem: Threshold Exceedance Magnitude
+
+        """
+        if self._low_extreme:
+            tem = self.threshold_grid - self.input_data_grid
+        else:
+            tem = self.input_data_grid - self.threshold_grid
+        tem = xr.where(tem <= 0, 0, tem)
+        return tem
+    
     def _calc_DTEM_Max_GR(self):
         """
         calculate maximum DTEM for GR (equation 09)
@@ -404,6 +438,109 @@ class TEAIndicators:
         self._calc_DTEM_GR()
         self._calc_DTEM_Max_GR()
         self._calc_DTEEC_GR()
+        
+    # ### Hourly indicators ###
+    def calc_hourly_indicators(self, input_data):
+        """
+        calculate hourly indicators (e.g. DET) for the input data (equation 10)
+        Args:
+            input_data: gridded input data (e.g. temperature, precipitation) in hourly resolution
+            
+        Results are stored in self.daily_results
+        """
+        
+        # add one timestep to end of the time series (needed to work with ffill for the last day)
+        dtec_gr = self.daily_results.DTEC_GR
+        new_sample = xr.DataArray(
+            data=[np.nan],
+            dims=["time"],
+            coords={"time": [dtec_gr.time[-1].values + np.timedelta64(1, "D")]}  # Add one day to the last time
+        )
+        dtec_gr = xr.concat([dtec_gr, new_sample], dim="time")
+        
+        # set all non-exceedance days to nan
+        hourly_dtec_gr = dtec_gr.resample(time='1h').ffill()
+        input_data = input_data.where(hourly_dtec_gr > 0)
+        
+        # calculate daily exposure time
+        self._calc_DET(input_data)
+        self._calc_DET_GR()
+        
+        # calculate daily (first/last/max) exceedance hour
+        self._calc_DEH()
+    
+    def _calc_DET(self, input_data):
+        """
+        calculate daily exceedance hours (daily exposure time - DET) for the input data (equation 10_3)
+        Args:
+            input_data: gridded input data (e.g. temperature, precipitation) in hourly resolution
+        """
+        # calculate hourly exceedance magnitude
+        self.input_data_grid = input_data
+        htem = self._calc_TEM()
+        self._hourly_results['HTEM'] = htem
+        
+        # calculate hourly exceedance count
+        htec = self._calc_TEC(htem)
+        self._hourly_results['HTEC'] = htec
+        
+        # calculate exceedance hours per day (equation 10_3)
+        N_hours = htec.resample(time='1d').sum('time')
+        # TODO: add attributes
+        self.daily_results['Nhours'] = N_hours
+    
+    def _calc_DET_GR(self):
+        """
+        calculate daily exceedance hours (daily exposure time - DET) for GR (equation 10_7)
+        """
+        N_hours = self.daily_results.Nhours
+        
+        a_nl = self.daily_results.DTEA
+        a_gr = self.daily_results.DTEA_GR
+        
+        # replace 0 values with nan to avoid division by 0
+        a_gr = a_gr.where(a_gr > 0, np.nan)
+        
+        N_hours_gr = (a_nl / a_gr * N_hours).sum(axis=(1, 2), skipna=True)
+        N_hours_gr = N_hours_gr.rename('Nhours_GR')
+        # TODO: add attributes
+        self.daily_results['Nhours_GR'] = N_hours_gr
+        
+    def _calc_DEH(self):
+        """
+        calculate daily exceedance hours (first/last/max) for the input data (equation 10_4, 10_5, 10_6)
+        """
+        if 'Nhours' not in self.daily_results:
+            raise ValueError("Nhours must be calculated before calculating DEH")
+        if 'Nhours_GR' not in self.daily_results:
+            raise ValueError("Nhours_GR must be calculated before calculating DEH")
+        
+        # replace TEC by hour of day for each day
+        t_tec = self._hourly_results.HTEC.copy()
+        t_tec = t_tec.where(t_tec > 0, np.nan)
+        n_days = int(t_tec.shape[0] / 24)
+        hours = np.arange(0, 24)
+        hours_full = np.tile(hours, n_days)
+        t_tec = t_tec * hours_full[:, np.newaxis, np.newaxis]
+        
+        # calculate first exceedance hour
+        t_hfirst = t_tec.resample(time='1d').min(skipna=True, dim='time')
+        # TODO: add attributes
+        #t_hfirst.attrs = get_attrs(vname='DEH_first')
+        self.daily_results['t_hfirst'] = t_hfirst
+        
+        # calculate last exceedance hour
+        t_hlast = t_tec.resample(time='1d').max(skipna=True, dim='time')
+        #t_hlast.attrs = get_attrs(vname='DEH_last')
+        self.daily_results['t_hlast'] = t_hlast
+        
+        # calculate maximum exceedance hour
+        htem = self._hourly_results.HTEM
+        htem = htem.where(htem > 0, 0)
+        t_hmax = htem.resample(time='1d').map(xr.DataArray.argmax, dim='time')
+        t_hmax = t_hmax.where(t_hfirst >= 0, np.nan)
+        #t_hmax.attrs = get_attrs(vname='t_hmax')
+        self.daily_results['t_hmax'] = t_hmax
         
     # ### Climatic Time Period (CTP) functions ###
     def _set_ctp(self, ctp):
