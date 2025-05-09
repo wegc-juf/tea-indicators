@@ -490,9 +490,10 @@ class TEAIndicators:
         
         # calculate exceedance hours per day (equation 10_3)
         N_hours = htec.resample(time='1d').sum('time')
-        # TODO: add attributes
+        N_hours.attrs = get_attrs(vname='Nhours', data_unit='h')
         self.daily_results['Nhours'] = N_hours
-    
+        self.daily_results['DTED'] = self.daily_results.Nhours
+
     def _calc_DET_GR(self):
         """
         calculate daily exceedance hours (daily exposure time - DET) for GR (equation 10_7)
@@ -506,8 +507,9 @@ class TEAIndicators:
         a_gr = a_gr.where(a_gr > 0, np.nan)
         
         N_hours_gr = (a_nl / a_gr * N_hours).sum(axis=(1, 2), skipna=True)
-        # TODO: add attributes
+        N_hours_gr.attrs = get_attrs(vname='Nhours_GR', data_unit='h')
         self.daily_results['Nhours_GR'] = N_hours_gr
+        self.daily_results['DTED_GR'] = self.daily_results.Nhours_GR
         
     def _calc_DEH(self):
         """
@@ -528,13 +530,12 @@ class TEAIndicators:
         
         # calculate first exceedance hour
         t_hfirst = t_tec.resample(time='1d').min(skipna=True, dim='time')
-        # TODO: add attributes
-        #t_hfirst.attrs = get_attrs(vname='t_hfirst')
+        t_hfirst.attrs = get_attrs(vname='t_hfirst')
         self.daily_results['t_hfirst'] = t_hfirst
         
         # calculate last exceedance hour
         t_hlast = t_tec.resample(time='1d').max(skipna=True, dim='time')
-        #t_hlast.attrs = get_attrs(vname='t_hlast')
+        t_hlast.attrs = get_attrs(vname='t_hlast')
         self.daily_results['t_hlast'] = t_hlast
         
         # calculate maximum exceedance hour
@@ -542,7 +543,7 @@ class TEAIndicators:
         htem = htem.where(htem > 0, 0)
         t_hmax = htem.resample(time='1d').map(xr.DataArray.argmax, dim='time')
         t_hmax = t_hmax.where(t_hfirst >= 0, np.nan)
-        #t_hmax.attrs = get_attrs(vname='t_hmax')
+        t_hmax.attrs = get_attrs(vname='t_hmax')
         self.daily_results['t_hmax'] = t_hmax
     
     def _calc_DEH_GR(self):

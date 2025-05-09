@@ -31,6 +31,7 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
              'amplification_global_attrs': {'title': f'TEA decadal-mean amplification factors for climatic time period:'
                                                      f' {period}'},
              'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
+             'DTED': {'long_name': 'daily threshold exceedance duration', 'units': 'h'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
              'DTEA': {'long_name': 'daily threshold exceedance area', 'units': data_unit},
              'DTEMA': {'long_name': 'daily threshold exceedance magnitude * area (auxiliary)',
@@ -67,7 +68,11 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
              'H_AEHC_avg': {'long_name': 'average daily atmospheric boundary layer exceedance '
                                          'heat content', 'units': 'PJ d^-1', 'metric_type': 'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
-                                     'heat content', 'units': 'PJ yr^-1', 'metric_type': 'compound'}
+                                     'heat content', 'units': 'PJ yr^-1', 'metric_type': 'compound'},
+             'Nhours': {'long_name': 'daily threshold exceedance duration', 'units': 'h'},
+             't_hfirst': {'long_name': 'daily hour of first exceedance', 'units': 'h', 'metric_type': 'basic'},
+             't_hlast': {'long_name': 'daily hour of last exceedance', 'units': 'h', 'metric_type': 'basic'},
+             't_hmax': {'long_name': 'daily hour of maximum exceedance', 'units': 'h', 'metric_type': 'basic'},
              }
     
     # add (A)GR indicators if necessary
