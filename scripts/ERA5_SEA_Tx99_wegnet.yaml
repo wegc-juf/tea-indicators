@@ -11,9 +11,9 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2024
+    end: 1962
     period: annual
-    ref_period: 1961-1990
+    ref_period: 1961-1962
     cc_period: 2010-2024
   dataset: &DATA
     dataset: ERA5
@@ -36,7 +36,7 @@ calc_TEA:
   decadal: false
   spreads: false
   decadal_only: false
-  recalc_decadal: true
+  recalc_decadal: false
 
 create_region_masks:
   <<: *GR

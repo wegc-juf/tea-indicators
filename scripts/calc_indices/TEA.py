@@ -468,6 +468,10 @@ class TEAIndicators:
         
         # calculate daily (first/last/max) exceedance hour
         self._calc_DEH()
+        self._calc_DEH_GR()
+        
+        # remove temporary hourly results
+        del self._hourly_results
     
     def _calc_DET(self, input_data):
         """
@@ -502,7 +506,6 @@ class TEAIndicators:
         a_gr = a_gr.where(a_gr > 0, np.nan)
         
         N_hours_gr = (a_nl / a_gr * N_hours).sum(axis=(1, 2), skipna=True)
-        N_hours_gr = N_hours_gr.rename('Nhours_GR')
         # TODO: add attributes
         self.daily_results['Nhours_GR'] = N_hours_gr
         
@@ -526,12 +529,12 @@ class TEAIndicators:
         # calculate first exceedance hour
         t_hfirst = t_tec.resample(time='1d').min(skipna=True, dim='time')
         # TODO: add attributes
-        #t_hfirst.attrs = get_attrs(vname='DEH_first')
+        #t_hfirst.attrs = get_attrs(vname='t_hfirst')
         self.daily_results['t_hfirst'] = t_hfirst
         
         # calculate last exceedance hour
         t_hlast = t_tec.resample(time='1d').max(skipna=True, dim='time')
-        #t_hlast.attrs = get_attrs(vname='DEH_last')
+        #t_hlast.attrs = get_attrs(vname='t_hlast')
         self.daily_results['t_hlast'] = t_hlast
         
         # calculate maximum exceedance hour
@@ -541,7 +544,25 @@ class TEAIndicators:
         t_hmax = t_hmax.where(t_hfirst >= 0, np.nan)
         #t_hmax.attrs = get_attrs(vname='t_hmax')
         self.daily_results['t_hmax'] = t_hmax
+    
+    def _calc_DEH_GR(self):
+        """
+        calculate daily exceedance hours (first/last/max) for GR (equation 10_8)
+        """
+        a_nl = self.daily_results.DTEA
+        a_gr = self.daily_results.DTEA_GR
         
+        # replace 0 values with nan to avoid division by 0
+        a_gr = a_gr.where(a_gr > 0, np.nan)
+        
+        for var in ['t_hfirst', 't_hlast', 't_hmax']:
+            t_h = self.daily_results[var]
+            # replace 0 values with nan to avoid division by 0
+            t_h_gr = (a_nl / a_gr * t_h).sum(axis=(1, 2), skipna=True)
+            t_h_gr = t_h_gr.where(self.daily_results.DTEC_GR > 0, np.nan)
+            # TODO: add attributes
+            self.daily_results[f'{var}_GR'] = t_h_gr
+    
     # ### Climatic Time Period (CTP) functions ###
     def _set_ctp(self, ctp):
         """
