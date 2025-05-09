@@ -391,10 +391,13 @@ class TEAIndicators:
     def save_daily_results(self, filepath):
         """
         save all variables to filepath
+        Args:
+            filepath: path to save the results.
         """
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
+            logger.info(f"Saving daily results to {filepath}")
             self.daily_results.to_netcdf(filepath)
     
     def load_daily_results(self, filepath):
@@ -964,6 +967,7 @@ class TEAIndicators:
         self._calc_annual_event_severity()
         self._calc_annual_exceedance_heat_content()
         if drop_daily_results:
+            self.daily_results.close()
             del self._daily_results_filtered
             del self.daily_results
         ctp_attrs = get_attrs(vname='CTP', period=self.CTP)

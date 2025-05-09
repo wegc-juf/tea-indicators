@@ -228,10 +228,6 @@ def calc_tea_indicators(opts):
             # calculate daily basis variables
             tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
-            # calculate hourly indicators
-            if opts.hourly:
-                calc_hourly_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
-            
             # calculate CTP indicators
             calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
@@ -289,8 +285,11 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         
         tea.calc_daily_basis_vars()
         
+        # calculate hourly indicators
+        if opts.hourly:
+            calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
+        
         # save results
-        logger.info(f'Saving daily basis variables to {dbv_filename}')
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
@@ -317,8 +316,10 @@ def calc_hourly_indicators(tea, opts, start, end):
     # load data
     data = get_data(start=start, end=end, opts=opts, hourly=True)
     
+    logger.info('Calculating hourly basis variables.')
     # calculate hourly indicators
     tea.calc_hourly_indicators(input_data=data)
+    
     
     
 def calc_tea_indicators_agr(opts):
