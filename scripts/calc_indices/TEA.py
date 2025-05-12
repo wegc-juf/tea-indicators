@@ -91,8 +91,8 @@ class TEAIndicators:
         self._overlap_ctps = ['EWS', 'DJF']
         self.CTP_months = {'WAS': [4, 5, 6, 7, 8, 9, 10], 'ESS': [5, 6, 7, 8, 9], 'EWS': [11, 12, 1, 2, 3],
                            'JJA': [6, 7, 8], 'DJF': [12, 1, 2]}
-        self._CTP_resampler = None
         self._CTP_resample_sum = None
+        self._CTP_resample_mean = None
         self.CTP_results = xr.Dataset()
         
         # Decadal data
@@ -548,6 +548,12 @@ class TEAIndicators:
         t_hmax = t_hmax.where(t_hfirst >= 0, np.nan)
         t_hmax.attrs = get_attrs(vname='t_hmax')
         self.daily_results['t_hmax'] = t_hmax
+        
+        # calculate rise and set time (equation 16_2 and equation 16_3)
+        h_rise = t_hmax - t_hfirst + .5
+        h_set = t_hlast - t_hmax + .5
+        self.daily_results['h_rise'] = h_rise
+        self.daily_results['h_set'] = h_set
     
     def _calc_DEH_GR(self):
         """
@@ -564,8 +570,14 @@ class TEAIndicators:
             # replace 0 values with nan to avoid division by 0
             t_h_gr = (a_nl / a_gr * t_h).sum(axis=(1, 2), skipna=True)
             t_h_gr = t_h_gr.where(self.daily_results.DTEC_GR > 0, np.nan)
-            # TODO: add attributes
+            t_h_gr.attrs = get_attrs(vname=f'{var}_GR')
             self.daily_results[f'{var}_GR'] = t_h_gr
+        
+        # calculate rise and set time (equation 16_5 and equation 16_6)
+        h_rise = self.daily_results['t_hmax_GR'] - self.daily_results['t_hfirst_GR'] + .5
+        h_set = self.daily_results['t_hlast_GR'] - self.daily_results['t_hmax_GR'] + .5
+        self.daily_results['h_rise_GR'] = h_rise
+        self.daily_results['h_set_GR'] = h_set
     
     # ### Climatic Time Period (CTP) functions ###
     def _set_ctp(self, ctp):
@@ -716,6 +728,29 @@ class TEAIndicators:
         ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
         self.CTP_results['ED_avg_GR'] = ed_avg_gr
     
+    def _calc_hourly_ctp_vars(self):
+        """
+        calculate hourly CTP variables (equation 16)
+        """
+        
+        # average daily exposure time (h_avg, equation 16_1 and equation 16_4)
+        for var in ['Nhours', 'Nhours_GR']:
+            if var not in self.daily_results:
+                return
+            new_var = var.replace('Nhours', 'h_avg')
+            self.CTP_results[new_var] = self._CTP_resample_mean[var]
+            self.CTP_results[new_var].attrs = get_attrs(vname=new_var)
+        
+        # average daily rise/set time (h_rise_avg, h_set_avg, equation 16_2, 16_3, 16_5, and 16_6)
+        for var in ['h_rise', 'h_set']:
+            for gr_suffix in ['_GR', '']:
+                new_var = var + '_avg' + gr_suffix
+                old_var = var + gr_suffix
+                if var not in self.daily_results:
+                    return
+                self.CTP_results[new_var] = self._CTP_resample_mean[old_var]
+                self.CTP_results[new_var].attrs = get_attrs(vname=new_var)
+        
     def _calc_exceedance_magnitude(self):
         """
         calculate average (EM_avg) and cumulative (tEX=EM) exceedance magnitude (equation 17 and equation 18),
@@ -961,6 +996,7 @@ class TEAIndicators:
         self._calc_event_frequency()
         self._calc_supplementary_event_vars()
         self._calc_event_duration()
+        self._calc_hourly_ctp_vars()
         self._calc_exceedance_magnitude()
         self._calc_annual_total_events_extremity()
         self._calc_exceedance_area()
@@ -1042,7 +1078,7 @@ class TEAIndicators:
         if drop_annual_results:
             self.CTP_results.close()
             del self.CTP_results
-            del self._CTP_resampler
+            del self._CTP_resample_mean
             del self._CTP_resample_sum
     
     def save_decadal_results(self, filepath):
@@ -1462,9 +1498,20 @@ class TEAIndicators:
         if not self._calc_grid:
             self.daily_results = self.daily_results.drop_vars([var for var in self.daily_results.data_vars if 'GR' not
                                                                in var])
+            
+        # filter according to CTP definition (e.g. summer months)
         self._filter_CTP()
-        self._CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
-        self._CTP_resample_sum = self._CTP_resampler.sum('time', skipna=False)
+        
+        # set zero values to nan where necessary
+        for var in ['Nhours', 'Nhours_GR']:
+            if var in self._daily_results_filtered:
+                self._daily_results_filtered[var] = self._daily_results_filtered[var].where(
+                    self._daily_results_filtered[var] > 0)
+                
+        # resample to CTP
+        CTP_resampler = self._daily_results_filtered.resample(time=self.CTP_freqs[self.CTP])
+        self._CTP_resample_mean = CTP_resampler.mean('time', skipna=True)
+        self._CTP_resample_sum = CTP_resampler.sum('time', skipna=False)
         
         # dask does not support median for resampling so resample only what is necessary
         self._CTP_resample_median = xr.Dataset()

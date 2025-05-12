@@ -69,10 +69,13 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
                                          'heat content', 'units': 'PJ d^-1', 'metric_type': 'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
                                      'heat content', 'units': 'PJ yr^-1', 'metric_type': 'compound'},
-             'Nhours': {'long_name': 'daily threshold exceedance duration', 'units': 'h'},
+             'Nhours': {'long_name': 'daily exposure time', 'units': 'h'},
+             'h_avg': {'long_name': 'average daily exposure time (DET)', 'units': 'h', 'metric_type': 'basic'},
              't_hfirst': {'long_name': 'daily hour of first exceedance', 'units': 'h', 'metric_type': 'basic'},
              't_hlast': {'long_name': 'daily hour of last exceedance', 'units': 'h', 'metric_type': 'basic'},
              't_hmax': {'long_name': 'daily hour of maximum exceedance', 'units': 'h', 'metric_type': 'basic'},
+             'h_rise_avg': {'long_name': 'average daily exposure rise duration', 'units': 'h', 'metric_type': 'basic'},
+             'h_set_avg': {'long_name': 'average daily exposure set duration', 'units': 'h', 'metric_type': 'basic'},
              }
     
     # add (A)GR indicators if necessary
