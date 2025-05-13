@@ -319,8 +319,9 @@ def get_data(start, end, opts, period='annual', hourly=False):
     logger.info(f'Loading data from {filenames}...')
     try:
         ds = xr.open_mfdataset(filenames, combine='by_coords')
-    except ValueError:
-        ds = xr.open_dataset(filenames[0])
+    except ValueError as e:
+        logger.warning(f'Error loading data: {e} Trying again with combine="nested"')
+        ds = xr.open_mfdataset(filenames, combine='nested')
     
     # select variable
     if opts.dataset == 'SPARTACUS' and parameter == 'P24h_7to7':

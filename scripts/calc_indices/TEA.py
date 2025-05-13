@@ -494,6 +494,10 @@ class TEAIndicators:
         # calculate exceedance hours per day (equation 10_3)
         N_hours = htec.resample(time='1d').sum('time')
         N_hours.attrs = get_attrs(vname='Nhours', data_unit='h')
+        
+        if len(N_hours.time) != len(self.daily_results.time):
+            logger.warning("Number of days in hourly input data and daily results do not match.")
+            
         self.daily_results['Nhours'] = N_hours
         self.daily_results['DTED'] = self.daily_results.Nhours
 
@@ -567,9 +571,8 @@ class TEAIndicators:
         
         for var in ['t_hfirst', 't_hlast', 't_hmax']:
             t_h = self.daily_results[var]
-            # replace 0 values with nan to avoid division by 0
             t_h_gr = (a_nl / a_gr * t_h).sum(axis=(1, 2), skipna=True)
-            t_h_gr = t_h_gr.where(self.daily_results.DTEC_GR > 0, np.nan)
+            t_h_gr = t_h_gr.where(self.daily_results.Nhours_GR > 0, np.nan)
             t_h_gr.attrs = get_attrs(vname=f'{var}_GR')
             self.daily_results[f'{var}_GR'] = t_h_gr
         
