@@ -29,7 +29,7 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  outpath: /home/wegnet/results/TEA_indicators_test/
+  outpath: /home/wegnet/results/TEA_indicators_test
   recalc_threshold: false
   recalc_daily: true
   hourly: true
