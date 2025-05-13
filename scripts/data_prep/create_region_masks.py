@@ -270,6 +270,8 @@ def find_closest(coords, corner_val, direction):
         for i in reversed(range(len(coords))):
             if coords[i] < corner_val:
                 return coords[i]
+    else:
+        raise ValueError('Direction must be either -1 or 1.')
 
 
 def save_output(ds, opts, out_region=None):
