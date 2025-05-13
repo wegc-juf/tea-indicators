@@ -1215,7 +1215,7 @@ class TEAIndicators:
         supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
         for icy, cy in enumerate(annual_data.time):
             # skip first and last 5 years
-            if icy < 5 or icy > len(annual_data.time) - 4:
+            if icy < 5 or icy >= len(annual_data.time) - 4:
                 continue
             one_decade = annual_data.isel(time=slice(icy - 5, icy + 5))
             center_val = dec_data.isel(time=icy)
