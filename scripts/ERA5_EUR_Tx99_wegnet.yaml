@@ -49,6 +49,6 @@ create_region_masks:
   <<: *DATA
   <<: *PARAM
   <<: *TIME
-  # use UTM33N for SPARTACUS, because it has been regridded to WEGN grid
-  target_sys: 32633
   gr_type: polygon
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
