@@ -13,6 +13,7 @@ import pandas as pd
 from pathlib import Path
 import re
 import sys
+import math
 import warnings
 import xarray as xr
 import yaml
@@ -78,8 +79,9 @@ def load_mask_file(opts):
         mask: GR mask (ds)
 
     """
-    
-    mask_file = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc')
+    maskpath = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc'
+    logger.info(f'Loading mask from {maskpath}')
+    mask_file = xr.open_dataset(maskpath)
     
     return mask_file.mask
 
@@ -157,6 +159,81 @@ def calc_ctp_indicators(tea, opts, start, end):
     save_ctp_output(opts=opts, tea=tea, start=start, end=end)
 
 
+def calc_lat_lon_range(cell_size_lat, data, mask):
+    """
+    calculate latitude and longitude range for selected region
+    Args:
+        cell_size_lat: size of the grid cell in latitude
+        data: input data
+        mask: mask grid
+
+    Returns:
+        min_lat: minimum latitude
+        min_lon: minimum longitude
+        max_lat: maximum latitude
+        max_lon: maximum longitude
+
+    """
+    min_lat = math.floor(data.lat[np.where(mask > 0)[0][-1]].values - cell_size_lat / 2)
+    if min_lat < mask.lat.min().values:
+        min_lat = float(mask.lat.min().values)
+    max_lat = math.ceil(data.lat[np.where(mask > 0)[0][0]].values + cell_size_lat / 2)
+    if max_lat > mask.lat.max().values:
+        max_lat = float(mask.lat.max().values)
+    cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
+    min_lon = math.floor(data.lon[np.where(mask > 0)[1][0]].values - cell_size_lon / 2)
+    if min_lon < mask.lon.min().values:
+        min_lon = float(mask.lon.min().values)
+    max_lon = math.ceil(data.lon[np.where(mask > 0)[1][-1]].values + cell_size_lon / 2)
+    if max_lon > mask.lon.max().values:
+        max_lon = float(mask.lon.max().values)
+    return min_lat, min_lon, max_lat, max_lon
+
+
+def reduce_region(data, mask, threshold, opts):
+    """
+    reduce data to the region of interest
+    Args:
+        data: input data
+        mask: mask grid
+        threshold: threshold grid
+        opts: options
+
+    Returns:
+        data: reduced data
+        mask: reduced mask grid
+        threshold: reduced threshold grid
+
+    """
+    if opts.precip:
+        cell_size_lat = 1
+    else:
+        cell_size_lat = 2
+    
+    # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
+    if opts.full_region:
+        min_lat = mask.lat.min().values
+        max_lat = mask.lat.max().values
+    else:
+        min_lat, min_lon, max_lat, max_lon = calc_lat_lon_range(cell_size_lat, data, mask)
+        
+    if opts.dataset == 'ERA5' and opts.region == 'EUR':
+        lons = np.arange(-12, 40.5, 0.5)
+        cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
+        min_lon = math.floor(lons[0] - cell_size_lon / 2)
+        max_lon = math.ceil(lons[-1] + cell_size_lon / 2)
+        # if min_lat < 35 - cell_size_lat:
+        #     # TODO: get rid of this
+        #     logger.warning('Region is too far south. Setting minimum latitude to 35°N.')
+        #     min_lat = 35 - cell_size_lat
+
+    proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+    proc_mask = mask.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+    threshold = threshold.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+    
+    return proc_data, proc_mask, threshold
+
+
 def getopts():
     """
     get arguments
@@ -186,7 +263,7 @@ def run():
     # load CFG parameter
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
     
-    if 'agr' in opts:
+    if 'agr' in opts and False:
         calc_tea_indicators_agr(opts)
     else:
         calc_tea_indicators(opts)
@@ -266,8 +343,16 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         
     logger.info(f'Calculating TEA indicators for years {start}-{end}.')
     # set filenames
+    if 'agr' in opts:
+        agr_str = 'AGR-'
+        TEA_class_obj = TEAAgr
+    else:
+        agr_str = ''
+        TEA_class_obj = TEAIndicators
+        
+    # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins)
     dbv_filename = (f'{dbv_outpath}/'
-                    f'DBV_{opts.param_str}_{opts.region}_annual_{opts.dataset}'
+                    f'DBV_{opts.param_str}_{agr_str}{opts.region}_annual_{opts.dataset}'
                     f'_{start}to{end}.nc')
     
     # recalculate daily basis variables if needed
@@ -276,13 +361,19 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         # always calculate annual basis variables to later extract sub-annual values
         period = 'annual'
         data = get_data(start=start, end=end, opts=opts, period=period)
+    
+        # reduce extent of data to the region of interest
+        if 'agr' in opts:
+            data, mask, threshold = reduce_region(data, mask, threshold, opts)
         
         # computation of daily basis variables (Methods chapter 3)
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
-        tea = TEAIndicators(input_data_grid=data, threshold=threshold, mask=mask,
-                            # set min area to < 1 grid cell area so that all exceedance days are considered
-                            min_area=0.0001, low_extreme=opts.low_extreme, unit=opts.unit)
         
+        # set min area to < 1 grid cell area so that all exceedance days are considered
+        min_area = 0.0001
+        
+        tea = TEA_class_obj(input_data_grid=data, threshold=threshold, mask=mask,
+                            min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit)
         tea.calc_daily_basis_vars()
         
         # calculate hourly indicators
@@ -293,7 +384,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
-        tea = TEAIndicators(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit)
+        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit)
         logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
                     'set --recalc-daily.')
         tea.load_daily_results(dbv_filename)
@@ -321,9 +412,17 @@ def calc_hourly_indicators(tea, opts, start, end):
     tea.calc_hourly_indicators(input_data=data)
     
     
-    
 def calc_tea_indicators_agr(opts):
+    """
+    calculate TEA indicators for aggregated GeoRegions (AGR)
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+
+    Returns:
+
+    """
     # TODO: run only last step as AGR, all other code should be the same?
+    
     # load static files
     gr_grid_mask = None
     gr_grid_areas = None
@@ -334,6 +433,7 @@ def calc_tea_indicators_agr(opts):
         cell_size_lat = 1
     else:
         cell_size_lat = 2
+        
     tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas, cell_size_lat=cell_size_lat)
     
     if not opts.decadal_only:
@@ -351,12 +451,6 @@ def calc_tea_indicators_agr(opts):
             myopts.end = p_end
             logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
             
-            # set filenames
-            dbv_filename = (f'{dbv_outpath}/'
-                            f'DBV_{myopts.param_str}_{myopts.region}_annual_{myopts.dataset}'
-                            f'_{myopts.start}to{myopts.end}.nc')
-            
-            # check if GR size is larger than 100 areals and switch to calc_TEA_largeGR if so
             # use European masks
             masks, static = load_static_files(opts=myopts, large_gr=True)
             data = get_data(start=p_start, end=p_end, opts=opts, period=opts.period)
