@@ -86,6 +86,22 @@ def load_mask_file(opts):
     return mask_file.mask
 
 
+def load_lsm_file(opts):
+    """
+    load land-sea-mask for AGR
+    Args:
+        opts: options
+
+    Returns:
+        mask: GR mask (ds)
+
+    """
+    # TODO: make this work outside of EUR
+    new_opts = deepcopy(opts)
+    new_opts.region = 'EUR'
+    return load_mask_file(new_opts)
+
+
 def compare_to_ctp_ref(tea, ctp_filename_ref):
     """
     compare results to reference file
@@ -98,11 +114,11 @@ def compare_to_ctp_ref(tea, ctp_filename_ref):
     if os.path.exists(ctp_filename_ref):
         logger.info(f'Comparing results to reference file {ctp_filename_ref}')
         tea_ref = TEAIndicators()
-        tea_ref.load_CTP_results(ctp_filename_ref)
-        tea_result = tea.CTP_results
+        tea_ref.load_ctp_results(ctp_filename_ref)
+        tea_result = tea.ctp_results
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
-            compare_to_ref(tea_result, tea_ref.CTP_results)
+            compare_to_ref(tea_result, tea_ref.ctp_results)
     else:
         logger.warning(f'Reference file {ctp_filename_ref} not found.')
     
@@ -116,25 +132,56 @@ def save_ctp_output(opts, tea, start, end):
         start: start year
         end: end year
     """
-    create_tea_history(cfg_params=opts, tea=tea, result_type='CTP')
+    create_tea_history(cfg_params=opts, tea=tea, result_type='ctp')
 
-    path = Path(f'{opts.outpath}/ctp_indicator_variables/supplementary/')
+    path = Path(f'{opts.outpath}/ctp_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
     
+    if 'agr' in opts:
+        grg_str = 'GRG-'
+    else:
+        grg_str = ''
+    
     outpath = (f'{opts.outpath}/ctp_indicator_variables/'
-               f'CTP_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
+               f'CTP_{opts.param_str}_{grg_str}{opts.region}_{opts.period}_{opts.dataset}'
                f'_{start}to{end}.nc')
     
     path_ref = outpath.replace('.nc', '_ref.nc')
     
     logger.info(f'Saving CTP indicators to {outpath}')
-    tea.save_CTP_results(outpath)
+    tea.save_ctp_results(outpath)
     
     if opts.compare_to_ref:
         compare_to_ctp_ref(tea, path_ref)
+        
+        
+def _save_0p5_mask(opts, mask_0p5, area_0p5):
+    """
+    save mask on 0.5° grid to netcdf file
+    Args:
+        opts: CLI parameter
+        mask_0p5: mask on 0.5° grid
+        area_0p5: area grid on 0.5° grid
+    """
+    area_0p5 = create_history_from_cfg(cfg_params=opts, ds=area_0p5)
+    area_grid_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
+    try:
+        area_0p5.to_netcdf(area_grid_file)
+    except PermissionError:
+        os.remove(area_grid_file)
+        area_0p5.to_netcdf(area_grid_file)
+    
+    # save 0.5° mask
+    mask_0p5 = create_history_from_cfg(cfg_params=opts, ds=mask_0p5)
+    mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_0p5_{opts.dataset}.nc'
+    try:
+        mask_0p5.to_netcdf(mask_file)
+    except PermissionError:
+        os.remove(mask_file)
+        mask_0p5.to_netcdf(mask_file)
 
 
-def calc_ctp_indicators(tea, opts, start, end):
+def calc_ctp_indicators(tea, opts, start, end, lsm=None):
     """
     calculate the TEA indicators for the annual climatic time period
     Args:
@@ -142,6 +189,7 @@ def calc_ctp_indicators(tea, opts, start, end):
         opts: CLI parameter
         start: start year
         end: end year
+        lsm: land-sea mask for AGR (optional)
     """
     
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
@@ -149,11 +197,34 @@ def calc_ctp_indicators(tea, opts, start, end):
     dtea_min = 1  # according to equation 03
     tea.update_min_area(dtea_min)
     
+    if 'agr' in opts:
+        # set cell_size
+        tea.cell_size_lat = opts.agr_cell_size
+        
+        tea.land_sea_mask = lsm
+
+        # load static GR grid files
+        # TODO: set path and put load function in TEA_AGR
+        gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
+        
+        # generate GR grid mask and area if necessary
+        if gr_grid_mask is None or gr_grid_areas is None:
+            tea.generate_gr_grid_mask()
+            _save_0p5_mask(opts, tea.gr_grid_mask, tea.gr_grid_areas)
+        else:
+            # set GR grid mask and area grid
+            tea.gr_grid_mask = gr_grid_mask
+            tea.gr_grid_areas = gr_grid_areas
+        
+        # set land_frac_min to 0 for full region
+        if opts.full_region:
+            tea.land_frac_min = 0
+            
     # calculate annual climatic time period indicators
     logger.info('Calculating annual CTP indicators')
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
-        tea.calc_annual_CTP_indicators(opts.period, drop_daily_results=True)
+        tea.calc_annual_ctp_indicators(opts.period, drop_daily_results=True)
 
     # save output
     save_ctp_output(opts=opts, tea=tea, start=start, end=end)
@@ -276,11 +347,14 @@ def calc_tea_indicators(opts):
         opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
     """
     
+    mask = None
+    lsm = None
     # load mask if needed
     if 'maskpath' in opts:
         mask = load_mask_file(opts)
-    else:
-        mask = None
+        if 'agr' in opts:
+            # load land-sea mask for AGR
+            lsm = load_lsm_file(opts)
     
     # load threshold grid or set threshold value
     if opts.threshold_type == 'abs':
@@ -306,7 +380,7 @@ def calc_tea_indicators(opts):
             tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
             # calculate CTP indicators
-            calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
+            calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end, lsm=lsm)
             
             gc.collect()
             
@@ -424,10 +498,8 @@ def calc_tea_indicators_agr(opts):
     # TODO: run only last step as AGR, all other code should be the same?
     
     # load static files
-    gr_grid_mask = None
-    gr_grid_areas = None
     # check if GR size is larger than 100 areals and switch to AGR if so
-    gr_grid_areas, gr_grid_mask = load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts)
+    gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
     
     if opts.precip:
         cell_size_lat = 1
@@ -500,8 +572,18 @@ def calc_tea_indicators_agr(opts):
         tea.save_amplification_factors(outpath_ampl)
 
 
-def load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts):
-    # load agr mask
+def load_gr_grid_static(opts):
+    """
+    load grid of GRs mask and area grid for AGR calculation
+    
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+
+    Returns:
+        gr_grid_areas: area grid (xarray DataArray)
+        gr_grid_mask: mask grid (xarray DataArray)
+
+    """
     gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_0p5_{opts.dataset}.nc'
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
@@ -509,7 +591,7 @@ def load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts):
     except FileNotFoundError:
         if opts.decadal_only:
             logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
-            gr_grid_mask = None
+        gr_grid_mask = None
     gr_grid_areas_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
     try:
         gr_grid_areas = xr.open_dataset(gr_grid_areas_file)
@@ -519,7 +601,8 @@ def load_gr_grid_static(gr_grid_areas, gr_grid_mask, opts):
             # TODO: make AGR code work without area grid (assuming all grid cells have same area)
             raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for '
                                     f'AGR calculations.')
-    return gr_grid_areas, gr_grid_mask
+        gr_grid_areas = None
+    return gr_grid_mask, gr_grid_areas
 
 
 if __name__ == '__main__':

@@ -38,14 +38,14 @@ if __name__ == '__main__':
     
     # calculate annual TEA indicators for warm season (WAS) and save to NetCDF file
     print('Calculating annual TEA indicators...')
-    tea_obj.calc_annual_CTP_indicators(ctp='WAS', drop_daily_results=True)
+    tea_obj.calc_annual_ctp_indicators(ctp='WAS', drop_daily_results=True)
     
     outpath = f'../examples/{ERA5_basename}_TEA_annual_results.nc'
     print(f'Saving annual results to {outpath}...')
-    tea_obj.save_CTP_results(outpath)
+    tea_obj.save_ctp_results(outpath)
     
     # plot cumulative exceedance magnitude (temporal event extremity tEX) for 2024
-    tea_obj.CTP_results.EM.sel(time='2024').plot()
+    tea_obj.ctp_results.EM.sel(time='2024').plot()
     plt.show()
     
     # calculate decadal-mean TEA indicators and save to NetCDF file

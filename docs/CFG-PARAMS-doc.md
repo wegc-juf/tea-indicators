@@ -5,6 +5,8 @@
 |------------------|----------------------------------------------------------------------------------------------------------------------------------|-------|----------------------------------------------------------|
 |                  |                                                                                                                                  |       |                                                          |
 | *region*         | Name of GeoRegion; AUT, SAR, SEA, FBR, name of Austrian state, EUR, or ISO2 country code.                                        | str   | AUT                                                      |
+| *agr*            | Name of Aggregated GeoRegion (AGR); AUT, SAR, SEA, FBR, name of Austrian state, EUR, N-EUR, C-EUR, S-EUR or ISO2 country code.   | str   | null                                                     |
+| *agr_cell_size*  | Size of AGR sub-cell in degrees                                                                                                  | float | 1 for precip and 2 for all other parameters              |
 | *sw_corner*      | Only if *gr_type* corners, southwest corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
 | *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
 | *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                     |
@@ -13,7 +15,7 @@
 |                  |                                                                                                                                  |       |                                                          |
 | *parameter*      | Name of parameter for TEA calculation .                                                                                          | str   | Tx                                                       |
 | *precip*         | Marks if precipitation data is used; set if input is precipitation data.                                                         | bool  | false                                                    |
-| *threshold*      | Threshold value; if percentiles are used as thresholds, *theshold* defines the percentile, otherwise it is the absolute value    | float | 99                                                       |
+| *threshold*      | Threshold value; if percentiles are used as thresholds, *threshold* defines the percentile, otherwise it is the absolute value   | float | 99                                                       |
 | *threshold_type* | Type of threshold; abs for absolute thresholds, perc for percentiles.                                                            | str   | perc                                                     |
 | *unit*           | Physical unit of chosen parameter.                                                                                               | str   | degC                                                     |
 | *low_extreme*    | Marks if a low extreme is investigated; set if low extreme is investigated (values lower than threshold are considered extreme). | bool  | false                                                    |

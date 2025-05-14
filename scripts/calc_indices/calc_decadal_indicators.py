@@ -56,7 +56,7 @@ def load_ctp_data(opts, tea):
     else:
         use_dask = True
 
-    tea.load_CTP_results(files, use_dask=use_dask)
+    tea.load_ctp_results(files, use_dask=use_dask)
 
 
 def rolling_decadal_mean(data):

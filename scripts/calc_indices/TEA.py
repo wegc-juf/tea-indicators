@@ -29,8 +29,7 @@ class TEAIndicators:
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
             threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
-            area_grid: grid containing the area of each results cell, if None, area is assumed to be 1 for each cell
-                       nan values mask out the corresponding results cells
+            area_grid: grid containing the area of each results cell, if None, area is calculated from input_data_grid
             min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
                       (1 areal according to equation 03)
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
@@ -49,8 +48,10 @@ class TEAIndicators:
         if area_grid is None:
             if input_data_grid is not None:
                 self._create_area_grid(input_data_grid)
-            elif threshold is not None:
-                self.area_grid = xr.ones_like(self.threshold_grid)
+            else:
+                raise ValueError("Area grid must be set together with input data")
+                if threshold is not None:
+                    self.area_grid = xr.ones_like(self.threshold_grid)
         else:
             self.area_grid = area_grid
         
@@ -93,7 +94,7 @@ class TEAIndicators:
                            'JJA': [6, 7, 8], 'DJF': [12, 1, 2]}
         self._CTP_resample_sum = None
         self._CTP_resample_mean = None
-        self.CTP_results = xr.Dataset()
+        self.ctp_results = xr.Dataset()
         
         # Decadal data
         self.decadal_results = xr.Dataset()
@@ -602,7 +603,7 @@ class TEAIndicators:
         self.CTP = ctp
         ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
         # TODO: add CF-Convention compatible attributes...
-        self.CTP_results.attrs = ctp_attrs
+        self.ctp_results.attrs = ctp_attrs
     
     def _calc_event_frequency(self):
         """
@@ -627,20 +628,20 @@ class TEAIndicators:
             ef = ef.where(event_count.notnull())
             
             ef.attrs = get_attrs(vname='EF')
-            self.CTP_results['EF'] = ef
+            self.ctp_results['EF'] = ef
             
         # # process GR data
         ef_gr = self._CTP_resample_sum.DTEEC_GR
         ef_gr = ef_gr.where(ef_gr.notnull(), 0)
         
         ef_gr.attrs = get_attrs(vname='EF_GR')
-        self.CTP_results['EF_GR'] = ef_gr
+        self.ctp_results['EF_GR'] = ef_gr
     
     def _calc_supplementary_event_vars(self):
         """
         calculate supplementary event variables (equation 13)
         """
-        if 'EF' not in self.CTP_results and 'EF_GR' not in self.CTP_results:
+        if 'EF' not in self.ctp_results and 'EF_GR' not in self.ctp_results:
             self._calc_event_frequency()
         
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
@@ -662,12 +663,12 @@ class TEAIndicators:
             # equation 13_3
             aep = (doy_last - doy_first + 1) / 30.5
             # set aep values where EF == 0 to 0
-            aep = xr.where(self.CTP_results.EF == 0, 0, aep)
+            aep = xr.where(self.ctp_results.EF == 0, 0, aep)
             aep.attrs = get_attrs(vname='AEP')
             
-            self.CTP_results['doy_first'] = doy_first
-            self.CTP_results['doy_last'] = doy_last
-            self.CTP_results['AEP'] = aep
+            self.ctp_results['doy_first'] = doy_first
+            self.ctp_results['doy_last'] = doy_last
+            self.ctp_results['AEP'] = aep
             # indent
 
         # # process GR data
@@ -683,21 +684,21 @@ class TEAIndicators:
         # equation 13_6
         aep_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
         # set aep values where EF == 0 to 0
-        aep_gr = xr.where(self.CTP_results.EF_GR == 0, 0, aep_gr)
+        aep_gr = xr.where(self.ctp_results.EF_GR == 0, 0, aep_gr)
         
         doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
         doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
         aep_gr.attrs = get_attrs(vname='AEP_GR')
         
-        self.CTP_results['doy_first_GR'] = doy_first_gr
-        self.CTP_results['doy_last_GR'] = doy_last_gr
-        self.CTP_results['AEP_GR'] = aep_gr
+        self.ctp_results['doy_first_GR'] = doy_first_gr
+        self.ctp_results['doy_last_GR'] = doy_last_gr
+        self.ctp_results['AEP_GR'] = aep_gr
     
     def _calc_event_duration(self):
         """
         calculate event duration (equation 14 and equation 15)
         """
-        if 'EF' not in self.CTP_results and 'EF_GR' not in self.CTP_results:
+        if 'EF' not in self.ctp_results and 'EF_GR' not in self.ctp_results:
             self._calc_event_frequency()
         
         if 'DTEC' in self._CTP_resample_sum:
@@ -706,30 +707,30 @@ class TEAIndicators:
             # equation 14_2
             ed = self._CTP_resample_sum.DTEC
             ed.attrs = get_attrs(vname='ED')
-            self.CTP_results['ED'] = ed
+            self.ctp_results['ED'] = ed
             
-            ef = self.CTP_results['EF']
+            ef = self.ctp_results['EF']
             
             # calc average event duration (equation 14_1)
             ed_avg = ed / ef
             ed_avg = xr.where(ef == 0, 0, ed_avg)
             ed_avg.attrs = get_attrs(vname='ED_avg')
-            self.CTP_results['ED_avg'] = ed_avg
+            self.ctp_results['ED_avg'] = ed_avg
             # indent
         
         # # process GR data
         # equation 15_2
         ed_gr = self._CTP_resample_sum.DTEC_GR
         ed_gr.attrs = get_attrs(vname='ED_GR')
-        self.CTP_results['ED_GR'] = ed_gr
+        self.ctp_results['ED_GR'] = ed_gr
         
-        ef_gr = self.CTP_results['EF_GR']
+        ef_gr = self.ctp_results['EF_GR']
         
         # calc average event duration (equation 15_1)
         ed_avg_gr = ed_gr / ef_gr
         ed_avg_gr = xr.where(ef_gr == 0, 0, ed_avg_gr)
         ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
-        self.CTP_results['ED_avg_GR'] = ed_avg_gr
+        self.ctp_results['ED_avg_GR'] = ed_avg_gr
     
     def _calc_hourly_ctp_vars(self):
         """
@@ -741,8 +742,8 @@ class TEAIndicators:
             if var not in self.daily_results:
                 return
             new_var = var.replace('Nhours', 'h_avg')
-            self.CTP_results[new_var] = self._CTP_resample_mean[var]
-            self.CTP_results[new_var].attrs = get_attrs(vname=new_var)
+            self.ctp_results[new_var] = self._CTP_resample_mean[var]
+            self.ctp_results[new_var].attrs = get_attrs(vname=new_var)
         
         # average daily rise/set time (h_rise_avg, h_set_avg, equation 16_2, 16_3, 16_5, and 16_6)
         for var in ['h_rise', 'h_set']:
@@ -751,8 +752,8 @@ class TEAIndicators:
                 old_var = var + gr_suffix
                 if var not in self.daily_results:
                     return
-                self.CTP_results[new_var] = self._CTP_resample_mean[old_var]
-                self.CTP_results[new_var].attrs = get_attrs(vname=new_var)
+                self.ctp_results[new_var] = self._CTP_resample_mean[old_var]
+                self.ctp_results[new_var].attrs = get_attrs(vname=new_var)
         
     def _calc_exceedance_magnitude(self):
         """
@@ -760,7 +761,7 @@ class TEAIndicators:
         median exceedance magnitude (equation 19), and maximum exceedance magnitude (equation 20)
         """
         
-        if 'ED' not in self.CTP_results and 'ED_GR' not in self.CTP_results:
+        if 'ED' not in self.ctp_results and 'ED_GR' not in self.ctp_results:
             self._calc_event_duration()
             
         if 'DTEM' in self._CTP_resample_sum:
@@ -770,25 +771,25 @@ class TEAIndicators:
             em = self._CTP_resample_sum.DTEM
             
             # calc average exceedance magnitude (equation 17_1)
-            ed = self.CTP_results.ED
+            ed = self.ctp_results.ED
             em_avg = em / ed
             em_avg = xr.where(ed == 0, 0, em_avg)
             
             em.attrs = get_attrs(vname='EM', data_unit=self.unit)
             em_avg.attrs = get_attrs(vname='EM_avg', data_unit=self.unit)
-            self.CTP_results['EM'] = em
-            self.CTP_results['EM_avg'] = em_avg
+            self.ctp_results['EM'] = em
+            self.ctp_results['EM_avg'] = em_avg
             
             # calc median exceedance magnitude (equation 19_1)
             em_avg_med = self._CTP_resample_median.DTEM
             em_avg_med.attrs = get_attrs(vname='EM_avg_Md', data_unit=self.unit)
 
             # equation 19_2
-            em_med = self.CTP_results.ED * em_avg_med
+            em_med = self.ctp_results.ED * em_avg_med
             em_med.attrs = get_attrs(vname='EM_Md', data_unit=self.unit)
             
-            self.CTP_results['EM_avg_Md'] = em_avg_med
-            self.CTP_results['EM_Md'] = em_med
+            self.ctp_results['EM_avg_Md'] = em_avg_med
+            self.ctp_results['EM_Md'] = em_med
             
             # indent
             
@@ -797,35 +798,35 @@ class TEAIndicators:
         em_gr = self._CTP_resample_sum.DTEM_GR
     
         # calc average exceedance magnitude (equation 18_1)
-        ed_gr = self.CTP_results.ED_GR
+        ed_gr = self.ctp_results.ED_GR
         em_avg_gr = em_gr / ed_gr
         em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
         
         em_gr.attrs = get_attrs(vname='EM_GR', data_unit=self.unit)
         em_avg_gr.attrs = get_attrs(vname='EM_avg_GR', data_unit=self.unit)
         
-        self.CTP_results['EM_GR'] = em_gr
-        self.CTP_results['EM_avg_GR'] = em_avg_gr
+        self.ctp_results['EM_GR'] = em_gr
+        self.ctp_results['EM_avg_GR'] = em_avg_gr
         
         # calc median exceedance magnitude (equation 19_3)
         em_avg_gr_med = self._CTP_resample_median.DTEM_GR
         em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md', data_unit=self.unit)
-        self.CTP_results['EM_avg_GR_Md'] = em_avg_gr_med
+        self.ctp_results['EM_avg_GR_Md'] = em_avg_gr_med
 
         # equation 19_4
-        em_gr_med = self.CTP_results.ED_GR * em_avg_gr_med
+        em_gr_med = self.ctp_results.ED_GR * em_avg_gr_med
         em_gr_med.attrs = get_attrs(vname='EM_GR_Md', data_unit=self.unit)
-        self.CTP_results['EM_GR_Md'] = em_gr_med
+        self.ctp_results['EM_GR_Md'] = em_gr_med
         
         # calc maximum exceedance magnitude (equation 20_2)
         em_gr_max = self._CTP_resample_sum.DTEM_Max_GR
         em_gr_max.attrs = get_attrs(vname='EM_Max_GR', data_unit=self.unit)
-        self.CTP_results['EM_Max_GR'] = em_gr_max
+        self.ctp_results['EM_Max_GR'] = em_gr_max
         
         # calc average maximum exceedance magnitude (equation 20_1)
-        em_gr_avg_max = em_gr_max / self.CTP_results.ED_GR
+        em_gr_avg_max = em_gr_max / self.ctp_results.ED_GR
         em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
-        self.CTP_results['EM_avg_Max_GR'] = em_gr_avg_max
+        self.ctp_results['EM_avg_Max_GR'] = em_gr_avg_max
     
     def _calc_annual_total_events_extremity(self):
         """
@@ -834,7 +835,7 @@ class TEAIndicators:
         # equation 21_3
         tex = self._CTP_resample_sum.DTEMA_GR
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
-        self.CTP_results['TEX_GR'] = tex
+        self.ctp_results['TEX_GR'] = tex
     
     def _calc_total_events_extremity(self, f, d=None, m=None, a=None, s=None):
         """
@@ -862,52 +863,52 @@ class TEAIndicators:
         """
         calculate exceedance area (equation 21_1)
         """
-        if self.CTP_results['TEX_GR'] is None:
+        if self.ctp_results['TEX_GR'] is None:
             self._calc_annual_total_events_extremity()
-        if self.CTP_results['EM_GR'] is None:
+        if self.ctp_results['EM_GR'] is None:
             self._calc_exceedance_magnitude()
         
         # equation 21_1
-        ea_avg = self.CTP_results.TEX_GR / self.CTP_results.EM_GR
-        ea_avg = xr.where(self.CTP_results.EM_GR == 0, 0, ea_avg)
+        ea_avg = self.ctp_results.TEX_GR / self.ctp_results.EM_GR
+        ea_avg = xr.where(self.ctp_results.EM_GR == 0, 0, ea_avg)
         ea_avg.attrs = get_attrs(vname='EA_avg_GR')
-        self.CTP_results['EA_avg_GR'] = ea_avg
+        self.ctp_results['EA_avg_GR'] = ea_avg
     
     def _calc_annual_event_severity(self):
         """
         calculate event severity (equation 21_2)
         """
-        if self.CTP_results['EA_avg_GR'] is None:
+        if self.ctp_results['EA_avg_GR'] is None:
             self._calc_exceedance_area()
-        if self.CTP_results['EM_avg_GR'] is None:
+        if self.ctp_results['EM_avg_GR'] is None:
             self._calc_exceedance_magnitude()
-        if self.CTP_results['ED_avg_GR'] is None:
+        if self.ctp_results['ED_avg_GR'] is None:
             self._calc_event_duration()
         
         # equation 21_2
-        es_avg = self._calc_event_severity(self.CTP_results.ED_avg_GR, self.CTP_results.EM_avg_GR,
-                                           self.CTP_results.EA_avg_GR)
-        self.CTP_results['ES_avg_GR'] = es_avg
+        es_avg = self._calc_event_severity(self.ctp_results.ED_avg_GR, self.ctp_results.EM_avg_GR,
+                                           self.ctp_results.EA_avg_GR)
+        self.ctp_results['ES_avg_GR'] = es_avg
     
     def _calc_annual_exceedance_heat_content(self):
         """
         calculate annual exceedance heat content (equation 22)
         """
-        if self.CTP_results['ED_avg_GR'] is None:
+        if self.ctp_results['ED_avg_GR'] is None:
             self._calc_event_duration()
-        if self.CTP_results['TEX_GR'] is None:
+        if self.ctp_results['TEX_GR'] is None:
             self._calc_annual_total_events_extremity()
-        if self.CTP_results['ES_avg_GR'] is None:
+        if self.ctp_results['ES_avg_GR'] is None:
             self._calc_annual_event_severity()
         
         # equation 22
-        H_AEHC_avg_GR, H_AEHC_GR = self._calc_exceedance_heat_content(self.CTP_results.ES_avg_GR,
-                                                                      self.CTP_results.ED_avg_GR,
-                                                                      self.CTP_results.TEX_GR)
+        H_AEHC_avg_GR, H_AEHC_GR = self._calc_exceedance_heat_content(self.ctp_results.ES_avg_GR,
+                                                                      self.ctp_results.ED_avg_GR,
+                                                                      self.ctp_results.TEX_GR)
         H_AEHC_avg_GR.attrs = get_attrs(vname='H_AEHC_avg_GR')
         H_AEHC_GR.attrs = get_attrs(vname='H_AEHC_GR')
-        self.CTP_results['H_AEHC_avg_GR'] = H_AEHC_avg_GR
-        self.CTP_results['H_AEHC_GR'] = H_AEHC_GR
+        self.ctp_results['H_AEHC_avg_GR'] = H_AEHC_avg_GR
+        self.ctp_results['H_AEHC_GR'] = H_AEHC_GR
     
     def _calc_event_severity(self, d, m, a):
         """
@@ -980,7 +981,7 @@ class TEAIndicators:
         H_AEHC_GR = ct_abl * tex
         return H_AEHC_avg_GR, H_AEHC_GR
     
-    def calc_annual_CTP_indicators(self, ctp=None, drop_daily_results=False):
+    def calc_annual_ctp_indicators(self, ctp=None, drop_daily_results=False):
         """
         calculate all annual Climatic Time Period (CTP) indicators
         
@@ -1010,34 +1011,34 @@ class TEAIndicators:
             del self._daily_results_filtered
             del self.daily_results
         ctp_attrs = get_attrs(vname='CTP', period=self.CTP)
-        self.CTP_results['time'].attrs = ctp_attrs
-        self.CTP_results.attrs['CTP'] = self.CTP
+        self.ctp_results['time'].attrs = ctp_attrs
+        self.ctp_results.attrs['CTP'] = self.CTP
 
-    def save_CTP_results(self, filepath):
+    def save_ctp_results(self, filepath):
         """
         save all CTP results to filepath
         """
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
-            self.CTP_results.to_netcdf(filepath)
+            self.ctp_results.to_netcdf(filepath)
         
-    def load_CTP_results(self, filepath, use_dask=True):
+    def load_ctp_results(self, filepath, use_dask=True):
         """
         load all CTP results from filepath
         """
         logger.info(f"Loading CTP results from {filepath}")
-        self.CTP_results = xr.open_mfdataset(filepath)
+        self.ctp_results = xr.open_mfdataset(filepath)
         # TODO: optimize code in TEA._calc_spread_estimators
         if not use_dask:
             # avoid using dask when calculating spreads
-            self.CTP_results.load()
-        if 'units' not in self.CTP_results.EM_avg.attrs:
+            self.ctp_results.load()
+        if 'units' not in self.ctp_results.EM_avg.attrs:
             logger.warning("No unit attribute found in CTP results. Please set the unit attribute manually.")
         else:
-            self.unit = self.CTP_results.EM_avg.attrs['units']
+            self.unit = self.ctp_results.EM_avg.attrs['units']
     
-    def get_CTP_results(self, grid=True, gr=True):
+    def get_ctp_results(self, grid=True, gr=True):
         """
         get CTP results
         
@@ -1045,14 +1046,14 @@ class TEAIndicators:
             grid: get gridded results. Default: True
             gr: get GR results. Default: True
         """
-        gr_vars = [var for var in self.CTP_results.data_vars if 'GR' in var]
-        grid_vars = [var for var in self.CTP_results.data_vars if 'GR' not in var]
+        gr_vars = [var for var in self.ctp_results.data_vars if 'GR' in var]
+        grid_vars = [var for var in self.ctp_results.data_vars if 'GR' not in var]
         if not grid:
-            return self.CTP_results.drop_vars(grid_vars)
+            return self.ctp_results.drop_vars(grid_vars)
         if not gr:
-            return self.CTP_results.drop_vars(gr_vars)
+            return self.ctp_results.drop_vars(gr_vars)
         else:
-            return self.CTP_results
+            return self.ctp_results
         
     # ### Decadal mean functions ###
     
@@ -1065,22 +1066,22 @@ class TEAIndicators:
             calc_spread: calculate spread estimators (equation 25)
             drop_annual_results: delete annual results after calculation
         """
-        if self.CTP_results is None:
+        if self.ctp_results is None:
             raise ValueError("CTP results must be calculated before calculating decadal mean")
         
         self._calc_decadal_mean()
         self._calc_decadal_compound_vars()
         if calc_spread:
             self._calc_spread_estimators()
-        self.CTP = self.CTP_results.attrs['CTP']
+        self.CTP = self.ctp_results.attrs['CTP']
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
         self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=self.CTP)
         self.decadal_results.attrs['CTP'] = self.CTP
         self.decadal_results = self._duplicate_vars(self.decadal_results)
 
         if drop_annual_results:
-            self.CTP_results.close()
-            del self.CTP_results
+            self.ctp_results.close()
+            del self.ctp_results
             del self._CTP_resample_mean
             del self._CTP_resample_sum
     
@@ -1108,12 +1109,12 @@ class TEAIndicators:
         calculate decadal mean for all basic CTP indicators (equation 23_1)
         """
         # check if CTP_results contain at least a decade of data
-        if len(self.CTP_results.time) < 10:
+        if len(self.ctp_results.time) < 10:
             raise ValueError("For calculating decadal results, CTP results and daily data must contain at least a "
                              "decade of data")
-        for var in self.CTP_results.data_vars:
-            if self.CTP_results[var].attrs['metric_type'] == 'basic':
-                self.decadal_results[var] = self.CTP_results[var].rolling(time=10, center=True, min_periods=1).mean(
+        for var in self.ctp_results.data_vars:
+            if self.ctp_results[var].attrs['metric_type'] == 'basic':
+                self.decadal_results[var] = self.ctp_results[var].rolling(time=10, center=True, min_periods=1).mean(
                     skipna=True)
                 # set first and last 5 years to nan
                 self.decadal_results[var][:5] = np.nan
@@ -1210,7 +1211,7 @@ class TEAIndicators:
         """
         calculate spread estimators (equation 25)
         """
-        annual_data = self.CTP_results
+        annual_data = self.ctp_results
         dec_data = self.decadal_results
         supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
         for icy, cy in enumerate(annual_data.time):

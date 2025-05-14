@@ -80,6 +80,7 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
                      cell_size_lat=cell_size_lat, ctp=opts.period, unit=opts.unit, low_extreme=opts.low_extreme)
     
     if agr_mask is None or agr_area is None:
+        tea_agr.generate_gr_grid_mask()
         save_0p5_mask(opts, tea_agr.gr_grid_mask, tea_agr.gr_grid_areas)
     
     # calculate daily basis variables
@@ -92,12 +93,12 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
     if False:
         lons = np.arange(22, 26, .5)
         lats = np.arange(51, 56, .5)
-        tea_agr.calc_tea_gr_grid(lats=lats, lons=lons)
+        tea_agr._calc_annual_gr_grid(lats=lats, lons=lons)
         res = tea_agr.get_ctp_results()
         res = res.sel(lat=slice(lats[0], lats[-1]), lon=slice(lons[0], lons[-1]))
         logger.info(res)
     else:
-        tea_agr.calc_tea_gr_grid()
+        tea_agr._calc_annual_gr_grid()
     
     # save output files
     # TODO do we need these results?
@@ -111,7 +112,6 @@ def calc_tea_large_gr(opts, data, masks, static, agr_mask=None, agr_area=None):
                 f'CTP_{opts.param_str}_GRG-{opts.region}_{opts.period}_{opts.dataset}'
                 f'_{opts.start}to{opts.end}.nc')
     create_tea_history(cfg_params=opts, tea=tea_agr, result_type='CTP')
-    tea_agr.apply_gr_grid_mask()
     tea_agr.save_ctp_results(ctp_path)
     
     if opts.compare_to_ref:

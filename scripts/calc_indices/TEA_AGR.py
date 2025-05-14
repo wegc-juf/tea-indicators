@@ -21,7 +21,7 @@ class TEAAgr(TEAIndicators):
     """
     Class for Threshold Exceedance Amount (TEA) indicators for aggregated georegions (AGR)
     """
-    def __init__(self, input_data_grid=None, threshold=None, area_grid=None, mask=None, min_area=0.0001,
+    def __init__(self, input_data_grid=None, threshold=None, mask=None, min_area=0.0001,
                  gr_grid_res=0.5, land_sea_mask=None, gr_grid_mask=None, gr_grid_areas=None,
                  land_frac_min=0.5, cell_size_lat=None, **kwargs):
         """
@@ -30,7 +30,6 @@ class TEAAgr(TEAIndicators):
         Args:
             input_data_grid: input data grid
             threshold: threshold grid
-            area_grid: area grid containing grid cell areas (needed if grid cells are not equally sized)
             mask: mask grid (needed if data should be masked out by e.g. country borders)
             min_area: minimum area for valid grid cells in areals (100 km^2). Default: 0.0001 areals or 10 km^2
             gr_grid_res: resolution for grid of GeoRegions (in degrees)
@@ -40,16 +39,21 @@ class TEAAgr(TEAIndicators):
             gr_grid_mask: mask for GR grid (will be automatically generated if not provided)
             gr_grid_areas: areas for GR grid (will be automatically generated if not provided)
         """
-        super().__init__(input_data_grid=input_data_grid, threshold=threshold, area_grid=area_grid,
+        super().__init__(input_data_grid=input_data_grid, threshold=threshold,
                          mask=mask, min_area=min_area, apply_mask=False, **kwargs)
         if self.area_grid is not None:
-            self.lat_resolution = round(abs(self.area_grid.lat.values[0] - self.area_grid.lat.values[1]), 4)
+            ref_grid = self.area_grid
+        elif self.input_data_grid is not None:
+            ref_grid = self.input_data_grid
+        elif self.mask is not None:
+            ref_grid = self.mask
         else:
-            self.lat_resolution = None
-        if input_data_grid is not None:
-            self.lat_resolution_in = abs(self.input_data_grid.lat.values[0] - self.input_data_grid.lat.values[1])
+            ref_grid = None
+        
+        if ref_grid is not None:
+            self._lat_resolution_in = round(abs(ref_grid.lat.values[0] - ref_grid.lat.values[1]), 4)
         else:
-            self.lat_resolution_in = None
+            self._lat_resolution_in = None
         self.gr_grid_res = gr_grid_res
         self.gr_grid_mask = None
         self.gr_grid_areas = None
@@ -57,14 +61,11 @@ class TEAAgr(TEAIndicators):
         self.land_frac_min = land_frac_min
         self.cell_size_lat = cell_size_lat
         
-        if (gr_grid_mask is None or gr_grid_areas is None) and mask is not None and area_grid is not None:
-            self._generate_gr_grid_mask()
-        else:
-            self.gr_grid_mask = gr_grid_mask
-            self.gr_grid_areas = gr_grid_areas
+        self.gr_grid_mask = gr_grid_mask
+        self.gr_grid_areas = gr_grid_areas
         
         # daily basis variables for grid of GeoRegions
-        self.dbv_gr_grid_results = None
+        self._dbv_gr_grid_results = None
         
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
@@ -98,7 +99,7 @@ class TEAAgr(TEAIndicators):
             cell_static: static data of cell
         """
         
-        lat_res = self.lat_resolution
+        lat_res = self._lat_resolution_in
         lat_off = self.cell_size_lat / 2
         lon_off_exact = 1 / np.cos(np.deg2rad(lat)) * lat_off
         size_exact = lon_off_exact * lat_off
@@ -113,7 +114,7 @@ class TEAAgr(TEAIndicators):
                                               lon=slice(lon - lon_off, lon + lon_off - lat_res))
             
             # calculate fraction covered by valid cells (land below 1500 m)
-            land_frac = cell_lsm.sum() / np.size(cell_lsm)
+            land_frac = cell_lsm.sum().values / np.size(cell_lsm)
             if land_frac < self.land_frac_min:
                 return None
         
@@ -137,7 +138,7 @@ class TEAAgr(TEAIndicators):
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
     
-    def set_dbv_results(self, lat, lon, dbv_results):
+    def _set_dbv_results(self, lat, lon, dbv_results):
         """
         set daily basis variables for point
         Args:
@@ -145,20 +146,20 @@ class TEAAgr(TEAIndicators):
             lon: longitude
             dbv_results: daily basis GR data for point
         """
-        if self.dbv_gr_grid_results is None:
+        if self._dbv_gr_grid_results is None:
             data_vars = [var for var in dbv_results.data_vars]
             var_dict = {}
             lats, lons = self._get_lats_lons()
             for var in data_vars:
                 var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(dbv_results.time),
                                                                            len(lats), len(lons))))
-            self.dbv_gr_grid_results = xr.Dataset(coords=dict(time=dbv_results.time,
+            self._dbv_gr_grid_results = xr.Dataset(coords=dict(time=dbv_results.time,
                                                               lon=lons,
                                                               lat=lats),
                                                   data_vars=var_dict,
                                                   attrs=dbv_results.attrs)
         
-        self.dbv_gr_grid_results.loc[dict(lat=lat, lon=lon)] = dbv_results
+        self._dbv_gr_grid_results.loc[dict(lat=lat, lon=lon)] = dbv_results
 
     def save_dbv_results(self, filepath):
         """
@@ -167,7 +168,7 @@ class TEAAgr(TEAIndicators):
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
-            self.dbv_gr_grid_results.to_netcdf(filepath)
+            self._dbv_gr_grid_results.to_netcdf(filepath)
 
     def set_ctp_results(self, lat, lon, ctp_results):
         """
@@ -180,7 +181,7 @@ class TEAAgr(TEAIndicators):
         # remove GR from variable names
         ctp_results = ctp_results.rename({var: var.replace('_GR', '') for var in ctp_results.data_vars})
         
-        if self.CTP_results is None or not len(self.CTP_results.data_vars):
+        if self.ctp_results is None or not len(self.ctp_results.data_vars):
             data_vars = [var for var in ctp_results.data_vars]
             var_dict = {}
             lats, lons = self._get_lats_lons()
@@ -188,27 +189,27 @@ class TEAAgr(TEAIndicators):
                 var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(ctp_results.time),
                                                                            len(lats),
                                                                            len(lons))))
-            self.CTP_results = xr.Dataset(coords=dict(time=ctp_results.time,
+            self.ctp_results = xr.Dataset(coords=dict(time=ctp_results.time,
                                                       lon=lons,
                                                       lat=lats),
                                           data_vars=var_dict,
                                           attrs=ctp_results.attrs)
             
-        self.CTP_results.loc[dict(lat=lat, lon=lon)] = ctp_results
+        self.ctp_results.loc[dict(lat=lat, lon=lon)] = ctp_results
         
         # set attributes for variables
         for var in ctp_results.data_vars:
-            if 'attrs' not in self.CTP_results[var]:
+            if 'attrs' not in self.ctp_results[var]:
                 attrs = ctp_results[var].attrs
                 new_attrs = get_attrs(vname=var)
                 attrs['long_name'] = new_attrs['long_name']
-                self.CTP_results[var].attrs = attrs
+                self.ctp_results[var].attrs = attrs
         
     def get_ctp_results(self):
         """
         get CTP results for grid of GeoRegions
         """
-        return self.CTP_results
+        return self.ctp_results
     
     def save_ctp_results(self, filepath):
         """
@@ -217,20 +218,49 @@ class TEAAgr(TEAIndicators):
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
-            self.CTP_results.to_netcdf(filepath)
+            self.ctp_results.to_netcdf(filepath)
     
-    def apply_gr_grid_mask(self):
+    def _apply_gr_grid_mask(self):
         """
         apply GR grid mask to daily basis variables and CTP results
         """
-        if self.dbv_gr_grid_results is not None:
-            self.dbv_gr_grid_results = self.dbv_gr_grid_results.where(self.gr_grid_mask > 0)
-        if self.CTP_results is not None:
-            self.CTP_results = self.CTP_results.where(self.gr_grid_mask > 0)
+        if self._dbv_gr_grid_results is not None:
+            self._dbv_gr_grid_results = self._dbv_gr_grid_results.where(self.gr_grid_mask > 0)
+        if self.ctp_results is not None:
+            self.ctp_results = self.ctp_results.where(self.gr_grid_mask > 0)
     
-    def calc_tea_gr_grid(self, lats=None, lons=None):
+    def calc_annual_ctp_indicators(self, ctp=None, drop_daily_results=False, lats=None, lons=None):
         """
-        calculate TEA indicators for all GeoRegions in GeoRegion grid
+        calculate annual CTP indicators for all GeoRegions in GeoRegion grid
+        Args:
+            ctp: Climatic Time Period (CTP) to resample to
+                allowed values: 'annual', 'seasonal', 'WAS', 'ESS', 'JJA', 'DJF', 'EWS', 'monthly'
+                'WAS': warm season (April to October)
+                'ESS': extended summer season (May to September)
+                'JJA': summer season (June to August)
+                'DJF': winter season (December to February)
+                'EWS': extended winter season (November to March)
+            drop_daily_results: if True, drop daily results after calculation
+            lats: Latitudes (default: get automatically)
+            lons: Longitudes (default: get automatically)
+
+        Returns:
+
+        """
+        if ctp is not None:
+            self._set_ctp(ctp)
+            
+        self._calc_annual_gr_grid(lats=lats, lons=lons)
+        self._apply_gr_grid_mask()
+        
+        if drop_daily_results:
+            self.daily_results.close()
+            del self._daily_results_filtered
+            del self.daily_results
+
+    def _calc_annual_gr_grid(self, lats=None, lons=None):
+        """
+        calculate annual CTP TEA indicators for all GeoRegions in GeoRegion grid
         Args:
             lats: Latitudes (default: get automatically)
             lons: Longitudes (default: get automatically)
@@ -242,7 +272,7 @@ class TEAAgr(TEAIndicators):
             lats, lons = self._get_lats_lons()
         
         for lat in lats:
-            self._calc_tea_lat(lat, lons=lons)
+            self._calc_tea_ctp_lat(lat, lons=lons)
     
     def _crop_to_rect(self, lat_range, lon_range):
         """
@@ -566,7 +596,7 @@ class TEAAgr(TEAIndicators):
                              f'static files')
         return lats, lons
     
-    def _generate_gr_grid_mask(self):
+    def generate_gr_grid_mask(self):
         """
         generate mask for grid of GeoRegions
         """
@@ -575,7 +605,7 @@ class TEAAgr(TEAIndicators):
         lats, lons = self._get_lats_lons()
         mask_orig = self.mask
         area_orig = self.area_grid
-        res_orig = self.lat_resolution
+        res_orig = self._lat_resolution_in
         
         gr_grid_mask = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
                                     coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
@@ -603,7 +633,7 @@ class TEAAgr(TEAIndicators):
         self.gr_grid_mask = gr_grid_mask
         self.gr_grid_areas = gr_grid_areas
 
-    def _calc_tea_lat(self, lat, lons=None):
+    def _calc_tea_ctp_lat(self, lat, lons=None):
         """
         calculate TEA indicators of GeoRegion grid cell for all longitudes of a latitude
         Args:
@@ -628,17 +658,14 @@ class TEAAgr(TEAIndicators):
             
             # calculate daily basis variables
             tea_sub.calc_daily_basis_vars(grid=False, gr=True)
-            # TODO check if this is necessary
-            # dbv_results = tea_sub.get_daily_results(gr=True, grid=False).compute()
-            # self.set_dbv_results(lat, lon, dbv_results)
             
+            # calculate CTP indicators
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore', message='invalid value encountered in multiply')
-                # calculate CTP indicators
-                tea_sub.calc_annual_CTP_indicators(drop_daily_results=True)
+                tea_sub.calc_annual_ctp_indicators(drop_daily_results=True)
                 
                 # set agr_results for lat and lon
-                ctp_results = tea_sub.get_CTP_results(gr=True, grid=False).compute()
+                ctp_results = tea_sub.get_ctp_results(gr=True, grid=False).compute()
             
             self.set_ctp_results(lat, lon, ctp_results)
             end_time = time.time()

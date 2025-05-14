@@ -58,6 +58,12 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.xy_name = 'lon,lat'
         else:
             raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
+    if 'agr' in opts:
+        if 'agr_cell_size' not in opts:
+            if opts.precip:
+                opts.agr_cell_size = 1
+            else:
+                opts.agr_cell_size = 2
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:

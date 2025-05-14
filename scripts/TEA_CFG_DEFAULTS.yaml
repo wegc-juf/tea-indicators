@@ -1,7 +1,8 @@
 common_params:
   GeoRegion: &GR
     region: AUT
-    # use full data without land, border, and altitude masks
+    # agr: AUT
+    # agr_cell_size: 2
     full_region: false
   parameter: &PARAM
     parameter: Tx
