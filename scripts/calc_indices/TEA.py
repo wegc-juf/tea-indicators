@@ -21,16 +21,14 @@ class TEAIndicators:
     Class to calculate TEA indicators
     """
     
-    def __init__(self, input_data_grid=None, threshold=None, min_area=1., area_grid=None,
-                 low_extreme=False,
+    def __init__(self, input_data_grid=None, threshold=None, min_area=1., low_extreme=False,
                  unit='', mask=None, apply_mask=True, ctp=None, **kwargs):
         """
         Initialize TEAIndicators object
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
             threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
-            area_grid: grid containing the area of each results cell, if None, area is calculated from input_data_grid
-            min_area: minimum area for a timestep to be considered as exceedance (same unit as area_grid). Default: 1
+            min_area: minimum area for a timestep to be considered as exceedance. Default: 1
                       (1 areal according to equation 03)
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
             unit: unit of the input data. Default: ''
@@ -44,16 +42,11 @@ class TEAIndicators:
         self.mask = mask
         self.apply_mask = apply_mask
         
-        self.area_grid = None
-        if area_grid is None:
-            if input_data_grid is not None:
-                self._create_area_grid(input_data_grid)
-            else:
-                raise ValueError("Area grid must be set together with input data")
-                if threshold is not None:
-                    self.area_grid = xr.ones_like(self.threshold_grid)
+        if input_data_grid is not None:
+            self._create_area_grid(input_data_grid)
         else:
-            self.area_grid = area_grid
+            self.area_grid = None
+            self.gr_size = None
         
         self.input_data_grid = None
         self.daily_results = xr.Dataset()
@@ -73,12 +66,6 @@ class TEAIndicators:
             if self.threshold_grid is None:
                 raise ValueError("Threshold grid must be set together with input data")
             self._set_input_data_grid(input_data_grid)
-        
-        # size of whole GeoRegion
-        if area_grid is not None:
-            self.gr_size = area_grid.sum().values
-        else:
-            self.gr_size = None
         
         # Climatic Time Period (CTP) variables
         self.CTP = ctp
@@ -407,6 +394,7 @@ class TEAIndicators:
         """
         self.daily_results = xr.open_dataset(filepath)
         self.area_grid = self.daily_results.area_grid
+        self.gr_size = self.area_grid.sum().values
         self.unit = self.daily_results.DTEM.attrs['units']
         
     def set_daily_results(self, daily_results):
@@ -1582,7 +1570,8 @@ class TEAIndicators:
         
         if self.mask is not None and self.apply_mask:
             self.area_grid = self.area_grid * self.mask
-
+        self.gr_size = self.area_grid.sum().values
+    
     # ### general functions ###
     def create_history(self, history, result_type):
         """

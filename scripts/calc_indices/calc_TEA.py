@@ -202,7 +202,6 @@ def calc_ctp_indicators(tea, opts, start, end):
         tea.cell_size_lat = opts.agr_cell_size
         
         # load static GR grid files
-        # TODO: set path and put load function in TEA_AGR
         gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
         
         # generate GR grid mask and area if necessary
