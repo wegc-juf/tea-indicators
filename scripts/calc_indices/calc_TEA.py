@@ -459,7 +459,8 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
-        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit)
+        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit,
+                            land_sea_mask=lsm)
         logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
                     'set --recalc-daily.')
         tea.load_daily_results(dbv_filename)

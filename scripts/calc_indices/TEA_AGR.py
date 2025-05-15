@@ -586,14 +586,19 @@ class TEAAgr(TEAIndicators):
         if margin is None:
             margin = self.cell_size_lat / 2
 
-        lats = np.arange(self.input_data_grid.lat.max() - margin,
-                         self.input_data_grid.lat.min() - self.gr_grid_res + margin,
+        if self.input_data_grid is not None:
+            ref_grid = self.input_data_grid
+        elif self.area_grid is not None:
+            ref_grid = self.area_grid
+            
+        lats = np.arange(ref_grid.lat.max() - margin,
+                         ref_grid.lat.min() - self.gr_grid_res + margin,
                          -self.gr_grid_res)
         margin_lon = 1 / np.cos(np.deg2rad(lats[0])) * margin
         # round margin_lon to resolution of gr grid
         margin_lon = np.round(np.round(margin_lon / self.gr_grid_res, 0) * self.gr_grid_res, 2)
-        lons = np.arange(self.input_data_grid.lon.min() + margin_lon,
-                         self.input_data_grid.lon.max() + self.gr_grid_res - margin_lon,
+        lons = np.arange(ref_grid.lon.min() + margin_lon,
+                         ref_grid.lon.max() + self.gr_grid_res - margin_lon,
                          self.gr_grid_res)
         if len(lats) == 0 or len(lons) == 0:
             raise ValueError(f'Not enough valid cells found for margin {margin} - check size of input data grid and '
