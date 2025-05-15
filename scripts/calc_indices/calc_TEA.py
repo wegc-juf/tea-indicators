@@ -23,11 +23,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
                                                      compare_to_ref, get_data)
 from scripts.general_stuff.TEA_logger import logger
-from scripts.calc_indices.calc_decadal_indicators import calc_decadal_indicators, calc_amplification_factors
+from scripts.calc_indices.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
+                                                          _get_decadal_outpath, _get_amplification_outpath)
 import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
 from scripts.calc_indices.TEA_AGR import TEAAgr
 from scripts.data_prep.create_static_files import create_threshold_grid
+
+# TODO: move this to config file
+region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
+region_def_lon_ = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
 
 
 def load_static_files(opts, large_gr=False):
@@ -198,21 +203,6 @@ def calc_ctp_indicators(tea, opts, start, end):
     tea.update_min_area(dtea_min)
     
     if 'agr' in opts:
-        # set cell_size
-        tea.cell_size_lat = opts.agr_cell_size
-        
-        # load static GR grid files
-        gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
-        
-        # generate GR grid mask and area if necessary
-        if gr_grid_mask is None or gr_grid_areas is None:
-            tea.generate_gr_grid_mask()
-            _save_0p5_mask(opts, tea.gr_grid_mask, tea.gr_grid_areas)
-        else:
-            # set GR grid mask and area grid
-            tea.gr_grid_mask = gr_grid_mask
-            tea.gr_grid_areas = gr_grid_areas
-        
         # set land_frac_min to 0 for full region
         if opts.full_region:
             tea.land_frac_min = 0
@@ -225,6 +215,22 @@ def calc_ctp_indicators(tea, opts, start, end):
 
     # save output
     save_ctp_output(opts=opts, tea=tea, start=start, end=end)
+
+
+def _load_or_generate_gr_grid(opts, tea):
+    # load static GR grid files
+    gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
+    # generate GR grid mask and area if necessary
+    if gr_grid_mask is None or gr_grid_areas is None:
+        tea.generate_gr_grid_mask()
+        _save_0p5_mask(opts, tea.gr_grid_mask, tea.gr_grid_areas)
+    else:
+        # set GR grid mask and area grid
+        tea.gr_grid_mask = gr_grid_mask
+        tea.gr_grid_areas = gr_grid_areas
+        
+    # set cell_size
+    tea.cell_size_lat = opts.agr_cell_size
 
 
 def calc_lat_lon_range(cell_size_lat, data, mask):
@@ -373,6 +379,9 @@ def calc_tea_indicators(opts):
             # calculate daily basis variables
             tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
+            if 'agr' in opts:
+                _load_or_generate_gr_grid(opts, tea)
+            
             # calculate CTP indicators
             calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
@@ -380,13 +389,20 @@ def calc_tea_indicators(opts):
             
     # calculate decadal indicators and amplification factors
     if opts.decadal or opts.decadal_only or opts.recalc_decadal:
-        tea = TEAIndicators()
+        if 'agr' in opts:
+            tea = TEAAgr()
+        else:
+            tea = TEAIndicators()
         
         # calculate decadal-mean ctp indicator variables
         calc_decadal_indicators(opts=opts, tea=tea)
         
         # calculate amplification factors
         calc_amplification_factors(opts=opts, tea=tea)
+        
+        if 'agr' in opts:
+            _load_or_generate_gr_grid(opts, tea)
+            _calc_agr_mean_and_spread(opts=opts, tea=tea)
 
 
 def calc_dbv_indicators(start, end, threshold, opts, mask=None):
@@ -548,30 +564,39 @@ def calc_tea_indicators_agr(opts):
         # calculate amplification factors
         calc_amplification_factors(opts, tea, outpath_ampl)
         
-        # calculate aggregate GeoRegion means and spread estimators
-        agr_lat_range_dict = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
-        agr_lon_range_dict = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
-        if opts.region in agr_lat_range_dict:
-            agr_lat_range = agr_lat_range_dict[opts.agr]
-            agr_lon_range = agr_lon_range_dict[opts.agr]
-        else:
-            agr_lat_range = None
-            agr_lon_range = None
-        if opts.region != opts.agr:
-            outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
-                               f'DEC_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
-                               f'_{opts.start}to{opts.end}.nc')
-            outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                            f'AF_{opts.param_str}_{agr_str}{opts.agr}_{opts.period}_{opts.dataset}'
-                            f'_{opts.start}to{opts.end}.nc')
-        tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
-        logger.info(f'Saving AGR decadal results to {outpath_decadal}')
-        # remove outpath_decadal if it exists
-        if os.path.exists(outpath_decadal):
-            os.remove(outpath_decadal)
-        tea.save_decadal_results(outpath_decadal)
-        logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
-        tea.save_amplification_factors(outpath_ampl)
+        _calc_agr_mean_and_spread(opts, tea)
+
+
+def _calc_agr_mean_and_spread(opts, tea):
+    """
+    calculate aggregate GeoRegion means and spread estimators
+    
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+        tea: teaAgr object
+
+    Returns:
+
+    """
+    if opts.region in region_def_lat_:
+        agr_lat_range = region_def_lat_[opts.agr]
+        agr_lon_range = region_def_lon_[opts.agr]
+    else:
+        agr_lat_range = None
+        agr_lon_range = None
+        
+    tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
+    
+    # save results
+    outpath_decadal = _get_decadal_outpath(opts, opts.agr)
+    outpath_ampl = _get_amplification_outpath(opts, opts.agr)
+    logger.info(f'Saving AGR decadal results to {outpath_decadal}')
+    # remove outpath_decadal if it exists
+    if os.path.exists(outpath_decadal):
+        os.remove(outpath_decadal)
+    tea.save_decadal_results(outpath_decadal)
+    logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
+    tea.save_amplification_factors(outpath_ampl)
 
 
 def load_gr_grid_static(opts):
