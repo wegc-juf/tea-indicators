@@ -67,6 +67,10 @@ class TEAAgr(TEAIndicators):
         # daily basis variables for grid of GeoRegions
         self._dbv_gr_grid_results = None
         
+        # filter input data to valid cells
+        if self.land_sea_mask is not None and self.input_data_grid is not None:
+            self.input_data_grid = self.input_data_grid.where(self.land_sea_mask > 0)
+            
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
         calculate all daily basis variables for grid of GeoRegions

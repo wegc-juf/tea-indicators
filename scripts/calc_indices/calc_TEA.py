@@ -181,7 +181,7 @@ def _save_0p5_mask(opts, mask_0p5, area_0p5):
         mask_0p5.to_netcdf(mask_file)
 
 
-def calc_ctp_indicators(tea, opts, start, end, lsm=None):
+def calc_ctp_indicators(tea, opts, start, end):
     """
     calculate the TEA indicators for the annual climatic time period
     Args:
@@ -201,8 +201,6 @@ def calc_ctp_indicators(tea, opts, start, end, lsm=None):
         # set cell_size
         tea.cell_size_lat = opts.agr_cell_size
         
-        tea.land_sea_mask = lsm
-
         # load static GR grid files
         # TODO: set path and put load function in TEA_AGR
         gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
@@ -352,9 +350,6 @@ def calc_tea_indicators(opts):
     # load mask if needed
     if 'maskpath' in opts:
         mask = load_mask_file(opts)
-        if 'agr' in opts:
-            # load land-sea mask for AGR
-            lsm = load_lsm_file(opts)
     
     # load threshold grid or set threshold value
     if opts.threshold_type == 'abs':
@@ -380,7 +375,7 @@ def calc_tea_indicators(opts):
             tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
             # calculate CTP indicators
-            calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end, lsm=lsm)
+            calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
             gc.collect()
             
@@ -423,7 +418,14 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
     else:
         agr_str = ''
         TEA_class_obj = TEAIndicators
-        
+    
+    # load land-sea mask for AGR
+    if 'agr' in opts and 'maskpath' in opts:
+        # load land-sea mask for AGR
+        lsm = load_lsm_file(opts)
+    else:
+        lsm = None
+
     # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins)
     dbv_filename = (f'{dbv_outpath}/'
                     f'DBV_{opts.param_str}_{agr_str}{opts.region}_annual_{opts.dataset}'
@@ -447,7 +449,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         min_area = 0.0001
         
         tea = TEA_class_obj(input_data_grid=data, threshold=threshold, mask=mask,
-                            min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit)
+                            min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
         tea.calc_daily_basis_vars()
         
         # calculate hourly indicators

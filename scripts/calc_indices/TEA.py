@@ -23,7 +23,7 @@ class TEAIndicators:
     
     def __init__(self, input_data_grid=None, threshold=None, min_area=1., area_grid=None,
                  low_extreme=False,
-                 unit='', mask=None, apply_mask=True, ctp=None):
+                 unit='', mask=None, apply_mask=True, ctp=None, **kwargs):
         """
         Initialize TEAIndicators object
         Args:
