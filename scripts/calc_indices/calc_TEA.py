@@ -37,33 +37,29 @@ region_def_lon_ = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-
 
 def calc_tea_indicators(opts):
     """
-    calculate TEA indicators for normal GeoRegion
+    calculate TEA indicators as defined in https://doi.org/10.48550/arXiv.2504.18964 and
+    Methods as defined in
+    Kirchengast, G., Haas, S. J. & Fuchsberger, J. Compound event metrics detect and explain ten-fold
+    increase of extreme heat over Europe—Supplementary Note: Detailed methods description for
+    computing threshold-exceedance-amount (TEA) indicators. Supplementary Information (SI) to
+    Preprint – April 2025. 40 pp. Wegener Center, University of Graz, Graz, Austria, 2025.
+    
     Args:
         opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
     """
     
-    mask = None
-    lsm = None
     # load mask if needed
     if 'maskpath' in opts:
         mask = _load_mask_file(opts)
+    else:
+        mask = None
     
     # load threshold grid or set threshold value
-    if opts.threshold_type == 'abs':
-        threshold_grid = opts.threshold
-    else:
-        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}_{opts.dataset}.nc'
-        if opts.recalc_threshold or not os.path.exists(threshold_file):
-            logger.info('Calculating percentiles...')
-            threshold_grid = create_threshold_grid(opts=opts)
-            logger.info(f'Saving threshold grid to {threshold_file}')
-            threshold_grid.to_netcdf(threshold_file)
-        else:
-            logger.info(f'Loading threshold grid from {threshold_file}')
-            threshold_grid = xr.open_dataset(threshold_file).threshold
+    threshold_grid = _get_threshold(opts)
     
-    # calculate annual climatic time period indicators
+    # calculate daily and annual climatic time period indicators
     if not opts.decadal_only:
+        # do calcs in chunks of 10 years
         starts = np.arange(opts.start, opts.end, 10)
         ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
         
@@ -71,12 +67,14 @@ def calc_tea_indicators(opts):
             # calculate daily basis variables
             tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
             
+            # for aggregate GeoRegion calculation, load GR grid files
             if 'agr' in opts:
                 _load_or_generate_gr_grid(opts, tea)
             
             # calculate CTP indicators
             calc_annual_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
+            # collect garbage
             gc.collect()
     
     # calculate decadal indicators and amplification factors
@@ -92,6 +90,7 @@ def calc_tea_indicators(opts):
         # calculate amplification factors
         calc_amplification_factors(opts=opts, tea=tea)
         
+        # calculate AGR variables
         if 'agr' in opts:
             _load_or_generate_gr_grid(opts, tea)
             _calc_agr_mean_and_spread(opts=opts, tea=tea)
@@ -104,7 +103,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         start: start year
         end: end year
         threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
-        opts: options
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
         mask: mask grid for input data containing nan values for cells that should be masked. Fractions of 1 are
         interpreted as area fractions for the given cell. (optional)
 
@@ -118,7 +117,8 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         os.makedirs(dbv_outpath)
     
     logger.info(f'Calculating TEA indicators for years {start}-{end}.')
-    # set filenames
+    
+    # use either TEAIndicators or TEAAgr class depending on the options
     if 'agr' in opts:
         agr_str = 'AGR-'
         TEA_class_obj = TEAAgr
@@ -133,7 +133,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
     else:
         lsm = None
     
-    # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins)
+    # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins) so optionally add agr_str
     dbv_filename = (f'{dbv_outpath}/'
                     f'DBV_{opts.param_str}_{agr_str}{opts.region}_annual_{opts.dataset}'
                     f'_{start}to{end}.nc')
@@ -149,14 +149,16 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         if 'agr' in opts:
             data, mask, threshold = _reduce_region(data, mask, threshold, opts)
         
-        # computation of daily basis variables (Methods chapter 3)
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
         
         # set min area to < 1 grid cell area so that all exceedance days are considered
         min_area = 0.0001
         
+        # initialize TEA object
         tea = TEA_class_obj(input_data_grid=data, threshold=threshold, mask=mask,
                             min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
+        
+        # computation of daily basis variables (Methods chapter 3)
         tea.calc_daily_basis_vars()
         
         # calculate hourly indicators
@@ -180,10 +182,9 @@ def calc_annual_ctp_indicators(tea, opts, start, end):
     calculate the TEA indicators for the annual climatic time period
     Args:
         tea: TEA object
-        opts: CLI parameter
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
         start: start year
         end: end year
-        lsm: land-sea mask for AGR (optional)
     """
     
     # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
@@ -206,14 +207,39 @@ def calc_annual_ctp_indicators(tea, opts, start, end):
     _save_ctp_output(opts=opts, tea=tea, start=start, end=end)
 
 
+def _get_threshold(opts):
+    """
+    load threshold grid or set threshold value
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+
+    Returns:
+        threshold_grid: threshold grid (xarray DataArray) or constant threshold value (int, float)
+
+    """
+    if opts.threshold_type == 'abs':
+        threshold_grid = opts.threshold
+    else:
+        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}_{opts.dataset}.nc'
+        if opts.recalc_threshold or not os.path.exists(threshold_file):
+            logger.info('Calculating percentiles...')
+            threshold_grid = create_threshold_grid(opts=opts)
+            logger.info(f'Saving threshold grid to {threshold_file}')
+            threshold_grid.to_netcdf(threshold_file)
+        else:
+            logger.info(f'Loading threshold grid from {threshold_file}')
+            threshold_grid = xr.open_dataset(threshold_file).threshold
+    return threshold_grid
+
+
 def _load_mask_file(opts):
     """
     load GR mask
     Args:
-        opts: options
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
 
     Returns:
-        mask: GR mask (ds)
+        mask: GR mask (Xarray DataArray)
 
     """
     maskpath = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc'
@@ -227,10 +253,10 @@ def _load_lsm_file(opts):
     """
     load land-sea-mask for AGR
     Args:
-        opts: options
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
 
     Returns:
-        mask: GR mask (ds)
+        mask: mask (Xarray DataArray)
 
     """
     # TODO: make this work outside of EUR
@@ -262,9 +288,9 @@ def _compare_to_ctp_ref(tea, ctp_filename_ref):
     
 def _save_ctp_output(opts, tea, start, end):
     """
-    save CTP results to netcdf file
+    save annual CTP results to netcdf file
     Args:
-        opts: CLI parameters
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
         tea: TEA object
         start: start year
         end: end year
@@ -300,6 +326,7 @@ def _save_0p5_mask(opts, mask_0p5, area_0p5):
         mask_0p5: mask on 0.5° grid
         area_0p5: area grid on 0.5° grid
     """
+    # TODO: allow arbitrary resolutions
     area_0p5 = create_history_from_cfg(cfg_params=opts, ds=area_0p5)
     area_grid_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
     try:
@@ -319,6 +346,15 @@ def _save_0p5_mask(opts, mask_0p5, area_0p5):
 
 
 def _load_or_generate_gr_grid(opts, tea):
+    """
+    load or generate grid of GRs mask and area grid for AGR calculation
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+        tea: TEA object
+
+    Returns:
+
+    """
     # load static GR grid files
     gr_grid_mask, gr_grid_areas = _load_gr_grid_static(opts)
     # generate GR grid mask and area if necessary
@@ -411,8 +447,10 @@ def _reduce_region(data, mask, threshold, opts):
 
 def _getopts():
     """
-    get arguments
-    :return: command line parameters
+    get command line arguments
+    
+    Returns:
+        opts: command line parameters
     """
     
     parser = argparse.ArgumentParser()
