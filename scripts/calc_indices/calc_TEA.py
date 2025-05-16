@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: hst
+@author: hst, juf
 """
 
 import argparse
@@ -33,6 +33,177 @@ from scripts.data_prep.create_static_files import create_threshold_grid
 # TODO: move this to config file
 region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
 region_def_lon_ = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
+
+
+def calc_tea_indicators(opts):
+    """
+    calculate TEA indicators for normal GeoRegion
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+    """
+    
+    mask = None
+    lsm = None
+    # load mask if needed
+    if 'maskpath' in opts:
+        mask = _load_mask_file(opts)
+    
+    # load threshold grid or set threshold value
+    if opts.threshold_type == 'abs':
+        threshold_grid = opts.threshold
+    else:
+        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}_{opts.dataset}.nc'
+        if opts.recalc_threshold or not os.path.exists(threshold_file):
+            logger.info('Calculating percentiles...')
+            threshold_grid = create_threshold_grid(opts=opts)
+            logger.info(f'Saving threshold grid to {threshold_file}')
+            threshold_grid.to_netcdf(threshold_file)
+        else:
+            logger.info(f'Loading threshold grid from {threshold_file}')
+            threshold_grid = xr.open_dataset(threshold_file).threshold
+    
+    # calculate annual climatic time period indicators
+    if not opts.decadal_only:
+        starts = np.arange(opts.start, opts.end, 10)
+        ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
+        
+        for p_start, p_end in zip(starts, ends):
+            # calculate daily basis variables
+            tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
+            
+            if 'agr' in opts:
+                _load_or_generate_gr_grid(opts, tea)
+            
+            # calculate CTP indicators
+            calc_annual_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
+            
+            gc.collect()
+    
+    # calculate decadal indicators and amplification factors
+    if opts.decadal or opts.decadal_only or opts.recalc_decadal:
+        if 'agr' in opts:
+            tea = TEAAgr()
+        else:
+            tea = TEAIndicators()
+        
+        # calculate decadal-mean ctp indicator variables
+        calc_decadal_indicators(opts=opts, tea=tea)
+        
+        # calculate amplification factors
+        calc_amplification_factors(opts=opts, tea=tea)
+        
+        if 'agr' in opts:
+            _load_or_generate_gr_grid(opts, tea)
+            _calc_agr_mean_and_spread(opts=opts, tea=tea)
+
+
+def calc_dbv_indicators(start, end, threshold, opts, mask=None):
+    """
+    calculate daily basis variables for a given time period
+    Args:
+        start: start year
+        end: end year
+        threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
+        opts: options
+        mask: mask grid for input data containing nan values for cells that should be masked. Fractions of 1 are
+        interpreted as area fractions for the given cell. (optional)
+
+    Returns:
+        tea: TEA object with daily basis variables
+
+    """
+    # check and create output path
+    dbv_outpath = f'{opts.outpath}/daily_basis_variables'
+    if not os.path.exists(dbv_outpath):
+        os.makedirs(dbv_outpath)
+    
+    logger.info(f'Calculating TEA indicators for years {start}-{end}.')
+    # set filenames
+    if 'agr' in opts:
+        agr_str = 'AGR-'
+        TEA_class_obj = TEAAgr
+    else:
+        agr_str = ''
+        TEA_class_obj = TEAIndicators
+    
+    # load land-sea mask for AGR
+    if 'agr' in opts and 'maskpath' in opts:
+        # load land-sea mask for AGR
+        lsm = _load_lsm_file(opts)
+    else:
+        lsm = None
+    
+    # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins)
+    dbv_filename = (f'{dbv_outpath}/'
+                    f'DBV_{opts.param_str}_{agr_str}{opts.region}_annual_{opts.dataset}'
+                    f'_{start}to{end}.nc')
+    
+    # recalculate daily basis variables if needed
+    if opts.recalc_daily or not os.path.exists(dbv_filename):
+        
+        # always calculate annual basis variables to later extract sub-annual values
+        period = 'annual'
+        data = get_data(start=start, end=end, opts=opts, period=period)
+        
+        # reduce extent of data to the region of interest
+        if 'agr' in opts:
+            data, mask, threshold = _reduce_region(data, mask, threshold, opts)
+        
+        # computation of daily basis variables (Methods chapter 3)
+        logger.info('Daily basis variables will be recalculated. Period set to annual.')
+        
+        # set min area to < 1 grid cell area so that all exceedance days are considered
+        min_area = 0.0001
+        
+        tea = TEA_class_obj(input_data_grid=data, threshold=threshold, mask=mask,
+                            min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
+        tea.calc_daily_basis_vars()
+        
+        # calculate hourly indicators
+        if opts.hourly:
+            _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
+        
+        # save results
+        tea.save_daily_results(dbv_filename)
+    else:
+        # load existing results
+        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit,
+                            land_sea_mask=lsm)
+        logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
+                    'set --recalc-daily.')
+        tea.load_daily_results(dbv_filename)
+    return tea
+
+
+def calc_annual_ctp_indicators(tea, opts, start, end):
+    """
+    calculate the TEA indicators for the annual climatic time period
+    Args:
+        tea: TEA object
+        opts: CLI parameter
+        start: start year
+        end: end year
+        lsm: land-sea mask for AGR (optional)
+    """
+    
+    # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
+    # dtea_min is given in areals (1 areal = 100 km2)
+    dtea_min = 1  # according to equation 03
+    tea.update_min_area(dtea_min)
+    
+    if 'agr' in opts:
+        # set land_frac_min to 0 for full region
+        if opts.full_region:
+            tea.land_frac_min = 0
+    
+    # calculate annual climatic time period indicators
+    logger.info('Calculating annual CTP indicators')
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
+        tea.calc_annual_ctp_indicators(opts.period, drop_daily_results=True)
+    
+    # save output
+    _save_ctp_output(opts=opts, tea=tea, start=start, end=end)
 
 
 def _load_mask_file(opts):
@@ -147,37 +318,6 @@ def _save_0p5_mask(opts, mask_0p5, area_0p5):
         mask_0p5.to_netcdf(mask_file)
 
 
-def calc_annual_ctp_indicators(tea, opts, start, end):
-    """
-    calculate the TEA indicators for the annual climatic time period
-    Args:
-        tea: TEA object
-        opts: CLI parameter
-        start: start year
-        end: end year
-        lsm: land-sea mask for AGR (optional)
-    """
-    
-    # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
-    # dtea_min is given in areals (1 areal = 100 km2)
-    dtea_min = 1  # according to equation 03
-    tea.update_min_area(dtea_min)
-    
-    if 'agr' in opts:
-        # set land_frac_min to 0 for full region
-        if opts.full_region:
-            tea.land_frac_min = 0
-            
-    # calculate annual climatic time period indicators
-    logger.info('Calculating annual CTP indicators')
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="invalid value encountered in multiply")
-        tea.calc_annual_ctp_indicators(opts.period, drop_daily_results=True)
-
-    # save output
-    _save_ctp_output(opts=opts, tea=tea, start=start, end=end)
-
-
 def _load_or_generate_gr_grid(opts, tea):
     # load static GR grid files
     gr_grid_mask, gr_grid_areas = _load_gr_grid_static(opts)
@@ -288,161 +428,6 @@ def _getopts():
     return myopts
 
 
-def run():
-    warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
-    warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
-    warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
-    
-    # get command line parameters
-    cmd_opts = _getopts()
-    
-    # load CFG parameters
-    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
-    
-    # calculate TEA indicators
-    calc_tea_indicators(opts)
-
-
-def calc_tea_indicators(opts):
-    """
-    calculate TEA indicators for normal GeoRegion
-    Args:
-        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
-    """
-    
-    mask = None
-    lsm = None
-    # load mask if needed
-    if 'maskpath' in opts:
-        mask = _load_mask_file(opts)
-    
-    # load threshold grid or set threshold value
-    if opts.threshold_type == 'abs':
-        threshold_grid = opts.threshold
-    else:
-        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}_{opts.dataset}.nc'
-        if opts.recalc_threshold or not os.path.exists(threshold_file):
-            logger.info('Calculating percentiles...')
-            threshold_grid = create_threshold_grid(opts=opts)
-            logger.info(f'Saving threshold grid to {threshold_file}')
-            threshold_grid.to_netcdf(threshold_file)
-        else:
-            logger.info(f'Loading threshold grid from {threshold_file}')
-            threshold_grid = xr.open_dataset(threshold_file).threshold
-    
-    # calculate annual climatic time period indicators
-    if not opts.decadal_only:
-        starts = np.arange(opts.start, opts.end, 10)
-        ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
-        
-        for p_start, p_end in zip(starts, ends):
-            # calculate daily basis variables
-            tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
-            
-            if 'agr' in opts:
-                _load_or_generate_gr_grid(opts, tea)
-            
-            # calculate CTP indicators
-            calc_annual_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
-            
-            gc.collect()
-            
-    # calculate decadal indicators and amplification factors
-    if opts.decadal or opts.decadal_only or opts.recalc_decadal:
-        if 'agr' in opts:
-            tea = TEAAgr()
-        else:
-            tea = TEAIndicators()
-        
-        # calculate decadal-mean ctp indicator variables
-        calc_decadal_indicators(opts=opts, tea=tea)
-        
-        # calculate amplification factors
-        calc_amplification_factors(opts=opts, tea=tea)
-        
-        if 'agr' in opts:
-            _load_or_generate_gr_grid(opts, tea)
-            _calc_agr_mean_and_spread(opts=opts, tea=tea)
-
-
-def calc_dbv_indicators(start, end, threshold, opts, mask=None):
-    """
-    calculate daily basis variables for a given time period
-    Args:
-        start: start year
-        end: end year
-        threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
-        opts: options
-        mask: mask grid for input data containing nan values for cells that should be masked. Fractions of 1 are
-        interpreted as area fractions for the given cell. (optional)
-
-    Returns:
-        tea: TEA object with daily basis variables
-
-    """
-    # check and create output path
-    dbv_outpath = f'{opts.outpath}/daily_basis_variables'
-    if not os.path.exists(dbv_outpath):
-        os.makedirs(dbv_outpath)
-        
-    logger.info(f'Calculating TEA indicators for years {start}-{end}.')
-    # set filenames
-    if 'agr' in opts:
-        agr_str = 'AGR-'
-        TEA_class_obj = TEAAgr
-    else:
-        agr_str = ''
-        TEA_class_obj = TEAIndicators
-    
-    # load land-sea mask for AGR
-    if 'agr' in opts and 'maskpath' in opts:
-        # load land-sea mask for AGR
-        lsm = _load_lsm_file(opts)
-    else:
-        lsm = None
-
-    # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins)
-    dbv_filename = (f'{dbv_outpath}/'
-                    f'DBV_{opts.param_str}_{agr_str}{opts.region}_annual_{opts.dataset}'
-                    f'_{start}to{end}.nc')
-    
-    # recalculate daily basis variables if needed
-    if opts.recalc_daily or not os.path.exists(dbv_filename):
-        
-        # always calculate annual basis variables to later extract sub-annual values
-        period = 'annual'
-        data = get_data(start=start, end=end, opts=opts, period=period)
-    
-        # reduce extent of data to the region of interest
-        if 'agr' in opts:
-            data, mask, threshold = _reduce_region(data, mask, threshold, opts)
-        
-        # computation of daily basis variables (Methods chapter 3)
-        logger.info('Daily basis variables will be recalculated. Period set to annual.')
-        
-        # set min area to < 1 grid cell area so that all exceedance days are considered
-        min_area = 0.0001
-        
-        tea = TEA_class_obj(input_data_grid=data, threshold=threshold, mask=mask,
-                            min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
-        tea.calc_daily_basis_vars()
-        
-        # calculate hourly indicators
-        if opts.hourly:
-            _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
-        
-        # save results
-        tea.save_daily_results(dbv_filename)
-    else:
-        # load existing results
-        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit,
-                            land_sea_mask=lsm)
-        logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
-                    'set --recalc-daily.')
-        tea.load_daily_results(dbv_filename)
-    return tea
-
-
 def _calc_hourly_indicators(tea, opts, start, end):
     """
     calculate hourly indicators for a given time period
@@ -461,7 +446,7 @@ def _calc_hourly_indicators(tea, opts, start, end):
     
     logger.info('Calculating hourly basis variables.')
     # calculate hourly indicators
-    tea._calc_hourly_indicators(input_data=data)
+    tea.calc_hourly_indicators(input_data=data)
     
     
 def _calc_agr_mean_and_spread(opts, tea):
@@ -529,5 +514,27 @@ def _load_gr_grid_static(opts):
     return gr_grid_mask, gr_grid_areas
 
 
+def _run():
+    """
+    run the script
+    Returns:
+
+    """
+    
+    # suppress warnings
+    warnings.filterwarnings(action='ignore', message='All-NaN slice encountered')
+    warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
+    warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
+    
+    # get command line parameters
+    cmd_opts = _getopts()
+    
+    # load CFG parameters
+    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
+    
+    # calculate TEA indicators
+    calc_tea_indicators(opts)
+
+
 if __name__ == '__main__':
-    run()
+    _run()
