@@ -25,7 +25,6 @@ from scripts.general_stuff.general_functions import (create_history_from_cfg, cr
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
                                                           _get_decadal_outpath, _get_amplification_outpath)
-import scripts.calc_indices.calc_TEA_largeGR as largeGR
 from scripts.calc_indices.TEA import TEAIndicators
 from scripts.calc_indices.TEA_AGR import TEAAgr
 from scripts.data_prep.create_static_files import create_threshold_grid
