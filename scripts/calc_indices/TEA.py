@@ -18,7 +18,13 @@ from scripts.general_stuff.TEA_logger import logger
 
 class TEAIndicators:
     """
-    Class to calculate TEA indicators
+    Class to calculate Threshold Exceedance Amount (TEA) indicators
+    as defined in https://doi.org/10.48550/arXiv.2504.18964 and
+    Methods as defined in
+    Kirchengast, G., Haas, S. J. & Fuchsberger, J. Compound event metrics detect and explain ten-fold
+    increase of extreme heat over Europe—Supplementary Note: Detailed methods description for
+    computing threshold-exceedance-amount (TEA) indicators. Supplementary Information (SI) to
+    Preprint – April 2025. 40 pp. Wegener Center, University of Graz, Graz, Austria, 2025.
     """
     
     def __init__(self, input_data_grid=None, threshold=None, min_area=1., low_extreme=False,
