@@ -92,10 +92,8 @@ def calc_decadal_indicators(opts, tea, outpath=None):
 
     """
     if outpath is None:
-        outpath = (f'{opts.outpath}/dec_indicator_variables/'
-                   f'DEC_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
-        
+        outpath = _get_decadal_outpath(opts, opts.region)
+    
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
@@ -111,6 +109,17 @@ def calc_decadal_indicators(opts, tea, outpath=None):
     if opts.compare_to_ref:
         file_ref = outpath.replace('.nc', '_ref.nc')
         compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
+
+
+def _get_decadal_outpath(opts, region):
+    if 'agr' in opts:
+        agr_str = 'AGR-'
+    else:
+        agr_str = ''
+    outpath = (f'{opts.outpath}/dec_indicator_variables/'
+               f'DEC_{opts.param_str}_{agr_str}{region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
+    return outpath
 
 
 def compare_to_ref_decadal(tea, filename_ref):
@@ -150,9 +159,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
 
     """
     if outpath is None:
-        outpath = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                   f'AF_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
+        outpath = _get_amplification_outpath(opts, opts.region)
     
     # calculate amplification factors
     with warnings.catch_warnings():
@@ -180,3 +187,24 @@ def calc_amplification_factors(opts, tea, outpath=None):
     # save amplification factors
     logger.info(f'Saving amplification factors to {outpath}')
     tea.save_amplification_factors(outpath)
+
+
+def _get_amplification_outpath(opts, region):
+    """
+    get amplification factors output path
+    Args:
+        opts: options
+        region: region name (str)
+
+    Returns:
+        outpath: output path (str)
+
+    """
+    if 'agr' in opts:
+        agr_str = 'AGR-'
+    else:
+        agr_str = ''
+    outpath = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+               f'AF_{opts.param_str}_{agr_str}{region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
+    return outpath

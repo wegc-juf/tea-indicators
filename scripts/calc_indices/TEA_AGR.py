@@ -400,8 +400,10 @@ class TEAAgr(TEAIndicators):
     def calc_agr_vars(self, lat_range=None, lon_range=None):
         """
         calculate AGR variables
-        lat_range: Latitude range (min, max). Default: Full region
-        lon_range: Longitude range (min, max). Default: Full region
+        
+        Args:
+            lat_range: Latitude range (min, max). Default: Full region
+            lon_range: Longitude range (min, max). Default: Full region
         """
         # filter data to spatial extent of aggregated GeoRegion
         if lat_range is not None or lon_range is not None:
@@ -411,6 +413,8 @@ class TEAAgr(TEAIndicators):
         self._drop_agr_values_and_spreads()
         
         # calculate area weights (equation 34_0)
+        if self.gr_grid_areas is None:
+            raise ValueError('No GR area grid provided. Please provide a valid GR area grid.')
         A_AGR = self.gr_grid_areas.sum()
         awgts = self.gr_grid_areas / A_AGR
         

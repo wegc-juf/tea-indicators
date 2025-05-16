@@ -16,7 +16,7 @@ import xarray as xr
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_data
-from scripts.calc_indices.calc_TEA import getopts
+from scripts.calc_indices.calc_TEA import _getopts
 from scripts.data_prep.create_static_files import match_dimension_dtypes
 
 
@@ -395,7 +395,7 @@ def run_custom_gr(opts):
 
 
 def run():
-    cmd_opts = getopts()
+    cmd_opts = _getopts()
     
     # load CFG parameter
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)

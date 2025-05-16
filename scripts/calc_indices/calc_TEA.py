@@ -35,46 +35,7 @@ region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-E
 region_def_lon_ = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
 
 
-def load_static_files(opts, large_gr=False):
-    """
-    # TODO: make this function obsolete
-    load GR masks and static file
-    Args:
-        opts: CLI parameter
-        large_gr: set for large GR (> 100 areals)
-
-    Returns:
-        masks: GR masks (ds)
-        static: ds with threshold, area_grid, etc.
-
-    """
-
-    if opts.full_region:
-        full_str = '_full'
-    else:
-        full_str = ''
-    masks = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_masks_{opts.dataset}.nc')
-
-    if 'LSM_EUR' in masks.data_vars:
-        valid_cells = masks['lt1500_mask_EUR'].where(masks['LSM_EUR'].notnull())
-        valid_cells = valid_cells.rename('valid_cells')
-        masks['valid_cells'] = valid_cells
-    elif opts.region == 'EUR':
-        valid_cells = masks['lt1500_mask'].copy()
-        valid_cells = valid_cells.rename('valid_cells')
-        masks['valid_cells'] = valid_cells
-
-    if large_gr:
-        region = 'EUR'
-    else:
-        region = opts.region
-    static = xr.open_dataset(
-        f'{opts.statpath}static_{opts.param_str}_{region}_{opts.dataset}{full_str}.nc')
-
-    return masks, static
-
-
-def load_mask_file(opts):
+def _load_mask_file(opts):
     """
     load GR mask
     Args:
@@ -91,7 +52,7 @@ def load_mask_file(opts):
     return mask_file.mask
 
 
-def load_lsm_file(opts):
+def _load_lsm_file(opts):
     """
     load land-sea-mask for AGR
     Args:
@@ -104,10 +65,10 @@ def load_lsm_file(opts):
     # TODO: make this work outside of EUR
     new_opts = deepcopy(opts)
     new_opts.region = 'EUR'
-    return load_mask_file(new_opts)
+    return _load_mask_file(new_opts)
 
 
-def compare_to_ctp_ref(tea, ctp_filename_ref):
+def _compare_to_ctp_ref(tea, ctp_filename_ref):
     """
     compare results to reference file
     TODO: move this to test routine
@@ -128,7 +89,7 @@ def compare_to_ctp_ref(tea, ctp_filename_ref):
         logger.warning(f'Reference file {ctp_filename_ref} not found.')
     
     
-def save_ctp_output(opts, tea, start, end):
+def _save_ctp_output(opts, tea, start, end):
     """
     save CTP results to netcdf file
     Args:
@@ -157,7 +118,7 @@ def save_ctp_output(opts, tea, start, end):
     tea.save_ctp_results(outpath)
     
     if opts.compare_to_ref:
-        compare_to_ctp_ref(tea, path_ref)
+        _compare_to_ctp_ref(tea, path_ref)
         
         
 def _save_0p5_mask(opts, mask_0p5, area_0p5):
@@ -186,7 +147,7 @@ def _save_0p5_mask(opts, mask_0p5, area_0p5):
         mask_0p5.to_netcdf(mask_file)
 
 
-def calc_ctp_indicators(tea, opts, start, end):
+def calc_annual_ctp_indicators(tea, opts, start, end):
     """
     calculate the TEA indicators for the annual climatic time period
     Args:
@@ -214,12 +175,12 @@ def calc_ctp_indicators(tea, opts, start, end):
         tea.calc_annual_ctp_indicators(opts.period, drop_daily_results=True)
 
     # save output
-    save_ctp_output(opts=opts, tea=tea, start=start, end=end)
+    _save_ctp_output(opts=opts, tea=tea, start=start, end=end)
 
 
 def _load_or_generate_gr_grid(opts, tea):
     # load static GR grid files
-    gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
+    gr_grid_mask, gr_grid_areas = _load_gr_grid_static(opts)
     # generate GR grid mask and area if necessary
     if gr_grid_mask is None or gr_grid_areas is None:
         tea.generate_gr_grid_mask()
@@ -233,7 +194,7 @@ def _load_or_generate_gr_grid(opts, tea):
     tea.cell_size_lat = opts.agr_cell_size
 
 
-def calc_lat_lon_range(cell_size_lat, data, mask):
+def _calc_lat_lon_range(cell_size_lat, data, mask):
     """
     calculate latitude and longitude range for selected region
     Args:
@@ -264,7 +225,7 @@ def calc_lat_lon_range(cell_size_lat, data, mask):
     return min_lat, min_lon, max_lat, max_lon
 
 
-def reduce_region(data, mask, threshold, opts):
+def _reduce_region(data, mask, threshold, opts):
     """
     reduce data to the region of interest
     Args:
@@ -289,7 +250,7 @@ def reduce_region(data, mask, threshold, opts):
         min_lat = mask.lat.min().values
         max_lat = mask.lat.max().values
     else:
-        min_lat, min_lon, max_lat, max_lon = calc_lat_lon_range(cell_size_lat, data, mask)
+        min_lat, min_lon, max_lat, max_lon = _calc_lat_lon_range(cell_size_lat, data, mask)
         
     if opts.dataset == 'ERA5' and opts.region == 'EUR':
         lons = np.arange(-12, 40.5, 0.5)
@@ -308,7 +269,7 @@ def reduce_region(data, mask, threshold, opts):
     return proc_data, proc_mask, threshold
 
 
-def getopts():
+def _getopts():
     """
     get arguments
     :return: command line parameters
@@ -332,15 +293,14 @@ def run():
     warnings.filterwarnings(action='ignore', message='divide by zero encountered in divide')
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
     
-    cmd_opts = getopts()
+    # get command line parameters
+    cmd_opts = _getopts()
     
-    # load CFG parameter
+    # load CFG parameters
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
     
-    if 'agr' in opts and False:
-        calc_tea_indicators_agr(opts)
-    else:
-        calc_tea_indicators(opts)
+    # calculate TEA indicators
+    calc_tea_indicators(opts)
 
 
 def calc_tea_indicators(opts):
@@ -354,7 +314,7 @@ def calc_tea_indicators(opts):
     lsm = None
     # load mask if needed
     if 'maskpath' in opts:
-        mask = load_mask_file(opts)
+        mask = _load_mask_file(opts)
     
     # load threshold grid or set threshold value
     if opts.threshold_type == 'abs':
@@ -383,7 +343,7 @@ def calc_tea_indicators(opts):
                 _load_or_generate_gr_grid(opts, tea)
             
             # calculate CTP indicators
-            calc_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
+            calc_annual_ctp_indicators(tea=tea, opts=opts, start=p_start, end=p_end)
             
             gc.collect()
             
@@ -437,7 +397,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
     # load land-sea mask for AGR
     if 'agr' in opts and 'maskpath' in opts:
         # load land-sea mask for AGR
-        lsm = load_lsm_file(opts)
+        lsm = _load_lsm_file(opts)
     else:
         lsm = None
 
@@ -455,7 +415,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
     
         # reduce extent of data to the region of interest
         if 'agr' in opts:
-            data, mask, threshold = reduce_region(data, mask, threshold, opts)
+            data, mask, threshold = _reduce_region(data, mask, threshold, opts)
         
         # computation of daily basis variables (Methods chapter 3)
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
@@ -469,7 +429,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         
         # calculate hourly indicators
         if opts.hourly:
-            calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
+            _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
         
         # save results
         tea.save_daily_results(dbv_filename)
@@ -483,7 +443,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
     return tea
 
 
-def calc_hourly_indicators(tea, opts, start, end):
+def _calc_hourly_indicators(tea, opts, start, end):
     """
     calculate hourly indicators for a given time period
     Args:
@@ -501,72 +461,9 @@ def calc_hourly_indicators(tea, opts, start, end):
     
     logger.info('Calculating hourly basis variables.')
     # calculate hourly indicators
-    tea.calc_hourly_indicators(input_data=data)
+    tea._calc_hourly_indicators(input_data=data)
     
     
-def calc_tea_indicators_agr(opts):
-    """
-    calculate TEA indicators for aggregated GeoRegions (AGR)
-    Args:
-        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
-
-    Returns:
-
-    """
-    # TODO: run only last step as AGR, all other code should be the same?
-    
-    # load static files
-    # check if GR size is larger than 100 areals and switch to AGR if so
-    gr_grid_mask, gr_grid_areas = load_gr_grid_static(opts)
-    
-    if opts.precip:
-        cell_size_lat = 1
-    else:
-        cell_size_lat = 2
-        
-    tea = TEAAgr(gr_grid_mask=gr_grid_mask, gr_grid_areas=gr_grid_areas, cell_size_lat=cell_size_lat)
-    
-    if not opts.decadal_only:
-        # calculate annual climatic time period indicators
-        myopts = deepcopy(opts)
-        starts = np.arange(myopts.start, myopts.end, 10)
-        ends = np.append(np.arange(myopts.start + 10 - 1, myopts.end, 10), myopts.end)
-        
-        dbv_outpath = f'{opts.outpath}/daily_basis_variables'
-        if not os.path.exists(dbv_outpath):
-            os.makedirs(dbv_outpath)
-        
-        for p_start, p_end in zip(starts, ends):
-            myopts.start = p_start
-            myopts.end = p_end
-            logger.info(f'Calculating TEA indicators for years {myopts.start}-{myopts.end}.')
-            
-            # use European masks
-            masks, static = load_static_files(opts=myopts, large_gr=True)
-            data = get_data(start=p_start, end=p_end, opts=opts, period=opts.period)
-            tea = largeGR.calc_tea_large_gr(opts=myopts, data=data, masks=masks, static=static,
-                                            agr_mask=gr_grid_mask, agr_area=gr_grid_areas)
-            gc.collect()
-            
-    if opts.decadal or opts.decadal_only or opts.recalc_decadal:
-        agr_str = 'AGR-'
-        
-        outpath_decadal = (f'{opts.outpath}/dec_indicator_variables/'
-                           f'DEC_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
-                           f'_{opts.start}to{opts.end}.nc')
-        outpath_ampl = (f'{opts.outpath}/dec_indicator_variables/amplification/'
-                        f'AF_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
-                        f'_{opts.start}to{opts.end}.nc')
-        
-        # calculate decadal-mean ctp indicator variables
-        calc_decadal_indicators(opts=opts, tea=tea, outpath=outpath_decadal)
-        
-        # calculate amplification factors
-        calc_amplification_factors(opts, tea, outpath_ampl)
-        
-        _calc_agr_mean_and_spread(opts, tea)
-
-
 def _calc_agr_mean_and_spread(opts, tea):
     """
     calculate aggregate GeoRegion means and spread estimators
@@ -599,7 +496,7 @@ def _calc_agr_mean_and_spread(opts, tea):
     tea.save_amplification_factors(outpath_ampl)
 
 
-def load_gr_grid_static(opts):
+def _load_gr_grid_static(opts):
     """
     load grid of GRs mask and area grid for AGR calculation
     
