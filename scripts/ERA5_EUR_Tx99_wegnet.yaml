@@ -14,7 +14,7 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: annual
+    period: WAS
     # ref period from-to (inclusive)
     ref_period: 1961-1990
     # cc period from-to (inclusive)
@@ -26,8 +26,7 @@ common_params:
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
-    result_path: &result_path /home/wegnet/results/TEA_indicators_test/
-
+    result_path: &result_path /home/wegnet/results/TEA_indicators/
 
 calc_TEA:
   <<: *GR
@@ -36,8 +35,9 @@ calc_TEA:
   <<: *DATA
   <<: *PATHS
   outpath: *result_path
-  recalc_threshold: true
+  recalc_threshold: false
   recalc_daily: true
+  hourly: false
   decadal: true
   spreads: true
   decadal_only: false
