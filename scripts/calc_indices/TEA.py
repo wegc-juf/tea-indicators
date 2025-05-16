@@ -27,7 +27,7 @@ class TEAIndicators:
     Preprint – April 2025. 40 pp. Wegener Center, University of Graz, Graz, Austria, 2025.
     """
     
-    def __init__(self, input_data_grid=None, threshold=None, min_area=1., low_extreme=False,
+    def __init__(self, input_data_grid=None, threshold=None, min_area=1., area_grid=None, low_extreme=False,
                  unit='', mask=None, apply_mask=True, ctp=None, **kwargs):
         """
         Initialize TEAIndicators object
@@ -36,6 +36,7 @@ class TEAIndicators:
             threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
             min_area: minimum area for a timestep to be considered as exceedance. Default: 1
                       (1 areal according to equation 03)
+            area_grid: grid containing the area of each grid cell in areals (1 areal = 100 m²)
             low_extreme: set to True if values below the threshold are considered as extreme events. Default: False
             unit: unit of the input data. Default: ''
             mask: mask grid for input data containing nan values for cells that should be masked. Default: None
@@ -48,11 +49,14 @@ class TEAIndicators:
         self.mask = mask
         self.apply_mask = apply_mask
         
-        if input_data_grid is not None:
-            self._create_area_grid(input_data_grid)
+        self.area_grid = None
+        self.gr_size = None
+        if area_grid is None:
+            if input_data_grid is not None:
+                self._create_area_grid(input_data_grid)
         else:
-            self.area_grid = None
-            self.gr_size = None
+            self.area_grid = area_grid
+            self.gr_size = area_grid.sum().values
         
         self.input_data_grid = None
         self.daily_results = xr.Dataset()
@@ -1525,9 +1529,11 @@ class TEAIndicators:
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
             self._CTP_resample_median = self._CTP_resample_median.isel(time=slice(1, -1))
     
-    def _create_area_grid_lat_lon(self, input_data_grid):
+    def _create_area_grid_lat_lon(self, template_grid):
         """
         create area grid for grid cells out of lat lon info
+        Args:
+            template_grid: template grid to create area grid from
         """
         # circumference of earth at equator
         c_lon_eq = 40075
@@ -1535,42 +1541,42 @@ class TEAIndicators:
         c_lat = 40008
         
         # size of one grid cell (in km)
-        lat_size = abs(input_data_grid.lat[1] - input_data_grid.lat[0]) * c_lat / 360
-        lon_size = ((input_data_grid.lon[1] - input_data_grid.lon[0]) * c_lon_eq / 360 *
-                    np.cos(np.deg2rad(input_data_grid.lat)))
+        lat_size = abs(template_grid.lat[1] - template_grid.lat[0]) * c_lat / 360
+        lon_size = ((template_grid.lon[1] - template_grid.lon[0]) * c_lon_eq / 360 *
+                    np.cos(np.deg2rad(template_grid.lat)))
         
         # create area size grid (in areals)
-        self.area_grid = lon_size * (lat_size * xr.ones_like(input_data_grid.lon)) / 100
+        self.area_grid = lon_size * (lat_size * xr.ones_like(template_grid.lon)) / 100
     
-    def _create_area_grid_regular_cartesian(self, input_data_grid):
+    def _create_area_grid_regular_cartesian(self, template_grid):
         """
         create area grid for regular cartesian grid
         Args:
-            input_data_grid:
-
-        Returns:
-
+            template_grid: template grid to create area grid from
         """
-        area_grid = xr.full_like(input_data_grid[0, :, :], 1)
+        area_grid = xr.full_like(template_grid[0, :, :], 1)
         # get size of one grid cell (in km2)
-        x_size = abs(input_data_grid.x[1] - input_data_grid.x[0]) / 1000
-        y_size = abs(input_data_grid.y[1] - input_data_grid.y[0]) / 1000
+        x_size = abs(template_grid.x[1] - template_grid.x[0]) / 1000
+        y_size = abs(template_grid.y[1] - template_grid.y[0]) / 1000
         cell_area = x_size * y_size
         
         # create area size grid (in areals)
         area_grid = area_grid * cell_area / 100
         self.area_grid = area_grid
     
-    def _create_area_grid(self, input_data_grid):
+    def _create_area_grid(self, template_grid):
         """
         create area grid for grid cells
+        
+        Args:
+            template_grid: template grid to create area grid from
         """
-        if 'lat' in input_data_grid.dims and 'lon' in input_data_grid.dims:
+        if 'lat' in template_grid.dims and 'lon' in template_grid.dims:
             # calculate area grid out of lat lon info
-            self._create_area_grid_lat_lon(input_data_grid)
-        elif 'x' in input_data_grid.dims and 'y' in input_data_grid.dims:
+            self._create_area_grid_lat_lon(template_grid)
+        elif 'x' in template_grid.dims and 'y' in template_grid.dims:
             # calculate equal area grid
-            self._create_area_grid_regular_cartesian(input_data_grid)
+            self._create_area_grid_regular_cartesian(template_grid)
         else:
             raise ValueError("Input data grid must contain lat lon or x y dimensions")
         

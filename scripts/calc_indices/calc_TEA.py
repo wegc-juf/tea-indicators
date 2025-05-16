@@ -146,7 +146,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         
         # reduce extent of data to the region of interest
         if 'agr' in opts:
-            data, mask, threshold = _reduce_region(data, mask, threshold, opts)
+            data, mask, threshold = _reduce_region(opts, data, mask, threshold)
         
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
         
@@ -158,7 +158,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
                             min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
         
         # computation of daily basis variables (Methods chapter 3)
-        tea.calc_daily_basis_vars()
+        tea.calc_daily_basis_vars(gr=opts.hourly)
         
         # calculate hourly indicators
         if opts.hourly:
@@ -400,14 +400,15 @@ def _calc_lat_lon_range(cell_size_lat, data, mask):
     return min_lat, min_lon, max_lat, max_lon
 
 
-def _reduce_region(data, mask, threshold, opts):
+def _reduce_region(opts, data, mask, threshold=None, full_region=False):
     """
     reduce data to the region of interest
     Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
         data: input data
         mask: mask grid
         threshold: threshold grid
-        opts: options
+        full_region: if True, use the full region (default: opts.full_region)
 
     Returns:
         data: reduced data
@@ -421,9 +422,11 @@ def _reduce_region(data, mask, threshold, opts):
         cell_size_lat = 2
     
     # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
-    if opts.full_region:
+    if opts.full_region or full_region:
         min_lat = mask.lat.min().values
         max_lat = mask.lat.max().values
+        min_lon = mask.lon.min().values
+        max_lon = mask.lon.max().values
     else:
         min_lat, min_lon, max_lat, max_lon = _calc_lat_lon_range(cell_size_lat, data, mask)
         
@@ -439,7 +442,8 @@ def _reduce_region(data, mask, threshold, opts):
 
     proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     proc_mask = mask.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
-    threshold = threshold.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
+    if threshold is not None:
+        threshold = threshold.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     
     return proc_data, proc_mask, threshold
 
