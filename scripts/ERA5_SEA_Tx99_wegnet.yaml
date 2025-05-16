@@ -34,9 +34,9 @@ calc_TEA:
   recalc_daily: true
   hourly: true
   decadal: false
-  spreads: false
-  decadal_only: false
   recalc_decadal: false
+  decadal_only: false
+  spreads: true
 
 create_region_masks:
   <<: *GR
