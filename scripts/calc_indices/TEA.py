@@ -384,6 +384,8 @@ class TEAIndicators:
             self._calc_DTEM_GR()
             self._calc_DTEM_Max_GR()
             self._calc_DTEEC_GR()
+            self._calc_DET_GR()
+            self._calc_DEH_GR()
             self._calc_gr = True
     
     def save_daily_results(self, filepath):
@@ -504,6 +506,9 @@ class TEAIndicators:
         """
         calculate daily exceedance hours (daily exposure time - DET) for GR (equation 10_7)
         """
+        if 'Nhours' not in self.daily_results:
+            logger.debug("Nhours must be calculated before calculating DEH")
+            return
         N_hours = self.daily_results.Nhours
         
         a_nl = self.daily_results.DTEA
@@ -562,6 +567,10 @@ class TEAIndicators:
         """
         calculate daily exceedance hours (first/last/max) for GR (equation 10_8)
         """
+        if 't_hfirst' not in self.daily_results:
+            logger.debug("t_hfirst must be calculated before calculating DEH_GR")
+            return
+        
         a_nl = self.daily_results.DTEA
         a_gr = self.daily_results.DTEA_GR
         
@@ -738,7 +747,7 @@ class TEAIndicators:
         # average daily exposure time (h_avg, equation 16_1 and equation 16_4)
         for var in ['Nhours', 'Nhours_GR']:
             if var not in self.daily_results:
-                return
+                continue
             new_var = var.replace('Nhours', 'h_avg')
             self.ctp_results[new_var] = self._CTP_resample_mean[var]
             self.ctp_results[new_var].attrs = get_attrs(vname=new_var)
@@ -748,8 +757,8 @@ class TEAIndicators:
             for gr_suffix in ['_GR', '']:
                 new_var = var + '_avg' + gr_suffix
                 old_var = var + gr_suffix
-                if var not in self.daily_results:
-                    return
+                if old_var not in self.daily_results:
+                    continue
                 self.ctp_results[new_var] = self._CTP_resample_mean[old_var]
                 self.ctp_results[new_var].attrs = get_attrs(vname=new_var)
         
