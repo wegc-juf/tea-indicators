@@ -494,6 +494,11 @@ class TEAIndicators:
         
         # calculate exceedance hours per day (equation 10_3)
         N_hours = htec.resample(time='1d').sum('time')
+        
+        # filter mask
+        if self.mask is not None and self.apply_mask:
+            N_hours = N_hours.where(self.mask > 0)
+        
         N_hours.attrs = get_attrs(vname='Nhours', data_unit='h')
         
         if len(N_hours.time) != len(self.daily_results.time):
@@ -749,7 +754,15 @@ class TEAIndicators:
             if var not in self.daily_results:
                 continue
             new_var = var.replace('Nhours', 'h_avg')
-            self.ctp_results[new_var] = self._CTP_resample_mean[var]
+            h_mean = self._CTP_resample_mean[var]
+            # set nan values to 0 (no exceedance = 0 hours)
+            h_mean = h_mean.where(h_mean > 0, 0)
+            if 'GR' not in var:
+                # apply mask
+                if self.mask is not None and self.apply_mask:
+                    h_mean = h_mean.where(self.mask > 0)
+                
+            self.ctp_results[new_var] = h_mean
             self.ctp_results[new_var].attrs = get_attrs(vname=new_var)
         
         # average daily rise/set time (h_rise_avg, h_set_avg, equation 16_2, 16_3, 16_5, and 16_6)
