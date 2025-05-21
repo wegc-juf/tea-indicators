@@ -50,6 +50,8 @@ class TEAIndicators:
         self.mask = mask
         self.apply_mask = apply_mask
         
+        self.use_dask = use_dask
+        
         self.area_grid = None
         self.gr_size = None
         if area_grid is None:
