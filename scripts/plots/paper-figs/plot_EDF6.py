@@ -30,6 +30,23 @@ def load_aep_data(ds):
     return aep, aep_af
 
 
+def load_det_data():
+    regs = ['AUT', 'SEA', 'FBR']
+    det = pd.DataFrame(columns=regs)
+    det_af = pd.DataFrame(columns=regs)
+    for reg in regs:
+        data = xr.open_dataset(
+            f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+            f'DEC_Tx99.0p_{reg}_annual_ERA5_1961to2024.nc')
+        data_af = xr.open_dataset(
+            f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/amplification/'
+            f'AF_Tx99.0p_{reg}_annual_ERA5_1961to2024.nc')
+
+        det[reg] = data['h_avg_GR']
+        det_af[reg] = data_af['h_avg_GR_AF']
+
+    return det, det_af
+
 def plot_det_aep(fig, axs, data, nax):
     """
     plot non normalized data
@@ -52,7 +69,7 @@ def plot_det_aep(fig, axs, data, nax):
                  'ylbl': r'AEP ($\Delta Y_s$) (months)', 'var': 'AEP', 'unit': 'months',
                  'refn': r'$\Delta Y_\mathrm{Ref}$', 'ccn': r'$\Delta Y_\mathrm{CC}$'}}
 
-    ylims = {0: {'ymin': 4, 'ymax': 7},
+    ylims = {0: {'ymin': 1, 'ymax': 6},
              2: {'ymin': 0, 'ymax': 5},
              4: {'ymin': 0, 'ymax': 5}}
 
@@ -138,7 +155,7 @@ def plot_af(fig, axs, data, nax):
     xticks = np.arange(1961, 2025)
 
     cc_vals = {}
-    lims = {1: {'yn': 0.75, 'yx': 1.5, 'dmaj': 0.25, 'dmin': 0.125},
+    lims = {1: {'yn': 0.5, 'yx': 1.75, 'dmaj': 0.25, 'dmin': 0.125},
             3: {'yn': 0, 'yx': 5, 'dmaj': 1, 'dmin': 0.25},
             5: {'yn': 0, 'yx': 5, 'dmaj': 1, 'dmin': 0.25}}
     yn, yx = lims[nax]['yn'], lims[nax]['yx']
@@ -197,17 +214,14 @@ def run():
 
     # load ERA5(Land) data
     aep_era5, aep_af_era5 = load_aep_data(ds='ERA5')
-    # e5_det = load_era5_data(ds='ERA5')
+    e5_det, e5_det_af = load_det_data()
 
-    # data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
-    data = {0: None, 1: None, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
+    data = {0: e5_det, 1: e5_det_af, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
     axs = axs.reshape(-1)
 
     for iax, ax in enumerate(axs):
-        if iax < 2:
-            continue
         if iax % 2 == 0:
             plot_det_aep(fig=fig, axs=ax, data=data[iax], nax=iax)
         else:
