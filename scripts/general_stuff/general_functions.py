@@ -9,6 +9,7 @@ import numpy as np
 import glob
 import os
 import xarray as xr
+import pandas as pd
 
 from scripts.general_stuff.check_CFG import check_config
 from .TEA_logger import logger
@@ -259,13 +260,13 @@ def extract_period(ds, period, start_year=None, end_year=None):
     select only times of interest
 
     Args:
-        ds: Dataset
+        ds: Xarray DataArray or Pandas DataFrame
         period: period of interest (annual, seasonal, ESS, WAS, JJA)
         start_year: start year (in case of seasonal: start year of first winter season (optional)
         end_year: end year (optional)
 
     Returns:
-        ds: Dataset with selected time period
+        ds: Data with selected time period
 
     """
     if period == 'seasonal':
@@ -284,9 +285,14 @@ def extract_period(ds, period, start_year=None, end_year=None):
         ds = ds.loc[start:end]
     if period in ['ESS', 'WAS', 'JJA']:
         months = {'ESS': np.arange(5, 10), 'WAS': np.arange(4, 11), 'JJA': np.arange(6, 9)}
-        # TODO: make this work for pandas
-        season = ds['time'].dt.month.isin(months[period])
-        ds = ds.sel(time=season)
+        if isinstance(ds, xr.DataArray):
+            season = ds['time.month'].isin(months[period])
+            ds = ds.sel(time=season)
+        elif isinstance(ds, pd.DataFrame):
+            season = ds.index.month.isin(months[period])
+            ds = ds.loc[season]
+        else:
+            raise ValueError('ds must be either xarray DataArray or pandas DataFrame')
     return ds
 
 
