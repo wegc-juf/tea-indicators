@@ -24,10 +24,12 @@ logging.basicConfig(
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (load_opts, create_history_from_cfg,
-                                                     ref_cc_params)
+                                                     ref_cc_params, extract_period)
 from scripts.general_stuff.var_attrs import get_attrs
+from scripts.calc_indices.calc_TEA import _getopts
 
 PARAMS = ref_cc_params()
+
 
 def load_data(opts):
     """
@@ -40,12 +42,12 @@ def load_data(opts):
 
     """
 
-    if opts.parameter == 'T':
+    if opts.parameter == 'Tx':
         pstr = 'Tmax'
-        rename_dict = {'tmax': 'T'}
+        rename_dict = {'tmax': opts.parameter}
     else:
         pstr = 'RR'
-        rename_dict = {'nied': 'P'}
+        rename_dict = {'nied': opts.parameter}
 
     # read csv file of station data and set time as index of df
     filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'
@@ -60,13 +62,7 @@ def load_data(opts):
     # rename columns
     data = data.rename(columns=rename_dict)
 
-    # only select the years 1877-2022
-    data = data.loc['1877-01-01':'2023-01-01']
-
-    if opts.period == 'WAS':
-        data = data[(data.index.month >= 4) & (data.index.month <= 10)]
-    elif opts.period == 'ESS':
-        data = data[(data.index.month >= 5) & (data.index.month <= 9)]
+    data = extract_period(ds=data, period=opts.period, start_year=opts.start, end_year=opts.end)
 
     # interpolate missing data
     data = interpolate_gaps(opts=opts, data=data)
@@ -241,30 +237,42 @@ def calc_ctp_indicators(opts, data):
     return ctp
 
 
-def run():
-    # load CFG parameter
-    opts = load_opts(fname=__file__)
+def calc_station_tea_indicators(opts):
+    """
+    calculate CTP indicators for station data
+    Args:
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
 
-    if opts.parameter == 'T':
-        opts.param_str = f'Tx{opts.threshold:.1f}p'
+    Returns:
 
+    """
     data = load_data(opts=opts)
-
     # calc daily basis variables
     dbv = calc_basis(opts=opts, data=data)
     dbv, dbv_per = assign_ctp_coords(opts=opts, data=dbv)
-
     # calc CTP variables
     ctp = calc_ctp_indicators(opts=opts, data=dbv_per)
-
     # set all other vars to 0 if EF is 0
     ctp = ctp.where(ctp.EF != 0, 0)
-
     # save output
     ds_out = create_history_from_cfg(cfg_params=opts, ds=ctp)
     path = Path(f'{opts.outpath}station_indices/')
     path.mkdir(parents=True, exist_ok=True)
     ds_out.to_netcdf(f'{opts.outpath}station_indices/CTP_{opts.param_str}_{opts.station}.nc')
+
+
+
+def run():
+    # get command line parameters
+    cmd_opts = _getopts()
+    
+    # load CFG parameters
+    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
+
+    if opts.parameter == 'T':
+        opts.param_str = f'Tx{opts.threshold:.1f}p'
+    
+    calc_station_tea_indicators(opts)
 
 
 if __name__ == '__main__':
