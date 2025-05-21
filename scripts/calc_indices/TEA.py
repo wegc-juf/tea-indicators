@@ -28,7 +28,7 @@ class TEAIndicators:
     """
     
     def __init__(self, input_data_grid=None, threshold=None, min_area=1., area_grid=None, low_extreme=False,
-                 unit='', mask=None, apply_mask=True, ctp=None, **kwargs):
+                 unit='', mask=None, apply_mask=True, ctp=None, use_dask=False, **kwargs):
         """
         Initialize TEAIndicators object
         Args:
@@ -41,6 +41,7 @@ class TEAIndicators:
             unit: unit of the input data. Default: ''
             mask: mask grid for input data containing nan values for cells that should be masked. Default: None
             ctp: Climatic Time Period (CTP) to resample to. For allowed values see set_ctp method. Default: None
+            use_dask: use dask for calculations. Default: False
         """
         if threshold is not None and isinstance(threshold, (int, float)):
             threshold = xr.full_like(input_data_grid[0], threshold)
@@ -387,6 +388,8 @@ class TEAIndicators:
             self._calc_DET_GR()
             self._calc_DEH_GR()
             self._calc_gr = True
+        if not self.use_dask:
+            self.daily_results = self.daily_results.compute()
     
     def save_daily_results(self, filepath):
         """
