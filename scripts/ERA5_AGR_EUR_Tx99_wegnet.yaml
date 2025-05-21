@@ -14,7 +14,7 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: WAS
+    period: annual
     # ref period from-to (inclusive)
     ref_period: 1961-1990
     # cc period from-to (inclusive)
