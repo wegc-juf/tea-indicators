@@ -6,7 +6,6 @@
 """
 
 import copy
-import glob
 import logging
 import os
 from datetime import timedelta
@@ -24,79 +23,11 @@ logging.basicConfig(
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (load_opts, create_history_from_cfg,
-                                                     ref_cc_params, extract_period)
+                                                     ref_cc_params, get_csv_data)
 from scripts.general_stuff.var_attrs import get_attrs
 from scripts.calc_indices.calc_TEA import _getopts
 
 PARAMS = ref_cc_params()
-
-
-def load_data(opts):
-    """
-    load station data
-    Args:
-        opts: CLI parameter
-
-    Returns:
-        data: interpolated station data
-
-    """
-
-    if opts.parameter == 'Tx':
-        pstr = 'Tmax'
-        rename_dict = {'tmax': opts.parameter}
-    else:
-        pstr = 'RR'
-        rename_dict = {'nied': opts.parameter}
-
-    # read csv file of station data and set time as index of df
-    filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'
-    file = glob.glob(filenames)
-    if len(file) == 0:
-        filenames = f'{opts.inpath}{pstr}_{opts.station}*.csv'
-        file = glob.glob(filenames)
-    data = pd.read_csv(file[0])
-    data['time'] = pd.to_datetime(data['time'])
-    data = data.set_index('time')
-
-    # rename columns
-    data = data.rename(columns=rename_dict)
-
-    data = extract_period(ds=data, period=opts.period, start_year=opts.start, end_year=opts.end)
-
-    # interpolate missing data
-    data = interpolate_gaps(opts=opts, data=data)
-
-    return data
-
-
-def interpolate_gaps(opts, data):
-    """
-    interpolates data gaps with average of missing day from other years
-    Args:
-        opts: CLI parameter
-        data: station data
-
-    Returns:
-        data: interpolated data
-    """
-
-    non_nan = data.loc[data[opts.parameter].notnull(), :]
-    start_yr = non_nan.index[0]
-
-    gaps = data[data[opts.parameter].isnull()]
-    for igap in gaps.index:
-        if igap < start_yr:
-            continue
-        # select all values from that day of year
-        day_data = data[data.index.month == igap.month]
-        day_data = day_data[day_data.index.day == igap.day]
-        # calculate mean
-        fill_val = day_data[opts.parameter].mean(skipna=True)
-        # fill gap with fill value
-        data.at[igap, opts.parameter] = fill_val
-
-    return data
 
 
 def assign_ctp_coords(opts, data):
@@ -158,7 +89,7 @@ def calc_thresh(opts):
     opts_ref = copy.deepcopy(opts)
     opts_ref.period = 'annual'
 
-    data = load_data(opts=opts_ref)
+    data = get_csv_data(opts=opts_ref)
     ref_data = data[(data.index.year >= int(PARAMS['REF']['start'][:4]))
                     & (data.index.year <= int(PARAMS['REF']['end'][:4]))]
 
@@ -246,7 +177,9 @@ def calc_station_tea_indicators(opts):
     Returns:
 
     """
-    data = load_data(opts=opts)
+    # tea = calc_dbv_indicators(start=opts.start, end=opts.end, threshold=25., opts=opts, gridded=False)
+    
+    data = get_csv_data(opts=opts)
     # calc daily basis variables
     dbv = calc_basis(opts=opts, data=data)
     dbv, dbv_per = assign_ctp_coords(opts=opts, data=dbv)
@@ -259,7 +192,6 @@ def calc_station_tea_indicators(opts):
     path = Path(f'{opts.outpath}station_indices/')
     path.mkdir(parents=True, exist_ok=True)
     ds_out.to_netcdf(f'{opts.outpath}station_indices/CTP_{opts.param_str}_{opts.station}.nc')
-
 
 
 def run():

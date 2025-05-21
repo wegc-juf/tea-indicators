@@ -296,7 +296,7 @@ def extract_period(ds, period, start_year=None, end_year=None):
     return ds
 
 
-def get_data(start, end, opts, period='annual', hourly=False):
+def get_gridded_data(start, end, opts, period='annual', hourly=False):
     """
     loads data for parameter and period
     :param start: start year
@@ -349,3 +349,69 @@ def get_data(start, end, opts, period='annual', hourly=False):
     return data
 
 
+def get_csv_data(opts):
+    """
+    load station data
+    Args:
+        opts: Config parameters as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+
+    Returns:
+        data: interpolated station data
+
+    """
+
+    if opts.parameter == 'Tx':
+        pstr = 'Tmax'
+        rename_dict = {'tmax': opts.parameter}
+    else:
+        pstr = 'RR'
+        rename_dict = {'nied': opts.parameter}
+
+    # read csv file of station data and set time as index of df
+    filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'
+    file = glob.glob(filenames)
+    if len(file) == 0:
+        filenames = f'{opts.inpath}{pstr}_{opts.station}*.csv'
+        file = glob.glob(filenames)
+    data = pd.read_csv(file[0])
+    data['time'] = pd.to_datetime(data['time'])
+    data = data.set_index('time')
+
+    # rename columns
+    data = data.rename(columns=rename_dict)
+
+    data = extract_period(ds=data, period=opts.period, start_year=opts.start, end_year=opts.end)
+
+    # interpolate missing data
+    data = interpolate_gaps(opts=opts, data=data)
+
+    return data
+
+
+def interpolate_gaps(opts, data):
+    """
+    interpolates data gaps with average of missing day from other years
+    Args:
+        opts: CLI parameter
+        data: station data
+
+    Returns:
+        data: interpolated data
+    """
+
+    non_nan = data.loc[data[opts.parameter].notnull(), :]
+    start_yr = non_nan.index[0]
+
+    gaps = data[data[opts.parameter].isnull()]
+    for igap in gaps.index:
+        if igap < start_yr:
+            continue
+        # select all values from that day of year
+        day_data = data[data.index.month == igap.month]
+        day_data = day_data[day_data.index.day == igap.day]
+        # calculate mean
+        fill_val = day_data[opts.parameter].mean(skipna=True)
+        # fill gap with fill value
+        data.at[igap, opts.parameter] = fill_val
+
+    return data

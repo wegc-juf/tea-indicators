@@ -21,7 +21,7 @@ from copy import deepcopy
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                                     compare_to_ref, get_data)
+                                                     compare_to_ref, get_gridded_data, get_csv_data)
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
                                                           _get_decadal_outpath, _get_amplification_outpath)
@@ -95,7 +95,7 @@ def calc_tea_indicators(opts):
             _calc_agr_mean_and_spread(opts=opts, tea=tea)
 
 
-def calc_dbv_indicators(start, end, threshold, opts, mask=None):
+def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
     """
     calculate daily basis variables for a given time period
     Args:
@@ -105,6 +105,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
         mask: mask grid for input data containing nan values for cells that should be masked. Fractions of 1 are
         interpreted as area fractions for the given cell. (optional)
+        gridded: if True, load gridded data, else load station timeseries (default: True)
 
     Returns:
         tea: TEA object with daily basis variables
@@ -142,7 +143,10 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None):
         
         # always calculate annual basis variables to later extract sub-annual values
         period = 'annual'
-        data = get_data(start=start, end=end, opts=opts, period=period)
+        if gridded:
+            data = get_gridded_data(start=start, end=end, opts=opts, period=period)
+        else:
+            data = get_csv_data(opts)
         
         # reduce extent of data to the region of interest
         if 'agr' in opts:
@@ -483,7 +487,7 @@ def _calc_hourly_indicators(tea, opts, start, end):
 
     """
     # load data
-    data = get_data(start=start, end=end, opts=opts, hourly=True)
+    data = get_gridded_data(start=start, end=end, opts=opts, hourly=True)
     
     if 'agr' in opts:
         # reduce data to the region of interest
