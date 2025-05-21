@@ -2,7 +2,6 @@ common_params:
   GeoRegion: &GR
     region: EUR
     # agr: EUR
-    # use full data without land, border, and altitude masks
     full_region: false
     gr_type: polygon
     sw_corner: null
@@ -18,7 +17,7 @@ common_params:
     unit: degC
     low_extreme: false
   time_params: &TIME
-    start: 1961
+    start: 1877
     end: 2024
     period: annual
     # ref period from-to (inclusive)
@@ -26,7 +25,7 @@ common_params:
     # cc period from-to (inclusive)
     cc_period: 2010-2024
   dataset: &DATA
-    dataset: ERA5
+    dataset: SPARTACUS
   paths: &PATHS
     data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
     statpath: &statpath /home/wegnet/results/static/
@@ -43,15 +42,6 @@ create_region_masks:
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-
-create_static_files:
-  <<: *GR
-  <<: *TIME
-  <<: *PARAM
-  <<: *DATA
-  <<: *PATHS
-  smoothing: 0
-  outpath: *statpath
 
 calc_TEA:
   <<: *GR
@@ -71,6 +61,7 @@ calc_TEA:
 calc_station_TEA:
   <<: *TIME
   <<: *PARAM
+  <<: *DATA
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /home/wegnet/results/TEA_indicators/station_indices/
