@@ -155,7 +155,7 @@ def plot_af(fig, axs, data, nax):
     xticks = np.arange(1961, 2025)
 
     cc_vals = {}
-    lims = {1: {'yn': 0.5, 'yx': 1.75, 'dmaj': 0.25, 'dmin': 0.125},
+    lims = {1: {'yn': 0.5, 'yx': 2, 'dmaj': 0.25, 'dmin': 0.125},
             3: {'yn': 0, 'yx': 5, 'dmaj': 1, 'dmin': 0.25},
             5: {'yn': 0, 'yx': 5, 'dmaj': 1, 'dmin': 0.25}}
     yn, yx = lims[nax]['yn'], lims[nax]['yx']
