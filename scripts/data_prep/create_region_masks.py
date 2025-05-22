@@ -17,7 +17,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_gridded_data
 from scripts.calc_indices.calc_TEA import _getopts
-from scripts.data_prep.create_static_files import match_dimension_dtypes
 
 
 def load_shp(opts):
@@ -501,3 +500,11 @@ def run():
 
 if __name__ == '__main__':
     run()
+
+
+def match_dimension_dtypes(src, dest):
+    for dim in dest.dims:
+        if dim not in src.dims:
+            continue
+        if dest[dim].dtype != src[dim].dtype:
+            dest[dim] = np.round(dest[dim].astype(src[dim].dtype), decimals=5)

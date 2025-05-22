@@ -21,13 +21,13 @@ from copy import deepcopy
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from scripts.general_stuff.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                                     compare_to_ref, get_gridded_data, get_csv_data)
+                                                     compare_to_ref, get_gridded_data, get_csv_data,
+                                                     create_threshold_grid)
 from scripts.general_stuff.TEA_logger import logger
 from scripts.calc_indices.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
                                                           _get_decadal_outpath, _get_amplification_outpath)
 from scripts.calc_indices.TEA import TEAIndicators
 from scripts.calc_indices.TEA_AGR import TEAAgr
-from scripts.data_prep.create_static_files import create_threshold_grid
 
 # TODO: move this to config file
 region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
