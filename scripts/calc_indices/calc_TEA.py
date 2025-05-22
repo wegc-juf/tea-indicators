@@ -505,7 +505,7 @@ def _calc_hourly_indicators(tea, opts, start, end):
         # reduce data to the region of interest
         data, _, _ = _reduce_region(opts, data, tea.mask, full_region=True)
     
-    if not _check_data_extent(data, tea.input_data_grid):
+    if not _check_data_extent(data, tea.input_data):
         logger.warning('Hourly data extent is not the same as daily data extent. '
                        'Please check your data and the region you want to calculate.')
     

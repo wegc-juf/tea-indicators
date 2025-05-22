@@ -71,7 +71,7 @@ class TEAIndicators:
             self.area_grid = area_grid
             self.gr_size = area_grid.sum().values
         
-        self.input_data_grid = None
+        self.input_data = None
         self.daily_results = xr.Dataset()
         self._daily_results_filtered = None
         
@@ -129,16 +129,16 @@ class TEAIndicators:
 
         """
         rename_dict_inv = {}
-        if 'lon' not in self.input_data_grid.dims:
+        if 'lon' not in self.input_data.dims:
             rename_dict = {'x': 'lon', 'y': 'lat'}
-            self.input_data_grid = self.input_data_grid.rename(rename_dict)
+            self.input_data = self.input_data.rename(rename_dict)
             self.area_grid = self.area_grid.rename(rename_dict)
             self.mask = self.mask.rename(rename_dict)
             self.threshold_grid = self.threshold_grid.rename(rename_dict)
             rename_dict_inv = {'lon': 'x', 'lat': 'y'}
             
-        self.input_data_grid = self.input_data_grid.sel(lat=slice(lat_range[1], lat_range[0]),
-                                                        lon=slice(lon_range[0], lon_range[1]))
+        self.input_data = self.input_data.sel(lat=slice(lat_range[1], lat_range[0]),
+                                              lon=slice(lon_range[0], lon_range[1]))
         self.area_grid = self.area_grid.sel(lat=slice(lat_range[1], lat_range[0]),
                                             lon=slice(lon_range[0], lon_range[1]))
         self.mask = self.mask.sel(lat=slice(lat_range[1], lat_range[0]),
@@ -146,7 +146,7 @@ class TEAIndicators:
         self.threshold_grid = self.threshold_grid.sel(lat=slice(lat_range[1], lat_range[0]),
                                                       lon=slice(lon_range[0], lon_range[1]))
         if rename_dict_inv:
-            self.input_data_grid = self.input_data_grid.rename(rename_dict_inv)
+            self.input_data = self.input_data.rename(rename_dict_inv)
             self.area_grid = self.area_grid.rename(rename_dict_inv)
             self.mask = self.mask.rename(rename_dict_inv)
             self.threshold_grid = self.threshold_grid.rename(rename_dict_inv)
@@ -177,23 +177,23 @@ class TEAIndicators:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
         """
         if self.mask is not None and self.apply_mask:
-            self.input_data_grid = input_data_grid.where(self.mask > 0)
+            self.input_data = input_data_grid.where(self.mask > 0)
             self._crop_to_mask_extents()
         else:
-            self.input_data_grid = input_data_grid
+            self.input_data = input_data_grid
             
-        if self.input_data_grid is not None:
+        if self.input_data is not None:
             # set time index
             if 'days' in input_data_grid.dims:
-                self.input_data_grid = self.input_data_grid.rename({'days': 'time'})
+                self.input_data = self.input_data.rename({'days': 'time'})
             elif 'time' in input_data_grid.dims:
                 pass
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
-            if self.input_data_grid.ndim > 1:
-                if self.input_data_grid.shape[-2:] != self.threshold_grid.shape:
+            if self.input_data.ndim > 1:
+                if self.input_data.shape[-2:] != self.threshold_grid.shape:
                     raise ValueError("Input data and threshold results must have the same area")
-                if self.input_data_grid.shape[-2:] != self.area_grid.shape:
+                if self.input_data.shape[-2:] != self.area_grid.shape:
                     raise ValueError("Input data and area results must have the same shape")
         
     def _calc_DTEC(self):
@@ -333,9 +333,9 @@ class TEAIndicators:
 
         """
         if self._low_extreme:
-            tem = self.threshold_grid - self.input_data_grid
+            tem = self.threshold_grid - self.input_data
         else:
-            tem = self.input_data_grid - self.threshold_grid
+            tem = self.input_data - self.threshold_grid
         tem = xr.where(tem <= 0, 0, tem)
         return tem
     
@@ -504,7 +504,7 @@ class TEAIndicators:
             input_data: gridded input data (e.g. temperature, precipitation) in hourly resolution
         """
         # calculate hourly exceedance magnitude
-        self.input_data_grid = input_data
+        self.input_data = input_data
         htem = self._calc_TEM()
         self._hourly_results['HTEM'] = htem
         

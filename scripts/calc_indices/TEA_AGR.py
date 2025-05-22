@@ -50,8 +50,8 @@ class TEAAgr(TEAIndicators):
                          mask=mask, min_area=min_area, apply_mask=False, **kwargs)
         if self.area_grid is not None:
             ref_grid = self.area_grid
-        elif self.input_data_grid is not None:
-            ref_grid = self.input_data_grid
+        elif self.input_data is not None:
+            ref_grid = self.input_data
         elif self.mask is not None:
             ref_grid = self.mask
         else:
@@ -75,8 +75,8 @@ class TEAAgr(TEAIndicators):
         self._dbv_gr_grid_results = None
         
         # filter input data to valid cells
-        if self.land_sea_mask is not None and self.input_data_grid is not None:
-            self.input_data_grid = self.input_data_grid.where(self.land_sea_mask > 0)
+        if self.land_sea_mask is not None and self.input_data is not None:
+            self.input_data_grid = self.input_data.where(self.land_sea_mask > 0)
             
     def calc_daily_basis_vars(self, grid=True, gr=False):
         """
