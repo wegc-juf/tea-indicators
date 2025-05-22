@@ -25,7 +25,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from scripts.general_stuff.general_functions import (load_opts, create_history_from_cfg,
                                                      ref_cc_params, get_csv_data)
 from scripts.general_stuff.var_attrs import get_attrs
-from scripts.calc_indices.calc_TEA import _getopts
+from scripts.calc_indices.calc_TEA import _getopts, calc_dbv_indicators, _save_ctp_output
 
 PARAMS = ref_cc_params()
 
@@ -177,8 +177,11 @@ def calc_station_tea_indicators(opts):
     Returns:
 
     """
-    # tea = calc_dbv_indicators(start=opts.start, end=opts.end, threshold=25., opts=opts, gridded=False)
-    
+    tea = calc_dbv_indicators(start=opts.start, end=opts.end, threshold=25., opts=opts, gridded=False)
+    tea.calc_annual_ctp_indicators(opts.period, drop_daily_results=True)
+    _save_ctp_output(opts=opts, tea=tea, start=opts.start, end=opts.end)
+    return
+
     data = get_csv_data(opts=opts)
     # calc daily basis variables
     dbv = calc_basis(opts=opts, data=data)

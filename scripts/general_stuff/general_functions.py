@@ -376,14 +376,21 @@ def get_csv_data(opts):
     data = pd.read_csv(file[0])
     data['time'] = pd.to_datetime(data['time'])
     data = data.set_index('time')
+    
+    # remove timezone information
+    data = data.tz_localize(None)
 
     # rename columns
     data = data.rename(columns=rename_dict)
-
-    data = extract_period(ds=data, period=opts.period, start_year=opts.start, end_year=opts.end)
-
+    
     # interpolate missing data
     data = interpolate_gaps(opts=opts, data=data)
+    
+    # convert to xarray DataArray
+    data = data.to_xarray()[opts.parameter]
+    
+    # extract only timestamps of interest
+    data = extract_period(ds=data, period=opts.period, start_year=opts.start, end_year=opts.end)
 
     return data
 

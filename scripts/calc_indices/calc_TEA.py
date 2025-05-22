@@ -134,8 +134,12 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         lsm = None
     
     # DBV can't be the same for AGR and non-AGR (AGR is always without mask and has margins) so optionally add agr_str
+    if gridded:
+        name = opts.region
+    else:
+        name = opts.station
     dbv_filename = (f'{dbv_outpath}/'
-                    f'DBV_{opts.param_str}_{agr_str}{opts.region}_annual_{opts.dataset}'
+                    f'DBV_{opts.param_str}_{agr_str}{name}_annual_{opts.dataset}'
                     f'_{start}to{end}.nc')
     
     # recalculate daily basis variables if needed
@@ -158,11 +162,15 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         min_area = 0.0001
         
         # initialize TEA object
-        tea = TEA_class_obj(input_data_grid=data, threshold=threshold, mask=mask,
+        tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
                             min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
         
         # computation of daily basis variables (Methods chapter 3)
-        tea.calc_daily_basis_vars(gr=opts.hourly)
+        if gridded:
+            gr = opts.hourly
+        else:
+            gr = False
+        tea.calc_daily_basis_vars(gr=gr)
         
         # calculate hourly indicators
         if opts.hourly:
@@ -308,8 +316,12 @@ def _save_ctp_output(opts, tea, start, end):
     else:
         grg_str = ''
     
+    if 'region' in opts:
+        name = opts.region
+    else:
+        name = opts.station
     outpath = (f'{opts.outpath}/ctp_indicator_variables/'
-               f'CTP_{opts.param_str}_{grg_str}{opts.region}_{opts.period}_{opts.dataset}'
+               f'CTP_{opts.param_str}_{grg_str}{name}_{opts.period}_{opts.dataset}'
                f'_{start}to{end}.nc')
     
     path_ref = outpath.replace('.nc', '_ref.nc')

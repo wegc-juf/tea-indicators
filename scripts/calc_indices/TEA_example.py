@@ -21,7 +21,7 @@ if __name__ == '__main__':
     input_data = xr.open_dataset(f'../examples/{ERA5_file}')
     
     # create TEA object; set threshold to THRESHOLD degC
-    tea_obj = TEAIndicators(input_data_grid=input_data.Tx, threshold=THRESHOLD, unit='degC')
+    tea_obj = TEAIndicators(input_data=input_data.Tx, threshold=THRESHOLD, unit='degC')
     
     # calculate daily TEA indicators and save to NetCDF file
     print('Calculating daily TEA indicators...')

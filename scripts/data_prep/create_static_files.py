@@ -12,7 +12,7 @@ import warnings
 import xarray as xr
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_input_filenames, get_data
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts, get_input_filenames, get_gridded_data
 
 
 def area_grid(opts, masks):
@@ -87,7 +87,7 @@ def calc_percentiles(opts, threshold_min=None):
 
     """
 
-    data = get_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
+    data = get_gridded_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
     
     if threshold_min is not None:
         data = data.where(data > threshold_min)

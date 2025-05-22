@@ -3,12 +3,6 @@ common_params:
     region: EUR
     # agr: EUR
     full_region: false
-    gr_type: polygon
-    sw_corner: null
-    ne_corner: null
-    center: null
-    we_len: null
-    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -43,7 +37,7 @@ create_region_masks:
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
   outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
 
-calc_TEA:
+calc_TEA: &calc_TEA
   <<: *GR
   <<: *PARAM
   <<: *TIME
@@ -51,10 +45,11 @@ calc_TEA:
   <<: *PATHS
   outpath: *result_path
   recalc_threshold: false
-  recalc_daily: false
+  recalc_daily: true
+  hourly: false
   decadal: true
   spreads: false
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
 
@@ -62,6 +57,7 @@ calc_station_TEA:
   <<: *TIME
   <<: *PARAM
   <<: *DATA
+  <<: *calc_TEA
   station: Graz
   inpath: /data/users/hst/cdrDPS/station_data/
   outpath: /home/wegnet/results/TEA_indicators/station_indices/

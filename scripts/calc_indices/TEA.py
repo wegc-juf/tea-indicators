@@ -27,12 +27,12 @@ class TEAIndicators:
     Preprint – April 2025. 40 pp. Wegener Center, University of Graz, Graz, Austria, 2025.
     """
     
-    def __init__(self, input_data_grid=None, threshold=None, min_area=1., area_grid=None, low_extreme=False,
+    def __init__(self, input_data=None, threshold=None, min_area=1., area_grid=None, low_extreme=False,
                  unit='', mask=None, apply_mask=True, ctp=None, use_dask=False, **kwargs):
         """
         Initialize TEAIndicators object
         Args:
-            input_data_grid: gridded input data (e.g. temperature, precipitation)
+            input_data: (gridded) input data (e.g. temperature, precipitation); DataArray
             threshold: either gridded threshold values (xarray DataArray) or a constant threshold value (int, float)
             min_area: minimum area for a timestep to be considered as exceedance. Default: 1
                       (1 areal according to equation 03)
@@ -44,7 +44,7 @@ class TEAIndicators:
             use_dask: use dask for calculations. Default: False
         """
         if threshold is not None and isinstance(threshold, (int, float)):
-            threshold = xr.full_like(input_data_grid[0], threshold)
+            threshold = xr.full_like(input_data[0], threshold)
         self.threshold_grid = threshold
         
         self.mask = mask
@@ -54,9 +54,19 @@ class TEAIndicators:
         
         self.area_grid = None
         self.gr_size = None
+        self.gridded = None
+        
+        if input_data is not None:
+            if input_data.ndim > 1:
+                self.gridded = True
+            else:
+                self.gridded = False
+            
         if area_grid is None:
-            if input_data_grid is not None:
-                self._create_area_grid(input_data_grid)
+            if input_data is not None and self.gridded:
+                self._create_area_grid(input_data)
+            else:
+                self.area_grid = 1
         else:
             self.area_grid = area_grid
             self.gr_size = area_grid.sum().values
@@ -75,10 +85,10 @@ class TEAIndicators:
         self._calc_grid = True
         self._calc_gr = True
         
-        if input_data_grid is not None:
+        if input_data is not None:
             if self.threshold_grid is None:
                 raise ValueError("Threshold grid must be set together with input data")
-            self._set_input_data_grid(input_data_grid)
+            self._set_input_data_grid(input_data)
         
         # Climatic Time Period (CTP) variables
         self.CTP = ctp
@@ -180,10 +190,11 @@ class TEAIndicators:
                 pass
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
-            if self.input_data_grid.shape[-2:] != self.threshold_grid.shape:
-                raise ValueError("Input data and threshold results must have the same area")
-            if self.input_data_grid.shape[-2:] != self.area_grid.shape:
-                raise ValueError("Input data and area results must have the same shape")
+            if self.input_data_grid.ndim > 1:
+                if self.input_data_grid.shape[-2:] != self.threshold_grid.shape:
+                    raise ValueError("Input data and threshold results must have the same area")
+                if self.input_data_grid.shape[-2:] != self.area_grid.shape:
+                    raise ValueError("Input data and area results must have the same shape")
         
     def _calc_DTEC(self):
         """
@@ -234,15 +245,19 @@ class TEAIndicators:
         
         dteec = xr.full_like(dtec, np.nan)
         
-        dtec_3d = dtec.values
-        # loop through all rows and calculate DTEEC
-        for iy in range(len(dtec_3d[0, :, 0])):
-            dtec_row = dtec_3d[:, iy, :]
-            # skip all nan rows
-            if np.isnan(dtec_row).all():
-                continue
-            dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
-            dteec[:, iy, :] = dteec_row
+        if self.gridded:
+            dtec_3d = dtec.values
+            # loop through all rows and calculate DTEEC
+            for iy in range(len(dtec_3d[0, :, 0])):
+                dtec_row = dtec_3d[:, iy, :]
+                # skip all nan rows
+                if np.isnan(dtec_row).all():
+                    continue
+                dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
+                dteec[:, iy, :] = dteec_row
+        else:
+            dteec[:] = self._calc_dteec_1d(dtec_cell=dtec.values)
+        
         if self.mask is not None and self.apply_mask:
             dteec = dteec.where(self.mask > 0)
         dteec.attrs = get_attrs(vname='DTEEC')
@@ -628,9 +643,10 @@ class TEAIndicators:
         """
         if self.CTP is None:
             raise ValueError("CTP must be set before calculating event frequency")
-        if 'DTEEC' not in self.daily_results:
+        
+        if 'DTEEC' not in self.daily_results and 'DTEC' in self.daily_results:
             self._calc_DTEEC()
-        if 'DTEEC_GR' not in self.daily_results:
+        if 'DTEEC_GR' not in self.daily_results and 'DTEC_GR' in self.daily_results:
             self._calc_DTEEC_GR()
             
         if self._CTP_resample_sum is None:
@@ -647,12 +663,13 @@ class TEAIndicators:
             ef.attrs = get_attrs(vname='EF')
             self.ctp_results['EF'] = ef
             
-        # # process GR data
-        ef_gr = self._CTP_resample_sum.DTEEC_GR
-        ef_gr = ef_gr.where(ef_gr.notnull(), 0)
-        
-        ef_gr.attrs = get_attrs(vname='EF_GR')
-        self.ctp_results['EF_GR'] = ef_gr
+        if 'DTEEC_GR' in self._CTP_resample_sum:
+            # # process GR data
+            ef_gr = self._CTP_resample_sum.DTEEC_GR
+            ef_gr = ef_gr.where(ef_gr.notnull(), 0)
+            
+            ef_gr.attrs = get_attrs(vname='EF_GR')
+            self.ctp_results['EF_GR'] = ef_gr
     
     def _calc_supplementary_event_vars(self):
         """
@@ -688,28 +705,29 @@ class TEAIndicators:
             self.ctp_results['AEP'] = aep
             # indent
 
-        # # process GR data
-        event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
-        resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
-        
-        # equation 13_4
-        doy_first_gr = resampler_gr.min('time')
-        
-        # equation 13_5
-        doy_last_gr = resampler_gr.max('time')
-        
-        # equation 13_6
-        aep_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
-        # set aep values where EF == 0 to 0
-        aep_gr = xr.where(self.ctp_results.EF_GR == 0, 0, aep_gr)
-        
-        doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
-        doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
-        aep_gr.attrs = get_attrs(vname='AEP_GR')
-        
-        self.ctp_results['doy_first_GR'] = doy_first_gr
-        self.ctp_results['doy_last_GR'] = doy_last_gr
-        self.ctp_results['AEP_GR'] = aep_gr
+        if 'DTEEC_GR' in self._daily_results_filtered:
+            # # process GR data
+            event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
+            resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
+            
+            # equation 13_4
+            doy_first_gr = resampler_gr.min('time')
+            
+            # equation 13_5
+            doy_last_gr = resampler_gr.max('time')
+            
+            # equation 13_6
+            aep_gr = (doy_last_gr - doy_first_gr + 1) / 30.5
+            # set aep values where EF == 0 to 0
+            aep_gr = xr.where(self.ctp_results.EF_GR == 0, 0, aep_gr)
+            
+            doy_first_gr.attrs = get_attrs(vname='doy_first_GR')
+            doy_last_gr.attrs = get_attrs(vname='doy_last_GR')
+            aep_gr.attrs = get_attrs(vname='AEP_GR')
+            
+            self.ctp_results['doy_first_GR'] = doy_first_gr
+            self.ctp_results['doy_last_GR'] = doy_last_gr
+            self.ctp_results['AEP_GR'] = aep_gr
     
     def _calc_event_duration(self):
         """
@@ -735,19 +753,20 @@ class TEAIndicators:
             self.ctp_results['ED_avg'] = ed_avg
             # indent
         
-        # # process GR data
-        # equation 15_2
-        ed_gr = self._CTP_resample_sum.DTEC_GR
-        ed_gr.attrs = get_attrs(vname='ED_GR')
-        self.ctp_results['ED_GR'] = ed_gr
-        
-        ef_gr = self.ctp_results['EF_GR']
-        
-        # calc average event duration (equation 15_1)
-        ed_avg_gr = ed_gr / ef_gr
-        ed_avg_gr = xr.where(ef_gr == 0, 0, ed_avg_gr)
-        ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
-        self.ctp_results['ED_avg_GR'] = ed_avg_gr
+        if 'DTEC_GR' in self._CTP_resample_sum:
+            # # process GR data
+            # equation 15_2
+            ed_gr = self._CTP_resample_sum.DTEC_GR
+            ed_gr.attrs = get_attrs(vname='ED_GR')
+            self.ctp_results['ED_GR'] = ed_gr
+            
+            ef_gr = self.ctp_results['EF_GR']
+            
+            # calc average event duration (equation 15_1)
+            ed_avg_gr = ed_gr / ef_gr
+            ed_avg_gr = xr.where(ef_gr == 0, 0, ed_avg_gr)
+            ed_avg_gr.attrs = get_attrs(vname='ED_avg_GR')
+            self.ctp_results['ED_avg_GR'] = ed_avg_gr
     
     def _calc_hourly_ctp_vars(self):
         """
@@ -818,45 +837,48 @@ class TEAIndicators:
             
             # indent
             
-        # # process GR data
-        # equation 18_2
-        em_gr = self._CTP_resample_sum.DTEM_GR
-    
-        # calc average exceedance magnitude (equation 18_1)
-        ed_gr = self.ctp_results.ED_GR
-        em_avg_gr = em_gr / ed_gr
-        em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
+        if 'DTEM_GR' in self._CTP_resample_sum:
+            # # process GR data
+            # equation 18_2
+            em_gr = self._CTP_resample_sum.DTEM_GR
         
-        em_gr.attrs = get_attrs(vname='EM_GR', data_unit=self.unit)
-        em_avg_gr.attrs = get_attrs(vname='EM_avg_GR', data_unit=self.unit)
-        
-        self.ctp_results['EM_GR'] = em_gr
-        self.ctp_results['EM_avg_GR'] = em_avg_gr
-        
-        # calc median exceedance magnitude (equation 19_3)
-        em_avg_gr_med = self._CTP_resample_median.DTEM_GR
-        em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md', data_unit=self.unit)
-        self.ctp_results['EM_avg_GR_Md'] = em_avg_gr_med
+            # calc average exceedance magnitude (equation 18_1)
+            ed_gr = self.ctp_results.ED_GR
+            em_avg_gr = em_gr / ed_gr
+            em_avg_gr = xr.where(ed_gr == 0, 0, em_avg_gr)
+            
+            em_gr.attrs = get_attrs(vname='EM_GR', data_unit=self.unit)
+            em_avg_gr.attrs = get_attrs(vname='EM_avg_GR', data_unit=self.unit)
+            
+            self.ctp_results['EM_GR'] = em_gr
+            self.ctp_results['EM_avg_GR'] = em_avg_gr
+            
+            # calc median exceedance magnitude (equation 19_3)
+            em_avg_gr_med = self._CTP_resample_median.DTEM_GR
+            em_avg_gr_med.attrs = get_attrs(vname='EM_avg_GR_Md', data_unit=self.unit)
+            self.ctp_results['EM_avg_GR_Md'] = em_avg_gr_med
 
-        # equation 19_4
-        em_gr_med = self.ctp_results.ED_GR * em_avg_gr_med
-        em_gr_med.attrs = get_attrs(vname='EM_GR_Md', data_unit=self.unit)
-        self.ctp_results['EM_GR_Md'] = em_gr_med
-        
-        # calc maximum exceedance magnitude (equation 20_2)
-        em_gr_max = self._CTP_resample_sum.DTEM_Max_GR
-        em_gr_max.attrs = get_attrs(vname='EM_Max_GR', data_unit=self.unit)
-        self.ctp_results['EM_Max_GR'] = em_gr_max
-        
-        # calc average maximum exceedance magnitude (equation 20_1)
-        em_gr_avg_max = em_gr_max / self.ctp_results.ED_GR
-        em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
-        self.ctp_results['EM_avg_Max_GR'] = em_gr_avg_max
+            # equation 19_4
+            em_gr_med = self.ctp_results.ED_GR * em_avg_gr_med
+            em_gr_med.attrs = get_attrs(vname='EM_GR_Md', data_unit=self.unit)
+            self.ctp_results['EM_GR_Md'] = em_gr_med
+            
+            # calc maximum exceedance magnitude (equation 20_2)
+            em_gr_max = self._CTP_resample_sum.DTEM_Max_GR
+            em_gr_max.attrs = get_attrs(vname='EM_Max_GR', data_unit=self.unit)
+            self.ctp_results['EM_Max_GR'] = em_gr_max
+            
+            # calc average maximum exceedance magnitude (equation 20_1)
+            em_gr_avg_max = em_gr_max / self.ctp_results.ED_GR
+            em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
+            self.ctp_results['EM_avg_Max_GR'] = em_gr_avg_max
     
     def _calc_annual_total_events_extremity(self):
         """
         calculate annual total events extremity (equation 21_3)
         """
+        if 'DTEMA_GR' not in self._CTP_resample_sum:
+            return
         # equation 21_3
         tex = self._CTP_resample_sum.DTEMA_GR
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
@@ -888,6 +910,8 @@ class TEAIndicators:
         """
         calculate exceedance area (equation 21_1)
         """
+        if 'TEX_GR' not in self.ctp_results:
+            return
         if self.ctp_results['TEX_GR'] is None:
             self._calc_annual_total_events_extremity()
         if self.ctp_results['EM_GR'] is None:
@@ -903,6 +927,9 @@ class TEAIndicators:
         """
         calculate event severity (equation 21_2)
         """
+        if 'EA_avg_GR' not in self.ctp_results:
+            return
+        
         if self.ctp_results['EA_avg_GR'] is None:
             self._calc_exceedance_area()
         if self.ctp_results['EM_avg_GR'] is None:
@@ -919,6 +946,9 @@ class TEAIndicators:
         """
         calculate annual exceedance heat content (equation 22)
         """
+        if 'ES_avg_GR' not in self.ctp_results:
+            return
+        
         if self.ctp_results['ED_avg_GR'] is None:
             self._calc_event_duration()
         if self.ctp_results['TEX_GR'] is None:

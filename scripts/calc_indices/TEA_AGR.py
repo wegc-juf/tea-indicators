@@ -28,14 +28,14 @@ class TEAAgr(TEAIndicators):
     computing threshold-exceedance-amount (TEA) indicators. Supplementary Information (SI) to
     Preprint – April 2025. 40 pp. Wegener Center, University of Graz, Graz, Austria, 2025.
     """
-    def __init__(self, input_data_grid=None, threshold=None, mask=None, min_area=0.0001,
+    def __init__(self, input_data=None, threshold=None, mask=None, min_area=0.0001,
                  gr_grid_res=0.5, land_sea_mask=None, gr_grid_mask=None, gr_grid_areas=None,
                  land_frac_min=0.5, cell_size_lat=None, **kwargs):
         """
         initialize TEA object
         
         Args:
-            input_data_grid: input data grid
+            input_data: input data grid
             threshold: threshold grid
             mask: mask grid (needed if data should be masked out by e.g. country borders)
             min_area: minimum area for valid grid cells in areals (100 km^2). Default: 0.0001 areals or 10 km^2
@@ -46,7 +46,7 @@ class TEAAgr(TEAIndicators):
             gr_grid_mask: mask for GR grid (will be automatically generated if not provided)
             gr_grid_areas: areas for GR grid (will be automatically generated if not provided)
         """
-        super().__init__(input_data_grid=input_data_grid, threshold=threshold,
+        super().__init__(input_data=input_data, threshold=threshold,
                          mask=mask, min_area=min_area, apply_mask=False, **kwargs)
         if self.area_grid is not None:
             ref_grid = self.area_grid

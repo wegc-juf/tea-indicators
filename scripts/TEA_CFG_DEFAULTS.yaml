@@ -4,6 +4,12 @@ common_params:
     # agr: AUT
     # agr_cell_size: 2
     full_region: false
+    gr_type: polygon
+    sw_corner: null
+    ne_corner: null
+    center: null
+    we_len: null
+    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
