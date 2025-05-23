@@ -57,15 +57,23 @@ def calc_tea_indicators(opts):
     if not opts.decadal_only:
         
         # load threshold grid or set threshold value
-        threshold_grid = _get_threshold(opts)
+        if 'station' not in opts:
+            gridded = True
+            threshold_grid = _get_threshold(opts)
         
-        # do calcs in chunks of 10 years
-        starts = np.arange(opts.start, opts.end, 10)
-        ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
+            # do calcs in chunks of 10 years for gridded data
+            starts = np.arange(opts.start, opts.end, 10)
+            ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
+        else:
+            gridded = False
+            threshold_grid = None
+            starts = [opts.start]
+            ends = [opts.end]
         
         for p_start, p_end in zip(starts, ends):
             # calculate daily basis variables
-            tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end, threshold=threshold_grid)
+            tea = calc_dbv_indicators(mask=mask, opts=opts, start=p_start, end=p_end,
+                                      gridded=gridded, threshold=threshold_grid)
             
             # for aggregate GeoRegion calculation, load GR grid files
             if 'agr' in opts:
@@ -200,10 +208,11 @@ def calc_annual_ctp_indicators(tea, opts, start, end):
         end: end year
     """
     
-    # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
-    # dtea_min is given in areals (1 areal = 100 km2)
-    dtea_min = 1  # according to equation 03
-    tea.update_min_area(dtea_min)
+    if 'station' not in opts:
+        # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
+        # dtea_min is given in areals (1 areal = 100 km2)
+        dtea_min = 1  # according to equation 03
+        tea.update_min_area(dtea_min)
     
     if 'agr' in opts:
         # set land_frac_min to 0 for full region
@@ -318,10 +327,10 @@ def _save_ctp_output(opts, tea, start, end):
     else:
         grg_str = ''
     
-    if 'region' in opts:
-        name = opts.region
-    else:
+    if 'station' in opts:
         name = opts.station
+    else:
+        name = opts.region
     outpath = (f'{opts.outpath}/ctp_indicator_variables/'
                f'CTP_{opts.param_str}_{grg_str}{name}_{opts.period}_{opts.dataset}'
                f'_{start}to{end}.nc')

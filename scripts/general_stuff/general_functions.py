@@ -50,6 +50,8 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.target_sys = 3416
         elif 'ERA' in opts.dataset:
             opts.target_sys = 4326
+        elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
+            opts.target_sys = None
         else:
             raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
     if 'xy_name' not in opts:
@@ -57,6 +59,8 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.xy_name = 'x,y'
         elif 'ERA' in opts.dataset:
             opts.xy_name = 'lon,lat'
+        elif 'station' in opts:
+            opts.xy_name = None
         else:
             raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
     if 'agr' in opts:
@@ -368,10 +372,10 @@ def get_csv_data(opts):
         rename_dict = {'nied': opts.parameter}
 
     # read csv file of station data and set time as index of df
-    filenames = f'{opts.inpath}{pstr}_{opts.station}*18770101*.csv'
+    filenames = f'{opts.data_path}{pstr}_{opts.station}*18770101*.csv'
     file = glob.glob(filenames)
     if len(file) == 0:
-        filenames = f'{opts.inpath}{pstr}_{opts.station}*.csv'
+        filenames = f'{opts.data_path}{pstr}_{opts.station}*.csv'
         file = glob.glob(filenames)
     data = pd.read_csv(file[0])
     data['time'] = pd.to_datetime(data['time'])
