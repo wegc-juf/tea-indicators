@@ -164,7 +164,7 @@ def calc_ctp_indicators(opts, data):
     ef = pdata.DTEEC
     ed = pdata['DTEC']
     ed_avg = ed / ef
-    if opts.parameter == 'T':
+    if not opts.precip:
         em_avg = pdata['DTEM'] / ed
     else:
         em_avg = data.median('days')['DTEM']
