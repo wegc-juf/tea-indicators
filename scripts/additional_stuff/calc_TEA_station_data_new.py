@@ -61,6 +61,14 @@ def load_data(region, pvar):
     if region != 'AUT':
         data = data.loc[:, stations['id'].values]
 
+    # only keep stations with data records beginning before 1961
+    for col in data.columns:
+        if data[col].isna().all():
+            continue
+        if data[col].first_valid_index() > dt.datetime(1961, 1, 1):
+            data = data.drop(columns=col)
+            continue
+
     # shift data by 7h to get 7to7 data
     data = data.shift(-7, freq='H')
 
@@ -344,8 +352,8 @@ def calc_af(data, region, pvar):
 
 
 def run():
-    region = 'SEA'
-    pvar = 'Px1h_7to7'
+    region = 'AUT'
+    pvar = 'P24h_7to7'
 
     data, p95 = load_data(region=region, pvar=pvar)
 

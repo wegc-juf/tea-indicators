@@ -75,10 +75,10 @@ def load_tea_data():
     for reg in ['EUR', 'C-EUR', 'S-EUR', 'N-EUR']:
         af_data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/'
                                f'dec_indicator_variables/amplification/'
-                               f'AF_Tx99.0p_AGR-{reg}_WAS_ERA5_1961to2024.nc')
+                               f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         dec_data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/'
                                f'dec_indicator_variables/'
-                               f'DEC_Tx99.0p_AGR-{reg}_WAS_ERA5_1961to2024.nc')
+                               f'DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         ref = dec_data.sel(time=slice('1966-01-01', '1985-12-31'))
         ref = gmean(ref['TEX_AGR'])
         reftr[reg] = ref
@@ -135,7 +135,7 @@ def plot_panel1(axs, af, uc, ref, cc):
 
     axs[0].set_ylim(-0.55, 12)
     axs[0].plot(np.arange(0, 9), np.ones(9), color='tab:gray', alpha=0.5)
-    axs[0].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]))
+    axs[0].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 2, 4, 6, 8, 10, 12]))
     axs[0].yaxis.set_minor_locator(mticker.FixedLocator(np.arange(0, 12.5, 0.5)))
     axs[0].tick_params(axis='y', which='major', labelsize=8)
 
@@ -204,12 +204,12 @@ def plot_panel2(axs, af, uc, ref, ccs):
     axs[1].xaxis.set_major_locator(mticker.FixedLocator(xvals))
     axs[1].set_xticklabels(['EUR', 'C-EUR', 'S-EUR', 'N-EUR'], fontsize=8)
 
-    axs[1].set_ylim(-2.5, 25)
+    axs[1].set_ylim(-0.55, 12)
     axs[1].plot(np.arange(0, 9), np.ones(9), color='tab:gray', alpha=0.5)
     axs[1].tick_params(axis='y', which='major', labelsize=8)
 
-    axs[1].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 5, 10, 15, 20, 25]))
-    axs[1].yaxis.set_minor_locator(mticker.FixedLocator(np.arange(0, 26)))
+    axs[1].yaxis.set_major_locator(mticker.FixedLocator([0, 1, 2, 4, 6, 8, 10, 12]))
+    axs[1].yaxis.set_minor_locator(mticker.FixedLocator(np.arange(0, 12.5, 0.5)))
 
     for ireg, reg in enumerate(['EUR', 'C-EUR', 'S-EUR', 'N-EUR']):
         axs[1].text(xvals[ireg] / 8, 0.086, f'{np.round(ref[reg] * 0.1507, 1):.1f}',
