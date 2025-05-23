@@ -1231,8 +1231,11 @@ class TEAIndicators:
             
         if 'EM_avg_Max_GR' in data:
             gvar = '_GR'
-        else:
+        elif 'EM_avg_Max' in data:
             gvar = ''
+        else:
+            # no spatial data available
+            return data
             
         # calculate cumulative maximum exceedance magnitude (cf. equation 20_2)
         EM_Max = data[f'EM_avg_Max{gvar}'] * data[f'ED{gvar}']

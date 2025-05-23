@@ -293,7 +293,7 @@ def save_output(ds, opts, out_region=None):
 
 
 def run_custom_gr(opts):
-    # load testfile
+    # load template file
     template_file = get_gridded_data(opts.start, opts.start + 1, opts)
     xy = opts.xy_name.split(',')
     x, y = xy[0], xy[1]

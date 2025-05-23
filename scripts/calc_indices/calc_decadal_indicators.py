@@ -45,7 +45,11 @@ def load_ctp_data(opts, tea):
         grg_str = 'GRG-'
     else:
         grg_str = ''
-    filenames = (f'{ctppath}/CTP_{opts.param_str}_{grg_str}{opts.region}_{opts.period}'
+    if 'station' in opts:
+        name = opts.station
+    else:
+        name = opts.region
+    filenames = (f'{ctppath}/CTP_{opts.param_str}_{grg_str}{name}_{opts.period}'
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if 'ref' not in file]
@@ -92,7 +96,11 @@ def calc_decadal_indicators(opts, tea, outpath=None):
 
     """
     if outpath is None:
-        outpath = _get_decadal_outpath(opts, opts.region)
+        if 'station' in opts:
+            name = opts.station
+        else:
+            name = opts.region
+        outpath = _get_decadal_outpath(opts, name)
     
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
@@ -159,7 +167,11 @@ def calc_amplification_factors(opts, tea, outpath=None):
 
     """
     if outpath is None:
-        outpath = _get_amplification_outpath(opts, opts.region)
+        if 'station' in opts:
+            name = opts.station
+        else:
+            name = opts.region
+        outpath = _get_amplification_outpath(opts, name)
     
     # calculate amplification factors
     with warnings.catch_warnings():
