@@ -1,3 +1,4 @@
+# Template for gridded data TEA indicators
 common_params:
   GeoRegion: &GR
     region: EUR
@@ -48,16 +49,6 @@ calc_TEA: &calc_TEA
   recalc_daily: true
   hourly: false
   decadal: true
-  spreads: false
+  spreads: true
   decadal_only: false
   recalc_decadal: true
-  compare_to_ref: false
-
-calc_station_TEA:
-  <<: *TIME
-  <<: *PARAM
-  <<: *DATA
-  <<: *calc_TEA
-  station: Graz
-  inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /home/wegnet/results/TEA_indicators/station_indices/
