@@ -53,11 +53,12 @@ def calc_tea_indicators(opts):
     else:
         mask = None
     
-    # load threshold grid or set threshold value
-    threshold_grid = _get_threshold(opts)
-    
     # calculate daily and annual climatic time period indicators
     if not opts.decadal_only:
+        
+        # load threshold grid or set threshold value
+        threshold_grid = _get_threshold(opts)
+        
         # do calcs in chunks of 10 years
         starts = np.arange(opts.start, opts.end, 10)
         ends = np.append(np.arange(opts.start + 10 - 1, opts.end, 10), opts.end)
@@ -151,6 +152,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             data = get_gridded_data(start=start, end=end, opts=opts, period=period)
         else:
             data = get_csv_data(opts)
+            threshold = create_threshold_grid(opts, data=data)
         
         # reduce extent of data to the region of interest
         if 'agr' in opts:

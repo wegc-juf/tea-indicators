@@ -177,7 +177,7 @@ def calc_station_tea_indicators(opts):
     Returns:
 
     """
-    tea = calc_dbv_indicators(start=opts.start, end=opts.end, threshold=25., opts=opts, gridded=False)
+    tea = calc_dbv_indicators(start=opts.start, end=opts.end, opts=opts, gridded=False, threshold=None)
     tea.calc_annual_ctp_indicators(opts.period, drop_daily_results=True)
     _save_ctp_output(opts=opts, tea=tea, start=opts.start, end=opts.end)
     return

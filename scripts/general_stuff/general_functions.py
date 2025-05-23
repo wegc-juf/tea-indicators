@@ -500,6 +500,8 @@ def calc_percentiles(opts, threshold_min=None, data=None):
     # load data if not provided
     if data is None:
         data = get_gridded_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
+    else:
+        data = extract_period(ds=data, period=opts.period, start_year=opts.ref_period[0], end_year=opts.ref_period[1])
     
     if threshold_min is not None:
         data = data.where(data > threshold_min)
@@ -546,11 +548,12 @@ def smooth_data(data, radius):
     return percent_smooth
 
 
-def create_threshold_grid(opts):
+def create_threshold_grid(opts, data=None):
     """
     create threshold grid for the given parameter and reference period
     Args:
-        opts: options
+        opts: options as defined in CFG-PARAMS-doc.md and TEA_CFG_DEFAULT.yaml
+        data: data to calculate threshold grid for; if not provided, data will be loaded
 
     Returns:
         thr_grid: threshold grid
@@ -559,7 +562,7 @@ def create_threshold_grid(opts):
         threshold_min = 0.99
     else:
         threshold_min = None
-    thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min)
+    thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min, data=data)
     thr_grid = thr_grid.rename('threshold')
     
     if opts.precip:
