@@ -1361,9 +1361,27 @@ class TEAIndicators:
         if start_cy < data.time.min().dt.year or end_cy > data.time.max().dt.year:
             raise ValueError(f"Selected period {start_cy} - {end_cy} not within time range of decadal results")
         
+        # get data for selected period
         period_data = data.sel(time=slice(start_cy_date, end_cy_date))
         
+        # calculate geometric mean
         period_mean = self._gmean_custom(period_data, dim='time')
+        
+        # adjust h_rise/set and doy_first/last (equation 24)
+        
+        if 'h_rise_avg' in period_mean:
+            h_rise, h_set = self._calc_h_rise_set_adjustment(h_rise=period_mean.h_rise_avg.values,
+                                                             h_set=period_mean.h_set_avg.values,
+                                                             h_avg=period_mean.h_avg.values)
+            period_mean['h_rise_avg'].values = h_rise
+            period_mean['h_set_avg'].values = h_set
+        if 'h_rise_avg_GR' in period_mean:
+            h_rise_gr, h_set_gr = self._calc_h_rise_set_adjustment(h_rise=period_mean.h_rise_avg_GR.values,
+                                                                   h_set=period_mean.h_set_avg_GR.values,
+                                                                   h_avg=period_mean.h_avg_GR.values)
+            period_mean['h_rise_avg_GR'].values = h_rise_gr
+            period_mean['h_set_avg_GR'].values = h_set_gr
+        
         doy_first, doy_last = self._calc_doy_adjustment(doy_first=period_mean.doy_first.values,
                                                         doy_last=period_mean.doy_last.values,
                                                         aep=period_mean.AEP.values)
@@ -1376,6 +1394,7 @@ class TEAIndicators:
                                                                   aep=period_mean.AEP_GR.values)
             period_mean['doy_first_GR'].values = doy_first_gr
             period_mean['doy_last_GR'].values = doy_last_gr
+            
         return period_mean
     
     @staticmethod
@@ -1504,6 +1523,23 @@ class TEAIndicators:
         doy_first_adjusted = doy_first - doy_offset
         doy_last_adjusted = doy_last + doy_offset
         return doy_first_adjusted, doy_last_adjusted
+    
+    @staticmethod
+    def _calc_h_rise_set_adjustment(h_rise, h_set, h_avg):
+        """
+        calculate adjustment for h_rise and h_set (Equation 24)
+        Args:
+            h_rise: average rise time
+            h_set: average set time
+            h_avg: average daily exposure time
+
+        Returns:
+            h_rise_adjusted, h_set_adjusted
+
+        """
+        h_rise_adjusted = h_avg / (h_rise + h_set) * h_rise
+        h_set_adjusted = h_avg / (h_rise + h_set) * h_set
+        return h_rise_adjusted, h_set_adjusted
     
     def _calc_dteec_1d(self, dtec_cell):
         """
