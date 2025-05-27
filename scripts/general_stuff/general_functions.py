@@ -43,7 +43,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
         opts.spreads = None
     if 'mask_sub' not in opts:
         opts.mask_sub = 'masks'
-    if 'subreg' not in opts:
+    if 'subreg' not in opts or opts.subreg == opts.region:
         opts.subreg = None
     if 'target_sys' not in opts:
         if opts.dataset == 'SPARTACUS':
