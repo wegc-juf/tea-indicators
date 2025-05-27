@@ -278,8 +278,8 @@ def plot_map(opts, fig, ax, data):
     data = data.where(data > 0)
 
     aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'AUT_mask_SPARTACUS.nc')
-    ax.contourf(aut.x, aut.y, aut.mask, colors='lightgrey')
+                          'AUT_masks_SPARTACUS.nc')
+    ax.contourf(aut.x, aut.y, aut.nw_mask, colors='lightgrey')
 
     if data.max() > props['lvls'][-1] and data.min() > props['lvls'][0]:
         ext = 'max'
