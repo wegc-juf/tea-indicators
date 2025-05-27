@@ -34,8 +34,9 @@ def getopts():
 
 
 def get_data(opts):
-    af = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/amplification/'
-                         f'AF_Tx{opts.threshold:.1f}degC_{opts.region}_WAS_SPARTACUS_1961to2024.nc')
+    af = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                         f'amplification/AF_Tx{opts.threshold:.1f}degC_{opts.region}_annual'
+                         f'_SPARTACUS_1961to2024.nc')
 
     try:
         nv = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/natural_variability/'
@@ -54,19 +55,19 @@ def gr_plot_params(vname):
                            'unit': 'ev/yr',
                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$',
                            'nv_name': 'EF'},
-              'EDavg_GR_AF': {'col': 'tab:purple',
+              'ED_avg_GR_AF': {'col': 'tab:purple',
                               'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
                               'title': 'Average Event Duration (events-mean)',
                               'unit': 'days',
                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
                               'nv_name': 'ED'},
-              'EMavg_GR_AF': {'col': 'tab:orange',
+              'EM_avg_GR_AF': {'col': 'tab:orange',
                               'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
                               'title': 'Average Exceedance Magnitude (daily-mean)',
                               'unit': '°C',
                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
                               'nv_name': 'EM'},
-              'EAavg_GR_AF': {'col': 'tab:red',
+              'EA_avg_GR_AF': {'col': 'tab:red',
                               'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
                               'title': 'Average Exceedance Area (daily-mean)',
                               'unit': 'areals',
@@ -80,12 +81,12 @@ def map_plot_params(opts, vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
                            'title': f'Event Frequency (EF) amplification (CC2010-2024)'},
-              'EDavg_AF_CC': {'cmap': 'Purples',
-                           'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                           'title': f'Event Duration (ED) amplification (CC2010-2024)'},
-              'EMavg_AF_CC': {'cmap': 'Oranges',
-                           'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                           'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
+              'ED_avg_AF_CC': {'cmap': 'Purples',
+                              'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
+                              'title': f'Event Duration (ED) amplification (CC2010-2024)'},
+              'EM_avg_AF_CC': {'cmap': 'Oranges',
+                              'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
+                              'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
 
     if opts.threshold == 30:
@@ -106,7 +107,7 @@ def map_plot_params(opts, vname):
 def plot_gr_data(opts, ax, data, af_cc, nv):
     props = gr_plot_params(vname=data.name)
 
-    xvals = data.ctp
+    xvals = data.time
     xticks = np.arange(1961, 2025)
 
     if nv is not None:
@@ -150,12 +151,11 @@ def plot_gr_data(opts, ax, data, af_cc, nv):
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
             fontsize=9)
 
-    if data.name == 'EAavg_GR_AF':
+    if data.name == 'EA_avg_GR_AF':
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
 
 
 def get_ylims(opts):
-
     values = {'AUT': {30: {'yn': 0.5, 'yx': 2.5, 'dy': 0.5},
                       25: {'yn': 0.5, 'yx': 2, 'dy': 0.5}},
               'Niederösterreich': {25: {'yn': 0.5, 'yx': 2, 'dy': 0.25}},
@@ -173,7 +173,6 @@ def get_ylims(opts):
 
 
 def get_ylims_tex(opts):
-
     values = {'AUT': {30: {'yn': 0, 'yx': 9, 'dy': 1},
                       25: {'yn': 0, 'yx': 4, 'dy': 0.5}},
               'Niederösterreich': {25: {'yn': 0, 'yx': 4, 'dy': 0.5}},
@@ -189,9 +188,9 @@ def get_ylims_tex(opts):
 
     return yn, yx, ticks
 
-def plot_tex_es(opts, ax, data, af_cc, nv):
 
-    xvals = data.ctp
+def plot_tex_es(opts, ax, data, af_cc, nv):
+    xvals = data.time
     xticks = np.arange(1961, 2025)
 
     if nv is not None:
@@ -199,11 +198,11 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
         nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
         ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
 
-    ax.plot(xticks, data['ESavg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
+    ax.plot(xticks, data['ES_avg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
     ax.plot(xticks, data['TEX_GR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
 
     ax.plot(xticks[0:30], np.ones(len(xvals[:30])), alpha=0.5, color='tab:grey', linewidth=2)
-    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['ESavg_GR_AF_CC'].values, alpha=0.5,
+    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['ES_avg_GR_AF_CC'].values, alpha=0.5,
             color='tab:grey', linewidth=2)
     ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['TEX_GR_AF_CC'].values, alpha=0.5,
             color='tab:red', linewidth=2)
@@ -226,7 +225,7 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
 
     ypos_ref = ((1 - ymin) / (ymax - ymin)) + 0.05
     ypos_cc_tex = ((af_cc['TEX_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
-    ypos_cc_es = ((af_cc['ESavg_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
+    ypos_cc_es = ((af_cc['ES_avg_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
     ax.text(0.02, ypos_ref, r'$\mathcal{A}_\mathrm{Ref}$',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes,
@@ -238,9 +237,9 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
                 verticalalignment='center', transform=ax.transAxes,
                 fontsize=11)
         ax.text(0.93, ypos_cc_tex - 0.1, r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$',
-                    horizontalalignment='left',
-                    verticalalignment='center', transform=ax.transAxes,
-                    fontsize=11)
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes,
+                fontsize=11)
     else:
         ax.text(0.93, ypos_cc_es - 0.1, r'$\mathcal{A}_\mathrm{CC}^\mathrm{S}$',
                 horizontalalignment='left',
@@ -253,7 +252,7 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
 
     ax.text(0.02, 0.9,
             r'$\mathcal{A}_\mathrm{CC}^\mathrm{S} | \mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
-            + f'{af_cc["ESavg_GR_AF_CC"]:.2f}' + r'$\,$|$\,$'
+            + f'{af_cc["ES_avg_GR_AF_CC"]:.2f}' + r'$\,$|$\,$'
             + f'{af_cc["TEX_GR_AF_CC"]:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
@@ -272,12 +271,12 @@ def find_range(data):
     aut_min, aut_max = data.min().values, data.max().values
 
     sea_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'SEA_masks_SPARTACUS.nc')
+                               'SEA_masks_SPARTACUS.nc')
     sea_data = data * sea_mask.nw_mask
     sea_min, sea_max = sea_data.min().values, sea_data.max().values
 
     fbr_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'FBR_masks_SPARTACUS.nc')
+                               'FBR_masks_SPARTACUS.nc')
     fbr_data = data * fbr_mask.nw_mask
     fbr_min, fbr_max = fbr_data.min().values, fbr_data.max().values
 
@@ -287,12 +286,11 @@ def find_range(data):
 
 
 def plot_map(opts, fig, ax, data):
-
     props, cb_props = map_plot_params(opts=opts, vname=data.name)
 
     aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
                           'AUT_masks_SPARTACUS.nc')
-    ax.contourf(aut.nw_mask, colors='lightgrey')
+    ax.contourf(aut.x, aut.y, aut.nw_mask, colors='lightgrey')
 
     vn, vx = cb_props['vn'], cb_props['vx']
     lvls = np.arange(vn, vx + cb_props['delta'], cb_props['delta'])
@@ -307,7 +305,8 @@ def plot_map(opts, fig, ax, data):
 
     range_vals = find_range(data=data)
 
-    map_vals = ax.contourf(data, cmap=props['cmap'], extend=ext, levels=lvls, vmin=vn, vmax=vx)
+    map_vals = ax.contourf(data.x, data.y, data, cmap=props['cmap'],
+                           extend=ext, levels=lvls, vmin=vn, vmax=vx)
     if opts.region in ['AUT', 'SEA']:
         ax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
                                    fill=False, linewidth=1))
@@ -347,17 +346,17 @@ def run():
 
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
-    gr_vars = ['EF_GR_AF', 'EDavg_GR_AF', 'EMavg_GR_AF', 'EAavg_GR_AF']
+    gr_vars = ['EF_GR_AF', 'ED_avg_GR_AF', 'EM_avg_GR_AF', 'EA_avg_GR_AF']
     for irow, gr_var in enumerate(gr_vars):
         plot_gr_data(opts=opts, ax=axs[irow, 0], data=data[gr_var],
                      af_cc=data[f'{gr_var}_CC'], nv=natv)
 
-    map_vars = ['EF_AF_CC', 'EDavg_AF_CC', 'EMavg_AF_CC']
+    map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(opts=opts, fig=fig, ax=axs[irow, 1], data=data[map_var])
 
-    plot_tex_es(opts=opts, ax=axs[3, 1], data=data[['TEX_GR_AF', 'ESavg_GR_AF']],
-                af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=natv)
+    plot_tex_es(opts=opts, ax=axs[3, 1], data=data[['TEX_GR_AF', 'ES_avg_GR_AF']],
+                af_cc=data[[f'TEX_GR_AF_CC', f'ES_avg_GR_AF_CC']], nv=natv)
 
     axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
                    horizontalalignment='left', verticalalignment='center',
