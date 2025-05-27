@@ -34,73 +34,54 @@ def getopts():
     return myopts
 
 
-def preprocess(ds_in):
-    """
-    drops unnecessary variables from ds
-    :param ds_in: ds
-    :return: new ds
-    """
-    ds = ds_in.copy()
-
-    ds = ds.drop_vars(['EF', 'EF_GR', 'EDavg', 'EDavg_GR', 'EMavg', 'EMavg_GR',
-                       'EAavg_GR', 'TEX_GR', 'ESavg_GR'])
-
-    return ds
-
-
 def get_data(opts):
-    dec = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/dec_indicator_variables/'
-                          f'DEC_Tx{opts.threshold:.1f}degC_{opts.region}_WAS'
+    dec = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                          f'DEC_Tx{opts.threshold:.1f}degC_{opts.region}_annual'
                           f'_SPARTACUS_1961to2024.nc')
 
     ctp = xr.open_mfdataset(
-        sorted(glob.glob(f'/data/users/hst/TEA-clean/TEA/ctp_indicator_variables/'
-                         f'CTP_Tx{opts.threshold:.1f}degC_{opts.region}_WAS_SPARTACUS_*.nc')),
+        sorted(glob.glob(f'/data/users/hst/TEA-clean/TEA/misc_data/ctp_indicator_variables/'
+                         f'CTP_Tx{opts.threshold:.1f}degC_{opts.region}_annual_SPARTACUS_*.nc')),
         data_vars='minimal')
 
-    supp = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/dec_indicator_variables/'
-                           f'DEC_sUPP_Tx{opts.threshold:.1f}degC_{opts.region}_WAS'
-                           f'_SPARTACUS_1961to2024.nc')
+    af = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                         f'amplification/AF_Tx{opts.threshold:.1f}degC_{opts.region}_annual'
+                         f'_SPARTACUS_1961to2024.nc')
 
-    slow = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/dec_indicator_variables/'
-                           f'DEC_sLOW_Tx{opts.threshold:.1f}degC_{opts.region}_WAS'
-                           f'_SPARTACUS_1961to2024.nc')
-
-    return dec, ctp, supp, slow
+    return dec, ctp, af
 
 
 def ylims(opts, vname):
-
     if opts.region == 'SEA' and opts.threshold == 30:
         params = {'EF_GR': {'yn': 0, 'yx': 18, 'dy': 2},
-                  'EDavg_GR': {'yn': 0, 'yx': 8, 'dy': 2},
-                  'EMavg_GR': {'yn': 0, 'yx': 2, 'dy': 0.5},
-                  'EAavg_GR': {'yn': 0, 'yx': 100, 'dy': 20},
+                  'ED_avg_GR': {'yn': 0, 'yx': 8, 'dy': 2},
+                  'EM_avg_GR': {'yn': 0, 'yx': 2, 'dy': 0.5},
+                  'EA_avg_GR': {'yn': 0, 'yx': 100, 'dy': 20},
                   'TEX_GR': {'yn': 0, 'yx': 6000, 'dy': 1000}}
     elif opts.region == 'SEA' and opts.threshold == 25:
         params = {'EF_GR': {'yn': 5, 'yx': 25, 'dy': 2.5},
-                  'EDavg_GR': {'yn': 0, 'yx': 12, 'dy': 2},
-                  'EMavg_GR': {'yn': 0.5, 'yx': 3.5, 'dy': 0.5},
-                  'EAavg_GR': {'yn': 50, 'yx': 100, 'dy': 12.5},
+                  'ED_avg_GR': {'yn': 0, 'yx': 12, 'dy': 2},
+                  'EM_avg_GR': {'yn': 0.5, 'yx': 3.5, 'dy': 0.5},
+                  'EA_avg_GR': {'yn': 50, 'yx': 100, 'dy': 12.5},
                   'TEX_GR': {'yn': 0, 'yx': 30000, 'dy': 5000}}
     elif opts.region == 'AUT' and opts.threshold == 25:
         params = {'EF_GR': {'yn': 5, 'yx': 25, 'dy': 2.5},
-                  'EDavg_GR': {'yn': 2.5, 'yx': 15, 'dy': 2.5},
-                  'EMavg_GR': {'yn': 0.5, 'yx': 3.5, 'dy': 0.5},
-                  'EAavg_GR': {'yn': 200, 'yx': 600, 'dy': 50},
+                  'ED_avg_GR': {'yn': 2.5, 'yx': 15, 'dy': 2.5},
+                  'EM_avg_GR': {'yn': 0.5, 'yx': 3.5, 'dy': 0.5},
+                  'EA_avg_GR': {'yn': 200, 'yx': 600, 'dy': 50},
                   'TEX_GR': {'yn': 0, 'yx': 200000, 'dy': 25000}}
     elif opts.region == 'Niederösterreich' and opts.threshold == 25:
         params = {'EF_GR': {'yn': 5, 'yx': 30, 'dy': 5},
-                  'EDavg_GR': {'yn': 2, 'yx': 10, 'dy': 2},
-                  'EMavg_GR': {'yn': 0.5, 'yx': 4, 'dy': 0.5},
-                  'EAavg_GR': {'yn': 100, 'yx': 200, 'dy': 20},
+                  'ED_avg_GR': {'yn': 2, 'yx': 10, 'dy': 2},
+                  'EM_avg_GR': {'yn': 0.5, 'yx': 4, 'dy': 0.5},
+                  'EA_avg_GR': {'yn': 100, 'yx': 200, 'dy': 20},
                   'TEX_GR': {'yn': 0, 'yx': 70000, 'dy': 10000}}
-    else: # AUT 30degC
-        params = {'EF_GR': {'yn': 0,'yx': 18, 'dy': 2},
-                  'EDavg_GR': {'yn': 0,'yx': 8, 'dy': 2},
-                  'EMavg_GR': {'yn': 0,'yx': 2, 'dy': 0.5},
-                  'EAavg_GR': {'yn': 0,'yx': 500, 'dy': 100},
-                  'TEX_GR': {'yn': 0,'yx': 45000, 'dy': 5000}}
+    else:  # AUT 30degC
+        params = {'EF_GR': {'yn': 0, 'yx': 18, 'dy': 2},
+                  'ED_avg_GR': {'yn': 0, 'yx': 8, 'dy': 2},
+                  'EM_avg_GR': {'yn': 0, 'yx': 2, 'dy': 0.5},
+                  'EA_avg_GR': {'yn': 0, 'yx': 500, 'dy': 100},
+                  'TEX_GR': {'yn': 0, 'yx': 45000, 'dy': 5000}}
 
     return params[vname]
 
@@ -115,32 +96,32 @@ def gr_plot_params(opts, vname):
                         'nv_name': 'EF',
                         'unit': 'ev/yr',
                         'lbl_name': 'F'},
-              'EDavg_GR': {'col': 'tab:purple',
-                           'ylbl': r'ED $(\overline{D}_s$|$\overline{D}_p)$ (days)',
-                           'title': 'Average Event Duration (events-mean)',
-                           'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
-                           'nv_name': 'ED',
-                           'cc_name': r'$\overline{D}_\mathrm{CC}$',
-                           'ref_name': r'$\overline{D}_\mathrm{Ref}$',
-                           'unit': 'days',
-                           'lbl_name': 'D'},
-              'EMavg_GR': {'col': 'tab:orange',
-                           'ylbl': r'EM $(\overline{M}_s$|$\overline{M}_p)$ (°C)',
-                           'title': 'Average Exceedance Magnitude (daily-mean)',
-                           'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
-                           'cc_name': r'$\overline{M}_\mathrm{CC}$',
-                           'ref_name': r'$\overline{M}_\mathrm{Ref}$',
-                           'nv_name': 'EM',
-                           'lbl_name': 'M',
-                           'unit': '°C'},
-              'EAavg_GR': {'col': 'tab:red',
-                           'ylbl': r'EA $(\overline{A}_s$|$\overline{A}_p)$ (areals)',
-                           'title': 'Average Exceedance Area (daily-mean)',
-                           'cc_name': r'$\overline{A}_\mathrm{CC}$',
-                           'ref_name': r'$\overline{A}_\mathrm{Ref}$',
-                           'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$', 'nv_name': 'EA',
-                           'unit': 'areals',
-                           'lbl_name': 'A'},
+              'ED_avg_GR': {'col': 'tab:purple',
+                            'ylbl': r'ED $(\overline{D}_s$|$\overline{D}_p)$ (days)',
+                            'title': 'Average Event Duration (events-mean)',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
+                            'nv_name': 'ED',
+                            'cc_name': r'$\overline{D}_\mathrm{CC}$',
+                            'ref_name': r'$\overline{D}_\mathrm{Ref}$',
+                            'unit': 'days',
+                            'lbl_name': 'D'},
+              'EM_avg_GR': {'col': 'tab:orange',
+                            'ylbl': r'EM $(\overline{M}_s$|$\overline{M}_p)$ (°C)',
+                            'title': 'Average Exceedance Magnitude (daily-mean)',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
+                            'cc_name': r'$\overline{M}_\mathrm{CC}$',
+                            'ref_name': r'$\overline{M}_\mathrm{Ref}$',
+                            'nv_name': 'EM',
+                            'lbl_name': 'M',
+                            'unit': '°C'},
+              'EA_avg_GR': {'col': 'tab:red',
+                            'ylbl': r'EA $(\overline{A}_s$|$\overline{A}_p)$ (areals)',
+                            'title': 'Average Exceedance Area (daily-mean)',
+                            'cc_name': r'$\overline{A}_\mathrm{CC}$',
+                            'ref_name': r'$\overline{A}_\mathrm{Ref}$',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$', 'nv_name': 'EA',
+                            'unit': 'areals',
+                            'lbl_name': 'A'},
               'TEX_GR': {'col': 'tab:red',
                          'ylbl': r'TEX $(\mathcal{T}_s|\mathcal{T}_p)$ (areal °C days/yr)',
                          'title': 'Total Events Extremity (Annual)',
@@ -170,12 +151,12 @@ def find_range(data):
     aut_min, aut_max = data.min().values, data.max().values
 
     sea_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'SEA_masks_SPARTACUS.nc')
+                               'SEA_masks_SPARTACUS.nc')
     sea_data = data * sea_mask.nw_mask
     sea_min, sea_max = sea_data.min().values, sea_data.max().values
 
     fbr_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'FBR_masks_SPARTACUS.nc')
+                               'FBR_masks_SPARTACUS.nc')
     fbr_data = data * fbr_mask.nw_mask
     fbr_min, fbr_max = fbr_data.min().values, fbr_data.max().values
 
@@ -184,11 +165,16 @@ def find_range(data):
     return ranges
 
 
-def plot_gr_data(opts, ax, adata, ddata, su, sl):
-    props = gr_plot_params(opts=opts, vname=ddata.name)
+def plot_gr_data(opts, ax, adata, ddata, afdata, grvar):
+    props = gr_plot_params(opts=opts, vname=grvar)
+
+    sl = ddata[f'{grvar}_slow']
+    su = ddata[f'{grvar}_supp']
+    adata = adata[grvar]
+    ddata = ddata[grvar]
 
     xticks = np.arange(1961, 2025)
-    xvals = ddata.ctp
+    xvals = ddata.time
 
     ax.fill_between(x=xticks, y1=ddata - sl, y2=ddata + su, color=props['col'], alpha=0.3)
     ax.plot(xticks, ddata, 'o-', color=props['col'], markersize=3, linewidth=2)
@@ -220,7 +206,7 @@ def plot_gr_data(opts, ax, adata, ddata, su, sl):
 
     ref = gmean(ddata[5:26])
     cc = gmean(ddata[-10:-4])
-    af = cc / ref
+    af = afdata[f'{grvar}_AF_CC'].values
     ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
             + f'{ref:.1f}' + r'$\,$|$\,$'
             + f'{cc:.1f} {props["unit"]} \n'
@@ -245,23 +231,22 @@ def plot_gr_data(opts, ax, adata, ddata, su, sl):
 
 
 def cb_lims(opts, vname):
-
     if opts.region == 'SEA' and opts.threshold == 25:
         params = {'EF': {'yn': 1, 'yx': 17, 'dy': 2},
-                  'EDavg': {'yn': 1, 'yx': 6, 'dy': 0.5},
-                  'EMavg': {'yn': 1, 'yx': 4, 'dy': 0.25}}
+                  'ED_avg': {'yn': 1, 'yx': 6, 'dy': 0.5},
+                  'EM_avg': {'yn': 1, 'yx': 4, 'dy': 0.25}}
     elif opts.region == 'AUT' and opts.threshold == 25:
         params = {'EF': {'yn': 0, 'yx': 20, 'dy': 2.5},
-                  'EDavg': {'yn': 0, 'yx': 6, 'dy': 0.5},
-                  'EMavg': {'yn': 0, 'yx': 4, 'dy': 0.25}}
+                  'ED_avg': {'yn': 0, 'yx': 6, 'dy': 0.5},
+                  'EM_avg': {'yn': 0, 'yx': 4, 'dy': 0.25}}
     elif opts.region == 'Niederösterreich' and opts.threshold == 25:
         params = {'EF': {'yn': 0, 'yx': 20, 'dy': 2.5},
-                  'EDavg': {'yn': 0, 'yx': 6, 'dy': 0.5},
-                  'EMavg': {'yn': 0, 'yx': 4, 'dy': 0.25}}
-    else: # AUT 30degC, SEA 30degC
+                  'ED_avg': {'yn': 0, 'yx': 6, 'dy': 0.5},
+                  'EM_avg': {'yn': 0, 'yx': 4, 'dy': 0.25}}
+    else:  # AUT 30degC, SEA 30degC
         params = {'EF': {'yn': 0, 'yx': 12, 'dy': 1},
-                  'EDavg': {'yn': 0, 'yx': 4, 'dy': 0.5},
-                  'EMavg': {'yn': 0, 'yx': 2, 'dy': 0.25}}
+                  'ED_avg': {'yn': 0, 'yx': 4, 'dy': 0.5},
+                  'EM_avg': {'yn': 0, 'yx': 2, 'dy': 0.25}}
 
     lvls = np.arange(params[vname]['yn'],
                      params[vname]['yx'] + params[vname]['dy'],
@@ -269,16 +254,17 @@ def cb_lims(opts, vname):
 
     return lvls
 
+
 def map_plot_params(opts, vname):
     params = {'EF': {'cmap': 'Blues',
                      'lbl': r'EF$_\mathrm{CC}$(i,j) (ev/yr)',
                      'title': 'Event Frequency (Annual) (CC2008-2022)'},
-              'EDavg': {'cmap': 'Purples',
-                        'lbl': r'ED$_\mathrm{CC}$(i,j) (days)',
-                        'title': 'Avarage Event Duration (CC2008-2022)'},
-              'EMavg': {'cmap': 'Oranges',
-                        'lbl': r'EM$_\mathrm{CC}$(i,j) (°C)',
-                        'title': 'Average Exceedance Magnitude (CC2008-2022)'}
+              'ED_avg': {'cmap': 'Purples',
+                         'lbl': r'ED$_\mathrm{CC}$(i,j) (days)',
+                         'title': 'Avarage Event Duration (CC2008-2022)'},
+              'EM_avg': {'cmap': 'Oranges',
+                         'lbl': r'EM$_\mathrm{CC}$(i,j) (°C)',
+                         'title': 'Average Exceedance Magnitude (CC2008-2022)'}
               }
 
     lvls = cb_lims(opts=opts, vname=vname)
@@ -292,8 +278,8 @@ def plot_map(opts, fig, ax, data):
     data = data.where(data > 0)
 
     aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'AUT_masks_SPARTACUS.nc')
-    ax.contourf(aut.nw_mask, colors='lightgrey')
+                          'AUT_mask_SPARTACUS.nc')
+    ax.contourf(aut.x, aut.y, aut.mask, colors='lightgrey')
 
     if data.max() > props['lvls'][-1] and data.min() > props['lvls'][0]:
         ext = 'max'
@@ -306,7 +292,7 @@ def plot_map(opts, fig, ax, data):
 
     range_vals = find_range(data=data)
 
-    map = ax.contourf(data, cmap=props['cmap'], levels=props['lvls'], extend=ext)
+    map = ax.contourf(data.x, data.y, data, cmap=props['cmap'], levels=props['lvls'], extend=ext)
     if opts.region in ['AUT', 'SEA']:
         ax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
                                    fill=False, linewidth=1))
@@ -347,21 +333,19 @@ def plot_map(opts, fig, ax, data):
 def run():
     opts = getopts()
 
-    dec, ann, supp, slow = get_data(opts=opts)
+    dec, ann, af = get_data(opts=opts)
 
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
-    gr_vars = ['EF_GR', 'EDavg_GR', 'EMavg_GR', 'EAavg_GR']
+    gr_vars = ['EF_GR', 'ED_avg_GR', 'EM_avg_GR', 'EA_avg_GR']
     for irow, gr_var in enumerate(gr_vars):
-        plot_gr_data(opts=opts, ax=axs[irow, 0], adata=ann[gr_var], ddata=dec[gr_var],
-                     su=supp[f'{gr_var}_supp'], sl=slow[f'{gr_var}_slow'])
+        plot_gr_data(opts=opts, ax=axs[irow, 0], adata=ann, ddata=dec, afdata=af, grvar=gr_var)
 
-    plot_gr_data(opts=opts, ax=axs[3, 1], adata=ann['TEX_GR'], ddata=dec['TEX_GR'],
-                 su=supp['TEX_GR_supp'], sl=slow['TEX_GR_slow'])
+    plot_gr_data(opts=opts, ax=axs[3, 1], adata=ann, ddata=dec, afdata=af, grvar='TEX_GR')
 
-    map_vars = ['EF', 'EDavg', 'EMavg']
+    map_vars = ['EF', 'ED_avg', 'EM_avg']
     for irow, map_var in enumerate(map_vars):
-        mdata = gmean(dec[map_var].sel(ctp=slice('2015-01-01', '2020-12-31')), axis=0)
+        mdata = gmean(dec[map_var].sel(time=slice('2015-01-01', '2020-12-31')), axis=0)
         mdata = xr.DataArray(data=mdata, coords={'y': (['y'], dec.y.values),
                                                  'x': (['x'], dec.x.values)}, name=map_var)
         plot_map(opts=opts, fig=fig, ax=axs[irow, 1], data=mdata)
