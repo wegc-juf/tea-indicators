@@ -5,6 +5,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.patches as pat
 import numpy as np
 import pandas as pd
+from scipy.stats import gmean
 import xarray as xr
 
 
@@ -45,7 +46,11 @@ def get_data(opts):
     except FileNotFoundError:
         nv = None
 
-    return af, nv
+    dec = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                         f'DEC_Tx{opts.threshold:.1f}degC_{opts.region}_annual'
+                         f'_SPARTACUS_1961to2024.nc')
+
+    return af, nv, dec
 
 
 def gr_plot_params(vname):
@@ -104,7 +109,7 @@ def map_plot_params(opts, vname):
     return params[vname], cb_stuff
 
 
-def plot_gr_data(opts, ax, data, af_cc, nv):
+def plot_gr_data(opts, ax, data, af_cc, nv, dec):
     props = gr_plot_params(vname=data.name)
 
     xvals = data.time
@@ -146,7 +151,11 @@ def plot_gr_data(opts, ax, data, af_cc, nv):
             verticalalignment='center', transform=ax.transAxes,
             fontsize=11)
 
-    ax.text(0.02, 0.92, props['acc'] + ' = ' + f'{af_cc:.2f}',
+    ref = gmean(dec[5:26])
+    cc = gmean(dec[-10:-4])
+    ax.text(0.02, 0.92, f'TMax-{opts.threshold}°C-ANN-{props["lbl"]}' + r'$_\mathrm{Ref | CC}$ = '
+            + f'{ref:.2d}|{cc:.2d}\n'
+            + props['acc'] + ' = ' + f'{af_cc:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
             fontsize=9)
@@ -308,10 +317,10 @@ def plot_map(opts, fig, ax, data):
     map_vals = ax.contourf(data.x, data.y, data, cmap=props['cmap'],
                            extend=ext, levels=lvls, vmin=vn, vmax=vx)
     if opts.region in ['AUT', 'SEA']:
-        ax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
-                                   fill=False, linewidth=1))
-        ax.add_patch(pat.Rectangle(xy=(400, 28), height=94, width=132, edgecolor='black',
-                                   fill=False, linewidth=1))
+        ax.add_patch(pat.Rectangle(xy=(559000, 5193000), height=20000, width=25000,
+                                   edgecolor='black', fill=False, linewidth=1))
+        ax.add_patch(pat.Rectangle(xy=(486000, 5161000), height=94000, width=133000,
+                                   edgecolor='black', fill=False, linewidth=1))
 
     ax.axis('off')
     divider = make_axes_locatable(ax)
@@ -342,14 +351,14 @@ def plot_map(opts, fig, ax, data):
 def run():
     opts = getopts()
 
-    data, natv = get_data(opts=opts)
+    data, natv, dec_data = get_data(opts=opts)
 
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
     gr_vars = ['EF_GR_AF', 'ED_avg_GR_AF', 'EM_avg_GR_AF', 'EA_avg_GR_AF']
     for irow, gr_var in enumerate(gr_vars):
         plot_gr_data(opts=opts, ax=axs[irow, 0], data=data[gr_var],
-                     af_cc=data[f'{gr_var}_CC'], nv=natv)
+                     af_cc=data[f'{gr_var}_CC'], nv=natv, dec=dec_data[gr_var])
 
     map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
     for irow, map_var in enumerate(map_vars):

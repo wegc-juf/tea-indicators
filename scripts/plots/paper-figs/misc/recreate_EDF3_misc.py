@@ -207,8 +207,8 @@ def plot_gr_data(opts, ax, adata, ddata, afdata, grvar):
     ref = gmean(ddata[5:26])
     cc = gmean(ddata[-10:-4])
     af = afdata[f'{grvar}_AF_CC'].values
-    ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
-            + f'{ref:.1f}' + r'$\,$|$\,$'
+    ax.text(0.02, 0.89, f'TMax-{opts.threshold}°C-ANN-{props["nv_name"]}'
+            + r'$_\mathrm{Ref | CC}$ = ' + f'{ref:.1f}' + r'$\,$|$\,$'
             + f'{cc:.1f} {props["unit"]} \n'
             + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
             + f'{af:.2f}',
@@ -294,10 +294,10 @@ def plot_map(opts, fig, ax, data):
 
     map = ax.contourf(data.x, data.y, data, cmap=props['cmap'], levels=props['lvls'], extend=ext)
     if opts.region in ['AUT', 'SEA']:
-        ax.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
-                                   fill=False, linewidth=1))
-        ax.add_patch(pat.Rectangle(xy=(400, 28), height=94, width=132, edgecolor='black',
-                                   fill=False, linewidth=1))
+        ax.add_patch(pat.Rectangle(xy=(559000, 5193000), height=20000, width=25000,
+                                   edgecolor='black', fill=False, linewidth=1))
+        ax.add_patch(pat.Rectangle(xy=(486000, 5161000), height=94000, width=133000,
+                                   edgecolor='black', fill=False, linewidth=1))
     ax.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
