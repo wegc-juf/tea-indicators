@@ -153,8 +153,8 @@ def plot_gr_data(opts, ax, data, af_cc, nv, dec):
 
     ref = gmean(dec[5:26])
     cc = gmean(dec[-10:-4])
-    ax.text(0.02, 0.92, f'TMax-{opts.threshold}°C-ANN-{props["lbl"]}' + r'$_\mathrm{Ref | CC}$ = '
-            + f'{ref:.2d}|{cc:.2d}\n'
+    ax.text(0.02, 0.9, f'TMax-{opts.threshold}°C-ANN-{props["nv_name"]}'
+            + r'$_\mathrm{Ref | CC}$ = ' + f'{ref:.2f} | {cc:.2f} {props["unit"]}\n'
             + props['acc'] + ' = ' + f'{af_cc:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
@@ -198,7 +198,7 @@ def get_ylims_tex(opts):
     return yn, yx, ticks
 
 
-def plot_tex_es(opts, ax, data, af_cc, nv):
+def plot_tex_es(opts, ax, data, af_cc, nv, dec):
     xvals = data.time
     xticks = np.arange(1961, 2025)
 
@@ -207,20 +207,20 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
         nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
         ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
 
-    ax.plot(xticks, data['ES_avg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
-    ax.plot(xticks, data['TEX_GR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
+    ax.plot(xticks, data['ES_avg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2, zorder=3)
+    ax.plot(xticks, data['TEX_GR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2, zorder=3)
 
-    ax.plot(xticks[0:30], np.ones(len(xvals[:30])), alpha=0.5, color='tab:grey', linewidth=2)
+    ax.plot(xticks[0:30], np.ones(len(xvals[:30])), alpha=0.5, color='tab:grey', linewidth=2, zorder=4)
     ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['ES_avg_GR_AF_CC'].values, alpha=0.5,
-            color='tab:grey', linewidth=2)
+            color='tab:grey', linewidth=2, zorder=4)
     ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['TEX_GR_AF_CC'].values, alpha=0.5,
-            color='tab:red', linewidth=2)
+            color='tab:red', linewidth=2, zorder=4)
 
     ax.set_ylabel(r'ES|TEX amplification $(\mathcal{A}^\mathrm{S}, \mathcal{A}^\mathrm{T})$',
                   fontsize=12)
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.minorticks_on()
-    ax.grid(color='gray', which='major', linestyle=':')
+    ax.grid(color='gray', which='major', linestyle=':', zorder=1)
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     ax.set_xlim(1960, 2025)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
@@ -259,13 +259,20 @@ def plot_tex_es(opts, ax, data, af_cc, nv):
                 verticalalignment='center', transform=ax.transAxes,
                 fontsize=11)
 
-    ax.text(0.02, 0.9,
+    tex_ref = gmean(dec['TEX_GR'].values[5:26])
+    tex_cc = gmean(dec['TEX_GR'].values[-10:-4])
+    es_ref = gmean(dec['ES_avg_GR'].values[5:26])
+    es_cc = gmean(dec['ES_avg_GR'].values[-10:-4])
+    ax.text(0.02, 0.85,f'TMax-{opts.threshold}°C-ANN-TEX'
+            + r'$_\mathrm{Ref | CC}$ = ' + f'{tex_ref:.2f} | {tex_cc:.2f} areal °C days / yr\n' +
+            f'TMax-{opts.threshold}°C-ANN-ES'
+            + r'$_\mathrm{Ref | CC}$ = ' + f'{es_ref:.2f} | {es_cc:.2f} areal °C days\n' +
             r'$\mathcal{A}_\mathrm{CC}^\mathrm{S} | \mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
             + f'{af_cc["ES_avg_GR_AF_CC"]:.2f}' + r'$\,$|$\,$'
             + f'{af_cc["TEX_GR_AF_CC"]:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
-            fontsize=9)
+            fontsize=9, zorder=2)
 
 
 def find_range(data):
@@ -357,15 +364,17 @@ def run():
 
     gr_vars = ['EF_GR_AF', 'ED_avg_GR_AF', 'EM_avg_GR_AF', 'EA_avg_GR_AF']
     for irow, gr_var in enumerate(gr_vars):
+        dvar = gr_var.split('_AF')[0]
         plot_gr_data(opts=opts, ax=axs[irow, 0], data=data[gr_var],
-                     af_cc=data[f'{gr_var}_CC'], nv=natv, dec=dec_data[gr_var])
+                     af_cc=data[f'{gr_var}_CC'], nv=natv, dec=dec_data[dvar])
 
     map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(opts=opts, fig=fig, ax=axs[irow, 1], data=data[map_var])
 
     plot_tex_es(opts=opts, ax=axs[3, 1], data=data[['TEX_GR_AF', 'ES_avg_GR_AF']],
-                af_cc=data[[f'TEX_GR_AF_CC', f'ES_avg_GR_AF_CC']], nv=natv)
+                af_cc=data[[f'TEX_GR_AF_CC', f'ES_avg_GR_AF_CC']], nv=natv,
+                dec=dec_data[['TEX_GR', 'ES_avg_GR']])
 
     axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
                    horizontalalignment='left', verticalalignment='center',
