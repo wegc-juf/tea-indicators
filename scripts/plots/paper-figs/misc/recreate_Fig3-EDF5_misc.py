@@ -6,12 +6,11 @@ import xarray as xr
 
 
 def get_data(reg, ds, thresh):
-
     pstr = f'Tx{thresh}.0degC'
     reg_str, gr_str = reg, 'GR'
 
-    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA_no-largeGR/amplification/'
-                           f'AF_{pstr}_{reg_str}_WAS_{ds}_1961to2024.nc')
+    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                           f'amplification/AF_{pstr}_{reg_str}_annual_{ds}_1961to2024.nc')
 
     if 'ERA5' in ds:
         tEX_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
@@ -43,7 +42,6 @@ def get_data(reg, ds, thresh):
 
 
 def plot_subplot(ax, spcus, era5, var, reg, land, thresh):
-
     cols = {'EF': 'tab:blue', 'FD': 'tab:purple', 'tEX': 'tab:orange', 'TEX': 'tab:red'}
     plot_vars = ['EF', 'FD', 'tEX', 'TEX']
 
@@ -157,7 +155,6 @@ def create_legend(fig, ax):
     spar, = ax.plot([-9, -9], color='tab:gray', linewidth=2)
     era5, = ax.plot([-9, -9], color='tab:gray', linestyle='--', alpha=0.5, linewidth=2)
 
-
     fig.legend((spar, era5, f, fd, fdm, fdma),
                ('SPCUS', 'ERA5(L)', r'$\mathcal{A}^\mathrm{F}$', r'$\mathcal{A}^\mathrm{FD}$',
                 r'$\mathcal{A}^\mathrm{t}$', r'$\mathcal{A}^\mathrm{T}$'),
@@ -215,6 +212,7 @@ def run_noe():
 
     plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig3-EDF5/'
                 f'Fig3-EDF5_Niederösterreich_25degC.png', dpi=300, bbox_inches='tight')
+
 
 if __name__ == '__main__':
     run()

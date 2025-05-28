@@ -33,28 +33,28 @@ def load_aep_data(ds, thresh, noe=False):
         aep = pd.DataFrame(columns=['L-AUT'])
         aep_af = pd.DataFrame(columns=['L-AUT'])
         data = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/dec_indicator_variables/supplementary/'
-            f'DECsuppl_Tx{thresh}.0degC_Niederösterreich_WAS_{ds}_1961to2024.nc')
+            f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+            f'DEC_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
         data_af = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA_no-largeGR/amplification/supplementary/'
-            f'AFsuppl_Tx{thresh}.0degC_Niederösterreich_WAS_{ds}_1961to2024.nc')
+            f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/amplification/'
+            f'AF_Tx{thresh}.0degC_Niederösterreic_annual_{ds}_1961to2024.nc')
 
-        aep['L-AUT'] = data['delta_y_GR']
-        aep_af['L-AUT'] = data_af['delta_y_GR_AF']
+        aep['L-AUT'] = data['AEP_GR']
+        aep_af['L-AUT'] = data_af['AEP_GR_AF']
     else:
         regs = ['AUT', 'SEA', 'FBR']
         aep = pd.DataFrame(columns=regs)
         aep_af = pd.DataFrame(columns=regs)
         for reg in regs:
             data = xr.open_dataset(
-                f'/data/users/hst/TEA-clean/TEA/dec_indicator_variables/supplementary/'
-                f'DECsuppl_Tx{thresh}.0degC_{reg}_WAS_{ds}_1961to2024.nc')
+                f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                f'DEC_Tx{thresh}.0degC_{reg}_annual_{ds}_1961to2024.nc')
             data_af = xr.open_dataset(
-                f'/data/users/hst/TEA-clean/TEA_no-largeGR/amplification/supplementary/'
-                f'AFsuppl_Tx{thresh}.0degC_{reg}_WAS_{ds}_1961to2024.nc')
+                f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/amplification/'
+                f'AF_Tx{thresh}.0degC_{reg}_annual_{ds}_1961to2024.nc')
 
-            aep[reg] = data['delta_y_GR']
-            aep_af[reg] = data_af['delta_y_GR_AF']
+            aep[reg] = data['AEP_GR']
+            aep_af[reg] = data_af['AEP_GR_AF']
 
     return aep, aep_af
 
