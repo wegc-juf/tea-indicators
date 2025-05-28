@@ -37,7 +37,7 @@ def load_aep_data(ds, thresh, noe=False):
             f'DEC_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
         data_af = xr.open_dataset(
             f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/amplification/'
-            f'AF_Tx{thresh}.0degC_Niederösterreic_annual_{ds}_1961to2024.nc')
+            f'AF_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
 
         aep['L-AUT'] = data['AEP_GR']
         aep_af['L-AUT'] = data_af['AEP_GR_AF']
@@ -337,7 +337,7 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
 
 def run():
     e5_ds = 'ERA5'
-    threshold = 30
+    threshold = 25
 
     # load SPARTACUS data
     aep_spcus, aep_af_spcus = load_aep_data(ds='SPARTACUS', thresh=threshold)
@@ -431,5 +431,5 @@ def run_noe():
 
 
 if __name__ == '__main__':
-    run()
-    # run_noe()
+    # run()
+    run_noe()
