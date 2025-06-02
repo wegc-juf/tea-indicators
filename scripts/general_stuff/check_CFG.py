@@ -72,7 +72,7 @@ def check_config(opts_dict):
 
     for param in opts_dict.keys():
         # set default value if None was passed
-        if opts_dict[param] is None:
+        if opts_dict[param] is None and param != 'stations':
             opts_dict[param] = defaults[param]
             continue
         else:

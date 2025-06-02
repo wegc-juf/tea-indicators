@@ -45,7 +45,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
         opts.mask_sub = 'masks'
     if 'subreg' not in opts or opts.subreg == opts.region:
         opts.subreg = None
-    if 'target_sys' not in opts:
+    if 'target_sys' not in opts and 'natural_variability' not in fname:
         if opts.dataset == 'SPARTACUS':
             opts.target_sys = 3416
         elif 'ERA' in opts.dataset:
@@ -54,7 +54,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.target_sys = None
         else:
             raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
-    if 'xy_name' not in opts:
+    if 'xy_name' not in opts and 'natural_variability' not in fname:
         if opts.dataset == 'SPARTACUS':
             opts.xy_name = 'x,y'
         elif 'ERA' in opts.dataset:
