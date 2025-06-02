@@ -393,6 +393,14 @@ def run_custom_gr(opts):
     save_output(ds, opts, out_region)
 
 
+def match_dimension_dtypes(src, dest):
+    for dim in dest.dims:
+        if dim not in src.dims:
+            continue
+        if dest[dim].dtype != src[dim].dtype:
+            dest[dim] = np.round(dest[dim].astype(src[dim].dtype), decimals=5)
+
+
 def run():
     cmd_opts = _getopts()
     
@@ -500,11 +508,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-
-def match_dimension_dtypes(src, dest):
-    for dim in dest.dims:
-        if dim not in src.dims:
-            continue
-        if dest[dim].dtype != src[dim].dtype:
-            dest[dim] = np.round(dest[dim].astype(src[dim].dtype), decimals=5)
