@@ -12,29 +12,10 @@ def get_data(reg, ds, thresh):
     data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
                            f'amplification/AF_{pstr}_{reg_str}_annual_{ds}_1961to2024.nc')
 
-    if 'ERA5' in ds:
-        tEX_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
-                        + np.log10(data[f'EDavg_{gr_str}_AF'])
-                        + np.log10(data[f'EMavg_{gr_str}_AF']))
-        tEX_gr_cc = 10 ** (np.log10(data[f'EF_{gr_str}_AF_CC'])
-                           + np.log10(data[f'EDavg_{gr_str}_AF_CC'])
-                           + np.log10(data[f'EMavg_{gr_str}_AF_CC']))
-        data[f'tEX_{gr_str}_AF'] = tEX_gr
-        data[f'tEX_{gr_str}_AF_CC'] = tEX_gr_cc
-
-    tEX = 10 ** (np.log10(data[f'EF_AF'])
-                 + np.log10(data[f'EDavg_AF'])
-                 + np.log10(data['EMavg_AF']))
-    tEX_cc = 10 ** (np.log10(data[f'EF_AF_CC'])
-                    + np.log10(data[f'EDavg_AF_CC'])
-                    + np.log10(data['EMavg_AF_CC']))
-    data[f'tEX_AF'] = tEX
-    data[f'tEX_AF_CC'] = tEX_cc
-
     fd_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
-                   + np.log10(data[f'EDavg_{gr_str}_AF']))
+                   + np.log10(data[f'ED_avg_{gr_str}_AF']))
     fd_gr_cc = 10 ** (np.log10(data[f'EF_{gr_str}_AF_CC'])
-                      + np.log10(data[f'EDavg_{gr_str}_AF_CC']))
+                      + np.log10(data[f'ED_avg_{gr_str}_AF_CC']))
     data[f'FD_{gr_str}_AF'] = fd_gr
     data[f'FD_{gr_str}_AF_CC'] = fd_gr_cc
 
@@ -162,7 +143,7 @@ def create_legend(fig, ax):
 
 
 def run():
-    threshold = 30
+    threshold = 25
     era5_land = [True, False]
     regions = ['AUT', 'SEA', 'FBR']
 
@@ -215,5 +196,5 @@ def run_noe():
 
 
 if __name__ == '__main__':
-    run()
-    # run_noe()
+    # run()
+    run_noe()
