@@ -24,7 +24,7 @@ if __name__ == "__main__":
             ],
             'area': [40, -16, -36, 56],
             'download_format': 'unarchived',
-            'format': 'netcdf',
+            'data_format': 'netcdf',
         }
 
         client = cdsapi.Client()
