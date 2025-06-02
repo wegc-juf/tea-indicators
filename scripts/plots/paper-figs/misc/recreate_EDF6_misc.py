@@ -336,8 +336,8 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
 
 
 def run():
-    e5_ds = 'ERA5'
-    threshold = 25
+    e5_ds = 'ERA5Land'
+    threshold = 30
 
     # load SPARTACUS data
     aep_spcus, aep_af_spcus = load_aep_data(ds='SPARTACUS', thresh=threshold)
@@ -388,7 +388,7 @@ def run():
 
 
 def run_noe():
-    e5_ds = 'ERA5'
+    e5_ds = 'ERA5Land'
 
     # load SPARTACUS data
     aep_spcus, aep_af_spcus = load_aep_data(ds='SPARTACUS', thresh=25, noe=True)
