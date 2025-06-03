@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+import pandas as pd
 import xarray as xr
 
 from scripts.additional_stuff.NatVar import NaturalVariability
@@ -21,11 +22,12 @@ def _getopts():
     return myopts
 
 
-def load_station_data(opts, af=False):
+def load_station_data(opts):
     """
     load TEA Indicatos for the given region and stations
     Args:
         opts: CLI parameter
+        af: set to True to load amplification factors data
 
     Returns:
         ds: station data
@@ -38,11 +40,11 @@ def load_station_data(opts, af=False):
     else:
         stations = opts.stations.split(',')
 
-    sdir = ''
-    if af:
-        sdir = 'amplification/'
+    dm_var, em_var = 'DM_avg', 'EM_avg'
+    if opts.parameter != 'Tx':
+        dm_var, em_var = 'DM_Md', 'EM_avg_Md'
 
-    files = sorted(glob.glob(f'{opts.tea_path}station/dec_indicator_variables/{sdir}'
+    files = sorted(glob.glob(f'{opts.tea_path}station/dec_indicator_variables/amplification/'
                              f'*{opts.param_str}*.nc'))
 
     # only select files for the given stations
@@ -60,6 +62,8 @@ def load_station_data(opts, af=False):
 
         # Add a new 'station' coordinate (single value)
         station_name = extract_station_name(os.path.basename(file))
+        if station_name == 'Kremsmuenster':
+            ds_station = ds_station.where(ds_station['time'] > pd.Timestamp('1920-01-01'))
         ds_station = ds_station.expand_dims({'station': [station_name]})
 
         datasets.append(ds_station)
@@ -67,35 +71,29 @@ def load_station_data(opts, af=False):
     ds = xr.concat(datasets, dim='station')
 
     keeps = [v for v in ds.data_vars if any(
-        vvar in v for vvar in ['EF', 'ED_avg', 'EM_avg', 'EM_Md', 'DM_avg', 'DM_Md', 'tEX'])]
+        vvar in v for vvar in ['EF', 'ED_avg', em_var, dm_var, 'tEX'])]
     drops = [vvar for vvar in ds.data_vars if vvar not in keeps or '_s' in vvar or 'CC' in vvar]
 
     ds = ds.drop(drops)
 
     # add DM variables
-    if af:
-        ds['DM_avg_AF'] = ds['ED_avg_AF'] * ds['EM_avg_AF']
-        ds['DM_Md_AF'] = ds['ED_avg_AF'] * ds['EM_Md_AF']
-    else:
-        ds['DM_avg'] = ds['ED_avg'] * ds['EM_avg']
-        ds['DM_Md'] = ds['ED_avg'] * ds['EM_Md']
+    ds[f'{dm_var}_AF'] = ds['ED_avg_AF'] * ds[f'{em_var}_AF']
 
     return ds
 
 
-def load_spartacus_data(opts, af=False):
+def load_spartacus_data(opts):
 
-    sdir = ''
-    abbr = 'DEC'
-    if af:
-        sdir = 'amplification/'
-        abbr = 'AF'
-    ds = xr.open_dataset(f'{opts.tea_path}/dec_indicator_variables/{sdir}'
-                         f'{abbr}_{opts.param_str}_{opts.region}_{opts.period}_SPARTACUS'
+    ds = xr.open_dataset(f'{opts.tea_path}/dec_indicator_variables/amplification/'
+                         f'AF_{opts.param_str}_{opts.region}_{opts.period}_SPARTACUS'
                          f'_{opts.start}to{opts.end}.nc')
 
+    dm_var, em_var = 'DM_avg', 'EM_avg'
+    if opts.parameter != 'Tx':
+        dm_var, em_var = 'DM_Md', 'EM_avg_Md'
+
     keeps = [v for v in ds.data_vars if
-             any(vvar in v for vvar in ['EF', 'ED_avg', 'EM_avg', 'EM_Md', 'DM_avg', 'DM_Md', 'tEX'])]
+             any(vvar in v for vvar in ['EF', 'ED_avg', em_var, 'EA_avg', dm_var, 'tEX'])]
     drops = [vvar for vvar in ds.data_vars if vvar not in keeps or '_s' in vvar or 'GR' not in vvar
              or 'CC' in vvar]
     drops.extend(['x', 'y'])
@@ -113,15 +111,13 @@ def load_spartacus_data(opts, af=False):
 
     ds = ds.rename(rename_dict)
 
+    if opts.parameter == 'Tx':
+        ds = ds.drop(['EM_avg_Md_AF'])
+
+    ds = ds.drop('EM_avg_Max_AF')
+
     # add DM variables
-    if af:
-        ds = ds.rename({'EM_avg_Md_AF': 'EM_Md_AF'})
-        ds['DM_avg_AF'] = ds['ED_avg_AF'] * ds['EM_avg_AF']
-        ds['DM_Md_AF'] = ds['ED_avg_AF'] * ds['EM_Md_AF']
-    else:
-        ds = ds.rename({'EM_avg_Md': 'EM_Md'})
-        ds['DM_avg'] = ds['ED_avg'] * ds['EM_avg']
-        ds['DM_Md'] = ds['ED_avg'] * ds['EM_Md']
+    ds[f'{dm_var}_AF'] = ds['ED_avg_AF'] * ds[f'{em_var}_AF']
 
     return ds
 
@@ -134,21 +130,22 @@ def run():
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
 
     # load data
-    station_data = load_station_data(opts=opts)
-    station_data_af = load_station_data(opts=opts, af=True)
-    spcus_data = load_spartacus_data(opts=opts)
-    spcus_data_af = load_spartacus_data(opts=opts, af=True)
+    station_af = load_station_data(opts=opts)
+    spcus_af = load_spartacus_data(opts=opts)
 
     # initialize NaturalVariability class
-    natvar = NaturalVariability(station_data=station_data, spcus_data=spcus_data,
-                                station_data_af=station_data_af, spcus_data_af=spcus_data_af)
+    natvar = NaturalVariability(station_data_af=station_af, spcus_data_af=spcus_af,
+                                param=opts.parameter, ref_period=opts.ref_period)
 
-    natvar.calc_ref_std(ref_period=opts.ref_period)
+    natvar.calc_ref_std()
     natvar.calc_factors()
     natvar.calc_natvar(ref_eyr=opts.ref_period[1])
+    natvar.calc_combined()
+    pass
 
     # TODO: save to output nc
     # TODO: crosscheck with old results
+    # TODO: calculate compound NVs (TEX etc.)
 
 
 if __name__ == '__main__':
