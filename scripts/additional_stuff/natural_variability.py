@@ -5,7 +5,7 @@ import pandas as pd
 import xarray as xr
 
 from scripts.additional_stuff.NatVar import NaturalVariability
-from scripts.general_stuff.general_functions import (load_opts, create_history_from_cfg)
+from scripts.general_stuff.general_functions import load_opts, create_natvar_history
 
 
 def _getopts():
@@ -141,11 +141,8 @@ def run():
     natvar.calc_factors()
     natvar.calc_natvar(ref_eyr=opts.ref_period[1])
     natvar.calc_combined()
-    pass
-
-    # TODO: save to output nc
-    # TODO: crosscheck with old results
-    # TODO: calculate compound NVs (TEX etc.)
+    create_natvar_history(cfg_params=opts, nv=natvar)
+    natvar.save_results(outname=f'{opts.outpath}NV_AF_{opts.param_str}_{opts.region}.nc')
 
 
 if __name__ == '__main__':

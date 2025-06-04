@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class NaturalVariability:
     def __init__(self, station_data_af=None, spcus_data_af=None, param=None, ref_period=None):
         self.station_data_af = station_data_af
@@ -23,8 +22,7 @@ class NaturalVariability:
         self.ref_spcus_std = None
         self.ref_station_std = None
         self.factors = None
-        self.nv_low = None
-        self.nv_upp = None
+        self.nv = None
 
     def calc_ref_std(self):
         # TODO: should center year calculation be hard coded like it is now?
@@ -48,23 +46,74 @@ class NaturalVariability:
         supp_nv = np.sqrt((supp ** 2).mean()) * self.factors
         slow_nv = np.sqrt((slow ** 2).mean()) * self.factors
 
-        self.nv_low = slow_nv
-        self.nv_upp = supp_nv
+        # rename variables
+        rename_dict_supp = dict(zip(supp_nv.data_vars, [f's_{v}_NVupp' for v in supp_nv.data_vars]))
+        rename_dict_slow = dict(zip(slow_nv.data_vars, [f's_{v}_NVlow' for v in slow_nv.data_vars]))
+        supp_nv = supp_nv.rename(rename_dict_supp)
+        slow_nv = slow_nv.rename(rename_dict_slow)
+
+        # combine to one ds
+        nv = slow_nv.merge(supp_nv)
+
+        self.nv = nv
 
     def calc_combined(self):
         s_a_ref = np.sqrt((1 / len(self.ref_spcus_data.time))
                           * ((self.ref_spcus_data['EA_avg_AF'] - 1) ** 2).sum(dim='time'))
         s_dm_ref = np.sqrt((1 / len(self.ref_spcus_data.time))
-            * ((self.ref_spcus_data[f'{self.dm_var}_AF'] - 1) ** 2).sum(dim='time'))
+                           * ((self.ref_spcus_data[f'{self.dm_var}_AF'] - 1) ** 2).sum(dim='time'))
 
-        self.nv_low['EA_avg_AF'] = ((s_a_ref / s_dm_ref) * self.nv_low[f'{self.dm_var}_AF']).values
-        self.nv_upp['EA_avg_AF'] = ((s_a_ref / s_dm_ref) * self.nv_upp[f'{self.dm_var}_AF']).values
+        self.nv['s_EA_avg_AF_NVlow'] = (
+                    (s_a_ref / s_dm_ref) * self.nv[f's_{self.dm_var}_AF_NVlow']).values
+        self.nv['s_EA_avg_AF_NVupp'] = (
+                    (s_a_ref / s_dm_ref) * self.nv[f's_{self.dm_var}_AF_NVupp']).values
 
-        self.nv_low['ES_AF'] = np.sqrt(self.nv_low[f'{self.dm_var}_AF']**2 + self.nv_low['EA_avg_AF'] ** 2)
-        self.nv_upp['ES_AF'] = np.sqrt(self.nv_upp[f'{self.dm_var}_AF']**2 + self.nv_upp['EA_avg_AF'] ** 2)
+        self.nv['s_ES_AF_NVlow'] = np.sqrt(self.nv[f's_{self.dm_var}_AF_NVlow'] ** 2
+                                           + self.nv['s_EA_avg_AF_NVlow'] ** 2)
+        self.nv['s_ES_AF_NVupp'] = np.sqrt(self.nv[f's_{self.dm_var}_AF_NVupp'] ** 2
+                                           + self.nv['s_EA_avg_AF_NVupp'] ** 2)
 
-        self.nv_low['TEX_AF'] = np.sqrt(self.nv_low['EF_AF']**2 + self.nv_low['ES_AF'] ** 2)
-        self.nv_upp['TEX_AF'] = np.sqrt(self.nv_upp['EF_AF']**2 + self.nv_upp['ES_AF'] ** 2)
+        self.nv['s_TEX_AF_NVlow'] = np.sqrt(
+            self.nv['s_EF_AF_NVlow'] ** 2 + self.nv['s_ES_AF_NVlow'] ** 2)
+        self.nv['s_TEX_AF_NVupp'] = np.sqrt(
+            self.nv['s_EF_AF_NVupp'] ** 2 + self.nv['s_ES_AF_NVupp'] ** 2)
 
-        self.scaling = (s_a_ref / s_dm_ref).values
+        self.nv['std_scaling_EA_DM'] = (s_a_ref / s_dm_ref).values
 
+
+    def save_results(self, outname):
+        # rename factor variables
+        rename_dict = {v: f'GR_scaling_{v}' for v in self.factors.data_vars}
+        self.factors = self.factors.rename(rename_dict)
+
+        # combine factors with nv ds
+        self.nv = self.nv.merge(self.factors)
+
+        # add variable attributes
+        for vvar in self.nv.data_vars:
+            if vvar == 'std_scaling_EA_DM':
+                self.nv[vvar].attrs['long_name'] = 'Standard deviation scaling factor (EA/DM)'
+            elif 's_' in vvar:
+                var_name = vvar.split('_NV')[0].split('s_')[1]
+                bound = vvar.split('_NV')[1]
+                self.nv[vvar].attrs['long_name'] = f'{bound}er bound of {var_name} natural variability'
+            else:
+                var_name = vvar.split('_scaling')[1]
+                self.nv[vvar].attrs['long_name'] = f'GR {var_name} scaling factor'
+
+        self.nv.to_netcdf(outname)
+
+
+
+    def create_history(self, history):
+        """
+        create history of all functions called
+
+        Args:
+            history: history string
+        """
+        ds = getattr(self, 'nv')
+        if 'history' in ds.attrs:
+            ds.attrs['history'] = ds.attrs['history'] + history
+        else:
+            ds.attrs['history'] = history

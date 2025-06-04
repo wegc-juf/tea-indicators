@@ -167,6 +167,31 @@ def create_tea_history(cfg_params, tea, result_type):
     tea.create_history(new_hist, result_type)
 
 
+def create_natvar_history(cfg_params, nv):
+    """
+    add history to dataset
+    :param cfg_params: yaml config parameters
+    :param nv: NatVar object
+    """
+    ds = getattr(nv, f'nv')
+
+    parts = []
+    for key, value in vars(cfg_params).items():
+        if key != 'script':
+            part = f"--{key} {value}"
+            parts.append(part)
+    params = ' '.join(parts)
+
+    script = cfg_params.script.split('/')[-1]
+
+    if 'history' in ds.attrs:
+        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+    else:
+        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+
+    nv.create_history(new_hist)
+
+
 def ref_cc_params():
     params = {'REF': {'start': '1961-01-01', 'end': '1990-12-31',
                       'start_cy': '1966-01-01', 'end_cy': '1986-12-31',
