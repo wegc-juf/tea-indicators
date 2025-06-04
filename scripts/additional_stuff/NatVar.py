@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class NaturalVariability:
     def __init__(self, station_data_af=None, spcus_data_af=None, param=None, ref_period=None):
         self.station_data_af = station_data_af
@@ -12,33 +13,50 @@ class NaturalVariability:
             self.em_var = 'EM_Md'
             self.dm_var = 'DM_Md'
 
+        self.ref_period = ref_period
+
         # store data of REF period (from start center year to end center year)
         self.ref_station_data = self.station_data_af.sel(time=slice(f'{ref_period[0] + 5}-01-01',
                                                                     f'{ref_period[1] - 4}-12-31'))
         self.ref_spcus_data = self.spcus_data_af.sel(time=slice(f'{ref_period[0] + 5}-01-01',
                                                                 f'{ref_period[1] - 4}-12-31'))
 
-        # TODO: check if this is the best way to initialize these variables
         self.ref_spcus_std = None
         self.ref_station_std = None
         self.factors = None
         self.nv = None
 
     def calc_ref_std(self):
-        # TODO: should center year calculation be hard coded like it is now?
+        """
+        calculates standard diviation during REF period (s^REF_{AX,GR}, Eq. 32_4)
+        Returns:
+
+        """
         ref_station_std = self.ref_station_data.std(dim='time')
         ref_spcus_std = self.ref_spcus_data.std(dim='time')
         self.ref_station_std = ref_station_std
         self.ref_spcus_std = ref_spcus_std
 
     def calc_factors(self):
+        """
+        calculates scaling factors, i.e. station specific variance scaled to GR variability
+        (first term of Eq. 32_5)
+        Returns:
+
+        """
         facs = self.ref_spcus_std / np.sqrt((self.ref_station_std ** 2).sum()
                                             / len(self.ref_station_std.station))
         self.factors = facs
 
-    def calc_natvar(self, ref_eyr):
+    def calc_natvar(self):
+        """
+        calculates natural variability (Eq. 32_5 & 32_6)
+
+        Returns:
+
+        """
         data = self.station_data_af.sel(time=slice(self.station_data_af.time[0],
-                                                   f'{ref_eyr}-12-31'))
+                                                   f'{self.ref_period[1]}-12-31'))
         cupp = (data >= 1).astype(int)
         supp = np.sqrt((1 / cupp.sum()) * (cupp * (data - 1) ** 2).sum())
         slow = np.sqrt((1 / (1 - cupp).sum()) * ((1 - cupp) * (data - 1) ** 2).sum())
@@ -58,15 +76,20 @@ class NaturalVariability:
         self.nv = nv
 
     def calc_combined(self):
+        """
+        calculate natural variability of variables with event area (Eq. 33)
+        Returns:
+
+        """
         s_a_ref = np.sqrt((1 / len(self.ref_spcus_data.time))
                           * ((self.ref_spcus_data['EA_avg_AF'] - 1) ** 2).sum(dim='time'))
         s_dm_ref = np.sqrt((1 / len(self.ref_spcus_data.time))
                            * ((self.ref_spcus_data[f'{self.dm_var}_AF'] - 1) ** 2).sum(dim='time'))
 
         self.nv['s_EA_avg_AF_NVlow'] = (
-                    (s_a_ref / s_dm_ref) * self.nv[f's_{self.dm_var}_AF_NVlow']).values
+                (s_a_ref / s_dm_ref) * self.nv[f's_{self.dm_var}_AF_NVlow']).values
         self.nv['s_EA_avg_AF_NVupp'] = (
-                    (s_a_ref / s_dm_ref) * self.nv[f's_{self.dm_var}_AF_NVupp']).values
+                (s_a_ref / s_dm_ref) * self.nv[f's_{self.dm_var}_AF_NVupp']).values
 
         self.nv['s_ES_AF_NVlow'] = np.sqrt(self.nv[f's_{self.dm_var}_AF_NVlow'] ** 2
                                            + self.nv['s_EA_avg_AF_NVlow'] ** 2)
@@ -82,6 +105,14 @@ class NaturalVariability:
 
 
     def save_results(self, outname):
+        """
+        save results to netcdf file
+        Args:
+            outname: name of output file
+
+        Returns:
+
+        """
         # rename factor variables
         rename_dict = {v: f'GR_scaling_{v}' for v in self.factors.data_vars}
         self.factors = self.factors.rename(rename_dict)
@@ -96,13 +127,13 @@ class NaturalVariability:
             elif 's_' in vvar:
                 var_name = vvar.split('_NV')[0].split('s_')[1]
                 bound = vvar.split('_NV')[1]
-                self.nv[vvar].attrs['long_name'] = f'{bound}er bound of {var_name} natural variability'
+                self.nv[vvar].attrs[
+                    'long_name'] = f'{bound}er bound of {var_name} natural variability'
             else:
                 var_name = vvar.split('_scaling')[1]
                 self.nv[vvar].attrs['long_name'] = f'GR {var_name} scaling factor'
 
         self.nv.to_netcdf(outname)
-
 
 
     def create_history(self, history):

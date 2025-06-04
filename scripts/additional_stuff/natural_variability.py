@@ -137,10 +137,15 @@ def run():
     natvar = NaturalVariability(station_data_af=station_af, spcus_data_af=spcus_af,
                                 param=opts.parameter, ref_period=opts.ref_period)
 
+    # calculate standard deviation during REF period
     natvar.calc_ref_std()
+
+    # calculate scaling factors, natural variability, and natural variability of combined data
     natvar.calc_factors()
-    natvar.calc_natvar(ref_eyr=opts.ref_period[1])
+    natvar.calc_natvar()
     natvar.calc_combined()
+
+    # add history and save results
     create_natvar_history(cfg_params=opts, nv=natvar)
     natvar.save_results(outname=f'{opts.outpath}NV_AF_{opts.param_str}_{opts.region}.nc')
 
