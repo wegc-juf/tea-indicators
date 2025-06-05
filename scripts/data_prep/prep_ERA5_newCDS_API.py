@@ -66,6 +66,7 @@ def calc_altitude_dt(opts, africa=False):
     calculates altitude in m and time difference to UTC
     Args:
         opts: CLI parameter
+        africa: set if african data should be prepped
 
     Returns:
         altitude: altitude grid
@@ -323,7 +324,7 @@ def run():
         del da_t2m
 
         # Precipitation
-        da_tp = xr.open_dataarray(f'{basename}_{pname}n.nc',
+        da_tp = xr.open_dataarray(f'{basename}_{pname}.nc',
                                   mask_and_scale=True).chunk()
         da_tp = da_tp.drop(['expver'])
         p24h, p1h = resample_precipitation(data=da_tp, delta=delta_utc, tz=time_zones)
