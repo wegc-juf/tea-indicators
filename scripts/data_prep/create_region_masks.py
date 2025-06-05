@@ -411,7 +411,7 @@ def run():
         run_custom_gr(opts=opts)
     elif opts.region == 'SEA':
         run_sea(opts=opts)
-    elif opts.region == 'EUR':
+    elif opts.region in ['EUR', 'AFR']:
         run_eur(opts=opts)
     else:
         # Load template file
