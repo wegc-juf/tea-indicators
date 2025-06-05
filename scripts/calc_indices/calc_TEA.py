@@ -242,7 +242,7 @@ def _get_threshold(opts):
     if opts.threshold_type == 'abs':
         threshold_grid = opts.threshold
     else:
-        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}-{opts.region}_{opts.dataset}.nc'
+        threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}_{opts.region}_{opts.dataset}.nc'
         if opts.recalc_threshold or not os.path.exists(threshold_file):
             logger.info('Calculating percentiles...')
             threshold_grid = create_threshold_grid(opts=opts)
