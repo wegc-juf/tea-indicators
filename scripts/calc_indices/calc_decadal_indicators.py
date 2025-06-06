@@ -40,7 +40,7 @@ def load_ctp_data(opts, tea):
             return file_start <= end and file_end >= start
         else:
             return False
-    
+
     if 'Agr' in str(type(tea)):
         grg_str = 'GRG-'
     else:
@@ -53,14 +53,10 @@ def load_ctp_data(opts, tea):
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
     files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if 'ref' not in file]
-    
-    # TODO: optimize tea._calc_spread_estimators
-    if opts.spreads:
-        use_dask = False
-    else:
-        use_dask = True
 
-    tea.load_ctp_results(files, use_dask=use_dask)
+    # TODO: optimize tea._calc_spread_estimators
+
+    tea.load_ctp_results(files, use_dask=opts.use_dask)
 
 
 def rolling_decadal_mean(data):
@@ -101,7 +97,7 @@ def calc_decadal_indicators(opts, tea, outpath=None):
         else:
             name = opts.region
         outpath = _get_decadal_outpath(opts, name)
-    
+
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
@@ -172,7 +168,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
         else:
             name = opts.region
         outpath = _get_amplification_outpath(opts, name)
-    
+
     # calculate amplification factors
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -183,10 +179,10 @@ def calc_amplification_factors(opts, tea, outpath=None):
         else:
             min_duration = 0
         tea.calc_amplification_factors(ref_period=opts.ref_period, cc_period=opts.cc_period, min_duration=min_duration)
-    
+
     path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
     path.mkdir(parents=True, exist_ok=True)
-    
+
     # compare to reference file
     if opts.compare_to_ref:
         ref_path = outpath.replace('.nc', '_ref.nc')
@@ -195,7 +191,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             compare_to_ref(tea.amplification_factors, ref_data)
-    
+
     # save amplification factors
     logger.info(f'Saving amplification factors to {outpath}')
     tea.save_amplification_factors(outpath)

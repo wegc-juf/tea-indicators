@@ -36,7 +36,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
 
     # add name of script
     opts.script = f'{fname}.py'
-    
+
     if 'compare_to_ref' not in opts:
         opts.compare_to_ref = None
     if 'spreads' not in opts:
@@ -69,6 +69,11 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
                 opts.agr_cell_size = 1
             else:
                 opts.agr_cell_size = 2
+    if 'use_dask' not in opts:
+        if opts.dataset == 'SPARTACUS':
+            opts.use_dask = False
+        else:
+            opts.use_dask = False
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
@@ -81,7 +86,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             param_str = f'{pstr}{opts.threshold:.1f}{opts.unit}'
 
         opts.param_str = param_str
-        
+
     # convert str to int
     if 'ref_period' in opts:
         ref_period = opts.ref_period.split('-')
@@ -121,23 +126,23 @@ def create_history_from_cfg(cfg_params, ds):
     :param ds: dataset
     :return: ds with history in attrs
     """
-    
+
     parts = []
     for key, value in vars(cfg_params).items():
         if key != 'script':
             part = f"--{key} {value}"
             parts.append(part)
     params = ' '.join(parts)
-    
+
     script = cfg_params.script.split('/')[-1]
-    
+
     if 'history' in ds.attrs:
         new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
     else:
         new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
-    
+
     ds.attrs['history'] = new_hist
-    
+
     return ds
 
 
@@ -149,16 +154,16 @@ def create_tea_history(cfg_params, tea, result_type):
     :param result_type: result type (e.g. 'CTP')
     """
     ds = getattr(tea, f'{result_type}_results')
-    
+
     parts = []
     for key, value in vars(cfg_params).items():
         if key != 'script':
             part = f"--{key} {value}"
             parts.append(part)
     params = ' '.join(parts)
-    
+
     script = cfg_params.script.split('/')[-1]
-    
+
     if 'history' in ds.attrs:
         new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
     else:
@@ -238,13 +243,13 @@ def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=F
     # check if inpath is file
     if os.path.isfile(inpath):
         return inpath
-    
+
     if hourly:
         inpath = f'{inpath}/hourly/'
         h_string = 'hourly_'
     else:
         h_string = ''
-    
+
     # select only files of interest, if chosen period is 'seasonal' append one year in the
     # beginning to have the first winter fully included
     filenames = []
@@ -315,22 +320,22 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
 
     :return: dataset of given parameter
     """
-    
+
     param_str = ''
     parameter = opts.parameter
     if hourly:
         # use correct parameter for hourly data
         if opts.parameter == 'Tx':
             parameter = 'T'
-            
+
     if opts.dataset == 'SPARTACUS' and not opts.precip:
         param_str = f'{parameter}'
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
-    
+
     filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.data_path, param_str=param_str,
                                     hourly=hourly)
-    
+
     # load relevant years
     logger.info(f'Loading data from {filenames}...')
     try:
@@ -338,18 +343,22 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     except ValueError as e:
         logger.warning(f'Error loading data: {e} Trying again with combine="nested"')
         ds = xr.open_mfdataset(filenames, combine='nested')
-    
+
     # select variable
     if opts.dataset == 'SPARTACUS' and parameter == 'P24h_7to7':
         ds = ds.rename({'RR': parameter})
     data = ds[parameter]
-    
+
     # get only values from selected period
     data = extract_period(ds=data, period=period, start_year=start, end_year=end)
-    
+
     if opts.dataset == 'SPARTACUS':
         data = data.drop('lambert_conformal_conic')
-    
+
+    if not opts.use_dask:
+        # load data into memory
+        data.load()
+
     return data
 
 
@@ -380,19 +389,19 @@ def get_csv_data(opts):
     data = pd.read_csv(file[0])
     data['time'] = pd.to_datetime(data['time'])
     data = data.set_index('time')
-    
+
     # remove timezone information
     data = data.tz_localize(None)
 
     # rename columns
     data = data.rename(columns=rename_dict)
-    
+
     # interpolate missing data
     data = interpolate_gaps(opts=opts, data=data)
-    
+
     # convert to xarray DataArray
     data = data.to_xarray()[opts.parameter]
-    
+
     # extract only timestamps of interest
     data = extract_period(ds=data, period=opts.period, start_year=opts.start, end_year=opts.end)
 
@@ -506,7 +515,7 @@ def calc_percentiles(opts, threshold_min=None, data=None):
         data = get_gridded_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
     else:
         data = extract_period(ds=data, period=opts.period, start_year=opts.ref_period[0], end_year=opts.ref_period[1])
-    
+
     if threshold_min is not None:
         data = data.where(data > threshold_min)
 
@@ -523,9 +532,9 @@ def calc_percentiles(opts, threshold_min=None, data=None):
     if radius > 0:
         percent_smooth = smooth_data(percent, radius)
         percent = percent_smooth
-    
+
     percent = percent.drop_vars('quantile')
-    
+
     return percent
 
 
@@ -568,7 +577,7 @@ def create_threshold_grid(opts, data=None):
         threshold_min = None
     thr_grid = calc_percentiles(opts=opts, threshold_min=threshold_min, data=data)
     thr_grid = thr_grid.rename('threshold')
-    
+
     if opts.precip:
         ref_str = 'WetDays > 1 mm Ref'
     else:
