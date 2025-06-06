@@ -45,7 +45,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
         opts.mask_sub = 'masks'
     if 'subreg' not in opts or opts.subreg == opts.region:
         opts.subreg = None
-    if 'target_sys' not in opts:
+    if 'target_sys' not in opts and 'natural_variability' not in fname:
         if opts.dataset == 'SPARTACUS':
             opts.target_sys = 3416
         elif 'ERA' in opts.dataset:
@@ -54,7 +54,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.target_sys = None
         else:
             raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
-    if 'xy_name' not in opts:
+    if 'xy_name' not in opts and 'natural_variability' not in fname:
         if opts.dataset == 'SPARTACUS':
             opts.xy_name = 'x,y'
         elif 'ERA' in opts.dataset:
@@ -170,6 +170,31 @@ def create_tea_history(cfg_params, tea, result_type):
         new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
 
     tea.create_history(new_hist, result_type)
+
+
+def create_natvar_history(cfg_params, nv):
+    """
+    add history to dataset
+    :param cfg_params: yaml config parameters
+    :param nv: NatVar object
+    """
+    ds = getattr(nv, f'nv')
+
+    parts = []
+    for key, value in vars(cfg_params).items():
+        if key != 'script':
+            part = f"--{key} {value}"
+            parts.append(part)
+    params = ' '.join(parts)
+
+    script = cfg_params.script.split('/')[-1]
+
+    if 'history' in ds.attrs:
+        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+    else:
+        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+
+    nv.create_history(new_hist)
 
 
 def ref_cc_params():
