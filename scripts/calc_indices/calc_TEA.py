@@ -173,7 +173,8 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         
         # initialize TEA object
         tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
-                            min_area=min_area, low_extreme=opts.low_extreme, unit=opts.unit, land_sea_mask=lsm)
+                            min_area=min_area, low_extreme=opts.low_extreme,
+                            unit=opts.unit, land_sea_mask=lsm)
         
         # computation of daily basis variables (Methods chapter 3)
         if gridded:
@@ -283,7 +284,7 @@ def _load_lsm_file(opts):
     """
     # TODO: make this work outside of EUR
     new_opts = deepcopy(opts)
-    new_opts.region = 'EUR'
+    # new_opts.region = 'EUR'
     return _load_mask_file(new_opts)
 
 
@@ -411,17 +412,18 @@ def _calc_lat_lon_range(cell_size_lat, data, mask):
         max_lon: maximum longitude
 
     """
-    min_lat = math.floor(data.lat[np.where(mask > 0)[0][-1]].values - cell_size_lat / 2)
+    valid_cells = mask.where(mask > 0, drop=True)
+    min_lat = math.floor(valid_cells.lat.min().values - cell_size_lat / 2)
     if min_lat < mask.lat.min().values:
         min_lat = float(mask.lat.min().values)
-    max_lat = math.ceil(data.lat[np.where(mask > 0)[0][0]].values + cell_size_lat / 2)
+    max_lat = math.ceil(valid_cells.lat.max().values + cell_size_lat / 2)
     if max_lat > mask.lat.max().values:
         max_lat = float(mask.lat.max().values)
     cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
-    min_lon = math.floor(data.lon[np.where(mask > 0)[1][0]].values - cell_size_lon / 2)
+    min_lon = math.floor(valid_cells.lon.min().values - cell_size_lon / 2)
     if min_lon < mask.lon.min().values:
         min_lon = float(mask.lon.min().values)
-    max_lon = math.ceil(data.lon[np.where(mask > 0)[1][-1]].values + cell_size_lon / 2)
+    max_lon = math.ceil(valid_cells.lon.max().values + cell_size_lon / 2)
     if max_lon > mask.lon.max().values:
         max_lon = float(mask.lon.max().values)
     return min_lat, min_lon, max_lat, max_lon
