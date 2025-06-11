@@ -94,6 +94,8 @@ def load_spartacus_data(opts):
 
     keeps = [v for v in ds.data_vars if
              any(vvar in v for vvar in ['EF', 'ED_avg', em_var, 'EA_avg', dm_var, 'tEX'])]
+    if opts.parameter != 'Tx':
+        keeps.extend(['EM_avg_GR_Md_AF'])
     drops = [vvar for vvar in ds.data_vars if vvar not in keeps or '_s' in vvar or 'GR' not in vvar
              or 'CC' in vvar]
     drops.extend(['x', 'y'])
@@ -114,7 +116,7 @@ def load_spartacus_data(opts):
     if opts.parameter == 'Tx':
         ds = ds.drop(['EM_avg_Md_AF'])
 
-    ds = ds.drop('EM_avg_Max_AF')
+    # ds = ds.drop('EM_avg_Max_AF')
 
     # add DM variables
     ds[f'{dm_var}_AF'] = ds['ED_avg_AF'] * ds[f'{em_var}_AF']
@@ -147,7 +149,8 @@ def run():
 
     # add history and save results
     create_natvar_history(cfg_params=opts, nv=natvar)
-    natvar.save_results(outname=f'{opts.outpath}NV_AF_{opts.param_str}_{opts.region}.nc')
+    natvar.save_results(outname=f'{opts.outpath}natural_variability/'
+                                f'NV_AF_{opts.param_str}_{opts.region}.nc')
 
 
 if __name__ == '__main__':
