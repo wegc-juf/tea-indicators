@@ -20,9 +20,8 @@ def get_data():
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                           'DEC_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
-    nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                     'NV_AF_Tx99.0p_AUT.csv',
-                     index_col=0)
+    nv = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
+                         'NV_AF_Tx99.0p_AUT.nc')
 
     return af, dec, nv
 
@@ -33,24 +32,25 @@ def gr_plot_params(vname):
                            'title': 'Event Frequency (Annual)',
                            'unit': 'ev/yr',
                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$',
-                           'nv_name': 'EF'},
+                           'nv_name': 's_EF_AF_NV'},
               'EDavg_GR_AF': {'col': 'tab:purple',
                               'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
                               'title': 'Average Event Duration (events-mean)',
                               'unit': 'days',
                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
-                              'nv_name': 'ED'},
+                              'nv_name': 's_ED_avg_AF_NV'},
               'EMavg_GR_AF': {'col': 'tab:orange',
                               'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
                               'title': 'Average Exceedance Magnitude (daily-mean)',
                               'unit': '°C',
                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
-                              'nv_name': 'EM'},
+                              'nv_name': 's_EM_avg_AF_NV'},
               'EAavg_GR_AF': {'col': 'tab:red',
                               'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
                               'title': 'Average Exceedance Area (daily-mean)',
                               'unit': 'areals',
-                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$', 'nv_name': 'EA'}
+                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$',
+                              'nv_name': 's_EA_avg_AF_NV'}
               }
 
     return params[vname]
@@ -77,8 +77,8 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
     xvals = data.ctp
     xticks = np.arange(1961, 2025)
 
-    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc[props['nv_name'], 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc[props['nv_name'], 'upper'] * 1.645)
+    nat_var_low = np.ones(len(xvals)) * (1 - nv[f'{props["nv_name"]}low'].values * 1.645)
+    nat_var_upp = np.ones(len(xvals)) * (1 + nv[f'{props["nv_name"]}upp'].values * 1.645)
     ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=props['col'], alpha=0.2)
 
     ax.plot(xticks, data, 'o-', color=props['col'], markersize=3, linewidth=2)
@@ -131,8 +131,8 @@ def plot_tex_es(ax, data, af_cc, ddata,  nv):
     xvals = data.ctp
     xticks = np.arange(1961, 2025)
 
-    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc['TEX', 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc['TEX', 'upper'] * 1.645)
+    nat_var_low = np.ones(len(xvals)) * (1 - nv['s_TEX_AF_NVlow'].values * 1.645)
+    nat_var_upp = np.ones(len(xvals)) * (1 + nv['s_TEX_AF_NVupp'].values * 1.645)
     ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
 
     ax.plot(xticks, data['ESavg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
@@ -318,7 +318,6 @@ def run():
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure2/Figure2.png',
                 dpi=300, bbox_inches='tight')
-
 
 if __name__ == '__main__':
     run()

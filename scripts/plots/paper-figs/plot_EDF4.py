@@ -15,9 +15,8 @@ def get_data():
                          'amplification/'
                          'AF_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
 
-    nv = pd.read_csv('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                     'NV_AF_P24h_7to7_95.0p_SEA.csv',
-                     index_col=0)
+    nv = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
+                         'NV_AF_P24h_7to7_95.0p_SEA.nc')
 
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                           'DEC_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
@@ -30,21 +29,22 @@ def gr_plot_params(vname):
                            'ylbl': r'EF amplification $(\mathcal{A}^\mathrm{F})$',
                            'title': 'Event Frequency (Annual)',
                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$',
-                           'nv_name': 'EF', 'unit': 'ev/yr'},
+                           'nv_name': 's_EF_AF_NV', 'unit': 'ev/yr'},
               'ED_avg_GR_AF': {'col': 'tab:purple',
-                              'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
-                              'title': 'Average Event Duration (events-mean)',
-                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
-                              'nv_name': 'ED', 'unit': 'days'},
+                               'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
+                               'title': 'Average Event Duration (events-mean)',
+                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
+                               'nv_name': 's_ED_avg_AF_NV', 'unit': 'days'},
               'EM_avg_GR_Md_AF': {'col': 'tab:orange',
-                              'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
-                              'title': 'Average Exceedance Magnitude (daily-median)',
-                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
-                              'nv_name': 'EM', 'unit': 'mm'},
+                                  'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
+                                  'title': 'Average Exceedance Magnitude (daily-median)',
+                                  'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
+                                  'nv_name': 's_EM_avg_Md_AF_NV', 'unit': 'mm'},
               'tEX_GR_AF': {'col': 'tab:orange',
                             'ylbl': r'tEX amplification $(\mathcal{A}^\mathrm{t})$',
                             'title': 'Temporal Events Extremity (Annual)',
-                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{tEX}$', 'nv_name': 'tEX',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{tEX}$',
+                            'nv_name': 's_tEX_AF_NV',
                             'unit': 'mm days/yr'}
               }
 
@@ -57,17 +57,17 @@ def map_plot_params(vname):
                            'title': 'Event Frequency (EF) amplification (CC2008-2022)',
                            'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'ED_avg_AF_CC': {'cmap': 'Purples',
-                              'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                              'title': 'Event Duration (ED) amplification (CC2008-2022)',
-                           'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
+                               'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
+                               'title': 'Event Duration (ED) amplification (CC2008-2022)',
+                               'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'EM_avg_Md_AF_CC': {'cmap': 'Oranges',
-                              'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                              'title': 'Exceedance Magnitude (EM) amplification (CC2008-2022)',
-                           'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
+                                  'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
+                                  'title': 'Exceedance Magnitude (EM) amplification (CC2008-2022)',
+                                  'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'tEX_AF_CC': {'cmap': 'Oranges',
                             'lbl': r'$\mathcal{A}^\mathrm{tEX}_\mathrm{CC}$',
                             'title': 'Temporal Events Extremity (tEX) Ampl. (CC2008-2022)',
-                           'lvls': np.arange(0.25, 2.25, 0.25), 'vn': 0.25, 'vx': 2}
+                            'lvls': np.arange(0.25, 2.25, 0.25), 'vn': 0.25, 'vx': 2}
               }
 
     return params[vname]
@@ -79,8 +79,8 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     xvals = data.time
     xticks = np.arange(1961, 2025)
 
-    nat_var_low = np.ones(len(xvals)) * (1 - nv.loc[props['nv_name'], 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xvals)) * (1 + nv.loc[props['nv_name'], 'upper'] * 1.645)
+    nat_var_low = np.ones(len(xvals)) * (1 - nv[f'{props["nv_name"]}low'].values * 1.645)
+    nat_var_upp = np.ones(len(xvals)) * (1 + nv[f'{props["nv_name"]}upp'].values * 1.645)
     ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=props['col'], alpha=0.2)
 
     ax.plot(xticks, data, 'o-', color=props['col'], markersize=3, linewidth=2)
@@ -123,12 +123,12 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     cc = gmean(ddata.sel(time=slice(params['CC']['start_cy'], params['CC']['end_cy'])).values)
 
     ax.text(0.02, 0.9, f'P24H-p95WAS-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
-             + f'{ref:.2f}' + r'$\,$|$\,$'
-             + f'{cc:.2f} {props["unit"]} \n'
-             + props['acc'] + ' = ' + f'{af_cc:.2f}',
-             horizontalalignment='left',
-             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
-             fontsize=9)
+            + f'{ref:.2f}' + r'$\,$|$\,$'
+            + f'{cc:.2f} {props["unit"]} \n'
+            + props['acc'] + ' = ' + f'{af_cc:.2f}',
+            horizontalalignment='left',
+            verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
+            fontsize=9)
 
     if data.name == 'EA_avg_GR_AF':
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
@@ -179,16 +179,16 @@ def plot_map(fig, ax, data):
     yn_idx = np.where(aut.y.values == data.y.values[0])[0][0]
     yx_idx = np.where(aut.y.values == data.y.values[-1])[0][0]
 
-    map_vals = ax.contourf(aut.x[xn_idx:xx_idx+1], aut.y[yn_idx:yx_idx+1], data,
+    map_vals = ax.contourf(aut.x[xn_idx:xx_idx + 1], aut.y[yn_idx:yx_idx + 1], data,
                            cmap=props['cmap'], extend=ext, levels=props['lvls'],
                            vmin=props['vn'], vmax=props['vx'])
 
     fbr_x, fbr_y = aut.x[470], aut.y[74]
     sea_x, sea_y = aut.x[402], aut.y[42]
     ax.add_patch(pat.Rectangle(xy=(fbr_x, fbr_y), height=20000, width=25000, edgecolor='black',
-                                fill=False, linewidth=1))
+                               fill=False, linewidth=1))
     ax.add_patch(pat.Rectangle(xy=(sea_x, sea_y), height=97000, width=135000, edgecolor='black',
-                                fill=False, linewidth=1))
+                               fill=False, linewidth=1))
     ax.axis('off')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)

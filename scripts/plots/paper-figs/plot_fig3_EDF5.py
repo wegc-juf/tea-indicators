@@ -126,22 +126,21 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
     xticks = np.arange(1961, 2025)
 
     pstr = 'Tx99.0p'
-    nv_var = 'TEX'
+    nv_var, cstr = 's_TEX_AF_NV', 'TEX'
     if var != 'Temperature':
         pstr = 'P24h_7to7_95.0p'
-        nv_var = 'tEX'
+        nv_var, cstr = 's_tEX_AF_NV', 'tEX'
 
     rstr = 'AUT'
     if reg != 'AUT':
         rstr = 'SEA'
 
-    nv = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                     f'NV_AF_{pstr}_{rstr}.csv',
-                     index_col=0)
+    nv = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
+                         f'NV_AF_{pstr}_{rstr}.nc')
 
-    nat_var_low = np.ones(len(xticks)) * (1 - nv.loc[nv_var, 'lower'] * 1.645)
-    nat_var_upp = np.ones(len(xticks)) * (1 + nv.loc[nv_var, 'upper'] * 1.645)
-    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=cols[nv_var], alpha=0.2)
+    nat_var_low = np.ones(len(xticks)) * (1 - nv[f'{nv_var}low'].values * 1.645)
+    nat_var_upp = np.ones(len(xticks)) * (1 + nv[f'{nv_var}upp'].values * 1.645)
+    ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color=cols[cstr], alpha=0.2)
 
     acc = 100
     for ivar, pvar in enumerate(plot_vars):
@@ -256,7 +255,7 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = False
+    land = True
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']
