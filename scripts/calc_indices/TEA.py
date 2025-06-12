@@ -874,6 +874,27 @@ class TEAIndicators:
             em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
             self.ctp_results['EM_avg_Max_GR'] = em_gr_avg_max
     
+    def _calc_annual_htEX(self):
+        """
+        calculate htEX (hourly temporal events extremity) - equation TBD
+        """
+        
+        if 'h_avg' in self.ctp_results:
+            # process grid data
+            
+            tEX = self.ctp_results.EM
+            htEX = tEX * self.ctp_results.h_avg
+            
+            htEX.attrs = get_attrs(vname='htEX', data_unit=self.unit)
+            self.ctp_results['htEX'] = htEX
+        
+        if 'h_avg_GR' in self.ctp_results:
+            tEX_GR = self.ctp_results.EM_GR
+            htEX_GR = tEX_GR * self.ctp_results.h_avg_GR
+            
+            htEX_GR.attrs = get_attrs(vname='htEX_GR', data_unit=self.unit)
+            self.ctp_results['htEX_GR'] = htEX_GR
+    
     def _calc_annual_total_events_extremity(self):
         """
         calculate annual total events extremity (equation 21_3)
@@ -906,7 +927,33 @@ class TEAIndicators:
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         tex.rename('TEX_GR')
         return tex
+    
+    def _calc_hourly_total_events_extremity(self, TEX, h_avg):
+        """
+        calculate hourly total events extremity (equation TBD)
 
+        Args:
+            TEX: total events extremity
+            h_avg: average daily exposure time
+        """
+        htex = TEX * h_avg
+        htex.attrs = get_attrs(vname='hTEX_GR', data_unit=self.unit)
+        htex.rename('hTEX_GR')
+        return htex
+    
+    def _calc_annual_hourly_total_events_extremity(self):
+        """
+        calculate annual hourly_total events extremity (equation TBD)
+        """
+        if 'TEX_GR' not in self.ctp_results or 'h_avg_GR' not in self.ctp_results:
+            return
+        
+        tex = self.ctp_results.TEX_GR
+        h_avg_GR = self.ctp_results.h_avg_GR
+        hTEX_GR = self._calc_hourly_total_events_extremity(tex, h_avg_GR)
+        hTEX_GR.attrs = get_attrs(vname='hTEX_GR', data_unit=self.unit)
+        self.ctp_results['hTEX_GR'] = hTEX_GR
+        
     def _calc_annual_exceedance_area(self):
         """
         calculate exceedance area (equation 21_1)
@@ -943,6 +990,29 @@ class TEAIndicators:
                                            self.ctp_results.EA_avg_GR)
         self.ctp_results['ES_avg_GR'] = es_avg
     
+    def _calc_hourly_event_severity(self, ES, h_avg):
+        """
+        calculate event severity (equation TBD)
+
+        Args:
+            ES: average event severity
+            h_avg: average daily exposure time
+        """
+        hes_avg = ES * h_avg
+        hes_avg.attrs = get_attrs(vname='hES_avg_GR', data_unit=self.unit)
+        hes_avg.rename('hES_avg_GR')
+        return hes_avg
+
+    def _calc_annual_hourly_event_severity(self):
+        """
+        calculate hourly event severity (equation TBD)
+        """
+        if 'ES_avg_GR' not in self.ctp_results or 'h_avg_GR' not in self.ctp_results:
+            return
+        
+        hes_avg = self._calc_hourly_event_severity(self.ctp_results.ES_avg_GR, self.ctp_results.h_avg_GR)
+        self.ctp_results['hES_avg_GR'] = hes_avg
+
     def _calc_annual_exceedance_heat_content(self):
         """
         calculate annual exceedance heat content (equation 22)
@@ -1058,9 +1128,12 @@ class TEAIndicators:
         self._calc_annual_event_duration()
         self._calc_hourly_ctp_vars()
         self._calc_annual_exceedance_magnitude()
+        self._calc_annual_htEX()
         self._calc_annual_total_events_extremity()
+        self._calc_annual_hourly_total_events_extremity()
         self._calc_annual_exceedance_area()
         self._calc_annual_event_severity()
+        self._calc_annual_hourly_event_severity()
         self._calc_annual_exceedance_heat_content()
         if drop_daily_results:
             self.daily_results.close()

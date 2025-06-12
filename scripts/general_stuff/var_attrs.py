@@ -61,10 +61,16 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
                     'compound'},
              'TEX': {'long_name': 'total events extremity', 'units': f'100 km^2 {data_unit} d yr^-1', 'metric_type':
                      'compound'},
+             'hTEX': {'long_name': 'hourly total events extremity', 'units': f'100 km^2 {data_unit} h yr^-1',
+                      'metric_type': 'compound'},
              'ES_avg': {'long_name': 'average event severity',
                         'units': f'100 km^2 {data_unit} d', 'metric_type': 'compound'},
+             'hES_avg': {'long_name': 'average hourly event severity',
+                         'units': f'100 km^2 {data_unit} h', 'metric_type': 'compound'},
              'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} d yr^-1', 'metric_type':
                      'compound'},
+             'htEX': {'long_name': 'hourly temporal events extremity', 'units': f'{data_unit} h yr^-1', 'metric_type':
+                      'compound'},
              'H_AEHC_avg': {'long_name': 'average daily atmospheric boundary layer exceedance '
                                          'heat content', 'units': 'PJ d^-1', 'metric_type': 'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
