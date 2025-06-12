@@ -1285,6 +1285,13 @@ class TEAIndicators:
         EM_Md.attrs = get_attrs(vname='EM_Md', dec=True, data_unit=self.unit)
         data['EM_Md'] = EM_Md
         
+        # calculate hourly tEX (cf. equation TBD)
+        if f'h_avg' in data:
+            h_avg = data[f'h_avg']
+            htEX = data[f'EM'] * h_avg
+            htEX.attrs = get_attrs(vname=f'htEX', dec=True, data_unit=self.unit)
+            data[f'htEX'] = htEX
+        
         if 'EF_GR' in data:
             # calculate cumulative events duration (equation 15_2)
             ED_GR = self._calc_cumulative_events_duration(f=data['EF_GR'], d=data['ED_avg_GR'])
@@ -1302,7 +1309,14 @@ class TEAIndicators:
                 'EM_avg_GR_Md'])
             EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True, data_unit=self.unit)
             data['EM_GR_Md'] = EM_GR_Md
-            
+        
+            # calculate hourly tEX (cf. equation TBD)
+            if f'h_avg_GR' in data:
+                h_avg = data[f'h_avg_GR']
+                htEX = data[f'EM_GR'] * h_avg
+                htEX.attrs = get_attrs(vname=f'htEX_GR', dec=True, data_unit=self.unit)
+                data[f'htEX_GR'] = htEX
+                
         if 'EM_avg_Max_GR' in data:
             gvar = '_GR'
         elif 'EM_avg_Max' in data:
@@ -1337,6 +1351,23 @@ class TEAIndicators:
         data[f'H_AEHC_avg{gvar}'] = H_AEHC_avg
         data[f'H_AEHC{gvar}'] = H_AEHC
         
+        # calculate hourly parameters (cf. equation TBD)
+        if f'h_avg{gvar}' in data:
+            h_avg = data[f'h_avg{gvar}']
+            htEX = data[f'EM{gvar}'] * h_avg
+            htEX.attrs = get_attrs(vname=f'htEX{gvar}', dec=True, data_unit=self.unit)
+            data[f'htEX{gvar}'] = htEX
+            
+            es_avg = data[f'ES_avg{gvar}']
+            hES_avg = self._calc_hourly_event_severity(es_avg, h_avg)
+            hES_avg.attrs = get_attrs(vname=f'hES_avg{gvar}', dec=True, data_unit=self.unit)
+            data[f'hES_avg{gvar}'] = hES_avg
+            
+            TEX = data[f'TEX{gvar}']
+            hTEX = self._calc_hourly_total_events_extremity(TEX, h_avg)
+            hTEX.attrs = get_attrs(vname=f'hTEX{gvar}', dec=True, data_unit=self.unit)
+            data[f'hTEX{gvar}'] = hTEX
+
         return data
 
     def _calc_spread_estimators(self):
