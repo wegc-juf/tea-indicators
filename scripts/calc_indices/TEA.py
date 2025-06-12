@@ -636,8 +636,8 @@ class TEAIndicators:
         ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
         # TODO: add CF-Convention compatible attributes...
         self.ctp_results.attrs = ctp_attrs
-    
-    def _calc_event_frequency(self):
+
+    def _calc_annual_event_frequency(self):
         """
         calculate event frequency (equation 11 and equation 12)
         """
@@ -670,14 +670,15 @@ class TEAIndicators:
             
             ef_gr.attrs = get_attrs(vname='EF_GR')
             self.ctp_results['EF_GR'] = ef_gr
-    
-    def _calc_supplementary_event_vars(self):
+
+    def _calc_annual_supplementary_event_vars(self):
         """
         calculate supplementary event variables (equation 13)
         """
         if 'EF' not in self.ctp_results and 'EF_GR' not in self.ctp_results:
-            self._calc_event_frequency()
-        
+            self._calc_annual_event_frequency()
+
+        # TODO: try using this way of calculation for equation 10 too
         doy = [pd.Timestamp(dy).day_of_year for dy in self._daily_results_filtered.time.values]
         self._daily_results_filtered.coords['doy'] = ('time', doy)
         
@@ -728,14 +729,14 @@ class TEAIndicators:
             self.ctp_results['doy_first_GR'] = doy_first_gr
             self.ctp_results['doy_last_GR'] = doy_last_gr
             self.ctp_results['AEP_GR'] = aep_gr
-    
-    def _calc_event_duration(self):
+
+    def _calc_annual_event_duration(self):
         """
         calculate event duration (equation 14 and equation 15)
         """
         if 'EF' not in self.ctp_results and 'EF_GR' not in self.ctp_results:
-            self._calc_event_frequency()
-        
+            self._calc_annual_event_frequency()
+
         if 'DTEC' in self._CTP_resample_sum:
             # # process grid data
             
@@ -798,16 +799,16 @@ class TEAIndicators:
                     continue
                 self.ctp_results[new_var] = self._CTP_resample_mean[old_var]
                 self.ctp_results[new_var].attrs = get_attrs(vname=new_var)
-        
-    def _calc_exceedance_magnitude(self):
+
+    def _calc_annual_exceedance_magnitude(self):
         """
         calculate average (EM_avg) and cumulative (tEX=EM) exceedance magnitude (equation 17 and equation 18),
         median exceedance magnitude (equation 19), and maximum exceedance magnitude (equation 20)
         """
         
         if 'ED' not in self.ctp_results and 'ED_GR' not in self.ctp_results:
-            self._calc_event_duration()
-            
+            self._calc_annual_event_duration()
+
         if 'DTEM' in self._CTP_resample_sum:
             # process grid data
         
@@ -905,8 +906,8 @@ class TEAIndicators:
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         tex.rename('TEX_GR')
         return tex
-    
-    def _calc_exceedance_area(self):
+
+    def _calc_annual_exceedance_area(self):
         """
         calculate exceedance area (equation 21_1)
         """
@@ -915,8 +916,8 @@ class TEAIndicators:
         if self.ctp_results['TEX_GR'] is None:
             self._calc_annual_total_events_extremity()
         if self.ctp_results['EM_GR'] is None:
-            self._calc_exceedance_magnitude()
-        
+            self._calc_annual_exceedance_magnitude()
+
         # equation 21_1
         ea_avg = self.ctp_results.TEX_GR / self.ctp_results.EM_GR
         ea_avg = xr.where(self.ctp_results.EM_GR == 0, 0, ea_avg)
@@ -931,12 +932,12 @@ class TEAIndicators:
             return
         
         if self.ctp_results['EA_avg_GR'] is None:
-            self._calc_exceedance_area()
+            self._calc_annual_exceedance_area()
         if self.ctp_results['EM_avg_GR'] is None:
-            self._calc_exceedance_magnitude()
+            self._calc_annual_exceedance_magnitude()
         if self.ctp_results['ED_avg_GR'] is None:
-            self._calc_event_duration()
-        
+            self._calc_annual_event_duration()
+
         # equation 21_2
         es_avg = self._calc_event_severity(self.ctp_results.ED_avg_GR, self.ctp_results.EM_avg_GR,
                                            self.ctp_results.EA_avg_GR)
@@ -950,7 +951,7 @@ class TEAIndicators:
             return
         
         if self.ctp_results['ED_avg_GR'] is None:
-            self._calc_event_duration()
+            self._calc_annual_event_duration()
         if self.ctp_results['TEX_GR'] is None:
             self._calc_annual_total_events_extremity()
         if self.ctp_results['ES_avg_GR'] is None:
@@ -1052,13 +1053,13 @@ class TEAIndicators:
         """
         if ctp is not None:
             self._set_ctp(ctp)
-        self._calc_event_frequency()
-        self._calc_supplementary_event_vars()
-        self._calc_event_duration()
+        self._calc_annual_event_frequency()
+        self._calc_annual_supplementary_event_vars()
+        self._calc_annual_event_duration()
         self._calc_hourly_ctp_vars()
-        self._calc_exceedance_magnitude()
+        self._calc_annual_exceedance_magnitude()
         self._calc_annual_total_events_extremity()
-        self._calc_exceedance_area()
+        self._calc_annual_exceedance_area()
         self._calc_annual_event_severity()
         self._calc_annual_exceedance_heat_content()
         if drop_daily_results:
