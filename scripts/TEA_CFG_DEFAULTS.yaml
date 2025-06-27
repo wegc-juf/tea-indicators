@@ -1,8 +1,9 @@
 common_params:
-  gui: &GUI
-    no_gui: false
   GeoRegion: &GR
     region: AUT
+    # agr: AUT
+    # agr_cell_size: 2
+    full_region: false
     gr_type: polygon
     sw_corner: null
     ne_corner: null
@@ -19,13 +20,16 @@ common_params:
   time_params: &TIME
     start: 1961
     end: 2024
-    period: WAS
+    period: annual
+    ref_period: 1961-1990
+    cc_period: 2010-2024
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
-    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-    tmppath: /home/hst/tmp_data/TEAclean/largeGR/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/
+    mask_sub: masks/
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
@@ -37,25 +41,22 @@ regrid_SPARTACUS_to_WEGNext:
 
 create_region_masks:
   <<: *GR
-  subreg: null
-  target_sys: 3416
-  target_ds: SPARTACUS
-  xy_name: x,y
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  gr_type: polygon
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
-  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUS-DAILY_Tx_1961.nc
-  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/ SPARTACUSreg_orography.nc
-  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
 
 create_static_files:
   <<: *GR
   <<: *PARAM
   <<: *DATA
   <<: *PATHS
-  season_length: 366
+  <<: *TIME
   smoothing: 0
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+  outpath: *statpath
 
 calc_TEA:
   <<: *GR
@@ -63,45 +64,11 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-  outpath: /data/users/hst/TEA-clean/TEA/
+  outpath: ~/results/
+  recalc_threshold: false
   recalc_daily: false
-  decadal: false
+  decadal: true
   spreads: false
   decadal_only: false
-  recalc_decadal: false
-
-calc_station_TEA:
-  <<: *TIME
-  <<: *PARAM
-  station: Graz
-  inpath: /data/users/hst/cdrDPS/station_data/
-  outpath: /data/users/hst/TEA-clean/TEA/
-
-natural_variability:
-  <<: *GUI
-  <<: *PARAM
-  <<: *GR
-  inpath: /data/users/hst/TEA-clean/TEA/paper_data/
-  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
-
-calc_amplification_factors:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  supplementary: true
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/
-
-calc_AGR_vars:
-  <<: *GR
-  <<: *PARAM
-  <<: *TIME
-  <<: *DATA
-  <<: *PATHS
-  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
-  outpath: /data/users/hst/TEA-clean/TEA/
-  agr: EUR
-  spreads: false
+  recalc_decadal: true
+  compare_to_ref: false

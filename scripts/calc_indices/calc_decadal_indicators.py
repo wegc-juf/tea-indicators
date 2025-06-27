@@ -5,10 +5,14 @@ from pathlib import Path
 import pandas as pd
 import re
 import sys
+import os
 import xarray as xr
+import warnings
 
 from scripts.general_stuff.var_attrs import get_attrs
-from scripts.general_stuff.general_functions import create_history_from_cfg
+from scripts.general_stuff.general_functions import compare_to_ref
+from scripts.general_stuff.TEA_logger import logger
+from .TEA import TEAIndicators
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,23 +20,18 @@ logging.basicConfig(
 )
 
 
-def load_ctp_data(opts, suppl, basis=False):
+def load_ctp_data(opts, tea):
     """
     load CTP data
     Args:
         opts: CLI parameter
-        suppl: set if supplementary variables should be processed
+        tea: TEA object
 
     Returns:
         data: CTP ds
     """
 
-    ctppath = f'{opts.outpath}ctp_indicator_variables/'
-
-    sdir, suppl_str = '', ''
-    if suppl:
-        sdir = 'supplementary/'
-        suppl_str = 'suppl'
+    ctppath = f'{opts.outpath}/ctp_indicator_variables/'
 
     def is_in_period(filename, start, end):
         match = re.search(pattern=r'(\d{4})to(\d{4})', string=filename)
@@ -42,132 +41,22 @@ def load_ctp_data(opts, suppl, basis=False):
         else:
             return False
 
-    files = sorted(glob.glob(
-        f'{ctppath}{sdir}CTP{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}'
-        f'_{opts.dataset}_*.nc'))
-    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)]
+    if 'Agr' in str(type(tea)):
+        grg_str = 'GRG-'
+    else:
+        grg_str = ''
+    if 'station' in opts:
+        name = opts.station
+    else:
+        name = opts.region
+    filenames = (f'{ctppath}/CTP_{opts.param_str}_{grg_str}{name}_{opts.period}'
+                 f'_{opts.dataset}_*.nc')
+    files = sorted(glob.glob(filenames))
+    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if 'ref' not in file]
 
-    data = xr.open_mfdataset(paths=files, data_vars='minimal')
+    # TODO: optimize tea._calc_spread_estimators
 
-    # check if more data than chosen period is loaded and select correct period if so
-    syr, eyr = int(files[0].split('_')[-1][:4]), int(files[-1].split('_')[-1][6:10])
-    if opts.start != syr or opts.end != eyr:
-        data = data.sel(ctp=slice(f'{opts.start}-01-01', f'{opts.end}-12-31'))
-
-    if basis:
-        bvars = ['EF', 'EF_GR', 'EDavg', 'EDavg_GR']
-        # check if there are GR variables in data set (AGR datasets don't have these yet)
-        grs = [var for var in data.data_vars if '_GR' in var]
-        if len(grs) == 0:
-            bvars = ['EF', 'EDavg']
-        data = data[bvars]
-
-    return data
-
-
-def adjust_doy(data):
-    """
-    adjust doy_first(_GR) and doy_last(_GR) (Eq. 24)
-    Args:
-        data: ds
-
-    Returns:
-        data: ds with adjusted doy vars
-    """
-    data['doy_first'] = data['doy_first'] - 0.5 * (
-            30.5 * data['delta_y'] - (data['doy_last'] - data['doy_first'] + 1))
-    data['doy_last'] = data['doy_last'] + 0.5 * (
-            30.5 * data['delta_y'] - (data['doy_last'] - data['doy_first'] + 1))
-
-    if 'doy_first_GR' in data.data_vars:
-        data['doy_first_GR'] = data['doy_first_GR'] - 0.5 * (
-                30.5 * data['delta_y_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
-        data['doy_last_GR'] = data['doy_last_GR'] + 0.5 * (
-                30.5 * data['delta_y_GR'] - (data['doy_last_GR'] - data['doy_first_GR'] + 1))
-
-    return data
-
-
-def save_output(opts, data, su, sl, suppl):
-    """
-    save decdal-mean output
-    Args:
-        opts: CLI parameter
-        data: ds
-        su: upper spread ds
-        sl: lower spread ds
-        suppl: True if supplementary variables are processed
-
-    Returns:
-
-    """
-    sdir, suppl_str = '', ''
-    if suppl:
-        sdir = 'supplementary/'
-        suppl_str = 'suppl'
-
-    data = create_history_from_cfg(cfg_params=opts, ds=data)
-
-    path = Path(f'{opts.outpath}dec_indicator_variables/supplementary/')
-    path.mkdir(parents=True, exist_ok=True)
-    data.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                   f'DEC{suppl_str}_{opts.param_str}_{opts.region}_{opts.period}_{opts.dataset}'
-                   f'_{opts.start}to{opts.end}.nc')
-
-    if su:
-        sl = create_history_from_cfg(cfg_params=opts, ds=sl)
-        su = create_history_from_cfg(cfg_params=opts, ds=su)
-        sl.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                     f'DEC{suppl_str}_sLOW_{opts.param_str}_{opts.region}_{opts.period}'
-                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-        su.to_netcdf(f'{opts.outpath}dec_indicator_variables/{sdir}'
-                     f'DEC{suppl_str}_sUPP_{opts.param_str}_{opts.region}_{opts.period}'
-                     f'_{opts.dataset}_{opts.start}to{opts.end}.nc')
-
-
-def calc_spread_estimators(data, dec_data):
-    """
-    calculate spread estimator time series (Eq. 25)
-    Args:
-        data: non averaged data
-        dec_data: decadal-mean data
-
-    Returns:
-
-    """
-
-    supp, slow = xr.full_like(dec_data, np.nan), xr.full_like(dec_data, np.nan)
-    for icy, cy in enumerate(data.ctp):
-        # skip first and last 5 years
-        if icy < 5 or icy > len(data.ctp) - 4:
-            continue
-        pdata = data.isel(ctp=slice(icy - 5, icy + 5))
-        cupp = xr.where(pdata > dec_data.isel(ctp=icy), 1, 0)
-
-        cupp_sum = cupp.sum(dim='ctp')
-        cupp_sum = cupp_sum.where(cupp_sum > 0, 1)
-        supp_per = np.sqrt((1 / cupp_sum)
-                           * ((cupp * (pdata - dec_data.isel(ctp=icy)) ** 2).sum()))
-
-        clow_sum = (1 - cupp).sum(dim='ctp')
-        clow_sum = clow_sum.where(clow_sum > 0, 1)
-        slow_per = np.sqrt((1 / clow_sum)
-                           * (((1 - cupp) * (pdata - dec_data.isel(ctp=icy)) ** 2).sum()))
-
-        supp.loc[{'ctp': cy}] = supp_per
-        slow.loc[{'ctp': cy}] = slow_per
-
-    for vvar in supp.data_vars:
-        supp[vvar].attrs = get_attrs(vname=vvar, spread='upper')
-    for vvar in slow.data_vars:
-        supp[vvar].attrs = get_attrs(vname=vvar, spread='lower')
-
-    rename_dict_supp = {vvar: f'{vvar}_supp' for vvar in supp.data_vars}
-    rename_dict_slow = {vvar: f'{vvar}_slow' for vvar in slow.data_vars}
-    supp = supp.rename(rename_dict_supp)
-    slow = slow.rename(rename_dict_slow)
-
-    return supp, slow
+    tea.load_ctp_results(files, use_dask=opts.use_dask)
 
 
 def rolling_decadal_mean(data):
@@ -184,83 +73,141 @@ def rolling_decadal_mean(data):
 
     # equation 23 (decadal averaging)
     for vvar in data.data_vars:
-        data[vvar] = data.rolling(ctp=10, center=True).construct('window')[vvar].dot(
+        data[vvar] = data.rolling(time=10, center=True).construct('window')[vvar].dot(
             weights)
         data[vvar].attrs = get_attrs(vname=vvar, dec=True)
 
     return data
 
-def calc_compound_vars(data, suppl):
-    if 'EM' in data.data_vars:
-        em_var = 'EM'
-    elif 'EM_Md' in data.data_vars:
-        em_var = 'EM_Md'
 
-    cvars = [f'{em_var}', f'{em_var}_GR', 'ESavg_GR', 'TEX_GR', 'ED', 'ED_GR']
-    if suppl:
-        cvars = [f'{em_var}', f'{em_var}_GR', 'EM_Max_GR']
-
-    # check if there are GR variables in data set (AGR datasets don't have these yet)
-    grs = [var for var in data.data_vars if '_GR' in var]
-    if len(grs) == 0:
-        cvars = [f'{em_var}', 'ESavg', 'TEX', 'ED']
-        if suppl:
-            cvars = [f'{em_var}', 'EM_Max_GR']
-
-    components = {'ED': ['EF', 'EDavg'],
-                  'EM': ['EF', 'EDavg', 'EMavg'],
-                  'ESavg': ['EDavg', 'EMavg', 'EAavg'],
-                  'TEX': ['EF', 'EDavg', 'EMavg', 'EAavg'],
-                  'EM_Md': ['EF', 'EDavg', 'EM_Md'],
-                  'EM_Max': ['EF', 'EDavg', 'EM_Max']}
-
-    for var in cvars:
-        dname = var
-        if 'GR' in var:
-            dname = var.split('_GR')[0]
-        com = components[dname]
-        if 'GR' in var and len(grs) > 0:
-            com = [f'{ii}_GR' for ii in com]
-
-        compound = data[com[0]]
-        for cvar in com[1:]:
-            compound = compound * data[cvar]
-
-        compound = compound.rename(var)
-        data[var] = compound
-
-    return data
-
-
-def calc_decadal_indicators(opts, suppl=False):
+def calc_decadal_indicators(opts, tea, outpath=None):
     """
     calculate decadal-mean ctp indicator variables (Eq. 23)
     Args:
         opts: CLI parameter
-        suppl: set if supplementary variables should be processed
+        tea: TEA object
+        outpath: output path (default: opts.outpath/dec_indicator_variables/)
 
     Returns:
 
     """
-    data = load_ctp_data(opts=opts, suppl=suppl)
-    if suppl:
-        data_basis = load_ctp_data(opts=opts, suppl=False, basis=True)
-        data = xr.merge([data, data_basis])
-        data_basis.close()
+    if outpath is None:
+        if 'station' in opts:
+            name = opts.station
+        else:
+            name = opts.region
+        outpath = _get_decadal_outpath(opts, name)
 
-    dec_data = data.copy()
+    if opts.recalc_decadal or not os.path.exists(outpath):
+        load_ctp_data(opts=opts, tea=tea)
+        logger.info("Calculating decadal indicators")
+        tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
+        path = Path(f'{opts.outpath}/dec_indicator_variables/')
+        path.mkdir(parents=True, exist_ok=True)
+        logger.info(f'Saving decadal indicators to {outpath}')
+        tea.save_decadal_results(outpath)
+    else:
+        logger.info(f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
+        tea.load_decadal_results(outpath)
 
-    dec_data = rolling_decadal_mean(data=dec_data)
+    if opts.compare_to_ref:
+        file_ref = outpath.replace('.nc', '_ref.nc')
+        compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
 
-    # equation 24 (re-adjusting doy vars)
-    if 'doy_first' in data.data_vars:
-        dec_data = adjust_doy(data=dec_data)
 
-    # calculate compound variables
-    dec_data = calc_compound_vars(data=dec_data, suppl=suppl)
-    su, sl = None, None
-    if opts.spreads:
-        logging.info(f'Calculating spread estimators.')
-        su, sl = calc_spread_estimators(data=data, dec_data=dec_data)
+def _get_decadal_outpath(opts, region):
+    if 'agr' in opts:
+        agr_str = 'AGR-'
+    else:
+        agr_str = ''
+    outpath = (f'{opts.outpath}/dec_indicator_variables/'
+               f'DEC_{opts.param_str}_{agr_str}{region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
+    return outpath
 
-    save_output(opts=opts, data=dec_data, su=su, sl=sl, suppl=suppl)
+
+def compare_to_ref_decadal(tea, filename_ref):
+    """
+    compare results to reference file
+    TODO: move this to test routine
+    Args:
+        tea: TEA object
+        filename_ref: reference file
+    """
+    if os.path.exists(filename_ref):
+        logger.info(f'Comparing results to reference file {filename_ref}')
+        tea_ref = TEAIndicators()
+        tea_ref.load_decadal_results(filename_ref)
+        for vvar in tea.decadal_results.data_vars:
+            attrs = tea.decadal_results[vvar].attrs
+            if vvar in tea_ref.decadal_results.data_vars:
+                diff = tea.decadal_results[vvar] - tea_ref.decadal_results[vvar]
+                max_diff = diff.max(skipna=True).values
+                if max_diff > 1e-6:
+                    logger.warning(f'Maximum difference in {vvar} is {max_diff}')
+            else:
+                logger.warning(f'{vvar} not found in reference file.')
+    else:
+        logger.warning(f'Reference file {filename_ref} not found.')
+
+
+def calc_amplification_factors(opts, tea, outpath=None):
+    """
+    calculate amplification factors
+    Args:
+        opts: command line parameters
+        tea: TEA object
+        outpath: output path (default: opts.outpath/dec_indicator_variables/amplification/)
+
+    Returns:
+
+    """
+    if outpath is None:
+        if 'station' in opts:
+            name = opts.station
+        else:
+            name = opts.region
+        outpath = _get_amplification_outpath(opts, name)
+
+    # calculate amplification factors
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        logger.info('Calculating amplification factors.')
+        tea.calc_amplification_factors(ref_period=opts.ref_period, cc_period=opts.cc_period)
+
+    path = Path(f'{opts.outpath}/dec_indicator_variables/amplification/')
+    path.mkdir(parents=True, exist_ok=True)
+
+    # compare to reference file
+    if opts.compare_to_ref:
+        ref_path = outpath.replace('.nc', '_ref.nc')
+        ref_data = xr.open_dataset(ref_path)
+        logger.info(f'Comparing amplification factors to reference file {ref_path}')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            compare_to_ref(tea.amplification_factors, ref_data)
+
+    # save amplification factors
+    logger.info(f'Saving amplification factors to {outpath}')
+    tea.save_amplification_factors(outpath)
+
+
+def _get_amplification_outpath(opts, region):
+    """
+    get amplification factors output path
+    Args:
+        opts: options
+        region: region name (str)
+
+    Returns:
+        outpath: output path (str)
+
+    """
+    if 'agr' in opts:
+        agr_str = 'AGR-'
+    else:
+        agr_str = ''
+    outpath = (f'{opts.outpath}/dec_indicator_variables/amplification/'
+               f'AF_{opts.param_str}_{agr_str}{region}_{opts.period}_{opts.dataset}'
+               f'_{opts.start}to{opts.end}.nc')
+    return outpath

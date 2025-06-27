@@ -9,7 +9,7 @@ import yaml
 
 
 def dir_path(path):
-    if os.path.isdir(path):
+    if os.path.isdir(path) or os.path.exists(path):
         return path
     else:
         raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
@@ -72,7 +72,7 @@ def check_config(opts_dict, fname):
 
     for param in opts_dict.keys():
         # set default value if None was passed
-        if opts_dict[param] is None:
+        if opts_dict[param] is None and param != 'stations':
             opts_dict[param] = defaults[param]
             continue
         else:
@@ -87,14 +87,13 @@ def check_config(opts_dict, fname):
                 if opts_dict[param] == 1 or opts_dict[param] == 'true':
                     opts_dict[param] = True
                 bools(param=param, val=opts_dict[param])
-            if param in ['region', 'parameter', 'unit', 'subreg', 'target_ds', 'dataset',
-                         'xy_name']:
+            if param in ['region', 'parameter', 'unit', 'subreg', 'dataset', 'xy_name']:
                 strs(param=param, val=opts_dict[param])
             if param == 'threshold':
                 float_1pcd(opts_dict[param])
             if param in ['threshold_type', 'period', 'gr_type']:
                 choices(param=param, val=opts_dict[param], poss_vals=choice_vals[param])
-            if param in ['start', 'end', 'target_sys', 'season_length', 'smoothing']:
+            if param in ['start', 'end', 'target_sys', 'smoothing']:
                 ints(param=param, val=opts_dict[param])
 
     return opts_dict
