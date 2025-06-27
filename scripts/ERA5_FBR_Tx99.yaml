@@ -1,0 +1,52 @@
+common_params:
+  GeoRegion: &GR
+    region: FBR
+    # use full data without land, border, and altitude masks
+    full_region: false
+  parameter: &PARAM
+    parameter: Tx
+    precip: false
+    threshold: 99
+    threshold_type: perc
+    unit: degC
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: annual
+    ref_period: 1961-1990
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: ERA5
+  paths: &PATHS
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    statpath: &statpath /home/wegnet/results/static/
+    maskpath: *statpath
+    mask_sub: masks/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  outpath: /home/wegnet/results/TEA_indicators_test
+  recalc_threshold: false
+  recalc_daily: true
+  hourly: true
+  decadal: true
+  recalc_decadal: true
+  decadal_only: false
+  spreads: true
+
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  gr_type: polygon
+  shpfile: /data/users/hst/cdrDPS/shapefiles/FBR_polygon.shp
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
+

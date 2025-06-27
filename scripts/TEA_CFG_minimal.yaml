@@ -1,0 +1,34 @@
+common_params:
+  GeoRegion: &GR
+    region: full
+  parameter: &PARAM
+    parameter: Tx
+    threshold: 28
+    threshold_type: abs
+    low_extreme: false
+    unit: degC
+  time_params: &TIME
+    start: 1956
+    end: 2024
+    period: WAS
+    # ref period from-to (inclusive)
+    ref_period: 1961-1990
+    # cc period from-to (inclusive)
+    cc_period: 2008-2024
+  dataset: &DATA
+    dataset: ERA5
+  paths: &PATHS
+    data_path: ../examples/ERA5_Tx_1956-2024_CH.nc
+    outpath: ../examples/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  recalc_daily: true
+  decadal: true
+  decadal_only: false
+  spreads: true
+  recalc_decadal: true

@@ -4,7 +4,6 @@
 @author: hst
 
 """
-import argparse
 import os
 import glob
 import numpy as np
@@ -19,67 +18,19 @@ from scripts.calc_indices.calc_amplification_factors import (calc_ref_cc_mean,
                                                              calc_compound_amplification_factors)
 from scripts.calc_indices.calc_decadal_indicators import rolling_decadal_mean
 
-from scripts.general_stuff.general_functions import ref_cc_params
+from scripts.general_stuff.general_functions import ref_cc_params, load_opts
 
 PARAMS = ref_cc_params()
 
 
-def getopts():
-    """
-    get arguments
-    :return: command line parameters
-    """
-
-    parser = argparse.ArgumentParser()
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path')
-
-    parser.add_argument('--parameter',
-                        type=str,
-                        default='T',
-                        choices=['T', 'P'],
-                        help='Temperature (T, default) or Precipitation (P).')
-
-    parser.add_argument('--region',
-                        type=str,
-                        default='AUT',
-                        choices=['AUT', 'SEA'],
-                        help='Austria (AUT, default) or SE-Austria (SEA).')
-
-    parser.add_argument('--inpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
-                        type=dir_path,
-                        help='Path of folder where output data should be saved.')
-
-    parser.add_argument('--outpath',
-                        default='/data/users/hst/TEA-clean/TEA/',
-                        type=dir_path,
-                        help='Path of folder where output data should be saved.')
-
-    myopts = parser.parse_args()
-
-    return myopts
-
-
 def load_data(opts):
     """
-    load ACTEM station data and apply decadal moving average
+    load TEA station data and apply decadal moving average
     :return: data (station data)
     :return: ampl (amplification factors)
     """
 
-    if opts.parameter == 'T':
-        perc = 'T99.0p'
-        split_idx = 2
-    else:
-        perc = 'P24h_7to7_95.0p'
-        split_idx = 4
-
-    files = sorted(glob.glob(f'{opts.inpath}station_indices/*{perc}*.nc'))
+    files = sorted(glob.glob(f'{opts.inpath}station_indices/*{opts.param_str}*.nc'))
 
     if opts.region == 'AUT':
         stations = ['GRAZ', 'INNS', 'KREM', 'SALZ', 'WIEN']
@@ -92,7 +43,9 @@ def load_data(opts):
 
     for ifile, file in enumerate(files):
         basename = os.path.basename(file)
-        station_abbr = basename.split('_')[split_idx][:4].upper()
+        station_abbr = basename.split('_')[-1].split('.nc')[0].upper()[:4]
+        # if station_abbr != 'WIEN':
+        #     continue
         if station_abbr not in stations:
             continue
         # load data
@@ -158,6 +111,25 @@ def load_data(opts):
 
     return data, ampl
 
+def rename_juf_data(data):
+    """
+    rename juf according to hst convention
+    Args:
+        data: dataset
+
+    Returns:
+
+    """
+
+    dvars = data.data_vars
+    for var in dvars:
+        if '_avg' in var:
+            data = data.rename({var: var.replace('_avg', 'avg')})
+
+    data = data.rename({'EM_GR_Md': 'EM_Md_GR', 'EMavg_GR_Md': 'EMavg_Md_GR'})
+
+    return data
+
 
 def get_gr_vals(opts):
     """
@@ -169,15 +141,15 @@ def get_gr_vals(opts):
 
     """
 
-    if opts.parameter == 'T':
-        pstr = 'T99.0p'
+    if not opts.precip:
         em_var = 'EMavg_GR'
     else:
-        pstr = 'P24h_7to7_95.0p'
         em_var = 'EMavg_Md_GR'
 
     ref_data = xr.open_dataset(f'{opts.inpath}dec_indicator_variables/'
-                               f'DEC_{pstr}_{opts.region}_WAS_SPARTACUS_1961to2022.nc')
+                               f'DEC_{opts.param_str}_{opts.region}_annual_SPARTACUS_1961to2024.nc')
+
+    ref_data = rename_juf_data(data=ref_data)
 
     vkeep = ['EF_GR', 'EDavg_GR', em_var, 'EAavg_GR']
     vdrop = [vvar for vvar in ref_data.data_vars if vvar not in vkeep]
@@ -196,7 +168,10 @@ def get_gr_vals(opts):
     cc_ampl['tEX'] = cc_ampl['EF_GR_AF_CC'] * cc_ampl['EDavg_GR_AF_CC'] * cc_ampl[f'{em_var}_AF_CC']
 
     # calc std of ref period
-    s_ref = ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
+    try:
+        s_ref = ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
+    except KeyError:
+        s_ref = ampl.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])).std()
 
     return ref_vals, cc_vals, ampl, cc_ampl, s_ref
 
@@ -213,7 +188,7 @@ def calc_factors(opts, st_data, s_ref_gr):
         factors: ds with factors
     """
 
-    if opts.parameter == 'T':
+    if not opts.precip:
         em_var = 'EMavg'
     else:
         em_var = 'EMavg_Md'
@@ -280,20 +255,29 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
 
     """
 
-    if opts.parameter == 'T':
+    if not opts.precip:
         em_var = 'EMavg_GR_AF'
     else:
         em_var = 'EMavg_Md_GR_AF'
 
-    gr_ampl_ref = gr_ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    try:
+        gr_ampl_ref = gr_ampl.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
+    except KeyError:
+        gr_ampl_ref = gr_ampl.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy']))
 
     # calc DM
     gr_ampl_ref['DM_AF'] = gr_ampl_ref['EDavg_GR_AF'] * gr_ampl_ref[em_var]
 
     # Eq. 33_1 and 33_2
-    s_a_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
-        dim='ctp'))
-    s_dm_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(dim='ctp'))
+    try:
+        s_a_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
+            dim='ctp'))
+        s_dm_ref = np.sqrt((1/len(gr_ampl_ref.ctp)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(dim='ctp'))
+    except AttributeError:
+        s_a_ref = np.sqrt((1/len(gr_ampl_ref.time)) * ((gr_ampl_ref['EAavg_GR_AF'] - 1)**2).sum(
+            dim='time'))
+        s_dm_ref = np.sqrt((1/len(gr_ampl_ref.time)) * ((gr_ampl_ref['DM_AF'] - 1)**2).sum(
+            dim='time'))
 
     # Eq. 33_3 - 33_8
     natvar.loc['EA', 'lower'] = ((s_a_ref/s_dm_ref) * natvar.loc['DM', 'lower']).values
@@ -313,22 +297,17 @@ def calc_combined_indicators_natvar(opts, gr_ampl, natvar):
 
 
 def run():
-    opts = getopts()
-
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
     data, st_ampl = load_data(opts=opts)
     gr_ref, gr_cc, gr_ampl, gr_cc_ampl, std_ref_gr = get_gr_vals(opts=opts)
     nv, facs = calc_nat_var(opts=opts, st_data=data, std_gr=std_ref_gr)
     nv = calc_combined_indicators_natvar(opts=opts, gr_ampl=gr_ampl, natvar=nv)
 
-    if opts.parameter == 'T':
-        pstr = 'T99.0p'
-    else:
-        pstr = 'P24h_7to7_95.0p'
-
     path = Path(f'{opts.outpath}natural_variability/')
     path.mkdir(parents=True, exist_ok=True)
-    nv.to_csv(f'{opts.outpath}natural_variability/NV_AF_{pstr}_{opts.region}.csv')
-    facs.to_csv(f'{opts.outpath}natural_variability/SFACS_{pstr}_{opts.region}.csv')
+    nv.to_csv(f'{opts.outpath}natural_variability/NV_AF_{opts.param_str}_{opts.region}.csv')
+    facs.to_csv(f'{opts.outpath}natural_variability/SFACS_{opts.param_str}_{opts.region}.csv')
 
 
 if __name__ == '__main__':

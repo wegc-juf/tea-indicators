@@ -15,6 +15,9 @@ import pandas as pd
 import re
 import xarray as xr
 
+import scripts.general_stuff.general_functions
+
+
 def getopts():
     """
     get arguments
@@ -223,10 +226,10 @@ def plot_area(opts, fig, ax, static, params):
     cmap = colormaps['Greys']
     new_cols = cmap(np.linspace(0, 1, 12))
     cmap = ListedColormap(new_cols)
-    boundaries = np.linspace(static.area_grid.min(), static.area_grid.max(), 11)
+    boundaries = np.linspace(scripts.general_stuff.general_functions.area_grid.min(), scripts.general_stuff.general_functions.area_grid.max(), 11)
     norm = BoundaryNorm(boundaries, cmap.N, clip=True)
 
-    map_vals = ax.imshow(static.area_grid, origin=params['orig'], cmap=cmap, norm=norm)
+    map_vals = ax.imshow(scripts.general_stuff.general_functions.area_grid, origin=params['orig'], cmap=cmap, norm=norm)
     ax.set_title(f'Area grid {opts.region} ({static.GR_size:.2f} areals)')
 
     divider = make_axes_locatable(ax)

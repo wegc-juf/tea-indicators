@@ -1,0 +1,8 @@
+scripts/examples/ref
+scripts/examples/dec_indicator_variables
+scripts/examples/ctp_indicator_variables
+scripts/examples/daily_basis_variables
+__pycache__
+*.un~
+.idea/
+*.log

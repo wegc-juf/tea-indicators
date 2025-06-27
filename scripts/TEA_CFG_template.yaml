@@ -1,0 +1,54 @@
+# Template for gridded data TEA indicators
+common_params:
+  GeoRegion: &GR
+    region: AUT
+    # agr: EUR
+    full_region: false
+  parameter: &PARAM
+    parameter: Tx
+    precip: false
+    threshold: 99
+    threshold_type: perc
+    unit: degC
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: annual
+    # ref period from-to (inclusive)
+    ref_period: 1961-1990
+    # cc period from-to (inclusive)
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: ERA5
+  paths: &PATHS
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    statpath: &statpath /home/wegnet/results/static/
+    maskpath: *statpath
+    mask_sub: masks/
+    result_path: &result_path /home/wegnet/results/TEA_indicators/
+
+create_region_masks:
+  <<: *GR
+  <<: *DATA
+  subreg: custom
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  outpath: *result_path
+  recalc_threshold: false
+  recalc_daily: true
+  hourly: false
+  decadal: true
+  spreads: true
+  decadal_only: false
+  recalc_decadal: true
+  use_dask: false

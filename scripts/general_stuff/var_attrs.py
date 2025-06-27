@@ -2,63 +2,96 @@
 script for adding attributes to TEA variables
 """
 
+equal_vars = {'EM': 'tEX'}
 
-def get_attrs(opts=None, vname=None, dec=False, spread=None):
-    if opts is None:
-        data_unit = ''
-        period = ''
-    else:
-        data_unit = opts.unit
-        period = opts.period
 
+def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
+    """
+    get attributes for TEA variables
+    Args:
+        vname: variable name
+        dec: decadal mean added to variable name
+        spread: None, 'upper' or 'lower'. Set if spread estimator
+        period: climatic time period
+        data_unit: data unit (e.g. 'degC', 'mm')
+
+    Returns:
+        attributes: dict with attributes
+    """
+    if 'DTEA' in vname and not data_unit:
+        data_unit = '100 km^2'
     attrs = {'ctp': {'long_name': f'climatic time period ({period})'},
+             'CTP': {'long_name': f'start date of climatic time period {period}', 'standard_name': 'ctp_time'},
+             'CTP_global_attrs': {'title': f'TEA indicators for annual climatic time period: {period}'},
+             'decadal': {'long_name': f'center year of decadal indicators for climatic time period {period}',},
+             'decadal_global_attrs': {'title': f'TEA decadal-mean indicator variables for climatic time period: '
+                                               f'{period}'},
+             'amplification': {'long_name': 'center year of decadal amplification factors for climatic time period'
+                                            f' {period}'},
+             'amplification_global_attrs': {'title': f'TEA decadal-mean amplification factors for climatic time period:'
+                                                     f' {period}'},
+             'DTEC': {'long_name': 'daily threshold exceedance count', 'units': '1'},
+             'DTED': {'long_name': 'daily threshold exceedance duration', 'units': 'h'},
              'DTEM': {'long_name': 'daily threshold exceedance magnitude', 'units': data_unit},
+             'DTEA': {'long_name': 'daily threshold exceedance area', 'units': data_unit},
+             'DTEMA': {'long_name': 'daily threshold exceedance magnitude * area (auxiliary)',
+                       'units': f'100 km^2 {data_unit}'},
              'DTEM_Max': {'long_name': 'daily maximum grid cell exceedance magnitude',
                           'units': data_unit},
              f'DTEEC': {'long_name': f'daily threshold exceedance event count', 'units': '1'},
-             'EF': {'long_name': 'event frequency', 'units': '1'},
-             'doy_first': {'long_name': 'day of first event occurrence', 'units': '1'},
-             'doy_last': {'long_name': 'day of last event occurrence', 'units': '1'},
-             'delta_y': {'long_name': 'annual exposure period', 'units': 'dys'},
-             'ED': {'long_name': 'cumulative events duration', 'units': 'dys'},
-             'DM': {'long_name': 'duration-magnitude indicator', 'units': f'{data_unit} dys'},
-             'EDavg': {'long_name': 'average events duration', 'units': 'dys'},
-             'EM': {'long_name': 'cumulative exceedance magnitude', 'units': data_unit,
-                    'description': 'expresses the temporal events extremity (tEX)'},
-             'EMavg': {'long_name': 'average exceedance magnitude', 'units': data_unit},
-             'EMavg_Md': {'long_name': 'average daily-median exceedance magnitude',
-                          'units': data_unit},
+             'EF': {'long_name': 'event frequency', 'units': 'yr^-1', 'metric_type': 'basic'},
+             'doy_first': {'long_name': 'day of first event occurrence', 'units': '1', 'metric_type': 'basic'},
+             'doy_last': {'long_name': 'day of last event occurrence', 'units': '1', 'metric_type': 'basic'},
+             'AEP': {'long_name': 'annual exposure period', 'units': 'months', 'metric_type': 'basic'},
+             'ED': {'long_name': 'cumulative events duration', 'units': f'd yr^-1', 'metric_type': 'compound'},
+             'ED_avg': {'long_name': 'average events duration', 'units': 'd', 'metric_type': 'basic'},
+             'EM': {'long_name': 'cumulative exceedance magnitude', 'units': f'{data_unit} d yr^-1',
+                    'description': 'expresses the temporal events extremity (tEX)', 'metric_type': 'compound'},
+             'EM_avg': {'long_name': 'average exceedance magnitude', 'units': data_unit, 'metric_type': 'basic'},
+             'EM_avg_Md': {'long_name': 'average daily-median exceedance magnitude',
+                           'units': data_unit, 'metric_type': 'basic'},
              'EM_Md': {'long_name': 'cumulative daily-median exceedance magnitude',
-                       'units': data_unit},
+                       'units': f'{data_unit} d yr^-1', 'metric_type': 'compound'},
              'EM_Max': {'long_name': 'cumulative maximum exceedance magnitude',
-                        'units': data_unit},
-             'EMavg_Max': {'long_name': 'average maximum exceedance magnitude',
-                              'units': data_unit},
-             'EAavg': {'long_name': 'average exceedance area', 'units': 'areals'},
-             'TEX': {'long_name': 'total events extremity', 'units': f'areal {data_unit} dys'},
-             'ESavg': {'long_name': 'average event severity',
-                       'units': f'areal {data_unit} dys'},
-             'tEX': {'long_name': 'temporal events extremity', 'units': f'areal {data_unit} dys'},
+                        'units': f'{data_unit} d yr^-1', 'metric_type': 'compound'},
+             'EM_avg_Max': {'long_name': 'average maximum exceedance magnitude',
+                            'units': data_unit, 'metric_type': 'basic'},
+             'EA_avg': {'long_name': 'average exceedance area', 'units': '100 km^2', 'metric_type': 'basic'},
+             'DM': {'long_name': 'duration-magnitude indicator', 'units': f'{data_unit} d', 'metric_type':
+                    'compound'},
+             'TEX': {'long_name': 'total events extremity', 'units': f'100 km^2 {data_unit} d yr^-1', 'metric_type':
+                     'compound'},
+             'hTEX': {'long_name': 'hourly total events extremity', 'units': f'100 km^2 {data_unit} h yr^-1',
+                      'metric_type': 'compound'},
+             'ES_avg': {'long_name': 'average event severity',
+                        'units': f'100 km^2 {data_unit} d', 'metric_type': 'compound'},
+             'hES_avg': {'long_name': 'average hourly event severity',
+                         'units': f'100 km^2 {data_unit} h', 'metric_type': 'compound'},
+             'tEX': {'long_name': 'temporal events extremity', 'units': f'{data_unit} d yr^-1', 'metric_type':
+                     'compound'},
+             'htEX': {'long_name': 'hourly temporal events extremity', 'units': f'{data_unit} h yr^-1', 'metric_type':
+                      'compound'},
+             'H_AEHC_avg': {'long_name': 'average daily atmospheric boundary layer exceedance '
+                                         'heat content', 'units': 'PJ d^-1', 'metric_type': 'compound'},
              'H_AEHC': {'long_name': 'cumulative atmospheric boundary layer exceedance '
-                                     'heat content', 'units': 'PJ'}
+                                     'heat content', 'units': 'PJ yr^-1', 'metric_type': 'compound'},
+             'Nhours': {'long_name': 'daily exposure time', 'units': 'h'},
+             'h_avg': {'long_name': 'average daily exposure time (DET)', 'units': 'h', 'metric_type': 'basic'},
+             't_hfirst': {'long_name': 'daily hour of first exceedance', 'units': 'h', 'metric_type': 'basic'},
+             't_hlast': {'long_name': 'daily hour of last exceedance', 'units': 'h', 'metric_type': 'basic'},
+             't_hmax': {'long_name': 'daily hour of maximum exceedance', 'units': 'h', 'metric_type': 'basic'},
+             'h_rise_avg': {'long_name': 'average daily exposure rise duration', 'units': 'h', 'metric_type': 'basic'},
+             'h_set_avg': {'long_name': 'average daily exposure set duration', 'units': 'h', 'metric_type': 'basic'},
              }
-
+    
     # add (A)GR indicators if necessary
+    vname_dict = vname.replace('_GR', '').replace('_AGR', '').replace('_AF', '').replace('_CC', '')
+    vattrs = attrs[vname_dict]
     if '_GR' in vname:
-        vname_dict = vname.split('_GR')[0]
-        vattrs = attrs[vname_dict]
         vattrs['long_name'] = f'{vattrs["long_name"]} (GR)'
     elif '_AGR' in vname:
-        vname_dict = vname.split('_AGR')[0]
-        vattrs = attrs[vname_dict]
         vattrs['long_name'] = f'{vattrs["long_name"]} (AGR)'
-    else:
-        if 'AF' in vname:
-            vname_dict = vname.split('_AF')[0]
-            vattrs = attrs[vname_dict]
-        else:
-            vattrs = attrs[vname]
-
+        
     # add (CC) amplification if amplification factors are passed and set units to unity
     if 'AF' in vname and 'CC' not in vname:
         vattrs['long_name'] = f'{vattrs["long_name"]} amplification'
@@ -72,7 +105,9 @@ def get_attrs(opts=None, vname=None, dec=False, spread=None):
         vattrs['long_name'] = f'decadal-mean {vattrs["long_name"]}'
 
     # add upper/lower spread estimator for spreads
-    if spread:
+    if spread == 'upper' or spread == 'lower':
         vattrs['long_name'] = f'{vattrs["long_name"]} {spread} spread estimator'
+    elif spread:
+        vattrs['long_name'] = f'{vattrs["long_name"]} {spread}'
 
     return vattrs

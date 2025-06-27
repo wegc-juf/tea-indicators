@@ -5,77 +5,15 @@
 
 """
 
-import argparse
 import glob
 import numpy as np
 import os
 from pathlib import Path
 import pyproj
-import sys
 from tqdm import trange
 import xarray as xr
 
-from scripts.general_stuff.general_functions import create_history
-
-
-def get_opts():
-    """
-    loads CLI parameter
-    Returns:
-        myopts: CLI parameter
-
-    """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
-
-    def file(entry):
-        if os.path.isfile(entry):
-            return entry
-        else:
-            raise argparse.ArgumentTypeError(f'{entry} is not a valid file.')
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--parameter',
-                        default='Tx',
-                        type=str,
-                        choices=['Tx', 'Tn', 'RR', 'TX'],
-                        help='Parameter for which the SPARTACUS data should be regridded '
-                             '[options: Tx (default), Tn, RR, RRhr].')
-
-    parser.add_argument('--inpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/'
-                                'v2024_v1.5/',
-                        type=dir_path,
-                        help='Path of folder where data is located.')
-
-    parser.add_argument('--orography',
-                        action='store_true',
-                        help='Set if orography should be regridded.')
-
-    parser.add_argument('--orofile',
-                        default='/data/reloclim/backup/ZAMG_INCA/data/original/'
-                                'INCA_orog_corrected_y_dim.nc',
-                        type=file,
-                        help='Orography file only necessary if "orography" is set to true.')
-
-    parser.add_argument('--wegnfile',
-                        default='/data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc',
-                        type=file,
-                        help='Dummy WEGN file to extract grid.')
-
-    parser.add_argument('--outpath',
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/',
-                        help='Path of folder where output data should be saved.')
-
-    myopts = parser.parse_args()
-
-    return myopts
-
+from scripts.general_stuff.general_functions import create_history_from_cfg, load_opts
 
 def define_wegn_grid_1000x1000(opts):
     """
@@ -91,7 +29,7 @@ def define_wegn_grid_1000x1000(opts):
 
     # Load sample SPARTACUS data
     original_grid = xr.open_dataset(
-        os.path.join(f'{opts.inpath}', f'SPARTACUS-DAILY_{opts.parameter}_2000.nc'))
+        os.path.join(f'{opts.inpath}', f'SPARTACUS2-DAILY_{opts.parameter.upper()}_2000.nc'))
 
     # Open WEGN sample data
     wegnet = xr.open_dataset(opts.wegnfile)
@@ -217,7 +155,7 @@ def regrid_orog(opts):
     orog_file = xr.open_dataset(opts.orofile)
     oro_new = regrid_spartacus(opts=opts, ds_in=orog_file.orog, method='linear')
     oro_new = oro_new.assign_attrs(grid_mapping='UTM33N')
-    oro_new = create_history(cli_params=sys.argv, ds=oro_new)
+    oro_new = create_history_from_cfg(cfg_params=opts, ds=oro_new)
     oro_new.attrs['crs'] = 'EPSG:32633'
     oro_new = oro_new.drop(['lat', 'lon'])
 
@@ -227,7 +165,8 @@ def regrid_orog(opts):
 
 
 def run():
-    opts = get_opts()
+    # load CFG parameter
+    opts = load_opts(fname=__file__)
 
     if opts.orography:
         regrid_orog(opts=opts)
@@ -244,15 +183,16 @@ def run():
             ds_new = ds_new.assign_attrs(grid_mapping='UTM33N')
 
             # Add history to attributes and change crs to EPSG:32633
-            ds_new = create_history(cli_params=sys.argv, ds=ds_new)
+            ds_new = create_history_from_cfg(cfg_params=opts, ds=ds_new)
             ds_new.attrs['crs'] = 'EPSG:32633'
 
             # Rename variables if necessary
-            if opts.parameter == 'TX':
+            if opts.parameter in ['TX', 'Tx']:
                 ds_new = ds_new.rename({'TX': 'Tx'})
                 opts.parameter = 'Tx'
-            elif opts.parameter == 'TN':
+            elif opts.parameter in ['TN', 'Tn']:
                 ds_new = ds_new.rename({'TN': 'Tn'})
+                opts.parameter = 'Tn'
 
             # drop unnecessary coords
             ds_new = ds_new.drop(['lat', 'lon'])
@@ -263,7 +203,9 @@ def run():
 
             path = Path(f'{opts.outpath}')
             path.mkdir(parents=True, exist_ok=True)
-            ds_new.to_netcdf(f'{opts.outpath}{filename}', encoding=encoding,
+            filename_parts = filename.split(opts.parameter.upper())
+            filename_out = f'{filename_parts[0]}{opts.parameter}{filename_parts[1]}'
+            ds_new.to_netcdf(f'{opts.outpath}{filename_out}', encoding=encoding,
                              engine='netcdf4')
 
 
