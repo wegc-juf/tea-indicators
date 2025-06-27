@@ -52,16 +52,21 @@ def get_opts():
                         type=int,
                         help='Last year that should be prepped.')
 
+    parser.add_argument('--africa',
+                        action='store_true',
+                        help='Set if African data should be prepped.')
+
     myopts = parser.parse_args()
 
     return myopts
 
 
-def calc_altitude_dt(opts):
+def calc_altitude_dt(opts, africa=False):
     """
     calculates altitude in m and time difference to UTC
     Args:
         opts: CLI parameter
+        africa: set if african data should be prepped
 
     Returns:
         altitude: altitude grid
@@ -78,7 +83,11 @@ def calc_altitude_dt(opts):
     altitude.attrs = {'units': 'm', 'long_name': 'altitude'}
     altitude = altitude.drop(['expver', 'number'])
 
-    lon_grid = xr.DataArray(data=np.tile(ds_alt.longitude.values, (169, 1)),
+    nlat = 169
+    if africa:
+        nlat = 305
+
+    lon_grid = xr.DataArray(data=np.tile(ds_alt.longitude.values, (nlat, 1)),
                             dims={'latitude': (['latitude'], ds_alt.latitude.values),
                                   'longitude': (['longitude'], ds_alt.longitude.values)},
                             coords={'latitude': (['latitude'], ds_alt.latitude.values),
@@ -291,7 +300,7 @@ def run():
     else:
         raise UserWarning('End year is smaller than start year.')
 
-    altitude, delta_utc, time_zones = calc_altitude_dt(opts=opts)
+    altitude, delta_utc, time_zones = calc_altitude_dt(opts=opts, africa=opts.africa)
 
     # Save altitude in separate file
     altitude = create_history(cli_params=sys.argv, ds=altitude)
@@ -299,11 +308,15 @@ def run():
     # alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
     # alt_out.to_netcdf(f'{opts.outpath}ERA5_orography.nc')
 
+    tname, pname = '2m_temperature', 'total_precipitation'
+    if opts.africa:
+        tname, pname = 'instant', 'accum'
+
     for iyr in trange(len(years), desc='Preparing ERA5 data'):
         basename = f'{opts.inpath}ERA5_{years[iyr]}'
 
         # Temperature
-        da_t2m = xr.open_dataarray(f'{basename}_2m_temperature.nc',
+        da_t2m = xr.open_dataarray(f'{basename}_{tname}.nc',
                                    mask_and_scale=True).chunk()
         da_t2m = da_t2m.drop(['expver'])
         tav, tmin, tmax = resample_temperature(data=da_t2m, delta=delta_utc, tz=time_zones)
@@ -311,7 +324,7 @@ def run():
         del da_t2m
 
         # Precipitation
-        da_tp = xr.open_dataarray(f'{basename}_total_precipitation.nc',
+        da_tp = xr.open_dataarray(f'{basename}_{pname}.nc',
                                   mask_and_scale=True).chunk()
         da_tp = da_tp.drop(['expver'])
         p24h, p1h = resample_precipitation(data=da_tp, delta=delta_utc, tz=time_zones)
@@ -320,33 +333,39 @@ def run():
         da_tp.close()
         del da_tp
 
-        # Wind
-        windfiles = sorted(glob.glob(f'{basename}_10m_*_component_of_wind.nc'))
-        ds_wind = xr.open_mfdataset(windfiles, mask_and_scale=True).chunk()
-        ds_wind = ds_wind.drop(['expver'])
-        wind = calc_wind(data=ds_wind, delta=delta_utc, tz=time_zones)
-        ds_wind.close()
-        del ds_wind
+        dataarrays = [tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, altitude]
 
-        # Surface pressure
-        da_p = xr.open_dataarray(f'{basename}_surface_pressure.nc',
-                                 mask_and_scale=True).chunk()
-        da_p = da_p.drop(['expver'])
-        pressure = resample_pressure(data=da_p, delta=delta_utc, tz=time_zones)
+        if not opts.africa:
+            # Wind
+            windfiles = sorted(glob.glob(f'{basename}_10m_*_component_of_wind.nc'))
+            ds_wind = xr.open_mfdataset(windfiles, mask_and_scale=True).chunk()
+            ds_wind = ds_wind.drop(['expver'])
+            wind = calc_wind(data=ds_wind, delta=delta_utc, tz=time_zones)
+            ds_wind.close()
+            del ds_wind
 
-        # Specific humidity
-        da_dp = xr.open_dataarray(f'{basename}_2m_dewpoint_temperature.nc',
-                                  mask_and_scale=True).chunk()
-        da_dp = da_dp.drop(['expver'])
-        humidity = calc_specific_hum(t_dp=da_dp, pressure=da_p, delta=delta_utc,
-                                     tz=time_zones)
-        da_p.close()
-        del da_p
-        da_dp.close()
-        del da_dp
+            # Surface pressure
+            da_p = xr.open_dataarray(f'{basename}_surface_pressure.nc',
+                                     mask_and_scale=True).chunk()
+            da_p = da_p.drop(['expver'])
+            pressure = resample_pressure(data=da_p, delta=delta_utc, tz=time_zones)
+
+            # Specific humidity
+            da_dp = xr.open_dataarray(f'{basename}_2m_dewpoint_temperature.nc',
+                                      mask_and_scale=True).chunk()
+            da_dp = da_dp.drop(['expver'])
+            humidity = calc_specific_hum(t_dp=da_dp, pressure=da_p, delta=delta_utc,
+                                         tz=time_zones)
+            da_p.close()
+            del da_p
+            da_dp.close()
+            del da_dp
+
+            dataarrays = [tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7,
+                        wind, pressure, humidity, altitude]
 
         # Create output ds
-        ds_out = xr.merge([tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, wind, pressure, humidity, altitude]) #
+        ds_out = xr.merge(dataarrays)
         ds_out = create_history(cli_params=sys.argv, ds=ds_out)
         ds_out = ds_out.drop(['time', 'number'])
         ds_out = ds_out.rename({'valid_time':'time', 'latitude': 'lat', 'longitude': 'lon'})

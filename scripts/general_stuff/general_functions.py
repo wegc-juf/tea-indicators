@@ -13,6 +13,7 @@ import pandas as pd
 
 from scripts.general_stuff.check_CFG import check_config
 from .TEA_logger import logger
+from scripts.general_stuff.cfg_paramter import show_parameters
 
 
 def load_opts(fname, config_file='../TEA_CFG.yaml'):
@@ -31,7 +32,7 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
     with open(config_file, 'r') as stream:
         opts = yaml.safe_load(stream)
         opts = opts[fname]
-        opts = check_config(opts_dict=opts)
+        opts = check_config(opts_dict=opts, fname=fname)
         opts = argparse.Namespace(**opts)
 
     # add name of script
@@ -74,6 +75,11 @@ def load_opts(fname, config_file='../TEA_CFG.yaml'):
             opts.use_dask = False
         else:
             opts.use_dask = False
+    if 'no_gui' in opts and not opts.no_gui:
+        # show set parameter
+        show_parameters(opts)
+        opts = check_config(opts_dict=vars(opts), fname=fname)
+        opts = argparse.Namespace(**opts)
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:

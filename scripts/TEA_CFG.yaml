@@ -1,9 +1,14 @@
-# Template for gridded data TEA indicators
 common_params:
+  gui: &GUI
+    no_gui: true
   GeoRegion: &GR
-    region: AUT
-    # agr: EUR
-    full_region: false
+    region: EUR
+    gr_type: polygon
+    sw_corner: null
+    ne_corner: null
+    center: null
+    we_len: null
+    ns_len: null
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -13,29 +18,47 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2024
-    period: annual
-    # ref period from-to (inclusive)
-    ref_period: 1961-1990
-    # cc period from-to (inclusive)
-    cc_period: 2010-2024
+    end: 2022
+    period: WAS
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
-    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-    maskpath: *statpath
-    mask_sub: masks/
-    result_path: &result_path /data/users/hst/TEA-clean/TEA/paper_data/natural_variability/test/
+    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+    statpath: /home/wegnet/results/static/
+#    statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    tmppath: /home/wegnet/results/TEA_indicators_hst/tmp/
+
+regrid_SPARTACUS_to_WEGNext:
+  <<: *PARAM
+  inpath: /data/users/hst/TEA-clean/SPARTACUS/
+  orography: false
+  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
+  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  outpath: /home/wegnet/results/TEA_indicators_hst/
 
 create_region_masks:
+  <<: *GUI
   <<: *GR
-  <<: *DATA
   subreg: custom
+  target_sys: 4326
+  target_ds: ERA5
+  xy_name: lon,lat
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
   lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+
+create_static_files:
+  <<: *GR
+  <<: *TIME
+  <<: *PARAM
+  <<: *DATA
+  <<: *PATHS
+  season_length: 366
+  smoothing: 0
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  outpath: /home/wegnet/results/TEA_indicators_hst/static/
 
 calc_TEA:
   <<: *GR
@@ -43,20 +66,42 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  outpath: *result_path
-  recalc_threshold: false
-  recalc_daily: true
-  hourly: false
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+  recalc_daily: false
   decadal: true
-  spreads: true
-  decadal_only: false
-  recalc_decadal: true
+  spreads: false
+  decadal_only: true
+  recalc_decadal: false
 
-natural_variability:
+calc_station_TEA:
+  <<: *GUI
+  <<: *TIME
+  <<: *PARAM
+  station: Graz
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+
+calc_amplification_factors:
   <<: *GR
   <<: *PARAM
   <<: *TIME
+  <<: *DATA
   <<: *PATHS
-  tea_path: /data/users/hst/TEA-clean/TEA/paper_data/
-  outpath: *result_path
-  stations: null
+  supplementary: true
+  inpath: /home/wegnet/results/TEA_indicators_hst/dec_indicator_variables/
+  # inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+
+calc_AGR_vars:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  inpath: /home/wegnet/results/TEA_indicators_hst/dec_indicator_variables/
+#  inpath: /data/users/hst/TEA-clean/TEA/dec_indicator_variables/
+  # outpath: /data/users/hst/TEA-clean/TEA/
+  outpath: /home/wegnet/results/TEA_indicators_hst/
+  agr: EUR
+  spreads: true

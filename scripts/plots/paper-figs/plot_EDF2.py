@@ -15,10 +15,10 @@ def load_data(city, param):
     :return:
     """
 
-    path = '/data/users/hst/TEA-clean/TEA/station_indices/'
+    path = '/data/users/hst/TEA-clean/TEA/paper_data/station_indices/'
 
-    if param == 'T':
-        pstr = 'T99.0p'
+    if param == 'Tx':
+        pstr = 'Tx99.0p'
         mvar = 'EMavg'
     else:
         pstr = 'P24h_7to7_95.0p'
@@ -46,32 +46,32 @@ def load_data(city, param):
 
 def get_props():
     yn, yx = 0, 2.5
-    props = {0: {'var': 'EF', 'vname': 'EF', 'cmap': 'Blues', 'yn': yn, 'yx': yx,
+    props = {0: {'var': 'EF', 'vname': 'EF_AF', 'cmap': 'Blues', 'yn': yn, 'yx': yx,
                  'title': 'Event Frequency (Annual) NatVar',
                  'ylbl': r'EF amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{F})$',
                  'col': 'tab:blue', 'ref': 1,
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{F}$', 'ls': 'solid'},
-             1: {'var': 'DM', 'vname': 'DM', 'cmap': 'Oranges', 'yn': yn, 'yx': yx,
+             1: {'var': 'DM', 'vname': 'DM_avg_AF', 'cmap': 'Oranges', 'yn': yn, 'yx': yx,
                  'title': r'Avg. Duration $\times$ Magnitude (events-mean) NatVar',
                  'ylbl': r'D$\times$M  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{DM})$',
                  'col': 'tab:orange', 'ref': 1, 'ls': 'solid',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{DM}$'},
-             2: {'var': 'EDavg', 'vname': 'ED', 'cmap': 'Purples', 'yn': yn, 'yx': yx,
+             2: {'var': 'EDavg', 'vname': 'ED_avg_AF', 'cmap': 'Purples', 'yn': yn, 'yx': yx,
                  'title': 'Avg. Event Duration (events-mean)  NatVar',
                  'ylbl': r'ED amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{D})$',
                  'col': 'tab:purple', 'ref': 1, 'ls': 'solid',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{D}$'},
-             3: {'var': 'DM', 'vname': 'EA', 'cmap': 'Greys', 'yn': yn, 'yx': yx,
+             3: {'var': 'DM', 'vname': 'EA_avg_AF', 'cmap': 'Greys', 'yn': yn, 'yx': yx,
                  'title': 'Avg. Exceedance Area (daily-mean) NatVar',
                  'ylbl': r'EA  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{A})$',
                  'col': 'tab:red', 'ref': 1, 'ls': ':',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{A}$'},
-             4: {'var': 'EMavg', 'vname': 'EM', 'cmap': 'Oranges', 'yn': yn, 'yx': yx,
+             4: {'var': 'EMavg', 'vname': 'EM_avg_AF', 'cmap': 'Oranges', 'yn': yn, 'yx': yx,
                  'title': 'Avg. Exceedance Magnitude (daily-mean) NatVar',
                  'ylbl': r'EM  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{M})$',
                  'col': 'tab:orange', 'ref': 1, 'ls': 'solid',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{M}$'},
-             5: {'var': 'FDMA', 'vname': 'TEX', 'cmap': 'Reds', 'yn': yn, 'yx': yx,
+             5: {'var': 'FDMA', 'vname': 'TEX_AF', 'cmap': 'Reds', 'yn': yn, 'yx': yx,
                  'title': 'Total Events Extremity (Annual) NatVar',
                  'ylbl': r'TEX  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{T})$',
                  'col': 'tab:red', 'ref': 1401, 'ls': 'solid',
@@ -81,32 +81,32 @@ def get_props():
 
 
 def get_p_props():
-    props = {0: {'var': 'TEF', 'vname': 'EF', 'cmap': 'Blues', 'yn': 0, 'yx': 2,
+    props = {0: {'var': 'TEF', 'vname': 'EF_AF', 'cmap': 'Blues', 'yn': 0, 'yx': 2,
                  'title': 'Event Frequency (Annual) NatVar',
                  'ylbl': r'EF amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{F})$',
                  'col': 'tab:blue', 'ref': 1,
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{F}$', 'ls': 'solid'},
-             1: {'var': 'tEX', 'vname': 'tEX', 'cmap': 'Oranges', 'yn': 0, 'yx': 2.5,
+             1: {'var': 'tEX', 'vname': 'tEX_AF', 'cmap': 'Oranges', 'yn': 0, 'yx': 2.5,
                  'title': r'Temporal Events Extremity (Annual) NatVar',
                  'ylbl': r'tEX  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{tEX})$',
                  'col': 'tab:orange', 'ref': 1, 'ls': 'solid',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{tEX}$'},
-             2: {'var': 'AV_ED', 'vname': 'ED', 'cmap': 'Purples', 'yn': 0, 'yx': 2,
+             2: {'var': 'AV_ED', 'vname': 'ED_avg_AF', 'cmap': 'Purples', 'yn': 0, 'yx': 2,
                  'title': 'Avg. Event Duration (events-mean)  NatVar',
                  'ylbl': r'ED amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{D})$',
                  'col': 'tab:purple', 'ref': 1, 'ls': 'solid',
                  'bname': r'P24H-p95WAS-$\mathcal{A}_\mathrm{NV}^\mathrm{D}$'},
-             3: {'var': 'DM', 'vname': 'EA', 'cmap': 'Greys', 'yn': 0, 'yx': 2,
+             3: {'var': 'DM', 'vname': 'EA_avg_AF', 'cmap': 'Greys', 'yn': 0, 'yx': 2,
                  'title': 'Avg. Exceedance Area (daily-mean) NatVar',
                  'ylbl': r'EA  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{A})$',
                  'col': 'tab:red', 'ref': 1, 'ls': ':',
                  'bname': r'P24H-p95WAS-$\mathcal{A}_\mathrm{NV}^\mathrm{A}$'},
-             4: {'var': 'AV_EM', 'vname': 'EM', 'cmap': 'Oranges', 'yn': 0, 'yx': 2,
+             4: {'var': 'AV_EM', 'vname': 'EM_avg_AF', 'cmap': 'Oranges', 'yn': 0, 'yx': 2,
                  'title': 'Avg. Exceedance Magnitude (daily-mean) NatVar',
                  'ylbl': r'EM  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{M})$',
                  'col': 'tab:orange', 'ref': 1, 'ls': 'solid',
                  'bname': r'P24H-p95WAS-$\mathcal{A}_\mathrm{NV}^\mathrm{M}$'},
-             5: {'var': 'FDMA', 'vname': 'TEX', 'cmap': 'Reds', 'yn': 0, 'yx': 2,
+             5: {'var': 'FDMA', 'vname': 'TEX_AF', 'cmap': 'Reds', 'yn': 0, 'yx': 2,
                  'title': 'Total Events Extremity (Annual) NatVar',
                  'ylbl': r'TEX  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{T})$',
                  'col': 'tab:red', 'ref': 1401, 'ls': 'solid',
@@ -119,10 +119,10 @@ def add_natvar(ii, axs, props, nv):
     xticks = np.arange(1875, 1991)
 
     vname = props[ii]['vname']
-    if ii == 0:
-        vname = props[ii]['var']
+    # if ii == 0:
+    #     vname = props[ii]['var']
 
-    lstd, ustd = nv.loc[vname].iloc[0], nv.loc[vname].iloc[1]
+    lstd, ustd = nv[f's_{vname}_NVlow'].values, nv[f's_{vname}_NVupp'].values
 
     nv_90low = np.ones(len(xticks)) * (1 - lstd * 1.645)
     nv_90upp = np.ones(len(xticks)) * (1 + ustd * 1.645)
@@ -144,14 +144,8 @@ def add_natvar(ii, axs, props, nv):
 def plot_subplot(axs, data, ii, nv, rdata, param, region, sfac, no_facs):
     if param != 'P':
         props = get_props()
-        scalings = pd.read_csv(
-            f'/data/users/hst/TEA-clean/TEA/natural_variability/'
-            f'SFACS_T99.0p_{region}.csv', index_col=0)
     else:
         props = get_p_props()
-        scalings = pd.read_csv(
-            f'/data/users/hst/TEA-clean/TEA/natural_variability/'
-            f'SFACS_P24h_7to7_95.0p_{region}.csv', index_col=0)
 
     colors = sns.color_palette(props[ii]['cmap'], 5)
 
@@ -168,9 +162,9 @@ def plot_subplot(axs, data, ii, nv, rdata, param, region, sfac, no_facs):
 
             if ii == 3:
                 rdata = rdata * sfac + (1 - sfac)
-                fac = scalings.loc[0, 'DM']
+                fac = nv[f'GR_scaling_DM_avg_AF'].values
             else:
-                fac = scalings.loc[0, props[ii]['vname']]
+                fac = nv[f'GR_scaling_{props[ii]["vname"]}'].values
             if no_facs:
                 fac = 1
             plot_data = rdata[props[ii]['var']] * fac + 1 - fac
@@ -259,8 +253,8 @@ def set_subplot_props(axs, ii):
 
 
 def run():
-    reg = 'SEA'
-    param = 'P'
+    reg = 'AUT'
+    param = 'Tx'
 
     no_facs = False
 
@@ -268,8 +262,8 @@ def run():
     if reg == 'SEA':
         cities = ['Graz', 'Deutschlandsberg', 'BadGleichenberg']
 
-    if param == 'T':
-        pstr = 'T99.0p'
+    if param == 'Tx':
+        pstr = 'Tx99.0p'
     else:
         pstr = 'P24h_7to7_95.0p'
 
@@ -277,9 +271,9 @@ def run():
     for ict in cities:
         data[ict] = load_data(city=ict, param=param)
 
-    nat_var = pd.read_csv(f'/data/users/hst/TEA-clean/TEA/natural_variability/'
-                          f'NV_AF_{pstr}_{reg}.csv', index_col=0)
-    fac = nat_var.loc['SFAC', 'lower']
+    nat_var = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
+                         f'NV_AF_{pstr}_{reg}.nc')
+    fac = nat_var['std_scaling_EA_DM'].values
 
     fig, axs = plt.subplots(3, 2, figsize=(14, 12))
     axes = axs.reshape(-1)
@@ -302,11 +296,12 @@ def run():
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
 
-    if reg == 'AUT' and param == 'T':
-        outname = 'EDF2'
+    if reg == 'AUT' and param == 'Tx':
+        outname = 'ExtDataFig2'
     else:
-        outname = f'EDF2-{reg}-{param}'
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/paper-figs/{outname}.png', dpi=300)
+        outname = f'misc-EDF2-{reg}-{param}'
+    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
+                f'{outname}.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

@@ -206,6 +206,10 @@ def prep_lsm(opts):
     lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
         'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_lat)})
     
+    if opts.dataset == 'ERA5Land':
+        lsm = lsm.interp(lon=(np.arange(-1800, 1800, step * 10) / 10),
+                         lat=(np.arange(-900, 900, step * 10) / 10)[::-1])
+
     lsm = lsm.sel(lat=data.lat.values, lon=data.lon.values)
 
     return lsm
@@ -220,8 +224,8 @@ def run_eur(opts):
     Returns:
 
     """
-    if opts.dataset != 'ERA5':
-        raise AttributeError('EUR mask can only be created for ERA5 data.')
+    if 'ERA5' not in opts.dataset:
+        raise AttributeError('EUR mask can only be created for ERA5(Land) data.')
 
     # load LSM and only keep cells with more than 50% land in them
     lsm = prep_lsm(opts=opts)
@@ -433,7 +437,7 @@ def run():
         else:
             dx = set(abs(xvals[1:].values - xvals[:-1].values))
             dy = set(abs(yvals[1:].values - yvals[:-1].values))
-        if len(dx) > 1 or len(dx) > 1 or dx != dy:
+        if len(dx) > 1 or len(dy) > 1 or dx != dy:
             raise ValueError('The given test file does not have a regular grid. '
                              'Provide a file with a regular grid.')
         dx, dy = list(dx)[0], list(dy)[0]

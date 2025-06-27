@@ -4,6 +4,8 @@
 | NAME             | DESCRIPTION                                                                                                                      | TYPE  | DEFAULT                                                  |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------|-------|----------------------------------------------------------|
 |                  |                                                                                                                                  |       |                                                          |
+| *no_gui*         | Set if GUI (shows set CFG parameter and enables editing of parameters) should not be displayed.                                  | bool  | false                                                    |
+|                  |                                                                                                                                  |       |                                                          |
 | *region*         | Name of GeoRegion; AUT, SAR, SEA, FBR, name of Austrian state, EUR, or ISO2 country code.                                        | str   | AUT                                                      |
 | *agr*            | Name of Aggregated GeoRegion (AGR); AUT, SAR, SEA, FBR, name of Austrian state, EUR, N-EUR, C-EUR, S-EUR or ISO2 country code.   | str   | null                                                     |
 | *agr_cell_size*  | Size of AGR sub-cell in degrees                                                                                                  | float | 1 for precip and 2 for all other parameters              |
@@ -11,7 +13,7 @@
 | *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
 | *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                     |
 | *we_len*         | Only if *gr_type* center,length of GR west to east.                                                                              | float | null                                                     |
-| *ns_len*         | Only: if *gr_type* center,length of GR north to south.                                                                           | float | null                                                     |
+| *ns_len*         | Only if *gr_type* center,length of GR north to south.                                                                            | float | null                                                     |
 |                  |                                                                                                                                  |       |                                                          |
 | *parameter*      | Name of parameter for TEA calculation .                                                                                          | str   | Tx                                                       |
 | *precip*         | Marks if precipitation data is used; set if input is precipitation data.                                                         | bool  | false                                                    |

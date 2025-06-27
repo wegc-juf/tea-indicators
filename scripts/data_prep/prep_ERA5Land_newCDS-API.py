@@ -87,9 +87,19 @@ def calc_altitude(ds_in, orog):
 
     # height
     altitude = ds_geop_aut.z.resample(time='1D').mean() / 9.80665
-    altitude = altitude.rename('altitude')
-
     altitude = altitude[0, :, :]
+
+    # set coords to .1f
+    altitude = xr.DataArray(data=altitude.values, dims=('latitude', 'longitude'),
+                            coords={
+                                'longitude': (['longitude'], (
+                                        np.arange(altitude.longitude[0] * 10,
+                                                  (altitude.longitude[-1] + 0.1) * 10,
+                                                  0.1 * 10) / 10)),
+                                'latitude': (['latitude'], (np.arange(altitude.latitude[-1] * 10,
+                                                            (altitude.latitude[0] + 0.1) * 10,
+                                                            0.1 * 10) / 10)[::-1])},
+                            name='altitude')
 
     return altitude
 
@@ -289,6 +299,10 @@ def run():
         # drop unnecessary variables and rename coords
         ds_out = ds_out.drop_vars(['number'])
         ds_out = ds_out.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
+        ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
+        ds_out['lat'].attrs = {}
+        ds_out['lon'] = (np.arange(ds_out.lon[0] * 10, (ds_out.lon[-1] * 10) + 1) / 10)
+        ds_out['lon'].attrs = {}
 
         ds_out.to_netcdf(f'{opts.outpath}ERA5Land_{years[iyr]}.nc')
 
