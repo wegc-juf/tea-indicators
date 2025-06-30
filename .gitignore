@@ -1,7 +1,7 @@
-scripts/examples/ref
-scripts/examples/dec_indicator_variables
-scripts/examples/ctp_indicator_variables
-scripts/examples/daily_basis_variables
+src/teametrics/data/examples/ref
+src/teametrics/data/examples/dec_indicator_variables
+src/teametrics/data/examples/ctp_indicator_variables
+src/teametrics/data/examples/daily_basis_variables
 __pycache__
 *.un~
 .idea/
