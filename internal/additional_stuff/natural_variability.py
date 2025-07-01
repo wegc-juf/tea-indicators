@@ -4,8 +4,8 @@ import os
 import pandas as pd
 import xarray as xr
 
-from scripts.additional_stuff.NatVar import NaturalVariability
-from scripts.general_stuff.general_functions import load_opts, create_natvar_history
+from NatVar import NaturalVariability
+from teametrics.common.general_functions import load_opts, create_natvar_history
 
 
 def _getopts():
