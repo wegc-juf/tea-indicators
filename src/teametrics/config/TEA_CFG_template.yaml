@@ -3,7 +3,7 @@ common_params:
   GeoRegion: &GR
     region: AUT
     # agr: EUR
-    full_region: false
+    # land_frac_min: 0.5
   parameter: &PARAM
     parameter: Tx
     precip: false

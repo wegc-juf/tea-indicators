@@ -1,15 +1,9 @@
 common_params:
   GeoRegion: &GR
     region: AUT
-    # agr: AUT
-    # agr_cell_size: 2
-    full_region: false
-    gr_type: polygon
-    sw_corner: null
-    ne_corner: null
-    center: null
-    we_len: null
-    ns_len: null
+    agr: EUR
+    agr_cell_size: 2
+    land_frac_min: 0.5
   parameter: &PARAM
     parameter: Tx
     precip: false

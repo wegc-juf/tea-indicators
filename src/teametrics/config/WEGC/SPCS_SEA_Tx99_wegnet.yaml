@@ -1,7 +1,6 @@
 common_params:
   GeoRegion: &GR
     region: SEA
-    full_region: false
   parameter: &PARAM
     parameter: Tx
     precip: false

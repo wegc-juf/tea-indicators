@@ -483,17 +483,13 @@ def area_grid(opts, masks):
 
         # calculate size of cells in areals
         x_len_da = xr.DataArray(data=x_len, coords={'lat': (['lat'], lat)})
-        if opts.full_region:
-            mask_template = xr.full_like(masks['nw_mask'], 1.)
-        else:
-            mask_template = masks['nw_mask']
+        mask_template = masks['nw_mask']
         agrid = mask_template * y_len * x_len_da
         agrid = agrid / 100
 
     # apply GR mask
-    if not opts.full_region:
-        agrid = agrid.where(masks['lt1500_mask'] == 1)
-        agrid = agrid * masks['mask']
+    agrid = agrid.where(masks['lt1500_mask'] == 1)
+    agrid = agrid * masks['mask']
     agrid = agrid.rename('area_grid')
     agrid.attrs = {'units': 'areals'}
 

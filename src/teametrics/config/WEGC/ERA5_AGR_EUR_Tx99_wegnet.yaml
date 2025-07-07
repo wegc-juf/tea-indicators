@@ -3,7 +3,6 @@ common_params:
     region: EUR
     agr: EUR
     # use full data without land, border, and altitude masks
-    full_region: false
   parameter: &PARAM
     parameter: Tx
     precip: false

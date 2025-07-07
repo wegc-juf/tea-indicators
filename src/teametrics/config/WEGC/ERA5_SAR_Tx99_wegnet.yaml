@@ -2,7 +2,6 @@ common_params:
   GeoRegion: &GR
     region: SAR
     # use full data without land, border, and altitude masks
-    full_region: false
   parameter: &PARAM
     parameter: Tx
     precip: false

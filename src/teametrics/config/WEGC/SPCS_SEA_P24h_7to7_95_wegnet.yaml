@@ -3,7 +3,6 @@ common_params:
     region: SEA
     agr: AUT
     # use full data without land, border, and altitude masks
-    full_region: false
     gr_type: polygon
     sw_corner: null
     ne_corner: null

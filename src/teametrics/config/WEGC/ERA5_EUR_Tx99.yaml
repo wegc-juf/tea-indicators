@@ -2,7 +2,6 @@ common_params:
   GeoRegion: &GR
     region: EUR
     agr: S-EUR
-    full_region: false
   parameter: &PARAM
     parameter: Tx
     precip: false

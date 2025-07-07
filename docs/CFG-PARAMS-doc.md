@@ -1,21 +1,13 @@
-# Documentation of TEA CFG parameter
+# Documentation of TEA CFG parameters
 
-## Common parameter (used in all scripts)
+## Common parameters (used in all scripts)
 | NAME             | DESCRIPTION                                                                                                                      | TYPE  | DEFAULT                                                  |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------|-------|----------------------------------------------------------|
-|                  |                                                                                                                                  |       |                                                          |
-| *no_gui*         | Set if GUI (shows set CFG parameter and enables editing of parameters) should not be displayed.                                  | bool  | false                                                    |
-|                  |                                                                                                                                  |       |                                                          |
 | *region*         | Name of GeoRegion; AUT, SAR, SEA, FBR, name of Austrian state, EUR, or ISO2 country code.                                        | str   | AUT                                                      |
 | *agr*            | Name of Aggregated GeoRegion (AGR); AUT, SAR, SEA, FBR, name of Austrian state, EUR, N-EUR, C-EUR, S-EUR or ISO2 country code.   | str   | null                                                     |
-| *agr_cell_size*  | Size of AGR sub-cell in degrees                                                                                                  | float | 1 for precip and 2 for all other parameters              |
-| *sw_corner*      | Only if *gr_type* corners, southwest corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
-| *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
-| *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                     |
-| *we_len*         | Only if *gr_type* center,length of GR west to east.                                                                              | float | null                                                     |
-| *ns_len*         | Only if *gr_type* center,length of GR north to south.                                                                            | float | null                                                     |
+| *agr_cell_size*  | Size of AGR sub-cell in degrees.                                                                                                 | float | 1 for precip and 2 for all other parameters              |
 |                  |                                                                                                                                  |       |                                                          |
-| *parameter*      | Name of parameter for TEA calculation .                                                                                          | str   | Tx                                                       |
+| *parameter*      | Name of parameter for TEA calculation. Must match parameter name in input data file.                                             | str   | Tx                                                       |
 | *precip*         | Marks if precipitation data is used; set if input is precipitation data.                                                         | bool  | false                                                    |
 | *threshold*      | Threshold value; if percentiles are used as thresholds, *threshold* defines the percentile, otherwise it is the absolute value   | float | 99                                                       |
 | *threshold_type* | Type of threshold; abs for absolute thresholds, perc for percentiles.                                                            | str   | perc                                                     |
@@ -30,6 +22,7 @@
 | *maskpath*       | Path of mask directory.                                                                                                          | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/  |
 | *statpath*       | Path of static file directory.                                                                                                   | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/ |
 | *tmppath*        | Path of temporary directory. Only relevant if large GR (> 100 areals) are processed with ERA5(-Land) data.                       | path  | /home/hst/tmp_data/TEAclean/largeGR/                     |
+| *gui*            | Set if configuration GUI (shows set CFG parameter and enables editing of parameters) should not be displayed.                    | bool  | false                                                    |
 
 ## regrid_SPARTACUS_to_WEGNext
 | NAME        | DESCRIPTION                             | TYPE | DEFAULT                                                                    |
@@ -45,6 +38,11 @@
 | NAME         | DESCRIPTION                                                                                                                                                                                                                    | TYPE   | DEFAULT                                                                               |
 |--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|---------------------------------------------------------------------------------------|
 | *gr_type*        | Method to define GR; polygon, corners, or center.                                                                                | str   | polygon                                                  |
+| *sw_corner*      | Only if *gr_type* corners, southwest corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
+| *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
+| *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                     |
+| *we_len*         | Only if *gr_type* center,length of GR west to east.                                                                              | float | null                                                     |
+| *ns_len*         | Only if *gr_type* center,length of GR north to south.                                                                            | float | null                                                     |
 | *subreg*     | Only necessary if selected region is not the entire region in the shp file (Austrian states, european countries etc.). In case of Austrian states, give name of state. In case of european country, give ISO2 code of country. | str    | null                                                                                  |
 | *target_sys* | ID of wanted coordinate System (https://epsg.io) which should be used for mask.                                                                                                                                                | int    | 3416 for SPARTACUS and 4326 for ERA5                                                  |
 | *xy_name*    | Names of x and y coordinates in testfile, separated by ",".                                                                                                                                                                    | string | x,y for SPARTACUS, lon,lat for ERA5                                                  |

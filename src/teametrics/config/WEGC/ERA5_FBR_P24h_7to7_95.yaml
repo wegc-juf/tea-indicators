@@ -2,7 +2,6 @@ common_params:
   GeoRegion: &GR
     region: FBR
     # use full data without land, border, and altitude masks
-    full_region: false
     gr_type: polygon
     sw_corner: null
     ne_corner: null

@@ -433,7 +433,7 @@ def _reduce_region(opts, data, mask, threshold=None, full_region=False):
         data: input data
         mask: mask grid
         threshold: threshold grid
-        full_region: if True, use the full region (default: opts.full_region)
+        full_region: if True, use the full region
 
     Returns:
         data: reduced data
@@ -447,7 +447,7 @@ def _reduce_region(opts, data, mask, threshold=None, full_region=False):
         cell_size_lat = 2
 
     # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
-    if opts.full_region or full_region:
+    if full_region:
         min_lat = mask.lat.min().values
         max_lat = mask.lat.max().values
         min_lon = mask.lon.min().values
