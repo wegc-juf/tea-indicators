@@ -18,8 +18,8 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    data_path: ../examples/ERA5_Tx_1956-2024_CH.nc
-    outpath: ../examples/
+    data_path: data/examples/ERA5_Tx_1956-2024_CH.nc
+    outpath: data/examples/
 
 calc_TEA:
   <<: *GR
