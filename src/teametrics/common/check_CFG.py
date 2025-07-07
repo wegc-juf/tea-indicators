@@ -8,16 +8,16 @@ import re
 import yaml
 
 
-def dir_path(path):
+def is_dir_path(path):
     if os.path.isdir(path) or os.path.exists(path):
-        return path
+        return True
     else:
         raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
 
 
-def file_path(entry):
+def is_file(entry):
     if os.path.isfile(entry):
-        return entry
+        return True
     else:
         raise argparse.ArgumentTypeError(f'{entry} is not a valid file')
 
@@ -78,9 +78,9 @@ def check_config(opts_dict, fname):
             continue
         else:
             if 'path' in param:
-                dir_path(opts_dict[param])
+                is_dir_path(opts_dict[param])
             if 'file' in param:
-                file_path(opts_dict[param])
+                is_file(opts_dict[param])
             if param in ['precip', 'low_extreme', 'decadal', 'spreads', 'decadal_only',
                          'recalc_daily', 'orography', 'recalc_decadal', 'gui']:
                 if opts_dict[param] == 0 or opts_dict[param] == 'false':
