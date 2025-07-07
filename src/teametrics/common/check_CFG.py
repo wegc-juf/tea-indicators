@@ -60,7 +60,8 @@ def ints(param, val):
 
 
 def check_config(opts_dict, fname):
-    with open('./config/TEA_CFG_DEFAULTS.yaml', 'r') as stream:
+    file_path = os.path.dirname(__file__)
+    with open(f'{file_path}/../config/TEA_CFG_DEFAULTS.yaml', 'r') as stream:
         defaults = yaml.safe_load(stream)
         defaults = defaults[fname]
 
