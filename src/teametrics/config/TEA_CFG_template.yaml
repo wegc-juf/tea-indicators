@@ -7,8 +7,8 @@ common_params:
   parameter: &PARAM
     parameter: Tx
     precip: false
-    threshold: 99
     threshold_type: perc
+    threshold: 99
     unit: degC
     low_extreme: false
   time_params: &TIME
@@ -56,10 +56,10 @@ calc_TEA:
   <<: *GENERAL
   outpath: *result_path
   recalc_threshold: false
-  recalc_daily: false
+  recalc_daily: true
   hourly: false
   decadal: true
   spreads: true
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
   use_dask: false
