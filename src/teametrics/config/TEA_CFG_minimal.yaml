@@ -1,7 +1,7 @@
 common_params:
   GeoRegion: &GR
     region: full
-  parameter: &PARAM
+  parameters: &PARAM
     parameter: Tx
     threshold: 28
     threshold_type: abs
@@ -11,9 +11,9 @@ common_params:
     start: 1956
     end: 2024
     period: WAS
-    # ref period from-to (inclusive)
+    # ref period from-to [from, to] (including both years)
     ref_period: 1961-1990
-    # cc period from-to (inclusive)
+    # cc period from-to [from, to] (including both years)
     cc_period: 2008-2024
   dataset: &DATA
     dataset: ERA5

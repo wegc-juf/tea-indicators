@@ -1,7 +1,7 @@
 common_params:
   GeoRegion: &GR
     station: Graz
-  parameter: &PARAM
+  parameters: &PARAM
     parameter: Tx
     precip: false
     threshold: 99
@@ -20,7 +20,7 @@ common_params:
     dataset: HistAlp
   paths: &PATHS
     data_path: /data/users/hst/cdrDPS/station_data/
-    result_path: &result_path /home/wegnet/results/TEA_indicators/station_indices/
+    outpath: /home/wegnet/results/TEA_indicators/station_indices/
 
 calc_TEA: &calc_TEA
   <<: *GR
@@ -28,7 +28,6 @@ calc_TEA: &calc_TEA
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  outpath: *result_path
   recalc_daily: true
   hourly: false
   decadal: true
