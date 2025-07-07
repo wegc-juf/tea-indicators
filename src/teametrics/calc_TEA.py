@@ -211,10 +211,11 @@ def calc_annual_ctp_indicators(tea, opts, start, end):
         tea.update_min_area(dtea_min)
 
     if 'agr' in opts:
-        # set land_frac_min to 0 for full region
-        if opts.full_region:
-            tea.land_frac_min = 0
-    
+        if 'land_frac_min' in opts:
+            tea.land_frac_min = float(opts.land_frac_min)
+        else:
+            tea.land_frac_min = 0.5
+
     # calculate annual climatic time period indicators
     logger.info('Calculating annual CTP indicators')
     with warnings.catch_warnings():
