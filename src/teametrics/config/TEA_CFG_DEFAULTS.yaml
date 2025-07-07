@@ -44,6 +44,11 @@ create_region_masks:
   <<: *TIME
   <<: *GENERAL
   gr_type: polygon
+  sw_corner: null
+  ne_corner: null
+  center: null
+  we_len: null
+  ns_len: null
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
 
