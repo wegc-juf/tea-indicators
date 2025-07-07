@@ -32,9 +32,11 @@ common_params:
 
 create_region_masks:
   <<: *GR
+  <<: *PARAM
   <<: *DATA
+  <<: *PATHS
+  <<: *TIME
   <<: *GENERAL
-  subreg: custom
   gr_type: polygon
   sw_corner: null
   ne_corner: null

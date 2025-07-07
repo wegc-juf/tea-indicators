@@ -288,10 +288,14 @@ def save_output(ds, opts, out_region=None):
     """
     if out_region is None:
         out_region = opts.region
-    ds.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc')
+    outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
+    # print(f'Saving old masks file to {outpath}')
+    # ds.to_netcdf(outpath)
     simple_mask = ds.lt1500_mask * ds.mask
     simple_mask.name = 'mask'
-    simple_mask.to_netcdf(f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc')
+    outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc'
+    print(f'Saving mask file to {outpath}')
+    simple_mask.to_netcdf(outpath)
 
 
 def run_custom_gr(opts):
