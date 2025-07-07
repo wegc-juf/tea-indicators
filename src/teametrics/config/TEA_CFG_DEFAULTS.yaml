@@ -72,6 +72,7 @@ calc_TEA:
   decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
+  hourly: false
 
 natural_variability:
   <<: *GR

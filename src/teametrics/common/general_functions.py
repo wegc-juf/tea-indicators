@@ -80,6 +80,8 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         show_parameters(opts)
         opts = check_config(opts_dict=vars(opts), fname=fname)
         opts = argparse.Namespace(**opts)
+    if 'hourly' not in opts:
+        opts.hourly = False
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
