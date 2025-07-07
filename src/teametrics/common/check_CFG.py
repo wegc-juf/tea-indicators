@@ -82,7 +82,7 @@ def check_config(opts_dict, fname):
             if 'file' in param:
                 file_path(opts_dict[param])
             if param in ['precip', 'low_extreme', 'decadal', 'spreads', 'decadal_only',
-                         'recalc_daily', 'orography', 'recalc_decadal', 'no_gui']:
+                         'recalc_daily', 'orography', 'recalc_decadal', 'gui']:
                 if opts_dict[param] == 0 or opts_dict[param] == 'false':
                     opts_dict[param] = False
                 if opts_dict[param] == 1 or opts_dict[param] == 'true':

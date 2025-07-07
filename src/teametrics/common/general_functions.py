@@ -75,8 +75,8 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
             opts.use_dask = False
         else:
             opts.use_dask = False
-    if 'no_gui' in opts and not opts.no_gui:
-        # show set parameter
+    if 'gui' in opts and opts.gui:
+        # show set parameters
         show_parameters(opts)
         opts = check_config(opts_dict=vars(opts), fname=fname)
         opts = argparse.Namespace(**opts)

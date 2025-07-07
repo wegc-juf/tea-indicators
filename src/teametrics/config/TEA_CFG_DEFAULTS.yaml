@@ -30,9 +30,12 @@ common_params:
     statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/
     mask_sub: masks/
+  general: &GENERAL
+    gui: false
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
+  <<: *GENERAL
   inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/v2024_v1.5/
   orography: false
   orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
@@ -45,6 +48,7 @@ create_region_masks:
   <<: *DATA
   <<: *PARAM
   <<: *TIME
+  <<: *GENERAL
   gr_type: polygon
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
@@ -55,6 +59,7 @@ create_static_files:
   <<: *DATA
   <<: *PATHS
   <<: *TIME
+  <<: *GENERAL
   smoothing: 0
   outpath: *statpath
 
@@ -64,6 +69,7 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
+  <<: *GENERAL
   outpath: ~/results/
   recalc_threshold: false
   recalc_daily: false
@@ -72,3 +78,11 @@ calc_TEA:
   decadal_only: false
   recalc_decadal: true
   compare_to_ref: false
+
+natural_variability:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  <<: *GENERAL

@@ -27,10 +27,13 @@ common_params:
     maskpath: *statpath
     mask_sub: masks/
     result_path: &result_path /home/wegnet/results/TEA_indicators/
+  general: &GENERAL
+    gui: false
 
 create_region_masks:
   <<: *GR
   <<: *DATA
+  <<: *GENERAL
     # TODO siehe Chat mit Steffi
   subreg: custom
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
@@ -44,6 +47,7 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
+  <<: *GENERAL
   outpath: *result_path
   recalc_threshold: false
   recalc_daily: false

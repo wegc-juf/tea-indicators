@@ -1,6 +1,6 @@
 common_params:
   gui: &GUI
-    no_gui: true
+    gui: false
   GeoRegion: &GR
     region: EUR
     gr_type: polygon
