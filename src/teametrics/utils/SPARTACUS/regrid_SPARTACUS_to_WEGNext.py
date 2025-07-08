@@ -12,8 +12,9 @@ from pathlib import Path
 import pyproj
 from tqdm import trange
 import xarray as xr
+import argparse
 
-from common.general_functions import create_history_from_cfg, load_opts
+from teametrics.common.general_functions import create_history_from_cfg, load_opts
 
 
 def define_wegn_grid_1000x1000(opts):
@@ -165,9 +166,33 @@ def regrid_orog(opts):
     oro_new.to_netcdf(f'{opts.outpath}SPARTACUSreg_orography.nc')
 
 
+def _getopts():
+    """
+    get command line arguments
+
+    Returns:
+        opts: command line parameters
+    """
+    
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--config-file', '-cf',
+                        dest='config_file',
+                        type=str,
+                        default='../TEA_CFG.yaml',
+                        help='TEA configuration file (default: TEA_CFG.yaml)')
+    
+    myopts = parser.parse_args()
+    
+    return myopts
+
+
 def run():
-    # load CFG parameter
-    opts = load_opts(fname=__file__)
+    # get command line parameters
+    cmd_opts = _getopts()
+    
+    # load CFG parameters
+    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
 
     if opts.orography:
         regrid_orog(opts=opts)
