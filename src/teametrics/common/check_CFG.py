@@ -6,10 +6,11 @@ import os
 import pandas as pd
 import re
 import yaml
+import glob
 
 
 def is_dir_path(path):
-    if os.path.isdir(path) or os.path.exists(path):
+    if os.path.isdir(path) or os.path.exists(path) or glob.glob(path):
         return True
     else:
         raise argparse.ArgumentTypeError(f'{path} is not a valid path.')

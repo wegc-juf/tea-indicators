@@ -258,6 +258,8 @@ def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=F
     # check if inpath is file
     if os.path.isfile(inpath):
         return inpath
+    elif '*' in inpath and glob.glob(inpath):
+        return sorted(glob.glob(inpath))
 
     if hourly:
         inpath = f'{inpath}/hourly/'
