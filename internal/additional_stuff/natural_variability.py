@@ -46,11 +46,16 @@ def load_station_data(opts):
     if opts.parameter != 'Tx':
         dm_var, em_var = 'DM_Md', 'EM_avg_Md'
 
-    files = sorted(glob.glob(f'{opts.tea_path}station/dec_indicator_variables/amplification/'
+    files = sorted(glob.glob(f'{opts.tea_path}/station/dec_indicator_variables/amplification/'
                              f'*{opts.param_str}*.nc'))
-
+    
+    print(f'Loading data from files: {files}')
+    
     # only select files for the given stations
     files = [f for f in files if any(station in f for station in stations)]
+    
+    if not files:
+        raise FileNotFoundError(f'No files found for stations: {stations} in {opts.tea_path}/station/dec_indicator_variables/amplification/')
 
     def extract_station_name(filename):
         for station in stations:
@@ -76,7 +81,7 @@ def load_station_data(opts):
         vvar in v for vvar in ['EF', 'ED_avg', em_var, dm_var, 'tEX'])]
     drops = [vvar for vvar in ds.data_vars if vvar not in keeps or '_s' in vvar or 'CC' in vvar]
 
-    ds = ds.drop(drops)
+    ds = ds.drop_vars(drops)
 
     # add DM variables
     ds[f'{dm_var}_AF'] = ds['ED_avg_AF'] * ds[f'{em_var}_AF']
@@ -100,7 +105,7 @@ def load_spartacus_data(opts):
              or 'CC' in vvar]
     drops.extend(['x', 'y'])
 
-    ds = ds.drop(drops)
+    ds = ds.drop_vars(drops)
 
     # rename variables to match station data names (i.e., remove '_GR')
     rename_dict = {}
@@ -114,9 +119,9 @@ def load_spartacus_data(opts):
     ds = ds.rename(rename_dict)
 
     if opts.parameter == 'Tx':
-        ds = ds.drop(['EM_avg_Md_AF'])
+        ds = ds.drop_vars(['EM_avg_Md_AF'])
 
-    ds = ds.drop('EM_avg_Max_AF')
+    ds = ds.drop_vars('EM_avg_Max_AF')
 
     # add DM variables
     ds[f'{dm_var}_AF'] = ds['ED_avg_AF'] * ds[f'{em_var}_AF']

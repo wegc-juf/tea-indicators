@@ -133,6 +133,7 @@ class NaturalVariability:
                 var_name = vvar.split('_scaling')[1]
                 self.nv[vvar].attrs['long_name'] = f'GR {var_name} scaling factor'
 
+        print(f'Saving natural variability results to {outname}')
         self.nv.to_netcdf(outname)
 
 
