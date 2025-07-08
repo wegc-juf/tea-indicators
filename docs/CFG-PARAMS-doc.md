@@ -1,85 +1,76 @@
-# Documentation of TEA CFG parameter
+# Documentation of TEA CFG parameters
 
-## Common parameter (used in all scripts)
-| NAME             | DESCRIPTION                                                                                                                      | TYPE  | DEFAULT                                                  |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------|-------|----------------------------------------------------------|
-|                  |                                                                                                                                  |       |                                                          |
-| *no_gui*         | Set if GUI (shows set CFG parameter and enables editing of parameters) should not be displayed.                                  | bool  | false                                                    |
-|                  |                                                                                                                                  |       |                                                          |
-| *region*         | Name of GeoRegion; AUT, SAR, SEA, FBR, name of Austrian state, EUR, or ISO2 country code.                                        | str   | AUT                                                      |
-| *agr*            | Name of Aggregated GeoRegion (AGR); AUT, SAR, SEA, FBR, name of Austrian state, EUR, N-EUR, C-EUR, S-EUR or ISO2 country code.   | str   | null                                                     |
-| *agr_cell_size*  | Size of AGR sub-cell in degrees                                                                                                  | float | 1 for precip and 2 for all other parameters              |
-| *sw_corner*      | Only if *gr_type* corners, southwest corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
-| *ne_corner*      | Only if *gr_type* corners, northeast corner of GR; lon,lat or x,y separated by ",".                                              | x,y   | null                                                     |
-| *center*         | Only if *gr_type* center, center of GR; lon,lat or x,y separated by ",".                                                         | x,y   | null                                                     |
-| *we_len*         | Only if *gr_type* center,length of GR west to east.                                                                              | float | null                                                     |
-| *ns_len*         | Only if *gr_type* center,length of GR north to south.                                                                            | float | null                                                     |
-|                  |                                                                                                                                  |       |                                                          |
-| *parameter*      | Name of parameter for TEA calculation .                                                                                          | str   | Tx                                                       |
-| *precip*         | Marks if precipitation data is used; set if input is precipitation data.                                                         | bool  | false                                                    |
-| *threshold*      | Threshold value; if percentiles are used as thresholds, *threshold* defines the percentile, otherwise it is the absolute value   | float | 99                                                       |
-| *threshold_type* | Type of threshold; abs for absolute thresholds, perc for percentiles.                                                            | str   | perc                                                     |
-| *unit*           | Physical unit of chosen parameter.                                                                                               | str   | degC                                                     |
-| *low_extreme*    | Marks if a low extreme is investigated; set if low extreme is investigated (values lower than threshold are considered extreme). | bool  | false                                                    |
-|                  |                                                                                                                                  |       |                                                          |
-| *start*          | Start year.                                                                                                                      | int   | 1961                                                     |
-| *end*            | End year.                                                                                                                        | int   | 2024                                                     |
-| *period*         | Climatic time period of interest; monthly, seasonal, WAS, ESS, JJA, or annual.                                                   | str   | WAS                                                      |
-| *dataset*        | Name of dataset; SPARTACUS, ERA5, or ERA5Land.                                                                                   | str   | SPARTACUS                                                |
-|                  |                                                                                                                                  |       |                                                          |
-| *maskpath*       | Path of mask directory.                                                                                                          | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/  |
-| *statpath*       | Path of static file directory.                                                                                                   | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/ |
-| *tmppath*        | Path of temporary directory. Only relevant if large GR (> 100 areals) are processed with ERA5(-Land) data.                       | path  | /home/hst/tmp_data/TEAclean/largeGR/                     |
-
-## regrid_SPARTACUS_to_WEGNext
-| NAME        | DESCRIPTION                             | TYPE | DEFAULT                                                                    |
-|-------------|-----------------------------------------|------|----------------------------------------------------------------------------|
-| *inpath*    | Path of input data.                     | path | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/v2024_v1.5/ |
-| *orography* | Marks if orography should be regridded. | bool | false                                                                      |
-| *orofile*   | Path of orography file.                 | path | /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc |
-| *wegnfile*  | Dummy WEGN file to extract grid.        | path | /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc           |
-| *outpath*   | Path of output directory.               | path | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/                |
-
-
-## create_region_masks
-| NAME         | DESCRIPTION                                                                                                                                                                                                                    | TYPE   | DEFAULT                                                                               |
-|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|---------------------------------------------------------------------------------------|
-| *gr_type*        | Method to define GR; polygon, corners, or center.                                                                                | str   | polygon                                                  |
-| *subreg*     | Only necessary if selected region is not the entire region in the shp file (Austrian states, european countries etc.). In case of Austrian states, give name of state. In case of european country, give ISO2 code of country. | str    | null                                                                                  |
-| *target_sys* | ID of wanted coordinate System (https://epsg.io) which should be used for mask.                                                                                                                                                | int    | 3416 for SPARTACUS and 4326 for ERA5                                                  |
-| *xy_name*    | Names of x and y coordinates in testfile, separated by ",".                                                                                                                                                                    | string | x,y for SPARTACUS, lon,lat for ERA5                                                  |
-| *shpfile*    | Shape file of region.                                                                                                                                                                                                          | path   | /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp                          |
-| *orofile*    | File with orography information of target grid.                                                                                                                                                                                | path   | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/ SPARTACUSreg_orography.nc |
-| *lsmfile*    | Only necessary if mask for EUR should be created. File with land-sea-mask of target grid.                                                                                                                                      | path   | /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc                                               |
-| *outpath*    | Path of output directory.                                                                                                                                                                                                      | path   | /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/                               |
-
-
-## create_static_files
-| NAME            | DESCRIPTION                                                                                                 | TYPE | DEFAULT                                                     |
-|-----------------|-------------------------------------------------------------------------------------------------------------|------|-------------------------------------------------------------|
-| *season_length* | Number of days in season for threshold calculation. For whole year use 366, for WAS (Apr-Oct) 214.          | int  | 366                                                         |
-| *smoothing*     | Radius for spatial smoothing of threshold grid in km. Used for precipitation parameter from SPARTACUS data. | int  | 0                                                           |
-| *inpath*        | Path of input directory.                                                                                    | path | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/ |
-| *outpath*       | Path of output directory.                                                                                   | path | /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/    |
-
+## Common parameters (used in all scripts)
+| NAME             | DESCRIPTION                                                                                                                                                                                                | TYPE  | DEFAULT                                     |
+|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------|---------------------------------------------|
+| **GeoRegion**    | GeoRegion specific parameters.                                                                                                                                                                             |       |                                             |
+| *region*         | Name of GeoRegion; `AUT`, `SAR`, `SEA`, `FBR`, name of Austrian state, `EUR`, or ISO2 country code.                                                                                                        | str   | AUT                                         |
+| *station*        | Name of station, optional - use only if station data should be used instead of gridded data; `Graz`, <br/><br/>`Innsbruck`, `Wien`, `Salzburg`, `BadGleichenberg`, `Kremsmuenster`, or `Deutschlandsberg`. | str   | null                                        |
+| *agr*            | Name of Aggregated GeoRegion (AGR), optional; `AUT`, `SAR`, `SEA`, `FBR`, name of Austrian state, `EUR`, `N-EUR`, `C-EUR`,` S-EUR` or ISO2 country code.                                                   | str   | null                                        |
+| *agr_cell_size*  | Size of AGR sub-cell in degrees, in case *agr* is defined.                                                                                                                                                 | float | 1 for precip and 2 for all other parameters |
+| **parameters**   | Information about parameter and threshold.                                                                                                                                                                 |       |                                             |
+| *parameter*      | Name of parameter for TEA calculation. Must match parameter name in input data file. E.g. `Tx`, `Tn`, `P`                                                                                                  | str   | Tx                                          |
+| *precip*         | Marks if precipitation data is used; set true if input is precipitation data.                                                                                                                              | bool  | false                                       |
+| *threshold_type* | Type of threshold; `abs` for absolute thresholds, `perc` for percentiles.                                                                                                                                  | str   | perc                                        |
+| *threshold*      | Threshold value; if *threshold_type* is `perc`, *threshold* defines the percentile, otherwise it is an absolute value.                                                                                     | float | 99                                          |
+| *smoothing*      | Radius for spatial smoothing of threshold grid in km. Used for SPARTACUS precipitation data.                                                                                                               | int   | 0                                           |
+| *unit*           | Physical unit of chosen parameter.                                                                                                                                                                         | str   | degC                                        |
+| *low_extreme*    | Marks if a low extreme is investigated; set if low extreme is investigated (values lower than threshold are considered extreme).                                                                           | bool  | false                                       |
+| **time_params**  | Information about analyzed time period and reference period                                                                                                                                                |       |                                             |
+| *start*          | Start year.                                                                                                                                                                                                | int   | 1961                                        |
+| *end*            | End year.                                                                                                                                                                                                  | int   | 2024                                        |
+| *period*         | Climatic time period of interest; `monthly`, `seasonal`, `WAS` (warm season: Apr-Oct), `ESS` (extended summer season: May-Sep), `MAM`, `JJA`, `SON`, `DJF` or `annual`.                                    | str   | WAS                                         |
+| *ref_period*     | Reference period for amplification factor calculation; `start_year-end_year`, interval \[start_year, end_year\], e.g. `1961-1990`.                                                                         | str   | null                                        |
+| *cc_period*      | Climate change period for amplification factor calculation; `start_year-end_year`, interval \[start_year, end_year\], e.g. `1991-2020`.                                                                    | str   | null                                        |
+| **dataset**      | Information about dataset.                                                                                                                                                                                 |       |                                             |
+| *dataset*        | Name of dataset; `SPARTACUS`, `ERA5`, `ERA5Land` (for gridded data) or `HistAlp` (for station data).                                                                                                       | str   | SPARTACUS                                   |
+| **paths**        | Information about relevant paths                                                                                                                                                                           |       |                                             |
+| *data_path*      | Path of input data directory.                                                                                                                                                                              | path  | null                                        |
+| *statpath*       | Path of static file directory.                                                                                                                                                                             | path  | null                                        |
+| *maskpath*       | Path of mask directory.                                                                                                                                                                                    | path  | statpath                                    |
+| *mask_sub*       | Subdirectory of mask directory.                                                                                                                                                                            | str   | masks                                       |
+| *outpath*        | Path of output directory for results.                                                                                                                                                                      | path  | null                                        |
+| **general**      | General parameters.                                                                                                                                                                                        |       |                                             |
+| *gui*            | Set if configuration GUI (shows set CFG parameters and enables editing of parameters) should be displayed.                                                                                                 | bool  | false                                       |
 
 ## calc_TEA
-| NAME             | DESCRIPTION                                                                                                | TYPE  | DEFAULT                                                     |
-|------------------|------------------------------------------------------------------------------------------------------------|-------|-------------------------------------------------------------|
-| *inpath*         | Path of input directory.                                                                                   | path  | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/ |
-| *outpath*        | Path of output directory.                                                                                  | path  | /data/users/hst/TEA-clean/TEA/                              |
-| *recalc_daily*   | Set if daily basis variables (DBVs) should be recalculated or loaded from memory.                          | bool  | false                                                       |
-| *decadal*        | Set if decadal TEA indicators should also be calculated. Only possible if end - start >= 10                | bool  | false                                                       |
-| *spreads*        | Set if spread estimators of decadal TEA indicators should also be calculated.                              | bool  | false                                                       |
-| *decadal_only*   | Set if ONLY decadal TEA indicators should be calculated. Only possible if CTP vars already calculated.     | bool  | false                                                       |
-| *recalc_daily*   | Set if decadal indicator variables (DECs) should be recalculated or loaded from memory.                    | bool  | false                                                       |
-| *compare_to_ref* | Set if comparison to reference should be done as well.                                                     | bool  | false                                                       |
-| *save_old*       | Set if old and new versions should be stored.                                                              | bool  | false                                                       |
+| NAME               | DESCRIPTION                                                                                                                  | TYPE | DEFAULT |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------|------|---------|
+| *recalc_threshold* | Set if threshold grid should be recalculated.                                                                                | bool | false   |
+| *hourly*           | Set if hourly data should be used in addition to daily data. Only possible for ERA5(Land) if available in hourly resolution. | bool | false   |
+| *recalc_daily*     | Set if daily basis variables should be recalculated in case they already exist.                                              | bool | false   |
+| *decadal*          | Set if decadal TEA indicators should also be calculated. Only possible if end - start >= 10                                  | bool | false   |
+| *recalc_decadal*   | Set if decadal TEA indicators should be recalculated in case they already exist.                                             | bool | false   |
+| *spreads*          | Set if spread estimators of decadal TEA indicators should be calculated.                                                     | bool | false   |
+| *decadal_only*     | Set if ONLY decadal TEA indicators should be calculated. Only possible if annual CTP vars already calculated.                | bool | false   |
+| *use_dask*         | Set if Dask should be used for parallel processing.                                                                          | bool | false   |
+| *compare_to_ref*   | Set if comparison to reference data should be done.                                                                          | bool | false   |
+
+## create_region_masks
+| NAME         | DESCRIPTION                                                                                                                                                                                                                    | TYPE   | DEFAULT                              |
+|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|--------------------------------------|
+| *gr_type*    | Method to define GR; `polygon`, `corners`, or `center`.                                                                                                                                                                        | str    | polygon                              |
+| *sw_corner*  | Only if *gr_type* `corners`, southwest corner of GR; lon,lat or x,y separated by ",".                                                                                                                                          | x,y    | null                                 |
+| *ne_corner*  | Only if *gr_type* `corners`, northeast corner of GR; lon,lat or x,y separated by ",".                                                                                                                                          | x,y    | null                                 |
+| *center*     | Only if *gr_type* `center`, center of GR; lon,lat or x,y separated by ",".                                                                                                                                                     | x,y    | null                                 |
+| *we_len*     | Only if *gr_type* `center`,length of GR west to east.                                                                                                                                                                          | float  | null                                 |
+| *ns_len*     | Only if *gr_type* `center`,length of GR north to south.                                                                                                                                                                        | float  | null                                 |
+| *subreg*     | Only necessary if selected region is not the entire region in the shp file (Austrian states, european countries etc.). In case of Austrian states, give name of state. In case of european country, give ISO2 code of country. | str    | null                                 |
+| *target_sys* | ID of wanted coordinate System (https://epsg.io) which should be used for mask.                                                                                                                                                | int    | 3416 for SPARTACUS and 4326 for ERA5 |
+| *xy_name*    | Names of x and y coordinates in testfile, separated by ",".                                                                                                                                                                    | string | x,y for SPARTACUS, lon,lat for ERA5  |
+| *shpfile*    | Shape file of region.                                                                                                                                                                                                          | path   | null                                 |
+| *orofile*    | File with orography information of target grid.                                                                                                                                                                                | path   | null                                 |
+| *lsmfile*    | Only necessary if mask for EUR should be created. File with land-sea-mask of target grid.                                                                                                                                      | path   | null                                 |
+| *outpath*    | Path of output directory for mask.                                                                                                                                                                                             | path   | null                                 |
+
+## regrid_SPARTACUS_to_WEGNext
+### Only necessary for SPARTACUS data, to regrid SPARTACUS data to WEGNext grid.
+| NAME        | DESCRIPTION                             | TYPE | DEFAULT |
+|-------------|-----------------------------------------|------|---------|
+| *inpath*    | Path of input data.                     | path | null    |
+| *orography* | Marks if orography should be regridded. | bool | false   |
+| *orofile*   | Path of orography file.                 | path | null    |
+| *wegnfile*  | Dummy WEGN file to extract grid.        | path | null    |
+| *outpath*   | Path of output directory.               | path | null    |
 
 
-## calc_station_TEA
-| NAME      | DESCRIPTION                                                                                            | TYPE | DEFAULT                               |
-|-----------|--------------------------------------------------------------------------------------------------------|------|---------------------------------------|
-| *inpath*  | Path of input directory.                                                                               | path | /data/users/hst/cdrDPS/station_data/  |
-| *outpath* | Path of output directory.                                                                              | path | /data/users/hst/TEA-clean/TEA/        |
-| *station* | Name of station; Graz, Innsbruck, Wien, Salzburg, BadGleichenberg, Kremsmuenster, or Deutschlandsberg. | str  | Graz                                  |

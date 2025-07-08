@@ -1,0 +1,79 @@
+common_params:
+  GeoRegion: &GR
+    region: AUT
+    agr: EUR
+    agr_cell_size: 2
+    land_frac_min: 0.5
+  parameter: &PARAM
+    parameter: Tx
+    precip: false
+    threshold: 99
+    threshold_type: perc
+    unit: degC
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: annual
+    ref_period: 1961-1990
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: SPARTACUS
+  paths: &PATHS
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/
+    mask_sub: masks/
+  general: &GENERAL
+    gui: false
+
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  <<: *GENERAL
+  gr_type: polygon
+  sw_corner: null
+  ne_corner: null
+  center: null
+  we_len: null
+  ns_len: null
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/SPARTACUSreg_orography.nc
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  <<: *GENERAL
+  outpath: ~/results/
+  recalc_threshold: false
+  recalc_daily: false
+  decadal: true
+  spreads: false
+  decadal_only: false
+  recalc_decadal: true
+  compare_to_ref: false
+  hourly: false
+
+natural_variability:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  <<: *GENERAL
+
+regrid_SPARTACUS_to_WEGNext:
+  <<: *PARAM
+  <<: *GENERAL
+  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/v2024_v1.5/
+  orography: false
+  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
+  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+
