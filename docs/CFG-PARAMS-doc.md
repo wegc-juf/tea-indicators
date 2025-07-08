@@ -64,12 +64,13 @@
 | *outpath*    | Path of output directory for mask.                                                                                                                                                                                             | path   | null                                 |
 
 ## regrid_SPARTACUS_to_WEGNext
-| NAME        | DESCRIPTION                             | TYPE | DEFAULT                                                                    |
-|-------------|-----------------------------------------|------|----------------------------------------------------------------------------|
-| *inpath*    | Path of input data.                     | path | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS_raw/v2024_v1.5/ |
-| *orography* | Marks if orography should be regridded. | bool | false                                                                      |
-| *orofile*   | Path of orography file.                 | path | /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc |
-| *wegnfile*  | Dummy WEGN file to extract grid.        | path | /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc           |
-| *outpath*   | Path of output directory.               | path | /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/                |
+### Only necessary for SPARTACUS data, to regrid SPARTACUS data to WEGNext grid.
+| NAME        | DESCRIPTION                             | TYPE | DEFAULT |
+|-------------|-----------------------------------------|------|---------|
+| *inpath*    | Path of input data.                     | path | null    |
+| *orography* | Marks if orography should be regridded. | bool | false   |
+| *orofile*   | Path of orography file.                 | path | null    |
+| *wegnfile*  | Dummy WEGN file to extract grid.        | path | null    |
+| *outpath*   | Path of output directory.               | path | null    |
 
 
