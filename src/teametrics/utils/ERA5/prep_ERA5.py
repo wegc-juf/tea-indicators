@@ -14,7 +14,7 @@ from tqdm import trange
 import warnings
 import xarray as xr
 
-from common.general_functions import create_history
+from teametrics.common.general_functions import create_history
 
 
 def get_opts():
