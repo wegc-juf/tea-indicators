@@ -82,6 +82,11 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         opts = argparse.Namespace(**opts)
     if 'hourly' not in opts:
         opts.hourly = False
+    if 'input_data_path' not in opts:
+        if 'data_path' in opts:
+            opts.input_data_path = opts.data_path
+        else:
+            raise ValueError('input_data_path not set in options. Please set it in the CFG file.')
 
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
@@ -343,7 +348,7 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
 
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.data_path, param_str=param_str,
+    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path, param_str=param_str,
                                     hourly=hourly)
 
     # load relevant years
@@ -391,10 +396,10 @@ def get_csv_data(opts):
         rename_dict = {'nied': opts.parameter}
 
     # read csv file of station data and set time as index of df
-    filenames = f'{opts.data_path}{pstr}_{opts.station}*18770101*.csv'
+    filenames = f'{opts.input_data_path}{pstr}_{opts.station}*18770101*.csv'
     file = glob.glob(filenames)
     if len(file) == 0:
-        filenames = f'{opts.data_path}{pstr}_{opts.station}*.csv'
+        filenames = f'{opts.input_data_path}{pstr}_{opts.station}*.csv'
         file = glob.glob(filenames)
     data = pd.read_csv(file[0])
     data['time'] = pd.to_datetime(data['time'])
