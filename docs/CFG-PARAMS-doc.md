@@ -47,6 +47,7 @@
 | *compare_to_ref*   | Set if comparison to reference data should be done.                                                                          | bool | false   |
 
 ## create_region_masks
+### Only necessary if you want to create your own GeoRegion (GR) mask.
 | NAME         | DESCRIPTION                                                                                                                                                                                                                    | TYPE   | DEFAULT                              |
 |--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|--------------------------------------|
 | *gr_type*    | Method to define GR; `polygon`, `corners`, or `center`.                                                                                                                                                                        | str    | polygon                              |
