@@ -461,10 +461,6 @@ def _reduce_region(opts, data, mask, threshold=None, full_region=False):
         cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
         min_lon = math.floor(lons[0] - cell_size_lon / 2)
         max_lon = math.ceil(lons[-1] + cell_size_lon / 2)
-        # if min_lat < 35 - cell_size_lat:
-        #     # TODO: get rid of this
-        #     logger.warning('Region is too far south. Setting minimum latitude to 35°N.')
-        #     min_lat = 35 - cell_size_lat
 
     proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     proc_mask = mask.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
