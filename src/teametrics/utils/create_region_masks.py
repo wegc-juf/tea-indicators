@@ -298,7 +298,15 @@ def save_output(ds, opts, out_region=None):
     simple_mask.to_netcdf(outpath)
 
 
-def run_custom_gr(opts):
+def create_rectangular_gr(opts):
+    """
+    create rectangular grid mask using either corners or center coordinates + extent
+    Args:
+        opts: options as defined in config file
+
+    Returns:
+
+    """
     # load template file
     template_file = get_gridded_data(opts.start, opts.start + 1, opts)
     xy = opts.xy_name.split(',')
@@ -312,11 +320,13 @@ def run_custom_gr(opts):
         ne_coords = opts.ne_corner.split(',')
         sw_coords = [float(ii) for ii in sw_coords]
         ne_coords = [float(ii) for ii in ne_coords]
-    else:
+    elif opts.gr_type == 'center':
         center_coords = opts.center.split(',')
         center_coords = [float(ii) for ii in center_coords]
         sw_coords = [center_coords[0] - float(opts.we_len), center_coords[1] - float(opts.ns_len)]
         ne_coords = [center_coords[0] + float(opts.we_len), center_coords[1] + float(opts.ns_len)]
+    else:
+        raise ValueError('gr_type must be either "polygon", "corners", or "center".')
 
     if 'ERA5' in opts.dataset:
         xn, xx = sw_coords[0], ne_coords[0]
@@ -414,7 +424,7 @@ def run():
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
 
     if opts.gr_type != 'polygon':
-        run_custom_gr(opts=opts)
+        create_rectangular_gr(opts=opts)
     elif opts.region == 'SEA':
         run_sea(opts=opts)
     elif opts.region in ['EUR', 'AFR']:
