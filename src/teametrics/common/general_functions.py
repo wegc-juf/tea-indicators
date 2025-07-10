@@ -253,8 +253,8 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
 
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path, param_str=param_str,
-                                    hourly=hourly)
+    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path,
+                                    param_str=param_str, hourly=hourly)
 
     # load relevant years
     logger.info(f'Loading data from {filenames}...')

@@ -15,8 +15,8 @@ import warnings
 import xarray as xr
 from copy import deepcopy
 
-from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data, get_csv_data,
-                                      create_threshold_grid)
+from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
+                                      get_csv_data, create_threshold_grid)
 from common.config import load_opts
 from common.TEA_logger import logger
 from utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
@@ -393,12 +393,11 @@ def _load_or_generate_gr_grid(opts, tea):
     tea.cell_size_lat = opts.agr_cell_size
 
 
-def _calc_lat_lon_range(cell_size_lat, data, mask):
+def _calc_lat_lon_range(cell_size_lat, mask):
     """
     calculate latitude and longitude range for selected region
     Args:
         cell_size_lat: size of the grid cell in latitude
-        data: input data
         mask: mask grid
 
     Returns:
@@ -450,7 +449,7 @@ def _reduce_region(opts, data, mask, threshold=None, full_region=False):
         min_lon = mask.lon.min().values
         max_lon = mask.lon.max().values
     else:
-        min_lat, min_lon, max_lat, max_lon = _calc_lat_lon_range(cell_size_lat, data, mask)
+        min_lat, min_lon, max_lat, max_lon = _calc_lat_lon_range(cell_size_lat, mask)
 
     if opts.region == 'EUR':
         # hardcoded extent for EUR region

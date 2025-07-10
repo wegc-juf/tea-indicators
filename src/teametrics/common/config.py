@@ -28,7 +28,7 @@ def is_file(entry):
 
 def float_1pcd(value):
     value = str(value)
-    if not re.match(r'^\d+(\.\d{1})?$', value):
+    if not re.match(r'^\d+(\.\d)?$', value):
         raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
                                          'the decimal point.')
     return float(value)

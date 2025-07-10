@@ -415,6 +415,7 @@ class TEAIndicators:
             filepath: path to save the results.
         """
         with warnings.catch_warnings():
+            # TODO: implement compression for all netCDF files and use float instead of double if possible
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
             logger.info(f"Saving daily results to {filepath}")
@@ -472,7 +473,8 @@ class TEAIndicators:
 
         Results are stored in self.daily_results
         """
-        
+        # TODO: add fine-grained integration of exceedance magnitudes based on highest available resolution (here: 1h)
+
         # add one timestep to end of the time series (needed to work with ffill for the last day)
         dtec_gr = self.daily_results.DTEC_GR
         new_sample = xr.DataArray(
@@ -511,7 +513,9 @@ class TEAIndicators:
         # calculate hourly exceedance count
         htec = self._calc_TEC(htem)
         self._hourly_results['HTEC'] = htec
-        
+
+        # TODO: try to drop non-exceedance days before resampling, then fill up timeseries again (runtime improvement?)
+
         # calculate exceedance hours per day (equation 10_3)
         N_hours = htec.resample(time='1d').sum('time')
 
@@ -928,15 +932,15 @@ class TEAIndicators:
         tex.rename('TEX_GR')
         return tex
     
-    def _calc_hourly_total_events_extremity(self, TEX, h_avg):
+    def _calc_hourly_total_events_extremity(self, tex, h_avg):
         """
         calculate hourly total events extremity (equation TBD)
 
         Args:
-            TEX: total events extremity
+            tex: total events extremity
             h_avg: average daily exposure time
         """
-        htex = TEX * h_avg
+        htex = tex * h_avg
         htex.attrs = get_attrs(vname='hTEX_GR', data_unit=self.unit)
         htex.rename('hTEX_GR')
         return htex
@@ -990,15 +994,15 @@ class TEAIndicators:
                                            self.ctp_results.EA_avg_GR)
         self.ctp_results['ES_avg_GR'] = es_avg
     
-    def _calc_hourly_event_severity(self, ES, h_avg):
+    def _calc_hourly_event_severity(self, es, h_avg):
         """
         calculate event severity (equation TBD)
 
         Args:
-            ES: average event severity
+            es: average event severity
             h_avg: average daily exposure time
         """
-        hes_avg = ES * h_avg
+        hes_avg = es * h_avg
         hes_avg.attrs = get_attrs(vname='hES_avg_GR', data_unit=self.unit)
         hes_avg.rename('hES_avg_GR')
         return hes_avg
@@ -1819,5 +1823,4 @@ class TEAIndicators:
             ds.attrs['history'] = ds.attrs['history'] + history
         else:
             ds.attrs['history'] = history
-
-
+            
