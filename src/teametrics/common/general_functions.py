@@ -32,62 +32,20 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     with open(config_file, 'r') as stream:
         opts = yaml.safe_load(stream)
         opts = opts[fname]
-        opts = check_config(opts_dict=opts, fname=fname)
         opts = argparse.Namespace(**opts)
 
     # add name of script
     opts.script = f'{fname}.py'
-
-    if 'compare_to_ref' not in opts:
-        opts.compare_to_ref = None
-    if 'spreads' not in opts:
-        opts.spreads = None
-    if 'mask_sub' not in opts:
-        opts.mask_sub = 'masks'
-    if 'subreg' not in opts or opts.subreg == opts.region:
-        opts.subreg = None
-    if 'target_sys' not in opts and 'natural_variability' not in fname:
-        if opts.dataset == 'SPARTACUS':
-            opts.target_sys = 3416
-        elif 'ERA' in opts.dataset:
-            opts.target_sys = 4326
-        elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
-            opts.target_sys = None
-        else:
-            raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
-    if 'xy_name' not in opts and 'natural_variability' not in fname:
-        if opts.dataset == 'SPARTACUS':
-            opts.xy_name = 'x,y'
-        elif 'ERA' in opts.dataset:
-            opts.xy_name = 'lon,lat'
-        elif 'station' in opts:
-            opts.xy_name = None
-        else:
-            raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
-    if 'agr' in opts:
-        if 'agr_cell_size' not in opts:
-            if opts.precip:
-                opts.agr_cell_size = 1
-            else:
-                opts.agr_cell_size = 2
-    if 'use_dask' not in opts:
-        if opts.dataset == 'SPARTACUS':
-            opts.use_dask = False
-        else:
-            opts.use_dask = False
-    if 'gui' in opts and opts.gui:
+    
+    opts = _get_default_opts(fname, opts)
+    check_config(opts_dict=vars(opts))
+    
+    if opts.gui:
         # show set parameters
         show_parameters(opts)
-        opts = check_config(opts_dict=vars(opts), fname=fname)
+        check_config(opts_dict=vars(opts))
         opts = argparse.Namespace(**opts)
-    if 'hourly' not in opts:
-        opts.hourly = False
-    if 'input_data_path' not in opts:
-        if 'data_path' in opts:
-            opts.input_data_path = opts.data_path
-        else:
-            raise ValueError('input_data_path not set in options. Please set it in the CFG file.')
-
+        
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
         pstr = opts.parameter
@@ -107,6 +65,133 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         cc_period = opts.cc_period.split('-')
         opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
 
+    return opts
+
+
+def _get_default_opts(fname, opts):
+    """
+    set default options for parameters if not set in CFG file
+    Args:
+        fname: script name to check options for
+        opts: options dictionary
+
+    Returns:
+        opts: options with default values set
+
+    """
+    if 'precip' not in opts:
+        opts.precip = False
+    
+    # GeoRegion options
+    if 'region' not in opts:
+        opts.region = 'AUT'
+    if 'agr' in opts:
+        if 'agr_cell_size' not in opts:
+            if opts.precip:
+                opts.agr_cell_size = 1
+            else:
+                opts.agr_cell_size = 2
+        if 'grg_grid_spacing' not in opts:
+            opts.grg_grid_spacing = 0.5
+        if 'land_frac_min' not in opts:
+            opts.land_frac_min = 0.5
+    
+    # Parameter options
+    if 'parameter' not in opts:
+        opts.parameter = 'Tx'
+    if 'threshold_type' not in opts:
+        opts.threshold_type = 'perc'
+    if 'threshold' not in opts:
+        if opts.precip:
+            opts.threshold = 95
+        else:
+            opts.threshold = 99
+    if 'smoothing_radius' not in opts:
+        if 'smoothing' in opts:
+            opts.smoothing_radius = opts.smoothing
+        else:
+            opts.smoothing_radius = 0
+    if 'unit' not in opts:
+        if opts.precip:
+            opts.unit = 'mm'
+        else:
+            opts.unit = 'degC'
+    if 'low_extreme' not in opts:
+        opts.low_extreme = False
+        
+    # time_params options
+    if 'start' not in opts:
+        opts.start = 1961
+    if 'end' not in opts:
+        opts.end = 2024
+    if 'period' not in opts:
+        opts.period = 'annual'
+    if 'ref_period' not in opts:
+        opts.ref_period = '1961-1990'
+    if 'cc_period' not in opts:
+        opts.cc_period = '2010-2024'
+    
+    # paths
+    if 'statpath' in opts and 'maskpath' not in opts:
+        opts.maskpath = opts.statpath
+    if 'mask_sub' not in opts:
+        opts.mask_sub = '/masks'
+    if 'input_data_path' not in opts:
+        if 'data_path' in opts:
+            opts.input_data_path = opts.data_path
+    
+    # general options
+    if 'gui' not in opts:
+        opts.gui = False
+    
+    # calc_TEA.py options
+    if 'recalc_threshold' not in opts:
+        opts.recalc_threshold = False
+    if 'recalc_daily' not in opts:
+        opts.recalc_daily = True
+    if 'decadal' not in opts:
+        opts.decadal = True
+    if 'decadal_only' not in opts:
+        opts.decadal_only = False
+    if 'recalc_decadal' not in opts:
+        opts.recalc_decadal = True
+    if 'hourly' not in opts:
+        opts.hourly = False
+    if 'compare_to_ref' not in opts:
+        opts.compare_to_ref = False
+    if 'spreads' not in opts:
+        opts.spreads = False
+    if 'use_dask' not in opts:
+        opts.use_dask = False
+    
+    # create_region_masks.py options
+    if 'gr_type' not in opts:
+        opts.gr_type = 'polygon'
+    if 'subreg' not in opts or opts.subreg == opts.region:
+        opts.subreg = ''
+    if 'target_sys' not in opts and 'natural_variability' not in fname:
+        if opts.dataset == 'SPARTACUS':
+            opts.target_sys = 3416
+        elif 'ERA' in opts.dataset:
+            opts.target_sys = 4326
+        elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
+            opts.target_sys = None
+        else:
+            raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
+    if 'xy_name' not in opts and 'natural_variability' not in fname:
+        if opts.dataset == 'SPARTACUS':
+            opts.xy_name = 'x,y'
+        elif 'ERA' in opts.dataset:
+            opts.xy_name = 'lon,lat'
+        elif 'station' in opts:
+            opts.xy_name = None
+        else:
+            raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
+        
+    # regrid_SPARTACUS_to_WEGNext.py options
+    if 'orography' not in opts:
+        opts.orography = False
+        
     return opts
 
 
@@ -538,7 +623,7 @@ def calc_percentiles(opts, threshold_min=None, data=None):
     # smooth SPARTACUS precip percentiles (for each grid point calculate the average of all grid
     # points within the given radius)
     if 'smoothing' in opts:
-        radius = opts.smoothing
+        radius = opts.smoothing_radius
     else:
         radius = 0
 

@@ -1,4 +1,4 @@
-# Template for gridded data TEA indicators
+# Template for gridded data TEA indicators; for details and available options see CFG-PARAMS-doc.md
 common_params:
   input_data: &DATA
     dataset: ERA5
@@ -6,6 +6,8 @@ common_params:
     region: AUT
     # agr: EUR
     # land_frac_min: 0.5
+    # agr_cell_size: 2
+    # agr_grid_spacing: 0.5
   parameter: &PARAM
     parameter: Tx
     precip: false
