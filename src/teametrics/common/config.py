@@ -155,11 +155,12 @@ def check_config(opts_dict):
 
     """
     choice_vals = {
-        'threshold_type': ['abs', 'perc'],
-        'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
-        'gr_type': ['polygon', 'corners', 'center'],
         'station': ['Graz', 'Innsbruck', 'Wien', 'Salzburg', 'Kremsmuenster',
-                    'BadGleichenberg', 'Deutschlandsberg']}
+                    'BadGleichenberg', 'Deutschlandsberg'],
+        'threshold_type': ['abs', 'perc'],
+        'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'MAM', 'JJA', 'SON', 'DJF'],
+        'gr_type': ['polygon', 'corners', 'center'],
+    }
 
     for param in opts_dict.keys():
         if 'path' in param:
