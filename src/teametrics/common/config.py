@@ -135,6 +135,13 @@ def check_type(key, value):
     if not isinstance(value, expected_type):
         raise argparse.ArgumentTypeError(f'Expected type {expected_type} for {key}, '
                                          f'but got {value} of type {type(value)} instead.')
+    # check for correct unit
+    if key == 'unit':
+        unit = cfunits.Units(value)
+        if not unit.isvalid:
+            raise argparse.ArgumentTypeError(f'{unit.reason_notvalid}. '
+                                             f'Please use a valid unit from udunits.')
+        
 
 
 def check_config(opts_dict):
