@@ -15,9 +15,9 @@ import warnings
 import xarray as xr
 from copy import deepcopy
 
-from common.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                      compare_to_ref, get_gridded_data, get_csv_data,
+from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data, get_csv_data,
                                       create_threshold_grid)
+from common.config import load_opts
 from common.TEA_logger import logger
 from utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
                                            _get_decadal_outpath, _get_amplification_outpath)

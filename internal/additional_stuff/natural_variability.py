@@ -7,7 +7,8 @@ import pandas as pd
 import xarray as xr
 
 from NatVar import NaturalVariability
-from teametrics.common.general_functions import load_opts, create_natvar_history
+from teametrics.common.general_functions import create_natvar_history
+from teametrics.common.config import load_opts
 
 
 def _getopts():
