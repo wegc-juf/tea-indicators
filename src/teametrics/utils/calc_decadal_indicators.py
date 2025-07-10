@@ -93,7 +93,7 @@ def calc_decadal_indicators(opts, tea, outpath=None):
             name = opts.station
         else:
             name = opts.region
-        outpath = _get_decadal_outpath(opts, name)
+        outpath = get_decadal_outpath(opts, name)
 
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
@@ -112,7 +112,7 @@ def calc_decadal_indicators(opts, tea, outpath=None):
         compare_to_ref_decadal(tea=tea, filename_ref=file_ref)
 
 
-def _get_decadal_outpath(opts, region):
+def get_decadal_outpath(opts, region):
     if 'agr' in opts:
         agr_str = 'AGR-'
     else:
@@ -164,7 +164,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
             name = opts.station
         else:
             name = opts.region
-        outpath = _get_amplification_outpath(opts, name)
+        outpath = get_amplification_outpath(opts, name)
 
     # calculate amplification factors
     with warnings.catch_warnings():
@@ -189,7 +189,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
     tea.save_amplification_factors(outpath)
 
 
-def _get_amplification_outpath(opts, region):
+def get_amplification_outpath(opts, region):
     """
     get amplification factors output path
     Args:

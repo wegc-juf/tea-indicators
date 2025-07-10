@@ -20,7 +20,7 @@ from common.general_functions import (create_history_from_cfg, create_tea_histor
 from common.config import load_opts
 from common.TEA_logger import logger
 from utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
-                                           _get_decadal_outpath, _get_amplification_outpath)
+                                           get_decadal_outpath, get_amplification_outpath)
 from TEA import TEAIndicators
 from TEA_AGR import TEAAgr
 
@@ -556,8 +556,8 @@ def _calc_agr_mean_and_spread(opts, tea):
     tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
 
     # save results
-    outpath_decadal = _get_decadal_outpath(opts, opts.agr)
-    outpath_ampl = _get_amplification_outpath(opts, opts.agr)
+    outpath_decadal = get_decadal_outpath(opts, opts.agr)
+    outpath_ampl = get_amplification_outpath(opts, opts.agr)
     logger.info(f'Saving AGR decadal results to {outpath_decadal}')
     # remove outpath_decadal if it exists
     if os.path.exists(outpath_decadal):
