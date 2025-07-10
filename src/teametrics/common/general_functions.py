@@ -9,9 +9,8 @@ import os
 import xarray as xr
 import pandas as pd
 
-from .check_CFG import check_config
+from .config import check_config
 from .TEA_logger import logger
-from .cfg_paramter import show_parameters
 
 
 def create_history(cli_params, ds):
