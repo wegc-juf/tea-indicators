@@ -16,14 +16,14 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 
-from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
-                                      get_csv_data, create_threshold_grid)
-from common.config import load_opts
-from common.TEA_logger import logger
-from utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
+from .common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
+                                       get_csv_data, create_threshold_grid)
+from .common.config import load_opts
+from .common.TEA_logger import logger
+from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
                                            get_decadal_outpath, get_amplification_outpath)
-from TEA import TEAIndicators
-from TEA_AGR import TEAAgr
+from .TEA import TEAIndicators
+from .TEA_AGR import TEAAgr
 
 # TODO: move this to config file
 region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
@@ -602,7 +602,7 @@ def _load_gr_grid_static(opts):
     return gr_grid_mask, gr_grid_areas
 
 
-def _run():
+def run():
     """
     run the script
     Returns:
@@ -625,4 +625,4 @@ def _run():
 
 
 if __name__ == '__main__':
-    _run()
+    run()

@@ -18,8 +18,8 @@ common_params:
     # cc period from-to [from, to] (including both years)
     cc_period: 2008-2024
   paths: &PATHS
-    input_data_path: data/examples/ERA5_Tx_1956-2024_CH.nc
-    outpath: data/examples/
+    input_data_path: ./data/examples/ERA5_Tx_1956-2024_CH.nc
+    outpath: ./data/examples/
 
 calc_TEA:
   <<: *GR

@@ -10,9 +10,9 @@ import time
 import xarray as xr
 import numpy as np
 
-from common.var_attrs import get_attrs
-from common.TEA_logger import logger
-from TEA import TEAIndicators
+from .common.var_attrs import get_attrs
+from .common.TEA_logger import logger
+from .TEA import TEAIndicators
 
 
 class TEAAgr(TEAIndicators):

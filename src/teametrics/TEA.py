@@ -11,8 +11,8 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-from common.var_attrs import get_attrs, equal_vars
-from common.TEA_logger import logger
+from .common.var_attrs import get_attrs, equal_vars
+from .common.TEA_logger import logger
 
 
 class TEAIndicators:
