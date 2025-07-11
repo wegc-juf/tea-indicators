@@ -1,10 +1,11 @@
-import glob
-import logging
-from pathlib import Path
 import re
 import os
-import xarray as xr
+import glob
+import logging
 import warnings
+
+from pathlib import Path
+import xarray as xr
 
 from common.var_attrs import get_attrs
 from common.general_functions import compare_to_ref

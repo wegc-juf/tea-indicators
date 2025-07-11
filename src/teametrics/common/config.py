@@ -1,12 +1,13 @@
 """
 script to check CFG parameter
 """
-import argparse
 import os
-import pandas as pd
 import re
-import yaml
 import glob
+
+import argparse
+import pandas as pd
+import yaml
 import cfunits
 
 from .cfg_paramter_gui import show_parameters

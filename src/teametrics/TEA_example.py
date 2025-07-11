@@ -4,6 +4,7 @@ Example for using the TEA class
 """
 import sys
 import os
+
 import xarray as xr
 import matplotlib.pyplot as plt
 

@@ -4,16 +4,17 @@
 @author: hst, juf
 """
 
-import argparse
-import gc
-import numpy as np
 import os
-from pathlib import Path
 import sys
+import gc
 import math
 import warnings
-import xarray as xr
 from copy import deepcopy
+
+import argparse
+import numpy as np
+from pathlib import Path
+import xarray as xr
 
 from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
                                       get_csv_data, create_threshold_grid)

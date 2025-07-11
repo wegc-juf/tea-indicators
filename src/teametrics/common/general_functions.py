@@ -2,10 +2,11 @@
 scripts for general stuff (e.g. nc-history)
 """
 
-import datetime as dt
-import numpy as np
-import glob
 import os
+import glob
+import datetime as dt
+
+import numpy as np
 import xarray as xr
 import pandas as pd
 
