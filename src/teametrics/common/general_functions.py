@@ -2,107 +2,15 @@
 scripts for general stuff (e.g. nc-history)
 """
 
-import argparse
 import datetime as dt
-import yaml
 import numpy as np
 import glob
 import os
 import xarray as xr
 import pandas as pd
 
-from .check_CFG import check_config
+from .config import check_config
 from .TEA_logger import logger
-from .cfg_paramter import show_parameters
-
-
-def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
-    """
-    load parameters from CFG file and put them into a Namespace object
-    Args:
-        fname: name of executed script
-        config_file: path to CFG file
-
-    Returns:
-        opts: CFG parameter
-
-    """
-
-    fname = fname.split('/')[-1].split('.py')[0]
-    with open(config_file, 'r') as stream:
-        opts = yaml.safe_load(stream)
-        opts = opts[fname]
-        opts = check_config(opts_dict=opts, fname=fname)
-        opts = argparse.Namespace(**opts)
-
-    # add name of script
-    opts.script = f'{fname}.py'
-
-    if 'compare_to_ref' not in opts:
-        opts.compare_to_ref = None
-    if 'spreads' not in opts:
-        opts.spreads = None
-    if 'mask_sub' not in opts:
-        opts.mask_sub = 'masks'
-    if 'subreg' not in opts or opts.subreg == opts.region:
-        opts.subreg = None
-    if 'target_sys' not in opts and 'natural_variability' not in fname:
-        if opts.dataset == 'SPARTACUS':
-            opts.target_sys = 3416
-        elif 'ERA' in opts.dataset:
-            opts.target_sys = 4326
-        elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
-            opts.target_sys = None
-        else:
-            raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
-    if 'xy_name' not in opts and 'natural_variability' not in fname:
-        if opts.dataset == 'SPARTACUS':
-            opts.xy_name = 'x,y'
-        elif 'ERA' in opts.dataset:
-            opts.xy_name = 'lon,lat'
-        elif 'station' in opts:
-            opts.xy_name = None
-        else:
-            raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
-    if 'agr' in opts:
-        if 'agr_cell_size' not in opts:
-            if opts.precip:
-                opts.agr_cell_size = 1
-            else:
-                opts.agr_cell_size = 2
-    if 'use_dask' not in opts:
-        if opts.dataset == 'SPARTACUS':
-            opts.use_dask = False
-        else:
-            opts.use_dask = False
-    if 'gui' in opts and opts.gui:
-        # show set parameters
-        show_parameters(opts)
-        opts = check_config(opts_dict=vars(opts), fname=fname)
-        opts = argparse.Namespace(**opts)
-    if 'hourly' not in opts:
-        opts.hourly = False
-
-    # add strings that are often needed to parameters
-    if fname not in ['create_region_masks']:
-        pstr = opts.parameter
-        if opts.parameter != 'Tx':
-            pstr = f'{opts.parameter}_'
-
-        param_str = f'{pstr}{opts.threshold:.1f}p'
-        if opts.threshold_type == 'abs':
-            param_str = f'{pstr}{opts.threshold:.1f}{opts.unit}'
-
-        opts.param_str = param_str
-
-    # convert str to int
-    if 'ref_period' in opts:
-        ref_period = opts.ref_period.split('-')
-        opts.ref_period = (int(ref_period[0]), int(ref_period[1]))
-        cc_period = opts.cc_period.split('-')
-        opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
-
-    return opts
 
 
 def create_history(cli_params, ds):
@@ -253,6 +161,8 @@ def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=F
     # check if inpath is file
     if os.path.isfile(inpath):
         return inpath
+    elif '*' in inpath and glob.glob(inpath):
+        return sorted(glob.glob(inpath))
 
     if hourly:
         inpath = f'{inpath}/hourly/'
@@ -343,8 +253,8 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
 
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.data_path, param_str=param_str,
-                                    hourly=hourly)
+    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path,
+                                    param_str=param_str, hourly=hourly)
 
     # load relevant years
     logger.info(f'Loading data from {filenames}...')
@@ -391,10 +301,10 @@ def get_csv_data(opts):
         rename_dict = {'nied': opts.parameter}
 
     # read csv file of station data and set time as index of df
-    filenames = f'{opts.data_path}{pstr}_{opts.station}*18770101*.csv'
+    filenames = f'{opts.input_data_path}{pstr}_{opts.station}*18770101*.csv'
     file = glob.glob(filenames)
     if len(file) == 0:
-        filenames = f'{opts.data_path}{pstr}_{opts.station}*.csv'
+        filenames = f'{opts.input_data_path}{pstr}_{opts.station}*.csv'
         file = glob.glob(filenames)
     data = pd.read_csv(file[0])
     data['time'] = pd.to_datetime(data['time'])
@@ -531,7 +441,7 @@ def calc_percentiles(opts, threshold_min=None, data=None):
     # smooth SPARTACUS precip percentiles (for each grid point calculate the average of all grid
     # points within the given radius)
     if 'smoothing' in opts:
-        radius = opts.smoothing
+        radius = opts.smoothing_radius
     else:
         radius = 0
 

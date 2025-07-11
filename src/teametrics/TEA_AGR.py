@@ -82,20 +82,6 @@ class TEAAgr(TEAIndicators):
         """
         super().calc_daily_basis_vars(grid=grid, gr=gr)
 
-    @staticmethod
-    def _my_rolling_test(data, axis, keep_attrs=True, step=1):
-        """
-        custom rolling function
-        """
-        return data
-
-    def regrid_to_gr_grid(self):
-        """
-        regrid daily basis variables to grid of GeoRegions
-        """
-        # apply custom rolling function
-        self.daily_results.rolling(lat=4, lon=4, center=True).reduce(self._my_rolling_test, step=2).compute()
-
     def select_sub_gr(self, lat, lon):
         """
         select data of GeoRegion sub-cell and weight edges
@@ -163,10 +149,10 @@ class TEAAgr(TEAIndicators):
                 var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(dbv_results.time),
                                                                            len(lats), len(lons))))
             self._dbv_gr_grid_results = xr.Dataset(coords=dict(time=dbv_results.time,
-                                                              lon=lons,
-                                                              lat=lats),
-                                                  data_vars=var_dict,
-                                                  attrs=dbv_results.attrs)
+                                                               lon=lons,
+                                                               lat=lats),
+                                                   data_vars=var_dict,
+                                                   attrs=dbv_results.attrs)
 
         self._dbv_gr_grid_results.loc[dict(lat=lat, lon=lon)] = dbv_results
 
@@ -214,7 +200,7 @@ class TEAAgr(TEAIndicators):
                 attrs['long_name'] = new_attrs['long_name']
                 self.ctp_results[var].attrs = attrs
 
-    def get_ctp_results(self):
+    def get_ctp_results(self, grid=True, gr=True):
         """
         get CTP results for grid of GeoRegions
         """
@@ -313,7 +299,8 @@ class TEAAgr(TEAIndicators):
         """
         agr_vars = [var for var in self.decadal_results.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
         self.decadal_results = self.decadal_results.drop_vars(agr_vars)
-        agr_vars = [var for var in self.amplification_factors.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
+        agr_vars = [var for var in self.amplification_factors.data_vars if 'AGR' in var or 'supp' in var or 'slow' in
+                    var]
         self.amplification_factors = self.amplification_factors.drop_vars(agr_vars)
         agr_vars = [var for var in self._ref_mean.data_vars if 'AGR' in var or 'supp' in var or 'slow' in var]
         self._ref_mean = self._ref_mean.drop_vars(agr_vars)
@@ -599,6 +586,9 @@ class TEAAgr(TEAIndicators):
             ref_grid = self.input_data
         elif self.area_grid is not None:
             ref_grid = self.area_grid
+        else:
+            raise ValueError('No input data or area grid provided. Please provide a valid input data grid or area '
+                             'grid.')
 
         lats = np.arange(ref_grid.lat.max() - margin,
                          ref_grid.lat.min() - self.gr_grid_res + margin,
@@ -688,5 +678,3 @@ class TEAAgr(TEAIndicators):
             self.set_ctp_results(lat, lon, ctp_results)
             end_time = time.time()
             logger.debug(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
-
-

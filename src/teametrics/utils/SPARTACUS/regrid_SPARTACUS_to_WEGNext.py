@@ -14,7 +14,8 @@ from tqdm import trange
 import xarray as xr
 import argparse
 
-from teametrics.common.general_functions import create_history_from_cfg, load_opts
+from teametrics.common.general_functions import create_history_from_cfg
+from teametrics.common.config import load_opts
 
 
 def define_wegn_grid_1000x1000(opts):

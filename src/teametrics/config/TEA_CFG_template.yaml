@@ -1,9 +1,13 @@
-# Template for gridded data TEA indicators
+# Template for gridded data TEA indicators; for details and available options see CFG-PARAMS-doc.md
 common_params:
+  input_data: &DATA
+    dataset: ERA5
   GeoRegion: &GR
     region: AUT
     # agr: EUR
     # land_frac_min: 0.5
+    # agr_cell_size: 2
+    # agr_grid_spacing: 0.5
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -17,10 +21,8 @@ common_params:
     period: annual
     ref_period: 1961-1990
     cc_period: 2010-2024
-  dataset: &DATA
-    dataset: ERA5
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    input_data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
