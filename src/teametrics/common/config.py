@@ -117,6 +117,7 @@ def _get_default_opts(fname, opts):
             opts.unit = 'degC'
     if 'low_extreme' not in opts:
         opts.low_extreme = False
+    # TODO: add minimum exceedance area option as defined in gki RCF
     
     # time_params options
     if 'start' not in opts:
@@ -127,6 +128,8 @@ def _get_default_opts(fname, opts):
         opts.period = 'annual'
     if 'ref_period' not in opts:
         opts.ref_period = '1961-1990'
+    # TODO: add separate option for percentile period as defined in gki RCF
+    # TODO: add option for percentile estimation period as defined in gki RCF
     if 'cc_period' not in opts:
         opts.cc_period = '2010-2024'
     
@@ -150,6 +153,7 @@ def _get_default_opts(fname, opts):
         opts.recalc_daily = True
     if 'decadal' not in opts:
         opts.decadal = True
+    # TODO: add decadal window options as defined in gki RCF
     if 'decadal_only' not in opts:
         opts.decadal_only = False
     if 'recalc_decadal' not in opts:
@@ -251,7 +255,6 @@ def check_type(key, value):
         
         # regrid_SPARTACUS_to_WEGNext.py
         'orography': bool,
-        'orofile': 'path',
         'wegnfile': 'path',
     }
     expected_type = types.get(key, str)
@@ -362,5 +365,3 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
 
     return opts
-
-
