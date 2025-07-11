@@ -1,14 +1,14 @@
 """
 Threshold Exceedance Amount (TEA) indicators Class implementation for aggregated georegions (AGR)
-Based on:
-TODO: add reference to the paper
+Based on: https://doi.org/10.48550/arXiv.2504.18964
+# TODO: change doi when final version is available
 Equation numbers refer to Supplementary Notes
 """
 import warnings
+import time
 
 import xarray as xr
 import numpy as np
-import time
 
 from common.var_attrs import get_attrs
 from common.TEA_logger import logger

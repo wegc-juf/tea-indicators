@@ -1,12 +1,12 @@
 """
 Threshold Exceedance Amount (TEA) indicators Class implementation
-Based on:
-TODO: add reference to the paper
+Based on: https://doi.org/10.48550/arXiv.2504.18964
+# TODO: update doi when final version is published
 Equation numbers refer to Supplementary Notes
 """
 import warnings
-
 import os
+
 import xarray as xr
 import pandas as pd
 import numpy as np
