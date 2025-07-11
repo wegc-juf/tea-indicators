@@ -17,7 +17,7 @@ def is_dir_path(path):
     if os.path.isdir(path) or os.path.exists(path) or glob.glob(path):
         return True
     else:
-        raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
+        raise argparse.ArgumentTypeError(f'{path} not found or is not a valid directory or file path. ')
 
 
 def is_file(entry):
@@ -62,9 +62,6 @@ def ints(param, val):
             raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
                                              f'Please pass a year before the current year or the '
                                              f'current year.')
-
-
-file_path = os.path.dirname(__file__)
 
 
 def _get_default_opts(fname, opts):
