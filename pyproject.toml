@@ -1,22 +1,29 @@
-[tool.poetry]
+[project]
 name = "teametrics"
-version = "0.0.0"
+license = "CC-BY-4.0"
 description = "Code to calculate Threshold Exceedance Amount (TEA) indicators as defined in https://doi.org/10.48550/arXiv.2504.18964"
-authors = ["Stephanie Haas <stephanie.haas@uni-graz.at>, Jürgen Fuchsberger <juergen.fuchsberger@uni-graz.at>"]
+authors = [
+    {name = "Jürgen Fuchsberger",email = "juergen.fuchsberger@uni-graz.at"},
+    {name = "Stephanie Haas",email = "stephanie.haas@uni-graz.at"},
+]
 readme = "docs/HOWTO_TEA.md"
-packages = [{include = "teametrics"}]
+homepage = ""
+repository = ""
+requires-python = ">=3.11, <4.0"
+dependencies = [
+]
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = ">=3.11, <4.0"
-
-[tool.poetry.requires-plugins]
-poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
 build-backend = "poetry_dynamic_versioning.backend"
 
+[tool]
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
 style = "pep440"
+
+[tool.poetry]
+version = "0.0.0"
