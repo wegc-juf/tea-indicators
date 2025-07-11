@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 create region masks for TEA indicator calculation
 author: hst
