@@ -11,6 +11,16 @@ homepage = ""
 repository = ""
 requires-python = ">=3.11, <4.0"
 dependencies = [
+    "argparse (>=1.4.0,<2.0.0)",
+    "numpy (>=2.3.1,<3.0.0)",
+    "pathlib (>=1.0.1,<2.0.0)",
+    "xarray (>=2025.7.1,<2026.0.0)",
+    "matplotlib (>=3.10.3,<4.0.0)",
+    "geopandas (>=1.1.1,<2.0.0)",
+    "shapely (>=2.1.1,<3.0.0)",
+    "tqdm (>=4.67.1,<5.0.0)",
+    "cfunits (>=3.3.7,<4.0.0)",
+    "pyyaml (>=6.0.2,<7.0.0)"
 ]
 dynamic = ["version"]
 
