@@ -11,6 +11,7 @@ import yaml
 import cfunits
 
 from .cfg_paramter_gui import show_parameters
+import teametrics
 
 
 def is_dir_path(path):
@@ -269,7 +270,27 @@ def check_type(key, value):
         if not unit.isvalid:
             raise argparse.ArgumentTypeError(f'{unit.reason_notvalid}. '
                                              f'Please use a valid unit from udunits.')
-        
+
+
+def set_variables(opts_dict):
+    """
+    replace variables in opts_dict with their values
+    Args:
+        opts_dict: dictionary with configuration parameters
+
+    Returns:
+
+    """
+    for param in opts_dict.keys():
+        if not isinstance(opts_dict[param], str):
+            continue
+        if '$script_path' in opts_dict[param]:
+            # replace 'script_path' with the path of the script
+            script_path = os.path.dirname(os.path.abspath(teametrics.__file__))
+            opts_dict[param] = opts_dict[param].replace('$script_path', script_path)
+        elif '$' in opts_dict[param]:
+            raise ValueError(f'Unknown variable name in {param}: {opts_dict[param]}. ')
+
 
 def check_config(opts_dict):
     """
@@ -334,11 +355,13 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     opts.script = f'{fname}.py'
     
     opts = _get_default_opts(fname, opts)
+    set_variables(opts_dict=vars(opts))
     check_config(opts_dict=vars(opts))
     
     if opts.gui:
         # show set parameters
         show_parameters(opts)
+        set_variables(opts_dict=vars(opts))
         check_config(opts_dict=vars(opts))
         opts = argparse.Namespace(**opts)
         

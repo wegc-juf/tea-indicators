@@ -77,3 +77,8 @@
 | *outpath*   | Path of output directory.               | path | null    |
 
 
+## List of allowed variables (you can use these as a placeholder in your config files, values will be replaced at runtime)
+| NAME         | DESCRIPTION                                |
+|--------------|--------------------------------------------|
+| $script_path | Path to the script that is being executed. |
+
