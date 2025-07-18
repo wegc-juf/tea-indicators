@@ -7,10 +7,27 @@ import os
 
 import xarray as xr
 import matplotlib.pyplot as plt
+from argparse import ArgumentParser
 
 from teametrics.TEA import TEAIndicators
 
 THRESHOLD = 28  # degC
+
+
+def get_opts():
+    """
+    Get command line options.
+    Returns:
+        opts: Command line options.
+    """
+    parser = ArgumentParser(description='TEA example script.')
+    
+    parser.add_argument('--no-gui', dest='no_gui', action='store_true',
+                        help='Run without GUI (default: False)')
+    
+    opts = parser.parse_args()
+    
+    return opts
 
 
 def run():
@@ -19,6 +36,7 @@ def run():
     Returns:
 
     """
+    opts = get_opts()
     
     # load example data (ERA5 Switzerland, 1956-2024, daily maximum temperature)
     ERA5_file = 'ERA5_Tx_1956-2024_CH.nc'
@@ -40,7 +58,8 @@ def run():
     
     # plot Daily Threshold Exceedance Magnitude (DTEM) for 2024-08-30
     tea_obj.daily_results.DTEM.sel(time='2024-08-30').plot()
-    plt.show()
+    if not opts.no_gui:
+        plt.show()
     
     # calculate annual TEA indicators for warm season (WAS) and save to NetCDF file
     print('Calculating annual TEA indicators...')
@@ -51,7 +70,8 @@ def run():
     
     # plot cumulative exceedance magnitude (temporal event extremity tEX) for 2024
     tea_obj.ctp_results.EM.sel(time='2024').plot()
-    plt.show()
+    if not opts.no_gui:
+        plt.show()
     
     # calculate decadal-mean TEA indicators and save to NetCDF file
     print('Calculating decadal-mean TEA indicators...')
@@ -62,7 +82,8 @@ def run():
     
     # plot decadal-mean exceedance magnitude (EM) for 2010s
     tea_obj.decadal_results.EM.sel(time='2014').plot()
-    plt.show()
+    if not opts.no_gui:
+        plt.show()
     
     # calculate amplification factors and save to NetCDF file
     print('Calculating amplification factors...')
@@ -73,10 +94,10 @@ def run():
     
     # plot amplification factor for exceedance magnitude (EM) for current climate period (CC=2008-2024)
     tea_obj.amplification_factors.EM_AF_CC.plot()
-    plt.show()
+    if not opts.no_gui:
+        plt.show()
 
 
 if __name__ == '__main__':
     run()
     
-
