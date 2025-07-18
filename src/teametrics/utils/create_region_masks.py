@@ -14,9 +14,9 @@ from shapely.geometry import Polygon, MultiPolygon
 from tqdm import trange
 import xarray as xr
 
-from common.general_functions import create_history_from_cfg, get_gridded_data
-from common.config import load_opts
-from calc_TEA import _getopts
+from ..common.general_functions import create_history_from_cfg, get_gridded_data
+from ..common.config import load_opts
+from ..calc_TEA import _getopts
 
 
 def load_shp(opts):

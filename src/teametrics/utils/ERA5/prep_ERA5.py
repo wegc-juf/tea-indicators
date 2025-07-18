@@ -17,7 +17,7 @@ import xarray as xr
 try:
     from common.general_functions import create_history_from_cli_params
 except ImportError:
-    from teametrics.common.general_functions import create_history
+    from teametrics.common.general_functions import create_history_from_cli_params
 
 
 def get_opts():
