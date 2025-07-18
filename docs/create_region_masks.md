@@ -2,7 +2,7 @@
 Information about input data for `create_region_masks.py`
 
 ### shp file paths
-EUR: `/data/arsclisys/backup/clim-hydro/TEA-Indicators/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip` \
+GLOB: `/data/arsclisys/backup/clim-hydro/TEA-Indicators/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip` \
 AUT: `/data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp` \
 AUT-Bundeslaender: `/data/reloclim/backup/GEO/shapefiles/OEKS15/good/LAND_AT_.shp` \
 AUT-Gemeinden: `/data/reloclim/backup/GEO/shapefiles/OEKS15/good/GEM_AT_.shp` \
