@@ -58,6 +58,14 @@ enable = true
 vcs = "git"
 style = "pep440"
 
+[tool.poetry-dynamic-versioning.substitution]
+folders = [
+    {path = "src", files = ["*.py", "*/__init__.py", "*/__version__.py", "*/_version.py"], patterns = [
+        '''(^__version__\s*(?::.*?)?=\s*['"])[^'"]*(['"])''',
+        { value = '''(^__version_tuple__\s*(?::.*?)?=\s*\()[^)]*(\))''', mode = "tuple" },
+    ]  },
+]
+
 [tool.poetry]
 
 include = ["src/teametrics/config/*.yaml", "src/teametrics/data/examples/ERA5_Tx_1956-2024_CH.nc"]
