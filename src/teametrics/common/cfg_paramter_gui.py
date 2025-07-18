@@ -12,6 +12,8 @@ def show_parameters(opts):
     Returns:
 
     """
+    # TODO: add gui method to edit parameters
+    
     # Create a new window
     window = tk.Tk()
     window.title('CFG Parameters')
