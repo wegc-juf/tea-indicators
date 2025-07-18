@@ -19,7 +19,8 @@ common_params:
     cc_period: 2008-2024
   paths: &PATHS
     input_data_path: $script_path/data/examples/ERA5_Tx_1956-2024_CH.nc
-    outpath: $script_path/data/examples/
+
+    outpath: ./tea_examples/  # replace with your desired output path
 
 calc_TEA:
   <<: *GR
