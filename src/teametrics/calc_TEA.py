@@ -352,7 +352,7 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
     """
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
-    grg_areas = create_history_from_cfg(cfg_params=opts, ds=grg_areas)
+    create_history_from_cfg(cfg_params=opts, ds=grg_areas)
     area_grid_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
     try:
         grg_areas.to_netcdf(area_grid_file)
@@ -361,7 +361,7 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
         grg_areas.to_netcdf(area_grid_file)
 
     # save GRG mask
-    grg_mask = create_history_from_cfg(cfg_params=opts, ds=grg_mask)
+    create_history_from_cfg(cfg_params=opts, ds=grg_mask)
     mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
     try:
         grg_mask.to_netcdf(mask_file)

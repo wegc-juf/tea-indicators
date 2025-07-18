@@ -172,7 +172,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds)
 
     save_output(ds, opts)
 
@@ -254,7 +254,7 @@ def run_eur(opts):
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
     ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds)
 
     save_output(ds, opts)
 
@@ -405,7 +405,7 @@ def create_rectangular_gr(opts):
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
     save_output(ds, opts, out_region)
@@ -515,7 +515,7 @@ def run():
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
         else:
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+        create_history_from_cfg(cfg_params=opts, ds=ds)
 
         out_region = opts.region
         if opts.subreg:

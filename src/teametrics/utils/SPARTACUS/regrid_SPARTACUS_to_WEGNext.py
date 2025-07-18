@@ -158,7 +158,7 @@ def regrid_orog(opts):
     orog_file = xr.open_dataset(opts.orofile)
     oro_new = regrid_spartacus(opts=opts, ds_in=orog_file.orog, method='linear')
     oro_new = oro_new.assign_attrs(grid_mapping='UTM33N')
-    oro_new = create_history_from_cfg(cfg_params=opts, ds=oro_new)
+    create_history_from_cfg(cfg_params=opts, ds=oro_new)
     oro_new.attrs['crs'] = 'EPSG:32633'
     oro_new = oro_new.drop(['lat', 'lon'])
 
@@ -210,7 +210,7 @@ def run():
             ds_new = ds_new.assign_attrs(grid_mapping='UTM33N')
 
             # Add history to attributes and change crs to EPSG:32633
-            ds_new = create_history_from_cfg(cfg_params=opts, ds=ds_new)
+            create_history_from_cfg(cfg_params=opts, ds=ds_new)
             ds_new.attrs['crs'] = 'EPSG:32633'
 
             # Rename variables if necessary

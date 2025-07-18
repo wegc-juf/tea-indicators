@@ -15,7 +15,7 @@ from tqdm import trange
 import warnings
 import xarray as xr
 
-from common.general_functions import create_history
+from common.general_functions import create_history_from_cli_params
 
 
 def get_opts():
@@ -303,7 +303,7 @@ def run():
     altitude, delta_utc, time_zones = calc_altitude_dt(opts=opts, africa=opts.africa)
 
     # Save altitude in separate file
-    altitude = create_history(cli_params=sys.argv, ds=altitude)
+    create_history_from_cli_params(cli_params=sys.argv, ds=altitude)
     # alt_out = altitude.copy()
     # alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
     # alt_out.to_netcdf(f'{opts.outpath}ERA5_orography.nc')
@@ -366,7 +366,7 @@ def run():
 
         # Create output ds
         ds_out = xr.merge(dataarrays)
-        ds_out = create_history(cli_params=sys.argv, ds=ds_out)
+        create_history_from_cli_params(cli_params=sys.argv, ds=ds_out)
         ds_out = ds_out.drop(['time', 'number'])
         ds_out = ds_out.rename({'valid_time':'time', 'latitude': 'lat', 'longitude': 'lon'})
 
