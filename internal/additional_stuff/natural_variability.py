@@ -30,7 +30,6 @@ def load_station_data(opts):
     load TEA Indicators for the given region and stations
     Args:
         opts: CLI parameter
-        af: set to True to load amplification factors data
 
     Returns:
         ds: station data
@@ -56,7 +55,8 @@ def load_station_data(opts):
     files = [f for f in files if any(station in f for station in stations)]
     
     if not files:
-        raise FileNotFoundError(f'No files found for stations: {stations} in {opts.tea_path}/station/dec_indicator_variables/amplification/')
+        raise FileNotFoundError(f'No files found for stations: {stations} in'
+                                f' {opts.tea_path}/station/dec_indicator_variables/amplification/')
 
     def extract_station_name(filename):
         for station in stations:

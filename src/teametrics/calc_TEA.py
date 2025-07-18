@@ -21,7 +21,7 @@ from .common.general_functions import (create_history_from_cfg, create_tea_histo
 from .common.config import load_opts
 from .common.TEA_logger import logger
 from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
-                                           get_decadal_outpath, get_amplification_outpath)
+                                            get_decadal_outpath, get_amplification_outpath)
 from .TEA import TEAIndicators
 from .TEA_AGR import TEAAgr
 

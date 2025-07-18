@@ -134,3 +134,4 @@ class NaturalVariability:
 
         print(f'Saving natural variability results to {outname}')
         self.nv.to_netcdf(outname)
+        

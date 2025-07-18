@@ -138,7 +138,6 @@ def compare_to_ref_decadal(tea, filename_ref):
         tea_ref = TEAIndicators()
         tea_ref.load_decadal_results(filename_ref)
         for vvar in tea.decadal_results.data_vars:
-            attrs = tea.decadal_results[vvar].attrs
             if vvar in tea_ref.decadal_results.data_vars:
                 diff = tea.decadal_results[vvar] - tea_ref.decadal_results[vvar]
                 max_diff = diff.max(skipna=True).values

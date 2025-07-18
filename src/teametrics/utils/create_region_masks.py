@@ -269,10 +269,12 @@ def find_closest(coords, corner_val, direction):
         for i in range(len(coords)):
             if coords[i] > corner_val:
                 return coords[i]
+        return coords[-1]  # If no larger value found, return the last value
     elif direction == -1:
         for i in reversed(range(len(coords))):
             if coords[i] < corner_val:
                 return coords[i]
+        return coords[0]  # If no smaller value found, return the first value
     else:
         raise ValueError('Direction must be either -1 or 1.')
 
@@ -290,7 +292,7 @@ def save_output(ds, opts, out_region=None):
     """
     if out_region is None:
         out_region = opts.region
-    outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
+    # outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
     # print(f'Saving old masks file to {outpath}')
     # ds.to_netcdf(outpath)
     simple_mask = ds.lt1500_mask * ds.mask

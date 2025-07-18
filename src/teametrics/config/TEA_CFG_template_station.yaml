@@ -22,7 +22,7 @@ common_params:
     input_data_path: /data/users/hst/cdrDPS/station_data/
     outpath: /home/wegnet/results/TEA_indicators/station_indices/
 
-calc_TEA: &calc_TEA
+calc_TEA:
   <<: *GR
   <<: *PARAM
   <<: *TIME

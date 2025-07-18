@@ -362,13 +362,13 @@ def run():
             del da_dp
 
             dataarrays = [tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7,
-                        wind, pressure, humidity, altitude]
+                          wind, pressure, humidity, altitude]
 
         # Create output ds
         ds_out = xr.merge(dataarrays)
         create_history_from_cli_params(cli_params=sys.argv, ds=ds_out)
         ds_out = ds_out.drop(['time', 'number'])
-        ds_out = ds_out.rename({'valid_time':'time', 'latitude': 'lat', 'longitude': 'lon'})
+        ds_out = ds_out.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
 
         ds_out.to_netcdf(f'{opts.outpath}ERA5_{years[iyr]}.nc')
 
