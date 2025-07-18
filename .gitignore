@@ -6,3 +6,7 @@ __pycache__
 *.un~
 .idea/
 *.log
+/dist/
+/tests/tea_examples/
+/src/teametrics/config/WEGC/*_wegnet.yaml
+*.swp
