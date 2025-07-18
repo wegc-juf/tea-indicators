@@ -1,4 +1,6 @@
 common_params:
+  input_data: &DATA
+    dataset: ERA5
   GeoRegion: &GR
     region: full
   parameters: &PARAM
@@ -15,10 +17,8 @@ common_params:
     ref_period: 1961-1990
     # cc period from-to [from, to] (including both years)
     cc_period: 2008-2024
-  dataset: &DATA
-    dataset: ERA5
   paths: &PATHS
-    data_path: data/examples/ERA5_Tx_1956-2024_CH.nc
+    input_data_path: data/examples/ERA5_Tx_1956-2024_CH.nc
     outpath: data/examples/
 
 calc_TEA:

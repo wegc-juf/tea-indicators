@@ -29,7 +29,7 @@ The configuration options for the script are documented in `CFG-PARAMS-doc.md` \
 After preparing all the necessary input and mask data, run `calc_TEA.py --config-file CONFIG_FILE`. \
 A minimal example config can be found in `TEA_CFG_minimal.yaml`. Template config files are `TEA_CFG_template.yaml` for 
 gridded data and `TEA_CFG_template_station.yaml` for station data. \
-The configuration options for the script are documented in `CFG-PARAMS-doc.md` \
+The configuration options for the script are documented in `CFG-PARAMS-doc.md`
 
 ## 5) Using the TEA Indicator classes TEAIndicators and TEAAgr (optional)
 In case you want a more fine-grained control over the TEA Indicator calculations, you can use the classes 

@@ -1,4 +1,6 @@
 common_params:
+  input_data: &DATA
+    dataset: HistAlp
   GeoRegion: &GR
     station: Graz
   parameters: &PARAM
@@ -16,10 +18,8 @@ common_params:
     ref_period: 1961-1990
     # cc period from-to (inclusive)
     cc_period: 2010-2024
-  dataset: &DATA
-    dataset: HistAlp
   paths: &PATHS
-    data_path: /data/users/hst/cdrDPS/station_data/
+    input_data_path: /data/users/hst/cdrDPS/station_data/
     outpath: /home/wegnet/results/TEA_indicators/station_indices/
 
 calc_TEA: &calc_TEA

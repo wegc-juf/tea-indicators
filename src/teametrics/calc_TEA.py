@@ -15,12 +15,12 @@ import warnings
 import xarray as xr
 from copy import deepcopy
 
-from common.general_functions import (create_history_from_cfg, create_tea_history, load_opts,
-                                      compare_to_ref, get_gridded_data, get_csv_data,
-                                      create_threshold_grid)
+from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
+                                      get_csv_data, create_threshold_grid)
+from common.config import load_opts
 from common.TEA_logger import logger
 from utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
-                                           _get_decadal_outpath, _get_amplification_outpath)
+                                           get_decadal_outpath, get_amplification_outpath)
 from TEA import TEAIndicators
 from TEA_AGR import TEAAgr
 
@@ -158,6 +158,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             threshold = create_threshold_grid(opts, data=data)
 
         # reduce extent of data to the region of interest
+        # TODO: use this also for non-AGR and test
         if 'agr' in opts:
             data, mask, threshold = _reduce_region(opts, data, mask, threshold)
 
@@ -211,10 +212,7 @@ def calc_annual_ctp_indicators(tea, opts, start, end):
         tea.update_min_area(dtea_min)
 
     if 'agr' in opts:
-        if 'land_frac_min' in opts:
-            tea.land_frac_min = float(opts.land_frac_min)
-        else:
-            tea.land_frac_min = 0.5
+        tea.land_frac_min = opts.land_frac_min
 
     # calculate annual climatic time period indicators
     logger.info('Calculating annual CTP indicators')
@@ -342,31 +340,32 @@ def _save_ctp_output(opts, tea, start, end):
         _compare_to_ctp_ref(tea, path_ref)
 
 
-def _save_0p5_mask(opts, mask_0p5, area_0p5):
+def _save_grg_mask(opts, grg_mask, grg_areas):
     """
-    save mask on 0.5° grid to netcdf file
+    save grg mask to netcdf file
     Args:
         opts: CLI parameter
-        mask_0p5: mask on 0.5° grid
-        area_0p5: area grid on 0.5° grid
+        grg_mask: mask on grg grid
+        grg_areas: area grid on grg grid
     """
-    # TODO: allow arbitrary resolutions
-    area_0p5 = create_history_from_cfg(cfg_params=opts, ds=area_0p5)
-    area_grid_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
+    res = str(opts.grg_grid_spacing)
+    res_str = res.replace('.', 'p')
+    grg_areas = create_history_from_cfg(cfg_params=opts, ds=grg_areas)
+    area_grid_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
     try:
-        area_0p5.to_netcdf(area_grid_file)
+        grg_areas.to_netcdf(area_grid_file)
     except PermissionError:
         os.remove(area_grid_file)
-        area_0p5.to_netcdf(area_grid_file)
+        grg_areas.to_netcdf(area_grid_file)
 
-    # save 0.5° mask
-    mask_0p5 = create_history_from_cfg(cfg_params=opts, ds=mask_0p5)
-    mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_0p5_{opts.dataset}.nc'
+    # save GRG mask
+    grg_mask = create_history_from_cfg(cfg_params=opts, ds=grg_mask)
+    mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
     try:
-        mask_0p5.to_netcdf(mask_file)
+        grg_mask.to_netcdf(mask_file)
     except PermissionError:
         os.remove(mask_file)
-        mask_0p5.to_netcdf(mask_file)
+        grg_mask.to_netcdf(mask_file)
 
 
 def _load_or_generate_gr_grid(opts, tea):
@@ -384,7 +383,7 @@ def _load_or_generate_gr_grid(opts, tea):
     # generate GR grid mask and area if necessary
     if gr_grid_mask is None or gr_grid_areas is None:
         tea.generate_gr_grid_mask()
-        _save_0p5_mask(opts, tea.gr_grid_mask, tea.gr_grid_areas)
+        _save_grg_mask(opts, tea.gr_grid_mask, tea.gr_grid_areas)
     else:
         # set GR grid mask and area grid
         tea.gr_grid_mask = gr_grid_mask
@@ -394,12 +393,11 @@ def _load_or_generate_gr_grid(opts, tea):
     tea.cell_size_lat = opts.agr_cell_size
 
 
-def _calc_lat_lon_range(cell_size_lat, data, mask):
+def _calc_lat_lon_range(cell_size_lat, mask):
     """
     calculate latitude and longitude range for selected region
     Args:
         cell_size_lat: size of the grid cell in latitude
-        data: input data
         mask: mask grid
 
     Returns:
@@ -442,10 +440,7 @@ def _reduce_region(opts, data, mask, threshold=None, full_region=False):
         threshold: reduced threshold grid
 
     """
-    if opts.precip:
-        cell_size_lat = 1
-    else:
-        cell_size_lat = 2
+    cell_size_lat = opts.agr_cell_size
 
     # preselect region to reduce computation time (incl. some margins to avoid boundary effects)
     if full_region:
@@ -454,17 +449,14 @@ def _reduce_region(opts, data, mask, threshold=None, full_region=False):
         min_lon = mask.lon.min().values
         max_lon = mask.lon.max().values
     else:
-        min_lat, min_lon, max_lat, max_lon = _calc_lat_lon_range(cell_size_lat, data, mask)
+        min_lat, min_lon, max_lat, max_lon = _calc_lat_lon_range(cell_size_lat, mask)
 
-    if opts.dataset == 'ERA5' and opts.region == 'EUR':
-        lons = np.arange(-12, 40.5, 0.5)
+    if opts.region == 'EUR':
+        # hardcoded extent for EUR region
+        lons = np.arange(-12, 40.5, opts.grg_grid_spacing)
         cell_size_lon = 1 / np.cos(np.deg2rad(max_lat)) * cell_size_lat
         min_lon = math.floor(lons[0] - cell_size_lon / 2)
         max_lon = math.ceil(lons[-1] + cell_size_lon / 2)
-        # if min_lat < 35 - cell_size_lat:
-        #     # TODO: get rid of this
-        #     logger.warning('Region is too far south. Setting minimum latitude to 35°N.')
-        #     min_lat = 35 - cell_size_lat
 
     proc_data = data.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
     proc_mask = mask.sel(lat=slice(max_lat, min_lat), lon=slice(min_lon, max_lon))
@@ -563,8 +555,8 @@ def _calc_agr_mean_and_spread(opts, tea):
     tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
 
     # save results
-    outpath_decadal = _get_decadal_outpath(opts, opts.agr)
-    outpath_ampl = _get_amplification_outpath(opts, opts.agr)
+    outpath_decadal = get_decadal_outpath(opts, opts.agr)
+    outpath_ampl = get_amplification_outpath(opts, opts.agr)
     logger.info(f'Saving AGR decadal results to {outpath_decadal}')
     # remove outpath_decadal if it exists
     if os.path.exists(outpath_decadal):
@@ -586,7 +578,9 @@ def _load_gr_grid_static(opts):
         gr_grid_mask: mask grid (xarray DataArray)
 
     """
-    gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_0p5_{opts.dataset}.nc'
+    res = str(opts.grg_grid_spacing)
+    res_str = res.replace('.', 'p')
+    gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
         gr_grid_mask = gr_grid_mask.mask_lt1500
@@ -594,7 +588,7 @@ def _load_gr_grid_static(opts):
         if opts.decadal_only:
             logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
         gr_grid_mask = None
-    gr_grid_areas_file = f'{opts.statpath}/area_grid_0p5_{opts.region}_{opts.dataset}.nc'
+    gr_grid_areas_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
     try:
         gr_grid_areas = xr.open_dataset(gr_grid_areas_file)
         gr_grid_areas = gr_grid_areas.area_grid
