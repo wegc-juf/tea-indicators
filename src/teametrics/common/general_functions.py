@@ -10,6 +10,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 
+from .. import __version__
 from .config import check_config
 from .TEA_logger import logger
 
@@ -63,14 +64,14 @@ def create_history_from_cfg(cfg_params, ds):
     return ds
 
 
-def create_tea_history(cfg_params, tea, result_type):
+def create_tea_history(cfg_params, tea, dataset):
     """
-    add history to dataset
+    add history and version to dataset
     :param cfg_params: yaml config parameters
     :param tea: TEA object
-    :param result_type: result type (e.g. 'CTP')
+    :param dataset: dataset (e.g. 'CTP_results')
     """
-    ds = getattr(tea, f'{result_type}_results')
+    ds = getattr(tea, f'{dataset}')
 
     parts = []
     for key, value in vars(cfg_params).items():
@@ -80,13 +81,15 @@ def create_tea_history(cfg_params, tea, result_type):
     params = ' '.join(parts)
 
     script = cfg_params.script.split('/')[-1]
-
+    
+    new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}; teametrics v{__version__}'
     if 'history' in ds.attrs:
-        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+        ds.attrs['history'] = ds.attrs['history'] + new_hist
     else:
-        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
-
-    tea.create_history(new_hist, result_type)
+        ds.attrs['history'] = new_hist
+        
+    if 'version' not in ds.attrs:
+        ds.attrs['version'] = __version__
 
 
 def create_natvar_history(cfg_params, nv):

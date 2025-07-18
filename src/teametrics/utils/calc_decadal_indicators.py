@@ -8,7 +8,7 @@ from pathlib import Path
 import xarray as xr
 
 from teametrics.common.var_attrs import get_attrs
-from teametrics.common.general_functions import compare_to_ref
+from teametrics.common.general_functions import compare_to_ref, create_tea_history
 from teametrics.common.TEA_logger import logger
 from teametrics.TEA import TEAIndicators
 
@@ -103,6 +103,7 @@ def calc_decadal_indicators(opts, tea, outpath=None):
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath}')
+        create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
         tea.save_decadal_results(outpath)
     else:
         logger.info(f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
@@ -187,6 +188,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
 
     # save amplification factors
     logger.info(f'Saving amplification factors to {outpath}')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='amplification_factors')
     tea.save_amplification_factors(outpath)
 
 

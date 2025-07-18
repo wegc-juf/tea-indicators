@@ -185,6 +185,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
 
         # save results
+        create_tea_history(cfg_params=opts, tea=tea, dataset='daily_results')
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
@@ -314,7 +315,7 @@ def _save_ctp_output(opts, tea, start, end):
         start: start year
         end: end year
     """
-    create_tea_history(cfg_params=opts, tea=tea, result_type='ctp')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='ctp_results')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
@@ -562,8 +563,10 @@ def _calc_agr_mean_and_spread(opts, tea):
     # remove outpath_decadal if it exists
     if os.path.exists(outpath_decadal):
         os.remove(outpath_decadal)
+    create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
     tea.save_decadal_results(outpath_decadal)
     logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='amplification_factors')
     tea.save_amplification_factors(outpath_ampl)
 
 
