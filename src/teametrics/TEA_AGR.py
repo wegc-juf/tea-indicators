@@ -266,8 +266,14 @@ class TEAAgr(TEAIndicators):
         if lats is None:
             lats, lons = self._get_lats_lons()
 
+        valid_cells_found = False
         for lat in lats:
-            self._calc_tea_ctp_lat(lat, lons=lons)
+            cells_found = self._calc_tea_ctp_lat(lat, lons=lons)
+            if cells_found:
+                valid_cells_found = True
+        if not valid_cells_found:
+            logger.error('No valid cells found for annual CTP calculation. Try to decrease the land_frac_min '
+                         'parameter or check the region definition. ')
 
     def _crop_to_rect(self, lat_range, lon_range):
         """
@@ -649,11 +655,13 @@ class TEAAgr(TEAIndicators):
             lons: Longitudes (default: get automatically)
 
         Returns:
+            valid_cells_found: True if at least one valid cell was found, False otherwise
 
         """
         if lons is None:
             lats, lons = self._get_lats_lons()
 
+        valid_cells_found = False
         # step through all longitudes
         for ilon, lon in enumerate(lons):
             # this comment is necessary to suppress an unnecessary PyCharm warning for lon
@@ -663,6 +671,8 @@ class TEAAgr(TEAIndicators):
             tea_sub = self.select_sub_gr(lat=lat, lon=lon)
             if tea_sub is None:
                 continue
+                
+            valid_cells_found = True
 
             # calculate daily basis variables
             tea_sub.calc_daily_basis_vars(grid=False, gr=True)
@@ -678,3 +688,4 @@ class TEAAgr(TEAIndicators):
             self.set_ctp_results(lat, lon, ctp_results)
             end_time = time.time()
             logger.debug(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
+        return valid_cells_found
