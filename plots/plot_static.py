@@ -5,14 +5,9 @@ plot static input of TEA
 
 import argparse
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FormatStrFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.colors import BoundaryNorm, ListedColormap
-from matplotlib import colormaps
 import numpy as np
 import os
-import pandas as pd
-import re
 import xarray as xr
 
 from common.config import load_opts
