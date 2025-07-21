@@ -328,7 +328,10 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     fname = fname.split('/')[-1].split('.py')[0]
     with open(config_file, 'r') as stream:
         opts = yaml.safe_load(stream)
-        opts = opts[fname]
+        if 'plot' in fname:
+            opts = opts['calc_TEA']
+        else:
+            opts = opts[fname]
         opts = argparse.Namespace(**opts)
 
     # add name of script

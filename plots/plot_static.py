@@ -15,100 +15,24 @@ import pandas as pd
 import re
 import xarray as xr
 
+from common.config import load_opts
 
-def getopts():
+
+def _getopts():
     """
-    get arguments
-    :return: command line parameters
+    get command line arguments
+
+    Returns:
+        opts: command line parameters
     """
-
-    def dir_path(path):
-        if os.path.isdir(path):
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f'{path} is not a valid path')
-
-    def float_1pcd(value):
-        if not re.match(r'^\d+(\.\d{1})?$', value):
-            raise argparse.ArgumentTypeError('Threshold value must have at most one digit after '
-                                             'the decimal point')
-        return float(value)
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--start',
-                        default=1961,
-                        type=int,
-                        help='Start of the interval to be processed [default: 1961].')
-
-    parser.add_argument('--end',
-                        default=pd.to_datetime('today').year,
-                        type=int,
-                        help='End of the interval to be processed [default: current year].')
-
-    parser.add_argument('--period',
-                        dest='period',
-                        default='WAS',
+    parser.add_argument('--config-file', '-cf',
+                        dest='config_file',
                         type=str,
-                        choices=['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'JJA'],
-                        help='Climatic time period (CTP) of interest. '
-                             'Options: monthly, seasonal, WAS, ESS, JJA, and  annual [default].')
-
-    parser.add_argument('--region',
-                        default='AUT',
-                        type=str,
-                        help='GeoRegion. Options: EUR, AUT (default), SAR, SEA, FBR, '
-                             'Austrian state, or ISO2 code of a european country.')
-
-    parser.add_argument('--parameter',
-                        default='T',
-                        type=str,
-                        choices=['T', 'P'],
-                        help='Parameter for which the TEA indices should be calculated '
-                             'Options: T (= temperature, default), P (= precipitation).')
-
-    parser.add_argument('--precip-var',
-                        dest='precip_var',
-                        default='Px1h_7to7',
-                        type=str,
-                        choices=['Px1h', 'P24h', 'Px1h_7to7', 'P24h_7to7'],
-                        help='Precipitation variable used.'
-                             '[Px1h, P24h, Px1h_7to7 (default), P24h_7to7]')
-
-    parser.add_argument('--threshold',
-                        default=99,
-                        type=float_1pcd,
-                        help='Threshold in degrees Celsius, mm, or as percentile [default: 99].')
-
-    parser.add_argument('--threshold-type',
-                        dest='threshold_type',
-                        type=str,
-                        choices=['perc', 'abs'],
-                        default='perc',
-                        help='Pass "perc" (default) if percentiles should be used as thresholds or '
-                             '"abs" for absolute thresholds.')
-
-    parser.add_argument('--statpath',
-                        type=dir_path,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/',
-                        help='Path of folder where static file is located.')
-
-    parser.add_argument('--maskpath',
-                        type=dir_path,
-                        default='/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/',
-                        help='Path of folder where mask file is located.')
-
-    parser.add_argument('--outpath',
-                        type=dir_path,
-                        default='/nas/home/hst/work/TEAclean/plots/',
-                        help='Path of folder where plots should be saved.')
-
-    parser.add_argument('--dataset',
-                        dest='dataset',
-                        default='SPARTACUS',
-                        type=str,
-                        choices=['SPARTACUS', 'ERA5', 'ERA5Land'],
-                        help='Input dataset. Options: SPARTACUS (default), ERA5, ERA5Land.')
+                        default='../TEA_CFG.yaml',
+                        help='TEA configuration file (default: TEA_CFG.yaml)')
 
     myopts = parser.parse_args()
 
@@ -125,161 +49,144 @@ def load_data(opts):
         stat: static input data
         masks: mask data
     """
+    stat = {}
 
-    pstr = opts.parameter
-    if opts.parameter == 'P':
-        pstr = f'{opts.precip_var}_'
+    # load mask(s) data
+    stat['mask'] = xr.open_dataarray(f'{opts.maskpath}/masks/{opts.region}_mask_{opts.dataset}.nc')
+    if opts.dataset == 'ERA5':
+        stat['mask_0p5'] = xr.open_dataarray(f'{opts.maskpath}/masks/{opts.region}_mask_0p5_ERA5.nc')
 
-    unit, unit_str = '°C', 'degC'
-    if opts.parameter == 'P':
-        unit, unit_str = 'mm', 'mm'
+    # load static data
+    stat['thresh'] = xr.open_dataarray(f'{opts.maskpath}/'
+                                     f'threshold_{opts.param_str}_{opts.period}_{opts.region}'
+                                     f'_{opts.dataset}.nc')
+    if opts.dataset == 'ERA5':
+        stat['area'] = xr.open_dataarray(f'{opts.maskpath}/'
+                                       f'area_grid_0p5_{opts.region}_{opts.dataset}.nc')
 
-    param_str = f'{pstr}{opts.threshold:.1f}p'
-    if opts.threshold_type == 'abs':
-        param_str = f'{pstr}{opts.threshold:.1f}{unit_str}'
-
-    statname = f'{opts.statpath}static_{param_str}_{opts.region}_{opts.dataset}.nc'
-    stat = xr.open_dataset(statname)
-
-    maskname = f'{opts.maskpath}{opts.region}_masks_{opts.dataset}.nc'
-    masks = xr.open_dataset(maskname)
-
-    return stat, masks
+    return stat
 
 
-def load_params(opts, mask):
+def get_lims(data, rval):
     """
-    load plot parameter
+    get min and max values and round them for plotting
     Args:
-        opts: CLI parameter
-        mask: mask da
+        data: input data to get lims for
+        rval: rounding value
 
     Returns:
-        param_dict: dictionary of all necessary plot parameter
+        vmin: rounded minimum value
+        vmax: rounded maximum value
     """
-    if 'ERA5' not in opts.dataset:
-        x, y = 'x', 'y'
-        orig = 'lower'
-        xn, xx = 0, len(mask['x'])
-        yn, yx = 0, len(mask['y'])
-    elif opts.region == 'AUT':
-        x, y = 'lon', 'lat'
-        orig = 'upper'
-        xn, xx = 156, 190
-        yx, yn = 91, 105
-    else:
-        x, y = 'lon', 'lat'
-        orig = 'upper'
-        masky = mask.nw_mask
-        xn_val = masky.where(masky.notnull(), drop=True).lon[0].values
-        xx_val = masky.where(masky.notnull(), drop=True).lon[-1].values
-        yn_val = masky.where(masky.notnull(), drop=True).lat[-1].values
-        yx_val = masky.where(masky.notnull(), drop=True).lat[0].values
-        xn = np.where(masky.lon == xn_val)[0][0]
-        xx = np.where(masky.lon == xx_val)[0][0]
-        yn = np.where(masky.lat == yn_val)[0][0]
-        yx = np.where(masky.lat == yx_val)[0][0]
 
-    if opts.parameter == 'T':
+    vn = data.min().values
+    vx = data.max().values
+
+    # round to next round val (rval)
+    vmin = np.floor(vn / rval) * rval
+    vmax = np.ceil(vx / rval) * rval
+
+    return vmin, vmax
+
+
+def plot_props(opts, var_name, data):
+
+    # color map
+    if var_name != 'thresh':
+        cmap = 'cividis'
+    elif 'T' in opts.parameter:
         cmap = 'YlOrRd'
-        unit = '°C'
     else:
         cmap = 'YlGnBu'
-        unit = 'mm'
 
-    params_dict = {'x': x, 'y': y, 'cmap': cmap, 'orig': orig, 'xlims': [xn, xx], 'ylims': [yn, yx],
-                   'unit': unit}
+    # data range
+    if 'mask' in var_name:
+        vn, vx = 0, 1
+        delta = 0.1
+        unit = '1'
+    else:
+        if var_name == 'area_grid':
+            rval = 0.01
+            delta = 0.05
+            unit = 'areals'
+        else:
+            rval = 5
+            delta = 2.5
+            unit = opts.unit
+        vn, vx = get_lims(data=data, rval=rval)
 
-    return params_dict
+    # x and y ranges
+    valid_cells = data.where(data.notnull(), drop=True)
+    xn, xx = get_lims(data=valid_cells[opts.xname], rval=5)
+    yn, yx = get_lims(data=valid_cells[opts.yname], rval=5)
 
+    props = {'cmap': cmap, 'vn': vn, 'vmax': vx, 'xn': xn, 'xx': xx, 'yn': yn, 'yx': yx,
+             'step': delta, 'cb_lbl': f'{var_name} [{unit}]'}
 
-def plot_nw_masks(ax, masks, params):
-    ax.imshow(masks.nw_mask, origin=params['orig'], vmin=0, vmax=1.5, cmap='Greys')
-    ax.imshow(masks.lt1500_mask + 1, origin=params['orig'], vmin=0, vmax=2.5)
-
-    ax.set_title('Region mask / valid grid points')
-
-    ax.scatter(-100, -100, s=40, marker='s', color='#686868', label='GR mask')
-    ax.scatter(-100, -100, s=40, marker='s', color='#79d151', label='valid cells')
-
-    ax.legend(loc='upper left', fontsize=7)
-
-
-def plot_mask(fig, ax, masks, params):
-    cmap = colormaps['Greys']
-    new_cols = cmap(np.linspace(0, 1, 12))
-    cmap = ListedColormap(new_cols)
-    boundaries = np.linspace(0, 100, 11)
-    norm = BoundaryNorm(boundaries, cmap.N, clip=True)
-
-    map_vals = ax.imshow(masks.mask * 100, origin=params['orig'], cmap=cmap, norm=norm)
-    ax.set_title('Weighted region mask')
-
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cb = fig.colorbar(map_vals, cax=cax, orientation='vertical', label='GR fraction [%]')
+    return props
 
 
-def plot_area(opts, fig, ax, static, params):
-    cmap = colormaps['Greys']
-    new_cols = cmap(np.linspace(0, 1, 12))
-    cmap = ListedColormap(new_cols)
-    boundaries = np.linspace(scripts.general_stuff.general_functions.area_grid.min(), scripts.general_stuff.general_functions.area_grid.max(), 11)
-    norm = BoundaryNorm(boundaries, cmap.N, clip=True)
+def plot_static_data(opts, data):
+    """
+    plot static data
+    Args:
+        opts: CLI parameter
+        data: dictionary with static data
 
-    map_vals = ax.imshow(scripts.general_stuff.general_functions.area_grid, origin=params['orig'], cmap=cmap, norm=norm)
-    ax.set_title(f'Area grid {opts.region} ({static.GR_size:.2f} areals)')
+    Returns:
 
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cb = fig.colorbar(map_vals, cax=cax, orientation='vertical', label='cell area [areals]')
-    cb.formatter = FormatStrFormatter('%.2f')
-    cb.update_ticks()
+    """
 
+    # set up figure
+    n_subs = len(data.keys())
+    nrow, ncol = 1, n_subs
+    if n_subs == 4:
+        nrow, ncol = 2, 2
+    fig, axs = plt.subplots(nrows=nrow, ncols=ncol, figsize=(ncol * 4, nrow * 3.5))
+    axs = axs.flatten()
 
-def plot_thresh(fig, ax, static, params):
-    boundaries = np.arange(np.floor(static.threshold.min()), np.ceil(static.threshold.max()) + 1)
-    cmap = colormaps[params['cmap']]
-    new_cols = cmap(np.linspace(0, 1, len(boundaries)))
-    cmap = ListedColormap(new_cols)
-    norm = BoundaryNorm(boundaries, cmap.N, clip=True)
+    # get names of x and y dims
+    dims = opts.xy_name.split(',')
+    opts.xname, opts.yname = dims[0], dims[1]
 
-    map_vals = ax.imshow(static.threshold, origin=params['orig'], cmap=cmap, norm=norm)
+    for i, (key, da) in enumerate(data.items()):
+        props = plot_props(opts=opts, var_name=key, data=da)
+        lvls = np.arange(props['vn'], props['vmax'] + props['step'], props['step'])
+        map_vals = axs[i].contourf(da[opts.xname], da[opts.yname], da.values,
+                                   cmap=props['cmap'], levels=lvls)
 
-    ax.set_title(f'Threshold grid')
+        divider = make_axes_locatable(axs[i])
+        cax = divider.append_axes('right', size='5%', pad=0.05)
+        cb = fig.colorbar(map_vals, cax=cax, orientation='vertical', label=props['cb_lbl'])
 
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('right', size='5%', pad=0.05)
-    cb = fig.colorbar(map_vals, cax=cax, orientation='vertical', label=f'threshold {params["unit"]}')
+        axs[i].set_xlabel(opts.xname)
+        axs[i].set_ylabel(opts.yname)
+        axs[i].set_xlim(props['xn'], props['xx'])
+        axs[i].set_ylim(props['yn'], props['yx'])
+
+    fig.suptitle(f'Static data for {opts.region} ({opts.dataset})', fontsize=16)
+    fig.subplots_adjust(left=0.05, right=0.95, top=0.9, bottom=0.05, hspace=0.25, wspace=0.4)
+
+    # check and create output path
+    outpath = f'{opts.outpath}/plots'
+    if not os.path.exists(outpath):
+        os.makedirs(outpath)
+
+    plt.savefig(f'{outpath}/static_data_{opts.region}_{opts.param_str}_{opts.dataset}.png',
+                dpi=300, bbox_inches='tight')
 
 
 def run():
-    opts = getopts()
+    # get command line parameters
+    cmd_opts = _getopts()
 
-    # load data
-    stat_ds, mask_ds = load_data(opts=opts)
+    # load CFG parameters
+    opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
 
-    # load params
-    params = load_params(opts=opts, mask=mask_ds)
+    # load static data and mask
+    static_dict = load_data(opts)
 
-    # setup maps
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
-
-    plot_nw_masks(ax=axs[0, 0], masks=mask_ds, params=params)
-    plot_mask(fig=fig, ax=axs[0, 1], masks=mask_ds, params=params)
-    plot_area(opts=opts, fig=fig, ax=axs[1, 0], static=stat_ds, params=params)
-    plot_thresh(fig, ax=axs[1, 1], static=stat_ds, params=params)
-
-    for irow in range(2):
-        for icol in range(2):
-            axs[irow, icol].set_xlim(params['xlims'][0], params['xlims'][1])
-            axs[irow, icol].set_ylim(params['ylims'][0], params['ylims'][1])
-            axs[irow, icol].axis('off')
-
-    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.2)
-
-    plt.savefig(f'{opts.outpath}static_{opts.region}_{opts.dataset}.png',
-                bbox_inches='tight', dpi=300)
+    plot_static_data(opts=opts, data=static_dict)
 
 
 if __name__ == '__main__':
