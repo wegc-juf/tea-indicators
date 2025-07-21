@@ -1,4 +1,4 @@
-#!/opt/virtualenv3.7/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 gki et al. 2024 (TEA) ExtDataFig. 6 plot

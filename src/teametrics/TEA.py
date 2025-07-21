@@ -1,18 +1,18 @@
 """
 Threshold Exceedance Amount (TEA) indicators Class implementation
-Based on:
-TODO: add reference to the paper
+Based on: https://doi.org/10.48550/arXiv.2504.18964
+# TODO: update doi when final version is published
 Equation numbers refer to Supplementary Notes
 """
 import warnings
-
 import os
+
 import xarray as xr
 import pandas as pd
 import numpy as np
 
-from common.var_attrs import get_attrs, equal_vars
-from common.TEA_logger import logger
+from .common.var_attrs import get_attrs, equal_vars
+from .common.TEA_logger import logger
 
 
 class TEAIndicators:
@@ -1808,19 +1808,3 @@ class TEAIndicators:
         if self.mask is not None and self.apply_mask:
             self.area_grid = self.area_grid * self.mask
         self.gr_size = self.area_grid.sum().values
-
-    # ### general functions ###
-    def create_history(self, history, result_type):
-        """
-        create history of all functions called
-
-        Args:
-            history: history string
-            result_type: type of result (daily, CTP, decadal)
-        """
-        ds = getattr(self, f'{result_type}_results')
-        if 'history' in ds.attrs:
-            ds.attrs['history'] = ds.attrs['history'] + history
-        else:
-            ds.attrs['history'] = history
-            

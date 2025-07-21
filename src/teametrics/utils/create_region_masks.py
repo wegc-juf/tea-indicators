@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 create region masks for TEA indicator calculation
 author: hst
 """
-import argparse
 import os
 import sys
+
 import geopandas as gpd
 import numpy as np
 from pathlib import Path
@@ -13,30 +13,10 @@ from shapely.geometry import Polygon, MultiPolygon
 from tqdm import trange
 import xarray as xr
 
-from common.general_functions import create_history_from_cfg, get_gridded_data
-from common.config import load_opts
-# from calc_TEA import _getopts
+from ..common.general_functions import create_history_from_cfg, get_gridded_data
+from ..common.config import load_opts
+from ..calc_TEA import _getopts
 
-# TODO: remove _getopts and soft links in utils directory when imports are working properly
-def _getopts():
-    """
-    get command line arguments
-
-    Returns:
-        opts: command line parameters
-    """
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--config-file', '-cf',
-                        dest='config_file',
-                        type=str,
-                        default='../TEA_CFG.yaml',
-                        help='TEA configuration file (default: TEA_CFG.yaml)')
-
-    myopts = parser.parse_args()
-
-    return myopts
 
 def load_shp(opts):
     """
@@ -189,7 +169,7 @@ def run_sea(opts):
         ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds)
 
     save_output(ds, opts)
 
@@ -271,7 +251,7 @@ def run_eur(opts):
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
     ds = xr.merge([mask, nwmask, lt1500_mask])
-    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds)
 
     save_output(ds, opts)
 
@@ -286,10 +266,12 @@ def find_closest(coords, corner_val, direction):
         for i in range(len(coords)):
             if coords[i] > corner_val:
                 return coords[i]
+        return coords[-1]  # If no larger value found, return the last value
     elif direction == -1:
         for i in reversed(range(len(coords))):
             if coords[i] < corner_val:
                 return coords[i]
+        return coords[0]  # If no smaller value found, return the first value
     else:
         raise ValueError('Direction must be either -1 or 1.')
 
@@ -307,7 +289,7 @@ def save_output(ds, opts, out_region=None):
     """
     if out_region is None:
         out_region = opts.region
-    outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
+    # outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
     # print(f'Saving old masks file to {outpath}')
     # ds.to_netcdf(outpath)
     simple_mask = ds.lt1500_mask * ds.mask
@@ -422,7 +404,7 @@ def create_rectangular_gr(opts):
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
     else:
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-    ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
     save_output(ds, opts, out_region)
@@ -530,7 +512,7 @@ def run():
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
         else:
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-        ds = create_history_from_cfg(cfg_params=opts, ds=ds)
+        create_history_from_cfg(cfg_params=opts, ds=ds)
 
         out_region = opts.region
 

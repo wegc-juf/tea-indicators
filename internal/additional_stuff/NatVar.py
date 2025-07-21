@@ -103,7 +103,6 @@ class NaturalVariability:
 
         self.nv['std_scaling_EA_DM'] = (s_a_ref / s_dm_ref).values
 
-
     def save_results(self, outname):
         """
         save results to netcdf file
@@ -135,17 +134,4 @@ class NaturalVariability:
 
         print(f'Saving natural variability results to {outname}')
         self.nv.to_netcdf(outname)
-
-
-    def create_history(self, history):
-        """
-        create history of all functions called
-
-        Args:
-            history: history string
-        """
-        ds = getattr(self, 'nv')
-        if 'history' in ds.attrs:
-            ds.attrs['history'] = ds.attrs['history'] + history
-        else:
-            ds.attrs['history'] = history
+        

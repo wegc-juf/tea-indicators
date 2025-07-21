@@ -1,23 +1,25 @@
 """
 script to check CFG parameter
 """
-import argparse
-import numpy as np
 import os
-import pandas as pd
 import re
-import yaml
 import glob
+
+import argparse
+import pandas as pd
+import numpy as np
+import yaml
 import cfunits
 
 from .cfg_paramter_gui import show_parameters
+import teametrics
 
 
 def is_dir_path(path):
     if os.path.isdir(path) or os.path.exists(path) or glob.glob(path):
         return True
     else:
-        raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
+        raise argparse.ArgumentTypeError(f'{path} not found or is not a valid directory or file path. ')
 
 
 def is_file(entry):
@@ -62,9 +64,6 @@ def ints(param, val):
             raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
                                              f'Please pass a year before the current year or the '
                                              f'current year.')
-
-
-file_path = os.path.dirname(__file__)
 
 
 def _get_default_opts(fname, opts):
@@ -117,6 +116,7 @@ def _get_default_opts(fname, opts):
             opts.unit = 'degC'
     if 'low_extreme' not in opts:
         opts.low_extreme = False
+    # TODO: add minimum exceedance area option as defined in gki RCF
     
     # time_params options
     if 'start' not in opts:
@@ -127,6 +127,8 @@ def _get_default_opts(fname, opts):
         opts.period = 'annual'
     if 'ref_period' not in opts:
         opts.ref_period = '1961-1990'
+    # TODO: add separate option for percentile period as defined in gki RCF
+    # TODO: add option for percentile estimation period as defined in gki RCF
     if 'cc_period' not in opts:
         opts.cc_period = '2010-2024'
     
@@ -150,6 +152,7 @@ def _get_default_opts(fname, opts):
         opts.recalc_daily = True
     if 'decadal' not in opts:
         opts.decadal = True
+    # TODO: add decadal window options as defined in gki RCF
     if 'decadal_only' not in opts:
         opts.decadal_only = False
     if 'recalc_decadal' not in opts:
@@ -270,7 +273,27 @@ def check_type(key, value):
         if not unit.isvalid:
             raise argparse.ArgumentTypeError(f'{unit.reason_notvalid}. '
                                              f'Please use a valid unit from udunits.')
-        
+
+
+def set_variables(opts_dict):
+    """
+    replace variables in opts_dict with their values
+    Args:
+        opts_dict: dictionary with configuration parameters
+
+    Returns:
+
+    """
+    for param in opts_dict.keys():
+        if not isinstance(opts_dict[param], str):
+            continue
+        if '$script_path' in opts_dict[param]:
+            # replace 'script_path' with the path of the script
+            script_path = os.path.dirname(os.path.abspath(teametrics.__file__))
+            opts_dict[param] = opts_dict[param].replace('$script_path', script_path)
+        elif '$' in opts_dict[param]:
+            raise ValueError(f'Unknown variable name in {param}: {opts_dict[param]}. ')
+
 
 def check_config(opts_dict):
     """
@@ -338,11 +361,13 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     opts.script = f'{fname}.py'
     
     opts = _get_default_opts(fname, opts)
+    set_variables(opts_dict=vars(opts))
     check_config(opts_dict=vars(opts))
     
     if opts.gui:
         # show set parameters
         show_parameters(opts)
+        set_variables(opts_dict=vars(opts))
         check_config(opts_dict=vars(opts))
         opts = argparse.Namespace(**opts)
         
@@ -366,5 +391,3 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
 
     return opts
-
-

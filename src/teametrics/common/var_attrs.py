@@ -23,7 +23,7 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
     attrs = {'ctp': {'long_name': f'climatic time period ({period})'},
              'CTP': {'long_name': f'start date of climatic time period {period}', 'standard_name': 'ctp_time'},
              'CTP_global_attrs': {'title': f'TEA indicators for annual climatic time period: {period}'},
-             'decadal': {'long_name': f'center year of decadal indicators for climatic time period {period}',},
+             'decadal': {'long_name': f'center year of decadal indicators for climatic time period {period}', },
              'decadal_global_attrs': {'title': f'TEA decadal-mean indicator variables for climatic time period: '
                                                f'{period}'},
              'amplification': {'long_name': 'center year of decadal amplification factors for climatic time period'
