@@ -280,7 +280,7 @@ def plot_tex_es(opts, ax, data):
     ax.set_xlim(xn, xx)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(xn, xx)))
 
-    lims = get_lims(data[f'TEX_AGR'], rval=100)
+    lims = get_lims(data[f'TEX_AGR'], rval=250)
     ax.set_yticks(np.arange(lims[0], lims[1] + lims[2] * 2, lims[2] * 2))
     ax.set_ylim(lims[0], lims[1])
 

@@ -292,7 +292,7 @@ def plot_data(opts, data):
         plot_map(opts=opts, fig=fig, ax=axs[irow, 1], data=data[map_var], lims=mlims)
 
     # plot ES and TEX
-    rval_tex = 2
+    rval_tex = 5
     tex_lims = get_lims(data[f'TEX_AGR_AF'], rval=rval_tex)
     plot_tex_es(opts=opts, ax=axs[-1, -1], data=data, lims=tex_lims)
 
