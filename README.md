@@ -54,13 +54,13 @@ Source code documentation for the classes can be found in TODO.
 Just open an issue on the [GitHub repository](https://wegcgitlab.uni-graz.at/hst/tea-indicators/) or contact the authors directly.
 
 ## Authors 
-- **Stephanie Haas** — Developer, Maintainer
+- **Stephanie Haas** — Developer, Maintainer\
   Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
   (stephanie.haas@uni-graz.at)
-- **Jürgen Fuchsberger** — Developer, Maintainer
+- **Jürgen Fuchsberger** — Developer, Maintainer\
   Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
   (juergen.fuchsberger@uni-graz.at)
-- **Gottfried Kirchengast** — Project Lead, main concept
+- **Gottfried Kirchengast** — Project Lead, main concept\
   Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
   (gottfried.kirchengast@uni-graz.at)
 
