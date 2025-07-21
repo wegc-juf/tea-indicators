@@ -29,7 +29,7 @@ class TEAAgr(TEAIndicators):
     """
     def __init__(self, input_data=None, threshold=None, mask=None, min_area=0.0001,
                  gr_grid_res=0.5, land_sea_mask=None, gr_grid_mask=None, gr_grid_areas=None,
-                 land_frac_min=0.5, cell_size_lat=None, **kwargs):
+                 land_frac_min=0.5, cell_size_lat=2, **kwargs):
         """
         initialize TEA object
 
