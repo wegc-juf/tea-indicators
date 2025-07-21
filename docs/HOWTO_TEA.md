@@ -26,7 +26,8 @@ The configuration options for the script are documented in `CFG-PARAMS-doc.md` \
    (For WEGC users: input data filepaths are listed in `create_region_masks.md`) 
 
 ## 4) Calculation of TEA Indicators
-After preparing all the necessary input and mask data, run `calc_TEA.py --config-file CONFIG_FILE`. \
+After preparing all the necessary input and mask data, run `calc_TEA.py --config-file CONFIG_FILE`.
+
 A minimal example config can be found in `TEA_CFG_minimal.yaml`. Template config files are `TEA_CFG_template.yaml` for 
 gridded data and `TEA_CFG_template_station.yaml` for station data. \
 The configuration options for the script are documented in `CFG-PARAMS-doc.md`
