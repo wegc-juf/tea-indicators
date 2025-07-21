@@ -3,7 +3,6 @@
 create region masks for TEA indicator calculation
 author: hst
 """
-
 import os
 import sys
 
@@ -35,10 +34,10 @@ def load_shp(opts):
 
     if opts.subreg:
         try:
-            shp = shp[(shp.CNTR_ID == opts.subreg)]
+            shp = shp[(shp.CNTR_ID == opts.region)]
         except AttributeError:
             try:
-                shp = shp[(shp.LAND_NAME == opts.subreg)]
+                shp = shp[(shp.LAND_NAME == opts.region)]
             except AttributeError:
                 raise AttributeError('The given shape file has neither CNTR_ID nor '
                                      'LAND_NAME information.')
@@ -64,8 +63,6 @@ def create_cell_polygons(opts, xvals, yvals, offset):
     """
 
     out_region = opts.region
-    if opts.subreg:
-        out_region = opts.subreg
 
     path = Path(f'{opts.maskpath}/{opts.mask_sub}/polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
     path.mkdir(parents=True, exist_ok=True)
@@ -465,11 +462,9 @@ def run():
         # The following part is very sensible to the shape file that is used.
         # Lots of trial and error here...
         geom = shp.geometry.iloc[0]
-        if not opts.subreg:
-            if isinstance(geom, MultiPolygon):
-                poly = geom.geoms[1]
-            else:
-                poly = geom
+
+        if isinstance(geom, MultiPolygon):
+            poly = geom.geoms[0]
         else:
             poly = geom
 
@@ -520,9 +515,7 @@ def run():
         create_history_from_cfg(cfg_params=opts, ds=ds)
 
         out_region = opts.region
-        if opts.subreg:
-            out_region = opts.subreg
-        
+
         save_output(ds, opts, out_region)
 
 

@@ -7,6 +7,7 @@ import glob
 
 import argparse
 import pandas as pd
+import numpy as np
 import yaml
 import cfunits
 
@@ -169,7 +170,7 @@ def _get_default_opts(fname, opts):
     if 'gr_type' not in opts:
         opts.gr_type = 'polygon'
     if 'subreg' not in opts or opts.subreg == opts.region:
-        opts.subreg = ''
+        opts.subreg = False
     if 'target_sys' not in opts and 'natural_variability' not in fname:
         if opts.dataset == 'SPARTACUS':
             opts.target_sys = 3416
@@ -244,7 +245,7 @@ def check_type(key, value):
         'gr_type': str,
         'we_len': float,
         'ns_len': float,
-        'subreg': str,
+        'subreg': bool,
         'target_sys': int,
         'xy_name': str,
         'shpfile': 'path',
@@ -256,6 +257,8 @@ def check_type(key, value):
         'wegnfile': 'path',
     }
     expected_type = types.get(key, str)
+    if value == None or 'file' in key:
+        return
     if expected_type == float:
         try:
             value = float(value)
@@ -311,7 +314,7 @@ def check_config(opts_dict):
     }
 
     for param in opts_dict.keys():
-        if 'path' in param:
+        if 'path' in param or 'file' in param:
             is_dir_path(opts_dict[param])
         else:
             check_type(param, opts_dict[param])
@@ -348,7 +351,10 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     fname = fname.split('/')[-1].split('.py')[0]
     with open(config_file, 'r') as stream:
         opts = yaml.safe_load(stream)
-        opts = opts[fname]
+        if 'plot' in fname:
+            opts = opts['calc_TEA']
+        else:
+            opts = opts[fname]
         opts = argparse.Namespace(**opts)
 
     # add name of script
