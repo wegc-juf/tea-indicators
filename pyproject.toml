@@ -6,7 +6,7 @@ authors = [
     {name = "Jürgen Fuchsberger",email = "juergen.fuchsberger@uni-graz.at"},
     {name = "Stephanie Haas",email = "stephanie.haas@uni-graz.at"},
 ]
-readme = "docs/HOWTO_TEA.md"
+readme = "README.md"
 
 requires-python = ">=3.11, <4.0"
 
