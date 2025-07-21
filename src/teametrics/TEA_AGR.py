@@ -9,6 +9,7 @@ import warnings
 import xarray as xr
 import numpy as np
 import time
+from tqdm import trange
 
 from common.var_attrs import get_attrs
 from common.TEA_logger import logger
@@ -28,7 +29,7 @@ class TEAAgr(TEAIndicators):
     """
     def __init__(self, input_data=None, threshold=None, mask=None, min_area=0.0001,
                  gr_grid_res=0.5, land_sea_mask=None, gr_grid_mask=None, gr_grid_areas=None,
-                 land_frac_min=0.5, cell_size_lat=None, **kwargs):
+                 land_frac_min=0.5, cell_size_lat=2, **kwargs):
         """
         initialize TEA object
 
@@ -266,7 +267,8 @@ class TEAAgr(TEAIndicators):
         if lats is None:
             lats, lons = self._get_lats_lons()
 
-        for lat in lats:
+        for ilat in trange(len(lats), desc='Processing AGR cells'):
+            lat = lats[ilat]
             self._calc_tea_ctp_lat(lat, lons=lons)
 
     def _crop_to_rect(self, lat_range, lon_range):
@@ -658,7 +660,6 @@ class TEAAgr(TEAIndicators):
         for ilon, lon in enumerate(lons):
             # this comment is necessary to suppress an unnecessary PyCharm warning for lon
             # noinspection PyTypeChecker
-            logger.info(f'Processing lat {lat}, lon {lon}')
             start_time = time.time()
             tea_sub = self.select_sub_gr(lat=lat, lon=lon)
             if tea_sub is None:

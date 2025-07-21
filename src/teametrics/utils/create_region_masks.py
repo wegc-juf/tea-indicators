@@ -3,7 +3,7 @@
 create region masks for TEA indicator calculation
 author: hst
 """
-
+import argparse
 import os
 import sys
 import geopandas as gpd
@@ -15,8 +15,28 @@ import xarray as xr
 
 from common.general_functions import create_history_from_cfg, get_gridded_data
 from common.config import load_opts
-from calc_TEA import _getopts
+# from calc_TEA import _getopts
 
+# TODO: remove _getopts and soft links in utils directory when imports are working properly
+def _getopts():
+    """
+    get command line arguments
+
+    Returns:
+        opts: command line parameters
+    """
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--config-file', '-cf',
+                        dest='config_file',
+                        type=str,
+                        default='../TEA_CFG.yaml',
+                        help='TEA configuration file (default: TEA_CFG.yaml)')
+
+    myopts = parser.parse_args()
+
+    return myopts
 
 def load_shp(opts):
     """
@@ -34,10 +54,10 @@ def load_shp(opts):
 
     if opts.subreg:
         try:
-            shp = shp[(shp.CNTR_ID == opts.subreg)]
+            shp = shp[(shp.CNTR_ID == opts.region)]
         except AttributeError:
             try:
-                shp = shp[(shp.LAND_NAME == opts.subreg)]
+                shp = shp[(shp.LAND_NAME == opts.region)]
             except AttributeError:
                 raise AttributeError('The given shape file has neither CNTR_ID nor '
                                      'LAND_NAME information.')
@@ -63,8 +83,6 @@ def create_cell_polygons(opts, xvals, yvals, offset):
     """
 
     out_region = opts.region
-    if opts.subreg:
-        out_region = opts.subreg
 
     path = Path(f'{opts.maskpath}/{opts.mask_sub}/polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
     path.mkdir(parents=True, exist_ok=True)
@@ -462,11 +480,9 @@ def run():
         # The following part is very sensible to the shape file that is used.
         # Lots of trial and error here...
         geom = shp.geometry.iloc[0]
-        if not opts.subreg:
-            if isinstance(geom, MultiPolygon):
-                poly = geom.geoms[1]
-            else:
-                poly = geom
+
+        if isinstance(geom, MultiPolygon):
+            poly = geom.geoms[0]
         else:
             poly = geom
 
@@ -517,9 +533,7 @@ def run():
         ds = create_history_from_cfg(cfg_params=opts, ds=ds)
 
         out_region = opts.region
-        if opts.subreg:
-            out_region = opts.subreg
-        
+
         save_output(ds, opts, out_region)
 
 

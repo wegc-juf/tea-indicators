@@ -28,6 +28,24 @@ def prep_haslinger_data(provider='gsa', resol='daily'):
                   f'ts_{resol}_{provider}.csv')
 
 
+def prep_haslinger_temperature_data():
+    data = pyreadr.read_r(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/data/'
+                          f'processed/df_gsa_hr_t2m.rds')
+    df = data[None]
+
+    time = sorted(list(set(df['date'])))
+    stations = list(set(df['id']))
+    stations = sorted([int(istation[3:]) for istation in stations])
+
+    df_out = pd.DataFrame(index=time, columns=stations)
+
+    for station in stations:
+        df_station = df.loc[df['id'] == f'gh_{station}']
+        df_out.loc[df_station['date'], station] = df_station['tm'].values
+
+    df_out.to_csv(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/data/raw/TEAprep/'
+                  f't2m_hourly_gsa.csv')
+
 def check_station_syr(provider='gsa', resol='daily', sea=False):
     df = pd.read_csv(f'/data/users/hst/additional_stuff/heavyrainfall_Haslinger2025/'
                      f'data/raw/TEAprep/ts_{resol}_{provider}.csv', index_col=0)
@@ -129,7 +147,8 @@ def add_gsa_altitude_to_metadata():
 
 
 if __name__ == '__main__':
-    prep_haslinger_data(provider='hyd', resol='daily')
+    # prep_haslinger_data(provider='hyd', resol='daily')
+    prep_haslinger_temperature_data()
     # add_gsa_altitude_to_metadata()
     # check_station_syr(provider='gsa', resol='daily')
     # get_fbr_sea_stations(region='FBR', resol='daily')
