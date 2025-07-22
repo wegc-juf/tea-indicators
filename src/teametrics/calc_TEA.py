@@ -43,7 +43,7 @@ def calc_tea_indicators(opts):
     """
 
     # load mask if needed
-    if 'maskpath' in opts:
+    if 'maskpath' in opts and 'station' not in opts:
         mask = _load_mask_file(opts)
     else:
         mask = None
