@@ -421,9 +421,9 @@ def calc_percentiles(opts, threshold_min=None, data=None):
 
     # load data if not provided
     if data is None:
-        data = get_gridded_data(start=opts.ref_period[0], end=opts.ref_period[1], opts=opts, period=opts.period)
+        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1], opts=opts, period=opts.period)
     else:
-        data = extract_period(ds=data, period=opts.period, start_year=opts.ref_period[0], end_year=opts.ref_period[1])
+        data = extract_period(ds=data, period=opts.perc_period, start_year=opts.perc_period_yrs[0], end_year=opts.perc_period_yrs[1])
 
     if threshold_min is not None:
         data = data.where(data > threshold_min)

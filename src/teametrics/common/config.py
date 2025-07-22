@@ -128,8 +128,10 @@ def _get_default_opts(fname, opts):
         opts.period = 'annual'
     if 'ref_period' not in opts:
         opts.ref_period = '1961-1990'
-    # TODO: add separate option for percentile period as defined in gki RCF
-    # TODO: add option for percentile estimation period as defined in gki RCF
+    if 'perc_period_yrs' not in opts:
+        opts.perc_period_yrs = '1961-1990'
+    if 'perc_period' not in opts:
+        opts.perc_period = 'annual'
     if 'cc_period' not in opts:
         opts.cc_period = '2010-2024'
     
@@ -231,6 +233,7 @@ def check_type(key, value):
         'start': int,
         'end': int,
         'period': str,
+        'perc_period': str,
         
         # general
         'gui': bool,
@@ -315,6 +318,7 @@ def check_config(opts_dict):
                     'BadGleichenberg', 'Deutschlandsberg'],
         'threshold_type': ['abs', 'perc'],
         'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'MAM', 'JJA', 'SON', 'DJF'],
+        'perc_period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'MAM', 'JJA', 'SON', 'DJF'],
         'gr_type': ['polygon', 'corners', 'center'],
     }
 
@@ -394,5 +398,9 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         opts.ref_period = (int(ref_period[0]), int(ref_period[1]))
         cc_period = opts.cc_period.split('-')
         opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
+
+    if 'perc_period_yrs' in opts:
+        perc_period_yrs = opts.perc_period_yrs.split('-')
+        opts.perc_period_yrs = (int(perc_period_yrs[0]), int(perc_period_yrs[1]))
 
     return opts
