@@ -25,8 +25,10 @@ To calculate TEA indicators, you need to download and prepare your input data fi
 
 Download input datasets (ERA5, ERA5-Land, or SPARTACUS) if necessary. For ERA5 data, you can use the following scripts
 as a starting point:
-- `download_ERA5.py` - for downloading ERA5 data from the Copernicus Climate Data Store (CDS).
-- `download_ERA5-Land.py` - for downloading ERA5-Land data from the Copernicus Climate Data Store (CDS).
+- [`download_ERA5.py`](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/blob/main/src/teametrics/utils/ERA5/download_ERA5.py?ref_type=heads) - for downloading ERA5 
+  data from the Copernicus Climate Data Store (CDS).
+- [`download_ERA5-Land.py`](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/blob/main/src/teametrics/utils/ERA5/download_ERA5-Land.py?ref_type=heads) - for downloading 
+  ERA5-Land data from the Copernicus Climate Data Store (CDS).
 
 ### 2) Preparation of input datasets
 For calculation of daily TEA indicators, the input data must be aggregated to daily data.
