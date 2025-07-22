@@ -64,9 +64,9 @@ def create_cell_polygons(opts, xvals, yvals, offset):
 
     out_region = opts.region
 
-    path = Path(f'{opts.maskpath}/{opts.mask_sub}/polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
+    path = Path(opts.maskpath) / opts.mask_sub / 'polygons' / f'{out_region}_EPSG{opts.target_sys}_{opts.dataset}/'
     path.mkdir(parents=True, exist_ok=True)
-    fname = f'{path}/{out_region}_cells_EPSG{opts.target_sys}_{opts.dataset}.shp'
+    fname = path / f'{out_region}_cells_EPSG{opts.target_sys}_{opts.dataset}.shp'
 
     try:
         gdf = gpd.read_file(fname)
@@ -145,8 +145,8 @@ def run_sea(opts):
     """
 
     try:
-        aut = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/AUT_masks_{opts.dataset}.nc')
-        sar = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/SAR_masks_{opts.dataset}.nc')
+        aut = xr.open_dataset(Path(opts.maskpath) / opts.mask_sub / f'AUT_masks_{opts.dataset}.nc')
+        sar = xr.open_dataset(Path(opts.maskpath) / opts.mask_sub / f'SAR_masks_{opts.dataset}.nc')
     except FileNotFoundError:
         raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
 
@@ -289,12 +289,9 @@ def save_output(ds, opts, out_region=None):
     """
     if out_region is None:
         out_region = opts.region
-    # outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
-    # print(f'Saving old masks file to {outpath}')
-    # ds.to_netcdf(outpath)
     simple_mask = ds.lt1500_mask * ds.mask
     simple_mask.name = 'mask'
-    outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc'
+    outpath = Path(opts.maskpath) / opts.mask_sub / f'{out_region}_mask_{opts.dataset}.nc'
     print(f'Saving mask file to {outpath}')
     simple_mask.to_netcdf(outpath)
 
