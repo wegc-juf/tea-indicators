@@ -32,19 +32,19 @@ def gr_plot_params(vname):
                            'unit': 'ev/yr',
                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$',
                            'nv_name': 's_EF_AF_NV'},
-              'EDavg_GR_AF': {'col': 'tab:purple',
+              'ED_avg_GR_AF': {'col': 'tab:purple',
                               'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
                               'title': 'Average Event Duration (events-mean)',
                               'unit': 'days',
                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
                               'nv_name': 's_ED_avg_AF_NV'},
-              'EMavg_GR_AF': {'col': 'tab:orange',
+              'EM_avg_GR_AF': {'col': 'tab:orange',
                               'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
                               'title': 'Average Exceedance Magnitude (daily-mean)',
                               'unit': '°C',
                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
                               'nv_name': 's_EM_avg_AF_NV'},
-              'EAavg_GR_AF': {'col': 'tab:red',
+              'EA_avg_GR_AF': {'col': 'tab:red',
                               'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
                               'title': 'Average Exceedance Area (daily-mean)',
                               'unit': 'areals',
@@ -59,10 +59,10 @@ def map_plot_params(vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
                            'title': f'Event Frequency (EF) amplification (CC2010-2024)'},
-              'EDavg_AF_CC': {'cmap': 'Purples',
+              'ED_avg_AF_CC': {'cmap': 'Purples',
                               'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
                               'title': f'Event Duration (ED) amplification (CC2010-2024)'},
-              'EMavg_AF_CC': {'cmap': 'Oranges',
+              'EM_avg_AF_CC': {'cmap': 'Oranges',
                               'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
                               'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
@@ -73,7 +73,7 @@ def map_plot_params(vname):
 def plot_gr_data(ax, data, af_cc, ddata, nv):
     props = gr_plot_params(vname=data.name)
 
-    xvals = data.ctp
+    xvals = data.time
     xticks = np.arange(1961, 2025)
 
     nat_var_low = np.ones(len(xvals)) * (1 - nv[f'{props["nv_name"]}low'].values * 1.645)
@@ -111,8 +111,8 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
             verticalalignment='center', transform=ax.transAxes,
             fontsize=11)
 
-    ref_abs = gmean(ddata.sel(ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
-    cc_abs = gmean(ddata.sel(ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
+    ref_abs = gmean(ddata.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
+    cc_abs = gmean(ddata.sel(time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
 
     ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:3]}' + r'$_\mathrm{Ref | CC}$ = '
             + f'{ref_abs:.2f}' + r'$\,$|$\,$'
@@ -122,23 +122,23 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
             fontsize=9)
 
-    if data.name == 'EAavg_GR_AF':
+    if data.name == 'EA_avg_GR_AF':
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
 
 
 def plot_tex_es(ax, data, af_cc, ddata,  nv):
-    xvals = data.ctp
+    xvals = data.time
     xticks = np.arange(1961, 2025)
 
     nat_var_low = np.ones(len(xvals)) * (1 - nv['s_TEX_AF_NVlow'].values * 1.645)
     nat_var_upp = np.ones(len(xvals)) * (1 + nv['s_TEX_AF_NVupp'].values * 1.645)
     ax.fill_between(x=xticks, y1=nat_var_low, y2=nat_var_upp, color='tab:red', alpha=0.2)
 
-    ax.plot(xticks, data['ESavg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
+    ax.plot(xticks, data['ES_avg_GR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
     ax.plot(xticks, data['TEX_GR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
 
     ax.plot(xticks[0:30], np.ones(len(xvals[:30])), alpha=0.5, color='tab:grey', linewidth=2)
-    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['ESavg_GR_AF_CC'].values, alpha=0.5,
+    ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['ES_avg_GR_AF_CC'].values, alpha=0.5,
             color='tab:grey', linewidth=2)
     ax.plot(xticks[49:], np.ones(len(xvals[49:])) * af_cc['TEX_GR_AF_CC'].values, alpha=0.5,
             color='tab:red', linewidth=2)
@@ -161,7 +161,7 @@ def plot_tex_es(ax, data, af_cc, ddata,  nv):
 
     ypos_ref = 0.12
     ypos_cc_tex = ((af_cc['TEX_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
-    ypos_cc_es = ((af_cc['ESavg_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
+    ypos_cc_es = ((af_cc['ES_avg_GR_AF_CC'].values - ymin) / (ymax - ymin)) + 0.05
     ax.text(0.02, ypos_ref, r'$\mathcal{A}_\mathrm{Ref}$',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes,
@@ -176,13 +176,13 @@ def plot_tex_es(ax, data, af_cc, ddata,  nv):
             fontsize=11)
 
     ref_abs_tex = gmean(ddata['TEX_GR'].sel(
-        ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
+        time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
     cc_abs_tex = gmean(ddata['TEX_GR'].sel(
-        ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
-    ref_abs_es = gmean(ddata['ESavg_GR'].sel(
-        ctp=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
-    cc_abs_es = gmean(ddata['ESavg_GR'].sel(
-        ctp=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
+        time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
+    ref_abs_es = gmean(ddata['ES_avg_GR'].sel(
+        time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
+    cc_abs_es = gmean(ddata['ES_avg_GR'].sel(
+        time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
 
     ax.text(0.02, 0.85,
             'TMax-p99ANN-TEX' + r'$_\mathrm{Ref | CC}$'
@@ -193,7 +193,7 @@ def plot_tex_es(ax, data, af_cc, ddata,  nv):
             + f'{cc_abs_es:.0f} ' + r'areal$\,$°C$\,$days$\,$'
             + '\n'
             + r'$\mathcal{A}_\mathrm{CC}^\mathrm{S} | \mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
-            + f'{af_cc["ESavg_GR_AF_CC"]:.2f}' + r'$\,$|$\,$'
+            + f'{af_cc["ES_avg_GR_AF_CC"]:.2f}' + r'$\,$|$\,$'
             + f'{af_cc["TEX_GR_AF_CC"]:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
@@ -268,45 +268,23 @@ def plot_map(fig, ax, data):
             fontsize=9)
 
 
-def rename_juf_data(data):
-    """
-    rename juf according to hst convention
-    Args:
-        data: dataset
-
-    Returns:
-
-    """
-
-    dvars = data.data_vars
-    for var in dvars:
-        if '_avg' in var:
-            data = data.rename({var: var.replace('_avg', 'avg')})
-
-    data = data.rename({'time': 'ctp'})
-
-    return data
-
-
 def run():
     data, dec_data, natv = get_data()
-    data = rename_juf_data(data=data)
-    dec_data = rename_juf_data(data=dec_data)
 
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
-    gr_vars = ['EF_GR_AF', 'EDavg_GR_AF', 'EMavg_GR_AF', 'EAavg_GR_AF']
+    gr_vars = ['EF_GR_AF', 'ED_avg_GR_AF', 'EM_avg_GR_AF', 'EA_avg_GR_AF']
     for irow, gr_var in enumerate(gr_vars):
         plot_gr_data(ax=axs[irow, 0], data=data[gr_var], af_cc=data[f'{gr_var}_CC'],
                      ddata=dec_data[gr_var.split('_AF')[0]], nv=natv)
 
-    map_vars = ['EF_AF_CC', 'EDavg_AF_CC', 'EMavg_AF_CC']
+    map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
 
-    plot_tex_es(ax=axs[3, 1], data=data[['TEX_GR_AF', 'ESavg_GR_AF']],
-                ddata=dec_data[['TEX_GR', 'ESavg_GR']],
-                af_cc=data[[f'TEX_GR_AF_CC', f'ESavg_GR_AF_CC']], nv=natv)
+    plot_tex_es(ax=axs[3, 1], data=data[['TEX_GR_AF', 'ES_avg_GR_AF']],
+                ddata=dec_data[['TEX_GR', 'ES_avg_GR']],
+                af_cc=data[[f'TEX_GR_AF_CC', f'ES_avg_GR_AF_CC']], nv=natv)
 
     # iterate over each subplot and add a text label
     labels = ['a', 'e', 'b', 'f', 'c', 'g', 'd', 'h']

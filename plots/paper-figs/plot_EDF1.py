@@ -17,20 +17,6 @@ from shapely import geometry
 import xarray as xr
 
 
-def load_data(perc, temp=False):
-    if temp:
-        temp = '_T'
-    else:
-        temp = ''
-
-    path = '/data/arsclisys/backup/clim-hydro/gcci_ewm/actea_input/static/thresholds/'
-    file = f'threshold_grid_AUT_{perc}percentile{temp}_SPARTACUSreg.npy'
-
-    data = np.load(path + file)
-
-    return data
-
-
 def get_lims(param, reg):
     """
     set limits of target region

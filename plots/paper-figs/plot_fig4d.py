@@ -26,7 +26,6 @@ def scale_figsize(figwidth, figheight, figdpi):
     return width, height, dpi
 
 
-
 def calc_bw_af(data):
     """
     calculate amplification factors for box whiskers plot
@@ -74,11 +73,11 @@ def load_tea_data():
     reg_sizes = {'EUR': 7666936, 'S-EUR': 2241613.5, 'C-EUR': 3252386, 'N-EUR': 2172936.5}
     for reg in ['EUR', 'C-EUR', 'S-EUR', 'N-EUR']:
         af_data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/'
-                               f'dec_indicator_variables/amplification/'
-                               f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
+                                  f'dec_indicator_variables/amplification/'
+                                  f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         dec_data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/'
-                               f'dec_indicator_variables/'
-                               f'DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
+                                   f'dec_indicator_variables/'
+                                   f'DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         ref = dec_data.sel(time=slice('1966-01-01', '1985-12-31'))
         ref = gmean(ref['TEX_AGR'])
         reftr[reg] = ref
@@ -146,12 +145,12 @@ def plot_panel1(axs, af, uc, ref, cc):
                     backgroundcolor='whitesmoke',
                     fontsize=6, zorder=1)
 
-    axs[0].text(0.5, 0.045, f'AHCg'+r'$_\mathrm{Ref}$'+' (EJ/yr)',
+    axs[0].text(0.5, 0.045, f'AHCg' + r'$_\mathrm{Ref}$' + ' (EJ/yr)',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[0].transAxes, fontsize=6)
 
-    axs[0].text(0.73, 0.88, f'   ERA5 AHC gain AHCg'+r'$_\mathrm{CC}$'+' (EJ/yr)   \n\n\n\n',
+    axs[0].text(0.73, 0.88, f'   ERA5 AHC gain AHCg' + r'$_\mathrm{CC}$' + ' (EJ/yr)   \n\n\n\n',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[0].transAxes, fontsize=6)
@@ -166,7 +165,7 @@ def plot_panel1(axs, af, uc, ref, cc):
                 horizontalalignment='right',
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[0].transAxes, fontsize=6)
-    
+
 
 def plot_panel2(axs, af, uc, ref, ccs):
     """
@@ -275,7 +274,7 @@ def run():
     plt.setp(axs[1].get_yticklabels()[1], color='tab:gray')
 
     fig.suptitle(f'Climate change amplification of AHC gain and AEHC vs Ref1961-1990',
-                 fontsize=16-4)
+                 fontsize=16 - 4)
 
     fig.subplots_adjust(bottom=0.15, top=0.85, left=0.1, right=0.95, hspace=0.2, wspace=0.15)
 

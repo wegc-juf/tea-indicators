@@ -117,7 +117,7 @@ def _get_default_opts(fname, opts):
     if 'low_extreme' not in opts:
         opts.low_extreme = False
     # TODO: add minimum exceedance area option as defined in gki RCF
-    
+
     # time_params options
     if 'start' not in opts:
         opts.start = 1961
@@ -146,53 +146,56 @@ def _get_default_opts(fname, opts):
         opts.gui = False
     
     # calc_TEA.py options
-    if 'recalc_threshold' not in opts:
-        opts.recalc_threshold = False
-    if 'recalc_daily' not in opts:
-        opts.recalc_daily = True
-    if 'decadal' not in opts:
-        opts.decadal = True
-    # TODO: add decadal window options as defined in gki RCF
-    if 'decadal_only' not in opts:
-        opts.decadal_only = False
-    if 'recalc_decadal' not in opts:
-        opts.recalc_decadal = True
-    if 'hourly' not in opts:
-        opts.hourly = False
-    if 'compare_to_ref' not in opts:
-        opts.compare_to_ref = False
-    if 'spreads' not in opts:
-        opts.spreads = False
-    if 'use_dask' not in opts:
-        opts.use_dask = False
+    if fname == 'calc_TEA':
+        if 'recalc_threshold' not in opts:
+            opts.recalc_threshold = False
+        if 'recalc_daily' not in opts:
+            opts.recalc_daily = True
+        if 'decadal' not in opts:
+            opts.decadal = True
+        # TODO: add decadal window options as defined in gki RCF
+        if 'decadal_only' not in opts:
+            opts.decadal_only = False
+        if 'recalc_decadal' not in opts:
+            opts.recalc_decadal = True
+        if 'hourly' not in opts:
+            opts.hourly = False
+        if 'compare_to_ref' not in opts:
+            opts.compare_to_ref = False
+        if 'spreads' not in opts:
+            opts.spreads = False
+        if 'use_dask' not in opts:
+            opts.use_dask = False
     
     # create_region_masks.py options
-    if 'gr_type' not in opts:
-        opts.gr_type = 'polygon'
-    if 'subreg' not in opts or opts.subreg == opts.region:
-        opts.subreg = False
-    if 'target_sys' not in opts and 'natural_variability' not in fname:
-        if opts.dataset == 'SPARTACUS':
-            opts.target_sys = 3416
-        elif 'ERA' in opts.dataset:
-            opts.target_sys = 4326
-        elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
-            opts.target_sys = None
-        else:
-            raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
-    if 'xy_name' not in opts and 'natural_variability' not in fname:
-        if opts.dataset == 'SPARTACUS':
-            opts.xy_name = 'x,y'
-        elif 'ERA' in opts.dataset:
-            opts.xy_name = 'lon,lat'
-        elif 'station' in opts:
-            opts.xy_name = None
-        else:
-            raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
+    if fname == 'create_region_masks':
+        if 'gr_type' not in opts:
+            opts.gr_type = 'polygon'
+        if 'subreg' not in opts or opts.subreg == opts.region:
+            opts.subreg = False
+        if 'target_sys' not in opts and 'natural_variability' not in fname:
+            if opts.dataset == 'SPARTACUS':
+                opts.target_sys = 3416
+            elif 'ERA' in opts.dataset:
+                opts.target_sys = 4326
+            elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
+                opts.target_sys = None
+            else:
+                raise ValueError(f'Unknown dataset {opts.dataset}. Please set target_sys manually in options.')
+        if 'xy_name' not in opts and 'natural_variability' not in fname:
+            if opts.dataset == 'SPARTACUS':
+                opts.xy_name = 'x,y'
+            elif 'ERA' in opts.dataset:
+                opts.xy_name = 'lon,lat'
+            elif 'station' in opts:
+                opts.xy_name = None
+            else:
+                raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
     
     # regrid_SPARTACUS_to_WEGNext.py options
-    if 'orography' not in opts:
-        opts.orography = False
+    if fname == 'regrid_SPARTACUS_to_WEGNext':
+        if 'orography' not in opts:
+            opts.orography = False
     
     return opts
 

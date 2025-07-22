@@ -13,20 +13,6 @@ from teametrics.common.general_functions import ref_cc_params
 
 PARAMS = ref_cc_params()
 
-def preprocess(ds_in):
-    """
-    drops unnecessary variables from ds
-    :param ds_in: ds
-    :return: new ds
-    """
-    ds = ds_in.copy()
-
-    ds = ds.drop_vars(['EF', 'EF_GR', 'EDavg', 'EDavg_GR', 'EMavg', 'EMavg_GR',
-                       'EAavg_GR', 'TEX_GR', 'ESavg_GR'])
-
-    return ds
-
-
 def get_data():
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                           'DEC_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')

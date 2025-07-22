@@ -1,12 +1,9 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator, MultipleLocator
 import numpy as np
-import os
 import pandas as pd
-import sys
 import xarray as xr
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from teametrics.common.general_functions import ref_cc_params
 
 PARAMS = ref_cc_params()
