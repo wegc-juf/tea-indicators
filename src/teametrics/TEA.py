@@ -1190,13 +1190,14 @@ class TEAIndicators:
 
     # ### Decadal mean functions ###
 
-    def calc_decadal_indicators(self, calc_spread=False, drop_annual_results=True,
+    def calc_decadal_indicators(self, opts, calc_spread=False, drop_annual_results=True,
                                 min_duration=10):
         """
         calculate decadal mean for all CTP indicators
         equation 23_1 and equation 23_2
 
         Args:
+            opts: CLI parameters
             calc_spread: calculate spread estimators (equation 25)
             drop_annual_results: delete annual results after calculation
             min_duration: minimum cumulative duration of events in days/decade to keep in decadal results (default: 10)
@@ -1207,7 +1208,7 @@ class TEAIndicators:
         if self.ctp_results is None:
             raise ValueError("CTP results must be calculated before calculating decadal mean")
 
-        self._calc_decadal_mean()
+        self._calc_decadal_mean(opts=opts)
         self._calc_decadal_compound_vars()
         
         # backup self.decadal_results.ED
@@ -1251,7 +1252,7 @@ class TEAIndicators:
         if 'CTP' in self.decadal_results.attrs:
             self.CTP = self.decadal_results.attrs['CTP']
 
-    def _calc_decadal_mean(self):
+    def _calc_decadal_mean(self, opts):
         """
         calculate decadal mean for all basic CTP indicators (equation 23_1)
         """
@@ -1261,11 +1262,11 @@ class TEAIndicators:
                              "decade of data")
         for var in self.ctp_results.data_vars:
             if self.ctp_results[var].attrs['metric_type'] == 'basic':
-                self.decadal_results[var] = self.ctp_results[var].rolling(time=10, center=True, min_periods=1).mean(
+                self.decadal_results[var] = self.ctp_results[var].rolling(time=opts.decadal_window[0], center=True, min_periods=1).mean(
                     skipna=True)
                 # set first and last 5 years to nan
-                self.decadal_results[var][:5] = np.nan
-                self.decadal_results[var][-4:] = np.nan
+                self.decadal_results[var][:opts.decadal_window[1]] = np.nan
+                self.decadal_results[var][-opts.decadal_window[2]:] = np.nan
                 self.decadal_results[var].attrs = get_attrs(vname=var, dec=True, data_unit=self.unit)
 
     def _calc_decadal_compound_vars(self):

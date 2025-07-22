@@ -99,7 +99,7 @@ def calc_decadal_indicators(opts, tea, outpath=None):
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
-        tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
+        tea.calc_decadal_indicators(opts=opts, calc_spread=opts.spreads, drop_annual_results=True)
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath}')

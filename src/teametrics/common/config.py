@@ -156,7 +156,8 @@ def _get_default_opts(fname, opts):
             opts.recalc_daily = True
         if 'decadal' not in opts:
             opts.decadal = True
-        # TODO: add decadal window options as defined in gki RCF
+        if 'decadal_window' not in opts:
+            opts.decadal_window = '10,5,4'
         if 'decadal_only' not in opts:
             opts.decadal_only = False
         if 'recalc_decadal' not in opts:
@@ -234,6 +235,7 @@ def check_type(key, value):
         'end': int,
         'period': str,
         'perc_period': str,
+        'decadal_window': str,
         
         # general
         'gui': bool,
@@ -402,5 +404,9 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     if 'perc_period_yrs' in opts:
         perc_period_yrs = opts.perc_period_yrs.split('-')
         opts.perc_period_yrs = (int(perc_period_yrs[0]), int(perc_period_yrs[1]))
+
+    if 'decadal_window' in opts:
+        dec_options = opts.decadal_window.split(',')
+        opts.decadal_window = [int(x) for x in dec_options]
 
     return opts
