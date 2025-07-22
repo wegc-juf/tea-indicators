@@ -69,13 +69,13 @@
 
 ## regrid_SPARTACUS_to_WEGNext
 ### Only necessary for SPARTACUS data, to regrid SPARTACUS data to WEGNext grid.
-| NAME        | DESCRIPTION                             | TYPE | DEFAULT |
-|-------------|-----------------------------------------|------|---------|
-| *inpath*    | Path of input data.                     | path | null    |
-| *orography* | Marks if orography should be regridded. | bool | false   |
-| *orofile*   | Path of orography file.                 | path | null    |
-| *wegnfile*  | Dummy WEGN file to extract grid.        | path | null    |
-| *outpath*   | Path of output directory.               | path | null    |
+| NAME              | DESCRIPTION                             | TYPE | DEFAULT |
+|-------------------|-----------------------------------------|------|---------|
+| *input_data_path* | Path of input data.                     | path | null    |
+| *orography*       | Marks if orography should be regridded. | bool | false   |
+| *orofile*         | Path of orography file.                 | path | null    |
+| *wegnfile*        | Dummy WEGN file to extract grid.        | path | null    |
+| *outpath*         | Path of output directory.               | path | null    |
 
 
 ## List of allowed variables (you can use these as a placeholder in your config files, values will be replaced at runtime)
