@@ -225,6 +225,7 @@ def check_type(key, value):
         'smoothing_radius': float,
         'unit': str,
         'low_extreme': bool,
+        'min_exceedance_area': float,
         
         # time parameters
         'start': int,
