@@ -27,10 +27,9 @@ common_params:
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
-    # maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    maskpath: /home/wegnet/results/TEA_indicators/static/masks/
-    # statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-    statpath: /home/wegnet/results/TEA_indicators/static/
+    statpath: &statpath /home/wegnet/results/static/
+    maskpath: *statpath
+    mask_sub: masks/
     tmppath: /home/wegnet/results/TEA_indicators/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
@@ -45,12 +44,14 @@ regrid_SPARTACUS_to_WEGNext:
 create_region_masks:
   <<: *GR
   <<: *DATA
-  subreg: custom
+  <<: *PATHS
+  <<: *TIME
+  subreg: false
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
-  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+  lsmfile: /data/arsclisys/backup/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
+  outpath: /home/wegnet/tmp/
 
 create_static_files:
   <<: *GR
