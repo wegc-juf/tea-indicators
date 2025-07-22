@@ -5,7 +5,8 @@
 """
 
 import argparse
-import glob
+
+from pathlib import Path
 from metpy import calc
 import numpy as np
 import os
@@ -45,7 +46,7 @@ def get_opts():
 
     parser.add_argument('--orog-file',
                         default='/data/users/hst/cdrDPS/orographies/ERA5Land_geopotential.nc',
-                        dest='orog',
+                        dest='orog_file',
                         help='Orography file.')
 
     myopts = parser.parse_args()
@@ -53,12 +54,12 @@ def get_opts():
     return myopts
 
 
-def calc_altitude(ds_in, orog):
+def calc_altitude(ds_in, orog_file):
     """
     calc altitude from geopotential
     Args:
         ds_in: input ds
-        orog: orography data
+        orog_file: filename of orography data
 
     Returns:
         altitude: altitude
@@ -67,7 +68,7 @@ def calc_altitude(ds_in, orog):
     data = xr.open_dataset(ds_in)
 
     # altitude
-    ds_geop = xr.open_dataset(orog)
+    ds_geop = xr.open_dataset(orog_file)
 
     lat_min = data.latitude.values.min()
     lat_max = data.latitude.values.max()
@@ -223,20 +224,20 @@ def calc_specific_hum(t_dp, pressure):
 def run():
     opts = get_opts()
 
-    files = sorted(glob.glob(f'{opts.inpath}*ERA5Land*nc'))
+    files = sorted(Path(opts.inpath).glob('*ERA5Land*nc'))
 
-    altitude = calc_altitude(ds_in=files[0], orog=opts.orog)
+    altitude = calc_altitude(ds_in=files[0], orog_file=opts.orog_file)
 
     # Save altitude in separate file
     altitude = create_history_from_cli_params(cli_params=sys.argv, ds=altitude)
     alt_out = altitude.copy()
     alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
-    alt_out.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
+    alt_out.to_netcdf(Path(opts.outpath) / 'ERA5Land_orography.nc')
 
     for ifile in trange(len(files), desc='Preparing ERA5Land data'):
         file = files[ifile]
         ds_in = xr.open_dataset(file, mask_and_scale=True)
-        filename = file.split('/')[-1]
+        filename = file.name
 
         # Temperature
         tav, tmin, tmax = resample_temperature(ds_in=ds_in.t2m)
@@ -263,7 +264,7 @@ def run():
         ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
         ds_out['lon'] = (np.arange(ds_out.lon[0] * 10, (ds_out.lon[-1] * 10) + 1) / 10)
 
-        ds_out.to_netcdf(f'{opts.outpath}{filename}')
+        ds_out.to_netcdf(Path(opts.outpath) / filename)
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@
 """
 
 import argparse
-import glob
+from pathlib import Path
 from metpy import calc
 import numpy as np
 import os
@@ -276,22 +276,22 @@ def run():
 
     opts = get_opts()
 
-    files = sorted(glob.glob(f'{opts.inpath}*ERA5*nc'))
+    files = sorted(Path(opts.inpath).glob('*ERA5*.nc'))
     altitude, delta_utc, time_zones = calc_altitude_dt(data=files[0])
 
     # Save altitude in separate file
     create_history_from_cli_params(cli_params=sys.argv, ds=altitude)
     alt_out = altitude.copy()
     alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
-    alt_out.to_netcdf(f'{opts.outpath}ERA5_orography.nc')
+    alt_out.to_netcdf(Path(opts.outpath) / 'ERA5_orography.nc')
 
     for ifile in trange(len(files), desc='Preparing ERA5 data'):
         file = files[ifile]
         ds_in = xr.open_dataset(file, mask_and_scale=True, engine='netcdf4')
 
-        filename = file.split('/')[-1]
+        filename = file.name
         if opts.prelim:
-            filename = file.split('/')[-1][:4] + file.split('/')[-1][7:]
+            filename = filename[:4] + filename[7:]
 
         # Temperature
         tav, tmin, tmax = resample_temperature(data=ds_in.t2m, delta=delta_utc, tz=time_zones)
@@ -318,7 +318,7 @@ def run():
 
         ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
 
-        ds_out.to_netcdf(f'{opts.outpath}{filename}')
+        ds_out.to_netcdf(Path(opts.outpath) / filename)
 
 
 if __name__ == '__main__':
