@@ -15,29 +15,29 @@ def load_data(city, param):
     :return:
     """
 
-    path = '/data/users/hst/TEA-clean/TEA/paper_data/station_indices/'
+    path = '/data/users/hst/TEA-clean/TEA/paper_data/ctp_indicator_variables/'
 
     if param == 'Tx':
         pstr = 'Tx99.0p'
-        mvar = 'EMavg'
+        mvar = 'EM_avg'
     else:
         pstr = 'P24h_7to7_95.0p'
-        mvar = 'EMavg'
+        mvar = 'EM_avg'
 
-    ds = xr.open_dataset(f'{path}CTP_{pstr}_{city}.nc')
-    ds = ds.sel(ctp=slice('1875-01-01', '1990-12-31'))
+    ds = xr.open_dataset(f'{path}CTP_{pstr}_{city}_annual_HistAlp_1877to2024.nc')
+    ds = ds.sel(time=slice('1875-01-01', '1990-12-31'))
 
     for ivar in ds.data_vars:
-        ds[ivar] = ds[ivar].rolling(ctp=10, center=True).mean()
+        ds[ivar] = ds[ivar].rolling(time=10, center=True).mean()
 
         if city == 'Kremsmuenster':
             ds[ivar][:44] = np.nan
 
-    dm = 10 ** (np.log10(ds.EDavg) + np.log10(ds[mvar]))
+    dm = 10 ** (np.log10(ds.ED_avg) + np.log10(ds[mvar]))
     ds['DM'] = dm
     ds['DM'].rename('DM')
 
-    tex = 10 ** (np.log10(ds.EF) + np.log10(ds.EDavg) + np.log10(ds[mvar]))
+    tex = 10 ** (np.log10(ds.EF) + np.log10(ds.ED_avg) + np.log10(ds[mvar]))
     ds['tEX'] = tex
     ds['tEX'].rename('tEX')
 
@@ -56,7 +56,7 @@ def get_props():
                  'ylbl': r'D$\times$M  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{DM})$',
                  'col': 'tab:orange', 'ref': 1, 'ls': 'solid',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{DM}$'},
-             2: {'var': 'EDavg', 'vname': 'ED_avg_AF', 'cmap': 'Purples', 'yn': yn, 'yx': yx,
+             2: {'var': 'ED_avg', 'vname': 'ED_avg_AF', 'cmap': 'Purples', 'yn': yn, 'yx': yx,
                  'title': 'Avg. Event Duration (events-mean)  NatVar',
                  'ylbl': r'ED amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{D})$',
                  'col': 'tab:purple', 'ref': 1, 'ls': 'solid',
@@ -66,7 +66,7 @@ def get_props():
                  'ylbl': r'EA  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{A})$',
                  'col': 'tab:red', 'ref': 1, 'ls': ':',
                  'bname': r'TMax-p99ANN-$\mathcal{A}_\mathrm{NV}^\mathrm{A}$'},
-             4: {'var': 'EMavg', 'vname': 'EM_avg_AF', 'cmap': 'Oranges', 'yn': yn, 'yx': yx,
+             4: {'var': 'EM_avg', 'vname': 'EM_avg_AF', 'cmap': 'Oranges', 'yn': yn, 'yx': yx,
                  'title': 'Avg. Exceedance Magnitude (daily-mean) NatVar',
                  'ylbl': r'EM  amplification $(\mathcal{A}_\mathrm{NV}^\mathrm{M})$',
                  'col': 'tab:orange', 'ref': 1, 'ls': 'solid',
@@ -153,11 +153,11 @@ def plot_subplot(axs, data, ii, nv, rdata, param, region, sfac, no_facs):
         refs = []
         for ireg, reg in enumerate(data.keys()):
             rdata = data[reg]
-            ref = gmean(rdata[props[ii]['var']].sel(ctp=slice('1966-01-01',
+            ref = gmean(rdata[props[ii]['var']].sel(time=slice('1966-01-01',
                                                               '1986-12-31')).values)
             refs.append(ref)
             rdata = rdata / ref
-            syr = pd.Timestamp(rdata.ctp[0].values).year
+            syr = pd.Timestamp(rdata.time[0].values).year
             xticks = np.arange(syr, 1991)
 
             if ii == 3:

@@ -4,7 +4,6 @@ import matplotlib.patches as pat
 from matplotlib.ticker import FixedLocator, ScalarFormatter, FixedFormatter
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
-import pandas as pd
 import pyproj
 import xarray as xr
 

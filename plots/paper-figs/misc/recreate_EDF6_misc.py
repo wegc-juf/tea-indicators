@@ -8,24 +8,12 @@ gki et al. 2024 (TEA) ExtDataFig. 6 plot
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator, MultipleLocator
 import numpy as np
-import os
 import pandas as pd
-import sys
 import xarray as xr
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from teametrics.common.general_functions import ref_cc_params
 
 PARAMS = ref_cc_params()
-
-
-def preprocess(ds_in):
-    ds = ds_in.copy()
-    vkeep = ['doy_first', 'doy_last']
-    vdrop = [ivar for ivar in ds.data_vars if ivar not in vkeep]
-    ds_out = ds.drop(vdrop)
-
-    return ds_out
 
 
 def load_aep_data(ds, thresh, noe=False):
@@ -33,10 +21,10 @@ def load_aep_data(ds, thresh, noe=False):
         aep = pd.DataFrame(columns=['L-AUT'])
         aep_af = pd.DataFrame(columns=['L-AUT'])
         data = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+            f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/'
             f'DEC_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
         data_af = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/amplification/'
+            f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/amplification/'
             f'AF_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
 
         aep['L-AUT'] = data['AEP_GR']
@@ -47,10 +35,10 @@ def load_aep_data(ds, thresh, noe=False):
         aep_af = pd.DataFrame(columns=regs)
         for reg in regs:
             data = xr.open_dataset(
-                f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/'
+                f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/'
                 f'DEC_Tx{thresh}.0degC_{reg}_annual_{ds}_1961to2024.nc')
             data_af = xr.open_dataset(
-                f'/data/users/hst/TEA-clean/TEA/misc_data/dec_indicator_variables/amplification/'
+                f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/amplification/'
                 f'AF_Tx{thresh}.0degC_{reg}_annual_{ds}_1961to2024.nc')
 
             aep[reg] = data['AEP_GR']
@@ -59,7 +47,7 @@ def load_aep_data(ds, thresh, noe=False):
     return aep, aep_af
 
 
-def load_era5_data(ds, thresh, noe=False):
+def load_det_data(ds, thresh, noe=False):
     """
     load ERA5 energy content data and calc decadal mean
     :param ds: ERA5 or ERA5Land
@@ -71,29 +59,31 @@ def load_era5_data(ds, thresh, noe=False):
     if not noe:
         regs = ['AUT', 'SEA', 'FBR']
         det = pd.DataFrame(columns=regs)
+        det_af = pd.DataFrame(columns=regs)
+        for reg in regs:
+            data = xr.open_dataset(
+                f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/'
+                f'DEC_Tx{thresh}.0degC_{reg}_annual_{ds}_1961to2024.nc')
+            data_af = xr.open_dataset(
+                f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/amplification/'
+                f'AF_Tx{thresh}.0degC_{reg}_annual_{ds}_1961to2024.nc')
 
-        for ireg in regs:
-            # output from calc_SupplVars4EnergyContent.py
-            data = pd.read_csv(f'/data/users/hst/TEA-clean/energy_content/'
-                               f'SupplVars_EnergyContent_{ireg}_Tx_{thresh}.0degC_{ds}.csv',
-                               index_col=0)
-
-            data = data.fillna(0)
-            data = data.rolling(10, center=True).mean()
-
-            det[ireg] = data['h_avg']
+            det[reg] = data['h_avg_GR']
+            det_af[reg] = data_af['h_avg_GR_AF']
     else:
         det = pd.DataFrame(columns=['L-AUT'])
-        data = pd.read_csv(f'/data/users/hst/TEA-clean/energy_content/'
-                           f'SupplVars_EnergyContent_Niederösterreich_Tx_{thresh}.0degC_{ds}.csv',
-                           index_col=0)
+        det_af = pd.DataFrame(columns=['L-AUT'])
+        data = xr.open_dataset(
+            f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/'
+            f'DEC_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
+        data_af = xr.open_dataset(
+            f'/data/users/hst/TEA/TEA/misc_data/dec_indicator_variables/amplification/'
+            f'AF_Tx{thresh}.0degC_Niederösterreich_annual_{ds}_1961to2024.nc')
 
-        data = data.fillna(0)
-        data = data.rolling(10, center=True).mean()
+        det['L-AUT'] = data['h_avg_GR']
+        det_af['L-AUT'] = data_af['h_avg_GR_AF']
 
-        det['L-AUT'] = data['h_avg']
-
-    return det
+    return det, det_af
 
 
 def ylims_det_aep(e5, thresh):
@@ -287,7 +277,7 @@ def plot_af(fig, axs, data, nax, e5, thresh, noe=False):
         cc = data[reg][-10:-4].mean()
         cc_vals[reg] = cc / ref
 
-        axs.plot(xticks, data[reg] / ref, 'o-', color=colors[ireg], markersize=2)
+        axs.plot(xticks, data[reg], 'o-', color=colors[ireg], markersize=2)
         if reg == 'AUT':
             axs.plot(xticks[:30], np.ones(30), color='k', linewidth=2)
         if reg == 'L-AUT':
@@ -344,9 +334,9 @@ def run():
 
     # load ERA5(Land) data
     aep_era5, aep_af_era5 = load_aep_data(ds=e5_ds, thresh=threshold)
-    e5_det = load_era5_data(ds=e5_ds, thresh=threshold)
+    e5_det, e5_det_af = load_det_data(ds=e5_ds, thresh=threshold)
 
-    data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
+    data = {0: e5_det, 1: e5_det_af, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
     axs = axs.reshape(-1)
@@ -395,9 +385,9 @@ def run_noe():
 
     # load ERA5(Land) data
     aep_era5, aep_af_era5 = load_aep_data(ds=e5_ds, thresh=25, noe=True)
-    e5_det = load_era5_data(ds=e5_ds, thresh=25, noe=True)
+    e5_det, e5_det_af = load_det_data(ds=e5_ds, thresh=25, noe=True)
 
-    data = {0: e5_det, 1: e5_det, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
+    data = {0: e5_det, 1: e5_det_af, 2: aep_era5, 3: aep_af_era5, 4: aep_spcus, 5: aep_af_spcus}
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
     axs = axs.reshape(-1)
@@ -426,7 +416,7 @@ def run_noe():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    outpath = f'/nas/home/hst/work/TEAclean/plots/misc/EDF6/EDF6_Tx25_{e5_ds}_L-AUT.png'
+    outpath = f'/nas/home/hst/work/TEAclean/plots/misc/EDF6/EDF6_Tx25_{e5_ds}_L-AUT_TESTY.png'
     plt.savefig(outpath, bbox_inches='tight', dpi=300)
 
 

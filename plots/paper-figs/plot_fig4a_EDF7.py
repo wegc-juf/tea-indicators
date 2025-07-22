@@ -5,7 +5,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
-import seaborn as sns
 from shapely import geometry
 import xarray as xr
 
