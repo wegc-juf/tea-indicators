@@ -1,10 +1,22 @@
 # teametrics
 
 A python package to calculate threshold-exceedance-amount (TEA) indicators 
-    as described in https://doi.org/10.48550/arXiv.2504.18964 
+    as described in https://doi.org/10.48550/arXiv.2504.18964.
 
 ## Installation
+Start by creating a new `virtualenv` for your project
+```bash
+mkvirtualenv <project_name>
+```
+
+Then, install the package using `pip`:
+```bash
 pip install teametrics-{{VERSION}}-py3-none-any.whl
+```
+
+## Changelog
+
+See [Tags](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/tags) for a detailed changelog.
 
 ## Usage
 
