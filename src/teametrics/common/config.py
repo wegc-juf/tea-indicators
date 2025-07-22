@@ -368,8 +368,9 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
             opts = opts[fname]
         opts = argparse.Namespace(**opts)
 
-    # add name of script
+    # add name of script and CFG file
     opts.script = f'{fname}.py'
+    opts.cfg_file = config_file
     
     opts = _get_default_opts(fname, opts)
     set_variables(opts_dict=vars(opts))
@@ -380,7 +381,6 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         show_parameters(opts)
         set_variables(opts_dict=vars(opts))
         check_config(opts_dict=vars(opts))
-        opts = argparse.Namespace(**opts)
         
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
