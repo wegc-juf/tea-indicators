@@ -335,8 +335,9 @@ def check_config(opts_dict):
         if param in ['start', 'end', 'target_sys', 'smoothing']:
             ints(param=param, val=opts_dict[param])
     
-    if 'input_data_path' not in opts_dict:
-        raise ValueError('input_data_path not set in options. Please set it in the CFG file.')
+    if 'create_region_masks' not in opts_dict['script']:
+        if 'input_data_path' not in opts_dict:
+            raise ValueError('input_data_path not set in options. Please set it in the CFG file.')
 
 
 def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
