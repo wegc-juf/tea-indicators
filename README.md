@@ -61,8 +61,10 @@ The configuration options for the script are documented in [`CFG-PARAMS-doc.md`]
 
 ### 5) Using the TEA Indicator classes TEAIndicators and TEAAgr (optional)
 In case you want a more fine-grained control over the TEA Indicator calculations, you can use the classes
-`teametrics.TEA.TEAIndicators` for normal GeoRegions and `teametrics.TEA_AGR.TEAAgr` for Aggregated GeoRegions. A 
-simple use example can be found in the script [`tea_example`](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/blob/main/src/teametrics/TEA_example.py). \
+`teametrics.TEA.TEAIndicators` for normal GeoRegions, and \
+`teametrics.TEA_AGR.TEAAgr` for Aggregated GeoRegions.
+
+A simple use example can be found in the script [`tea_example`](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/blob/main/src/teametrics/TEA_example.py). \
 Source code documentation for the classes can be found in TODO.
 
 ## Support
