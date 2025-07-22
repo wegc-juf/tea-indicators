@@ -116,7 +116,8 @@ def _get_default_opts(fname, opts):
             opts.unit = 'degC'
     if 'low_extreme' not in opts:
         opts.low_extreme = False
-    # TODO: add minimum exceedance area option as defined in gki RCF
+    if 'min_exceedance_area' not in opts:
+        opts.min_exceedance_area = 1
 
     # time_params options
     if 'start' not in opts:

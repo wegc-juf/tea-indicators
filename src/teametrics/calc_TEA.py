@@ -210,7 +210,7 @@ def calc_annual_ctp_indicators(tea, opts, start, end):
     if 'station' not in opts:
         # apply criterion that DTEA_GR > DTEA_min and all GR variables use same dates,
         # dtea_min is given in areals (1 areal = 100 km2)
-        dtea_min = 1  # according to equation 03
+        dtea_min = opts.min_exceedance_area  # according to equation 03
         tea.update_min_area(dtea_min)
 
     if 'agr' in opts:
