@@ -4,25 +4,26 @@
 @author: hst, juf
 """
 
-import argparse
-import gc
-import numpy as np
 import os
-from pathlib import Path
 import sys
+import gc
 import math
 import warnings
-import xarray as xr
 from copy import deepcopy
 
-from common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
-                                      get_csv_data, create_threshold_grid)
-from common.config import load_opts
-from common.TEA_logger import logger
-from utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
-                                           get_decadal_outpath, get_amplification_outpath)
-from TEA import TEAIndicators
-from TEA_AGR import TEAAgr
+import argparse
+import numpy as np
+from pathlib import Path
+import xarray as xr
+
+from .common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
+                                       get_csv_data, create_threshold_grid)
+from .common.config import load_opts
+from .common.TEA_logger import logger
+from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplification_factors,
+                                            get_decadal_outpath, get_amplification_outpath)
+from .TEA import TEAIndicators
+from .TEA_AGR import TEAAgr
 
 # TODO: move this to config file
 region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
@@ -184,6 +185,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
 
         # save results
+        create_tea_history(cfg_params=opts, tea=tea, dataset='daily_results')
         tea.save_daily_results(dbv_filename)
     else:
         # load existing results
@@ -313,7 +315,7 @@ def _save_ctp_output(opts, tea, start, end):
         start: start year
         end: end year
     """
-    create_tea_history(cfg_params=opts, tea=tea, result_type='ctp')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='ctp_results')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
@@ -350,7 +352,7 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
     """
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
-    grg_areas = create_history_from_cfg(cfg_params=opts, ds=grg_areas)
+    create_history_from_cfg(cfg_params=opts, ds=grg_areas)
     area_grid_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
     try:
         grg_areas.to_netcdf(area_grid_file)
@@ -359,7 +361,7 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
         grg_areas.to_netcdf(area_grid_file)
 
     # save GRG mask
-    grg_mask = create_history_from_cfg(cfg_params=opts, ds=grg_mask)
+    create_history_from_cfg(cfg_params=opts, ds=grg_mask)
     mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
     try:
         grg_mask.to_netcdf(mask_file)
@@ -561,8 +563,10 @@ def _calc_agr_mean_and_spread(opts, tea):
     # remove outpath_decadal if it exists
     if os.path.exists(outpath_decadal):
         os.remove(outpath_decadal)
+    create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
     tea.save_decadal_results(outpath_decadal)
     logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='amplification_factors')
     tea.save_amplification_factors(outpath_ampl)
 
 
@@ -601,7 +605,7 @@ def _load_gr_grid_static(opts):
     return gr_grid_mask, gr_grid_areas
 
 
-def _run():
+def run():
     """
     run the script
     Returns:
@@ -624,4 +628,4 @@ def _run():
 
 
 if __name__ == '__main__':
-    _run()
+    run()

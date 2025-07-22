@@ -2,18 +2,20 @@
 scripts for general stuff (e.g. nc-history)
 """
 
-import datetime as dt
-import numpy as np
-import glob
 import os
+import glob
+import datetime as dt
+
+import numpy as np
 import xarray as xr
 import pandas as pd
 
+from .. import __version__
 from .config import check_config
 from .TEA_logger import logger
 
 
-def create_history(cli_params, ds):
+def create_history_from_cli_params(cli_params, ds):
     """
     add history to dataset
     :param cli_params: CLI parameter
@@ -23,16 +25,8 @@ def create_history(cli_params, ds):
 
     script = cli_params[0].split('/')[-1]
     cli_params = cli_params[1:]
-
-    if 'history' in ds.attrs:
-        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {" ".join(cli_params)}'
-
-    else:
-        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {" ".join(cli_params)}'
-
-    ds.attrs['history'] = new_hist
-
-    return ds
+    
+    _create_history_for_dataset(ds, cli_params, script)
 
 
 def create_history_from_cfg(cfg_params, ds):
@@ -51,41 +45,40 @@ def create_history_from_cfg(cfg_params, ds):
     params = ' '.join(parts)
 
     script = cfg_params.script.split('/')[-1]
-
-    if 'history' in ds.attrs:
-        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
-    else:
-        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
-
-    ds.attrs['history'] = new_hist
-
-    return ds
+    
+    _create_history_for_dataset(ds, params, script)
 
 
-def create_tea_history(cfg_params, tea, result_type):
+def create_tea_history(cfg_params, tea, dataset):
     """
-    add history to dataset
+    add history and version to dataset
     :param cfg_params: yaml config parameters
     :param tea: TEA object
-    :param result_type: result type (e.g. 'CTP')
+    :param dataset: dataset (e.g. 'CTP_results')
     """
-    ds = getattr(tea, f'{result_type}_results')
+    ds = getattr(tea, f'{dataset}')
 
-    parts = []
-    for key, value in vars(cfg_params).items():
-        if key != 'script':
-            part = f"--{key} {value}"
-            parts.append(part)
-    params = ' '.join(parts)
+    create_history_from_cfg(cfg_params, ds)
 
-    script = cfg_params.script.split('/')[-1]
 
+def _create_history_for_dataset(ds, params, script):
+    """
+    Helper function to create history and version for a dataset.
+    Args:
+        ds: Xarray Dataset
+        params: configuration parameters as a string
+        script: name of the script that generated the dataset
+
+    Returns:
+
+    """
+    new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}; teametrics v{__version__}'
     if 'history' in ds.attrs:
-        new_hist = f'{ds.history}; {dt.datetime.now():%FT%H:%M:%S} {script} {params}'
+        ds.attrs['history'] = ds.attrs['history'] + new_hist
     else:
-        new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
-
-    tea.create_history(new_hist, result_type)
+        ds.attrs['history'] = new_hist
+    if 'version' not in ds.attrs:
+        ds.attrs['version'] = __version__
 
 
 def create_natvar_history(cfg_params, nv):
@@ -110,7 +103,7 @@ def create_natvar_history(cfg_params, nv):
     else:
         new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
 
-    nv.create_history(new_hist)
+    nv.create_history_from_cli_params(new_hist)
 
 
 def ref_cc_params():

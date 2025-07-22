@@ -12,6 +12,8 @@ def show_parameters(opts):
     Returns:
 
     """
+    # TODO: add gui method to edit parameters
+    
     # Create a new window
     window = tk.Tk()
     window.title('CFG Parameters')
@@ -101,7 +103,7 @@ def edit_parameters(window, opts, yaml_fname):
     # Confirm Button in the edit window
     def confirm_edit():
         # Update the opts namespace with new values
-        for name, entry in entries.items():
+        for my_name, entry in entries.items():
             new_value = entry.get()
             try:
                 # Try to infer the correct type by evaluating the value
@@ -109,7 +111,7 @@ def edit_parameters(window, opts, yaml_fname):
             except (NameError, SyntaxError):
                 # Keep the value as string if it cannot be evaluated
                 pass
-            setattr(opts, name, new_value)
+            setattr(opts, my_name, new_value)
         # Update the YAML file
         update_yaml(yaml_fname, opts)
         # Close all windows and open main window again

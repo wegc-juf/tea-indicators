@@ -112,7 +112,7 @@ def calculate_event_count(dtec, gr=False):
     else:
         dtec = xr.DataArray(data=dtec.values,
                             coords={'days': (['days'], dtec.index.values),
-                                'stations': (['stations'], dtec.columns)})
+                                    'stations': (['stations'], dtec.columns)})
         dteec = xr.full_like(dtec, np.nan)
         dtec_2d = dtec.values
         # loop through all rows and calculate DTEEC
@@ -191,7 +191,7 @@ def assign_ctp_coords(data):
     pstarts = pd.date_range(data.days[0].values, data.days[-1].values,
                             freq=freq).to_series()
     pends = pd.date_range(data.days[0].values, data.days[-1].values,
-                              freq='A-OCT').to_series()
+                          freq='A-OCT').to_series()
 
     # add ctp as coordinates to enable using groupby later
     # map the 'days' coordinate to 'ctp'

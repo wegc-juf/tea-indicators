@@ -1,15 +1,16 @@
-import glob
-import logging
-from pathlib import Path
 import re
 import os
-import xarray as xr
+import glob
+import logging
 import warnings
 
-from common.var_attrs import get_attrs
-from common.general_functions import compare_to_ref
-from common.TEA_logger import logger
-from TEA import TEAIndicators
+from pathlib import Path
+import xarray as xr
+
+from teametrics.common.var_attrs import get_attrs
+from teametrics.common.general_functions import compare_to_ref, create_tea_history
+from teametrics.common.TEA_logger import logger
+from teametrics.TEA import TEAIndicators
 
 logging.basicConfig(
     level=logging.INFO,
@@ -102,6 +103,7 @@ def calc_decadal_indicators(opts, tea, outpath=None):
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath}')
+        create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
         tea.save_decadal_results(outpath)
     else:
         logger.info(f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
@@ -136,7 +138,6 @@ def compare_to_ref_decadal(tea, filename_ref):
         tea_ref = TEAIndicators()
         tea_ref.load_decadal_results(filename_ref)
         for vvar in tea.decadal_results.data_vars:
-            attrs = tea.decadal_results[vvar].attrs
             if vvar in tea_ref.decadal_results.data_vars:
                 diff = tea.decadal_results[vvar] - tea_ref.decadal_results[vvar]
                 max_diff = diff.max(skipna=True).values
@@ -186,6 +187,7 @@ def calc_amplification_factors(opts, tea, outpath=None):
 
     # save amplification factors
     logger.info(f'Saving amplification factors to {outpath}')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='amplification_factors')
     tea.save_amplification_factors(outpath)
 
 

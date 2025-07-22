@@ -5,6 +5,7 @@ API request to download ERA5 Heat data -- NOT WORKING AT THE MOMENT!!!
 import cdsapi
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 def retrieve(client, request, year):
     print(f"requesting year: {year} /n")
     request.update({"year": year})
@@ -12,6 +13,7 @@ def retrieve(client, request, year):
         "derived-utci-historical", request, f"ERA5Heat_{year}.nc"
     ).download()
     return f"retrieved year: {year}"
+
 
 def main(_request):
     """concurrent request using 10 threads"""
@@ -25,6 +27,7 @@ def main(_request):
                 print(f.result())
             except:
                 print("could not retrieve")
+
 
 if __name__ == "__main__":
     YEARS = ["%d" % (y) for y in range(1961, 2024)]

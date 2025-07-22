@@ -1,19 +1,19 @@
 """
 Threshold Exceedance Amount (TEA) indicators Class implementation for aggregated georegions (AGR)
-Based on:
-TODO: add reference to the paper
+Based on: https://doi.org/10.48550/arXiv.2504.18964
+# TODO: change doi when final version is available
 Equation numbers refer to Supplementary Notes
 """
 import warnings
+import time
 
 import xarray as xr
 import numpy as np
-import time
 from tqdm import trange
 
-from common.var_attrs import get_attrs
-from common.TEA_logger import logger
-from TEA import TEAIndicators
+from .common.var_attrs import get_attrs
+from .common.TEA_logger import logger
+from .TEA import TEAIndicators
 
 
 class TEAAgr(TEAIndicators):
@@ -266,10 +266,14 @@ class TEAAgr(TEAIndicators):
         """
         if lats is None:
             lats, lons = self._get_lats_lons()
-
+        
+        valid_cells_found = False
         for ilat in trange(len(lats), desc='Processing AGR cells'):
             lat = lats[ilat]
-            self._calc_tea_ctp_lat(lat, lons=lons)
+            valid_cells_found |= self._calc_tea_ctp_lat(lat, lons=lons)
+        if not valid_cells_found:
+            logger.error('No valid cells found for annual CTP calculation. Try to decrease the land_frac_min '
+                         'parameter or check the region definition. ')
 
     def _crop_to_rect(self, lat_range, lon_range):
         """
@@ -651,11 +655,13 @@ class TEAAgr(TEAIndicators):
             lons: Longitudes (default: get automatically)
 
         Returns:
+            valid_cells_found: True if at least one valid cell was found, False otherwise
 
         """
         if lons is None:
             lats, lons = self._get_lats_lons()
 
+        valid_cells_found = False
         # step through all longitudes
         for ilon, lon in enumerate(lons):
             # this comment is necessary to suppress an unnecessary PyCharm warning for lon
@@ -664,6 +670,8 @@ class TEAAgr(TEAIndicators):
             tea_sub = self.select_sub_gr(lat=lat, lon=lon)
             if tea_sub is None:
                 continue
+                
+            valid_cells_found = True
 
             # calculate daily basis variables
             tea_sub.calc_daily_basis_vars(grid=False, gr=True)
@@ -679,3 +687,4 @@ class TEAAgr(TEAIndicators):
             self.set_ctp_results(lat, lon, ctp_results)
             end_time = time.time()
             logger.debug(f'Lat {lat}, lon {lon} processed in {end_time - start_time} seconds')
+        return valid_cells_found

@@ -1,0 +1,1 @@
+# TODO: add WEGC specific TEA info like paths, config files, etc.
