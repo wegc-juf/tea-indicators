@@ -122,16 +122,7 @@ def create_lt1500m_mask(opts, da_nwmask):
     lt1500_mask.attrs = {'long_name': 'below 1500m mask',
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
-    # TODO: needs adjusting if worldwide applicable
-    lt1500_eur = None
-    if 'ERA5' in opts.dataset:
-        lt1500_eur = orog.where(orog < 1500)
-        lt1500_eur = lt1500_eur.where(lt1500_eur.isnull(), 1)
-        lt1500_eur = lt1500_eur.rename('lt1500_mask_EUR')
-        lt1500_eur.attrs = {'long_name': 'below 1500m mask (EUR)',
-                            'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    return lt1500_mask, lt1500_eur
+    return lt1500_mask
 
 
 def run_sea(opts):
@@ -212,7 +203,7 @@ def prep_lsm(opts):
     return lsm
 
 
-def run_eur(opts):
+def run_agr(opts):
     """
     create EUR mask
     Args:
@@ -393,7 +384,7 @@ def create_rectangular_gr(opts):
         da_mask.loc[:, closest_ne_x] = da_mask.loc[:, closest_ne_x] * e_frac
         da_mask.loc[closest_ne_y, :] = da_mask.loc[closest_ne_y, :] * n_frac
 
-    lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
+    lt1500_mask = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
     if 'ERA5' in opts.dataset:
         lsm = prep_lsm(opts=opts)
@@ -401,7 +392,7 @@ def create_rectangular_gr(opts):
         lsm = lsm.rename('LSM_EUR')
         lsm.attrs = {'long_name': 'land sea mask (EUR)',
                      'coordinate_sys': f'EPSG:{opts.target_sys}'}
-        ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
+        ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm])
     else:
         ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
     create_history_from_cfg(cfg_params=opts, ds=ds)
@@ -429,7 +420,7 @@ def run():
     elif opts.region == 'SEA':
         run_sea(opts=opts)
     elif opts.region in ['EUR', 'AFR']:
-        run_eur(opts=opts)
+        run_agr(opts=opts)
     else:
         # Load template file
         template_file = get_gridded_data(opts.start, opts.start + 1, opts)
@@ -497,7 +488,7 @@ def run():
                                  name='nw_mask')
 
         # Create below 1500m mask
-        lt1500_mask, lt1500_eur = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
+        lt1500_mask = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
 
         # add EUR LSM if ERA5(Land) data is used
         if 'ERA5' in opts.dataset:
@@ -509,7 +500,7 @@ def run():
             lsm = lsm.rename('LSM_EUR')
             lsm.attrs = {'long_name': 'land sea mask (EUR)',
                          'coordinate_sys': f'EPSG:{opts.target_sys}'}
-            ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm, lt1500_eur])
+            ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm])
         else:
             ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
         create_history_from_cfg(cfg_params=opts, ds=ds)

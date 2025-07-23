@@ -50,7 +50,8 @@ def load_ctp_data(opts, tea):
     filenames = (f'{ctppath}/CTP_{opts.param_str}_{grg_str}{name}_{opts.period}'
                  f'_{opts.dataset}_*.nc')
     files = sorted(glob.glob(filenames))
-    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end) if 'ref' not in file]
+    files = [file for file in files if is_in_period(filename=file, start=opts.start, end=opts.end)
+             if 'ref' not in file]
 
     # TODO: optimize tea._calc_spread_estimators
 
@@ -99,14 +100,16 @@ def calc_decadal_indicators(opts, tea, outpath=None):
     if opts.recalc_decadal or not os.path.exists(outpath):
         load_ctp_data(opts=opts, tea=tea)
         logger.info("Calculating decadal indicators")
-        tea.calc_decadal_indicators(calc_spread=opts.spreads, drop_annual_results=True)
+        tea.calc_decadal_indicators(decadal_window=opts.decadal_window, calc_spread=opts.spreads,
+                                    drop_annual_results=True)
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath}')
         create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
         tea.save_decadal_results(outpath)
     else:
-        logger.info(f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
+        logger.info(
+            f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
         tea.load_decadal_results(outpath)
 
     if opts.compare_to_ref:
