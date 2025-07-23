@@ -1,9 +1,32 @@
+import argparse
 import tkinter as tk
 from tkinter import ttk
 import os
+import yaml
 
 
-def show_parameters(opts):
+def _getopts():
+    """
+    get command line arguments
+
+    Returns:
+        opts: command line parameters
+    """
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--config-file', '-cf',
+                        dest='config_file',
+                        type=str,
+                        default='../TEA_CFG.yaml',
+                        help='TEA configuration file (default: TEA_CFG.yaml)')
+
+    myopts = parser.parse_args()
+
+    return myopts
+
+
+def run_gui(opts):
     """
     Create a window that lists all currently defined CFG parameter
     Args:
@@ -12,8 +35,7 @@ def show_parameters(opts):
     Returns:
 
     """
-    # TODO: add gui method to edit parameters
-    
+
     # Create a new window
     window = tk.Tk()
     window.title('CFG Parameters')
@@ -66,7 +88,7 @@ def show_parameters(opts):
     edit_button = tk.Button(button_frame, text='Edit parameter',
                             command=lambda: edit_parameters(window,
                                                             opts,
-                                                            '../TEA_CFG.yaml'))
+                                                            opts.cfg_file))
     edit_button.pack(side='left', padx=10, pady=10)
 
     # Run the GUI
@@ -94,6 +116,11 @@ def edit_parameters(window, opts, yaml_fname):
     # Create and populate the form with the current parameters and values
     for index, (name, value) in enumerate(vars(opts).items()):
         tk.Label(edit_window, text=name).grid(row=index, column=0)
+
+        # Convert boolean values to string for display
+        if isinstance(value, bool) or ',' in str(value):
+            value = str(value)
+
         # Create a variable for the entry
         entry_var = tk.StringVar(value=value)
         tk.Entry(edit_window, textvariable=entry_var, width=75).grid(row=index, column=1)
@@ -104,20 +131,37 @@ def edit_parameters(window, opts, yaml_fname):
     def confirm_edit():
         # Update the opts namespace with new values
         for my_name, entry in entries.items():
-            new_value = entry.get()
-            try:
-                # Try to infer the correct type by evaluating the value
-                new_value = eval(new_value)
-            except (NameError, SyntaxError):
-                # Keep the value as string if it cannot be evaluated
-                pass
+            new_value = entry.get().strip()
+            if '-' in new_value and new_value.count('-') == 1:
+                parts = new_value.split('-')
+                if len(parts) == 2 and all(part.isdigit() for part in parts):
+                    # If both parts are digits, keep it as a string
+                    new_value = new_value
+                else:
+                    # Handle as a normal string if not valid
+                    new_value = str(new_value)
+            elif ',' in new_value and new_value.count(',') == 2:
+                parts = new_value.split(',')
+                if len(parts) == 3 and all(part.isdigit() for part in parts):
+                    # If all parts are digits, keep it as a string
+                    new_value = new_value
+                else:
+                    # Handle as a normal string if not valid
+                    new_value = str(new_value)
+            else:
+                try:
+                    # Try to infer the correct type by evaluating the value
+                    new_value = eval(new_value)
+                except (NameError, SyntaxError):
+                    # Keep the value as string if it cannot be evaluated
+                    pass
             setattr(opts, my_name, new_value)
         # Update the YAML file
         update_yaml(yaml_fname, opts)
         # Close all windows and open main window again
         edit_window.destroy()
         window.destroy()
-        show_parameters(opts)
+        run_gui(opts)
 
     tk.Button(edit_window, text='Confirm',
               command=confirm_edit).grid(row=len(entries), column=1)
@@ -153,6 +197,9 @@ def update_yaml(fname, opts):
                 new_file.write(line)
                 continue
             key = line.split(':')[0].strip()
+            if key[0] == '#':
+                new_file.write(line)
+                continue
             if key in scripts:
                 sec = key
             ovalue = line.split(':')[1].strip()
@@ -162,10 +209,6 @@ def update_yaml(fname, opts):
                 continue
             nvalue = new_params[key]
             if ovalue != nvalue:
-                if key == 'outpath':
-                    if f'{sec}.py' != new_params['script']:
-                        new_file.write(line)
-                        continue
                 if ovalue == 'null' and nvalue == '':
                     new_file.write(line)
                     continue
@@ -184,3 +227,38 @@ def update_yaml(fname, opts):
                 new_file.write(line)
 
     os.system(f'mv {new_name} {fname}')
+
+
+def flatten_yaml(data, parent_key='', sep='_'):
+    items = {}
+    for key, value in data.items():
+        new_key = f"{key}" if parent_key else key
+        if isinstance(value, dict):
+            items.update(flatten_yaml(value, new_key, sep=sep))
+        else:
+            items[new_key] = value
+    return items
+
+def run():
+    # get command line parameters
+    cmd_opts = _getopts()
+
+    # load CFG parameters
+    with open(cmd_opts.config_file, 'r') as stream:
+        opts = yaml.safe_load(stream)
+
+    # Convert the loaded YAML data to a Namespace object
+    flattened_data = flatten_yaml(opts)
+    # Create a dictionary with all parameters
+    params = {key: value for key, value in flattened_data.items() if value is not None}
+    opts = argparse.Namespace(**params)
+
+    # add name of CFG file
+    opts.cfg_file = cmd_opts.config_file
+
+    # run gui to show parameters
+    run_gui(opts)
+
+
+if __name__ == '__main__':
+    run()

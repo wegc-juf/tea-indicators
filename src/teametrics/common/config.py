@@ -7,11 +7,10 @@ import glob
 
 import argparse
 import pandas as pd
-import numpy as np
 import yaml
 import cfunits
+import warnings
 
-from .cfg_paramter_gui import show_parameters
 import teametrics
 
 
@@ -93,7 +92,23 @@ def _get_default_opts(fname, opts):
             opts.grg_grid_spacing = 0.5
         if 'land_frac_min' not in opts:
             opts.land_frac_min = 0.5
-    
+        if 'agr_range' not in opts:
+            if opts.agr == 'EUR':
+                opts.agr_range = '35,70,-11,40'
+            elif opts.agr == 'S-EUR':
+                opts.agr_range = '35,44.5,-11,40'
+            elif opts.agr == 'C-EUR':
+                opts.agr_range = '45,55,-11,40'
+            elif opts.agr == 'N-EUR':
+                opts.agr_range = '55.,70,-11,40'
+            elif opts.agr == 'AFR':
+                opts.agr_range = '-36,40,-16,56'
+            elif opts.agr == opts.region:
+                warnings.warn(f'agr_range not set for {opts.agr}, full {opts.region} will be used.')
+            else:
+                raise ValueError(f'Unknown AGR {opts.agr}. '
+                                 f'Please set agr_range manually in options.')
+
     # Parameter options
     if 'parameter' not in opts:
         opts.parameter = 'Tx'
@@ -116,7 +131,8 @@ def _get_default_opts(fname, opts):
             opts.unit = 'degC'
     if 'low_extreme' not in opts:
         opts.low_extreme = False
-    # TODO: add minimum exceedance area option as defined in gki RCF
+    if 'min_exceedance_area' not in opts:
+        opts.min_exceedance_area = 1
 
     # time_params options
     if 'start' not in opts:
@@ -127,8 +143,10 @@ def _get_default_opts(fname, opts):
         opts.period = 'annual'
     if 'ref_period' not in opts:
         opts.ref_period = '1961-1990'
-    # TODO: add separate option for percentile period as defined in gki RCF
-    # TODO: add option for percentile estimation period as defined in gki RCF
+    if 'perc_period_yrs' not in opts:
+        opts.perc_period_yrs = opts.ref_period
+    if 'perc_period' not in opts:
+        opts.perc_period = 'annual'
     if 'cc_period' not in opts:
         opts.cc_period = '2010-2024'
     
@@ -142,8 +160,8 @@ def _get_default_opts(fname, opts):
             opts.input_data_path = opts.data_path
     
     # general options
-    if 'gui' not in opts:
-        opts.gui = False
+    if 'use_dask' not in opts:
+        opts.use_dask = False
     
     # calc_TEA.py options
     if fname == 'calc_TEA':
@@ -153,7 +171,8 @@ def _get_default_opts(fname, opts):
             opts.recalc_daily = True
         if 'decadal' not in opts:
             opts.decadal = True
-        # TODO: add decadal window options as defined in gki RCF
+        if 'decadal_window' not in opts:
+            opts.decadal_window = '10,5,4'
         if 'decadal_only' not in opts:
             opts.decadal_only = False
         if 'recalc_decadal' not in opts:
@@ -164,8 +183,6 @@ def _get_default_opts(fname, opts):
             opts.compare_to_ref = False
         if 'spreads' not in opts:
             opts.spreads = False
-        if 'use_dask' not in opts:
-            opts.use_dask = False
     
     # create_region_masks.py options
     if fname == 'create_region_masks':
@@ -224,12 +241,15 @@ def check_type(key, value):
         'smoothing_radius': float,
         'unit': str,
         'low_extreme': bool,
+        'min_exceedance_area': float,
         
         # time parameters
         'start': int,
         'end': int,
         'period': str,
-        
+        'perc_period': str,
+        'decadal_window': str,
+
         # general
         'gui': bool,
         
@@ -313,6 +333,7 @@ def check_config(opts_dict):
                     'BadGleichenberg', 'Deutschlandsberg'],
         'threshold_type': ['abs', 'perc'],
         'period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'MAM', 'JJA', 'SON', 'DJF'],
+        'perc_period': ['monthly', 'seasonal', 'annual', 'WAS', 'ESS', 'MAM', 'JJA', 'SON', 'DJF'],
         'gr_type': ['polygon', 'corners', 'center'],
     }
 
@@ -361,19 +382,14 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
             opts = opts[fname]
         opts = argparse.Namespace(**opts)
 
-    # add name of script
+    # add name of script and CFG file
     opts.script = f'{fname}.py'
+    opts.cfg_file = config_file
     
     opts = _get_default_opts(fname, opts)
     set_variables(opts_dict=vars(opts))
     check_config(opts_dict=vars(opts))
-    
-    if opts.gui:
-        # show set parameters
-        show_parameters(opts)
-        set_variables(opts_dict=vars(opts))
-        check_config(opts_dict=vars(opts))
-        opts = argparse.Namespace(**opts)
+
         
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
@@ -393,5 +409,17 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         opts.ref_period = (int(ref_period[0]), int(ref_period[1]))
         cc_period = opts.cc_period.split('-')
         opts.cc_period = (int(cc_period[0]), int(cc_period[1]))
+
+    if 'perc_period_yrs' in opts:
+        perc_period_yrs = opts.perc_period_yrs.split('-')
+        opts.perc_period_yrs = (int(perc_period_yrs[0]), int(perc_period_yrs[1]))
+
+    if 'decadal_window' in opts:
+        dec_options = opts.decadal_window.split(',')
+        opts.decadal_window = [int(x) for x in dec_options]
+
+    if 'agr_range' in opts:
+        agr_lims = opts.agr_range.split(',')
+        opts.agr_range = [float(x) for x in agr_lims]
 
     return opts
