@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import yaml
 import cfunits
+import warnings
 
 from .cfg_paramter_gui import show_parameters
 import teametrics
@@ -93,7 +94,23 @@ def _get_default_opts(fname, opts):
             opts.grg_grid_spacing = 0.5
         if 'land_frac_min' not in opts:
             opts.land_frac_min = 0.5
-    
+        if 'agr_range' not in opts:
+            if opts.agr == 'EUR':
+                opts.agr_range = '35,70,-11,40'
+            elif opts.agr == 'S-EUR':
+                opts.agr_range = '35,44.5,-11,40'
+            elif opts.agr == 'C-EUR':
+                opts.agr_range = '45,55,-11,40'
+            elif opts.agr == 'N-EUR':
+                opts.agr_range = '55.,70,-11,40'
+            elif opts.agr == 'AFR':
+                opts.agr_range = '-36,40,-16,56'
+            elif opts.agr == opts.region:
+                warnings.warn(f'agr_range not set for {opts.agr}, full {opts.region} will be used.')
+            else:
+                raise ValueError(f'Unknown AGR {opts.agr}. '
+                                 f'Please set agr_range manually in options.')
+
     # Parameter options
     if 'parameter' not in opts:
         opts.parameter = 'Tx'
@@ -408,5 +425,9 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     if 'decadal_window' in opts:
         dec_options = opts.decadal_window.split(',')
         opts.decadal_window = [int(x) for x in dec_options]
+
+    if 'agr_range' in opts:
+        agr_lims = opts.agr_range.split(',')
+        opts.agr_range = [float(x) for x in agr_lims]
 
     return opts

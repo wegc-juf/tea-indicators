@@ -25,11 +25,6 @@ from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplif
 from .TEA import TEAIndicators
 from .TEA_AGR import TEAAgr
 
-# TODO: move this to config file
-region_def_lat_ = {'EUR': [35, 70], 'S-EUR': [35, 44.5], 'C-EUR': [45, 55], 'N-EUR': [55.5, 70]}
-region_def_lon_ = {'EUR': [-11, 40], 'S-EUR': [-11, 40], 'C-EUR': [-11, 40], 'N-EUR': [-11, 40]}
-
-
 def calc_tea_indicators(opts):
     """
     calculate TEA indicators as defined in https://doi.org/10.48550/arXiv.2504.18964 and
@@ -547,9 +542,9 @@ def _calc_agr_mean_and_spread(opts, tea):
     Returns:
 
     """
-    if opts.region in region_def_lat_:
-        agr_lat_range = region_def_lat_[opts.agr]
-        agr_lon_range = region_def_lon_[opts.agr]
+    if opts.agr_range:
+        agr_lat_range = opts.agr_range[:2]
+        agr_lon_range = opts.agr_range[-2:]
     else:
         agr_lat_range = None
         agr_lon_range = None

@@ -52,7 +52,14 @@ ERA5: 4326 \
 ERA5-Land: 4326 \
 WEGN: 32633 \
 EOBS: 4326 \
-INCA: 31287 
+INCA: 31287
 
 **Note** that to for regridded SPARTACUS data, the same coordinate system as the WEGN data 
 (EPSG:32633) has to be passed in `create_region_masks.py`.
+
+## AGR definitions
+EUR: lat [35, 70], lon [-11, 40] \
+S-EUR: lat [35, 44.5], lon [-11, 40] \
+C-EUR: lat [45, 55], lon [-11, 40] \
+N-EUR: lat [55.5, 70], lon [-11, 40] \
+AFR: lat [-36, 40], lon [-16, 56] 
