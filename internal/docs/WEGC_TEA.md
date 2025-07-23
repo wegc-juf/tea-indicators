@@ -2,7 +2,7 @@
 
 ## General information
 
-All TEA related input data stored in the `/data/arsclisys/normal/clim-hydro/TEA-Indicators/`
+All TEA related input data are stored in the `/data/arsclisys/normal/clim-hydro/TEA-Indicators/`
 directory. Henceforth, refered to as `<TEA-path>`.
 
 ## CFG files
@@ -19,15 +19,15 @@ Preprocessed SPARTACUSv2 (and v1.5), ERA5, and ERA5-Land data are stored in the 
 - `<TEA-path>/ERA5/` (output of `prep_ERA5.py`)
 - `<TEA-path>/ERA5Land/` (output of `prep_ERA5Land.py`)
 
-**Note** that the SPARTACUS data is regridded to the WEGNext grid (EPSG:32633).
+**Note** that the SPARTACUS data are regridded to the WEGNext grid (EPSG:32633).
 
 Data of selected GeoSphere stations (used for the calculation of the natural variability) are stored
 in `<TEA-path>/station_data/`.
 
 ## Static input data
 
-Static input data (masks, threshold grids, etc.) produced by `calc_TEA.py` are stored in
-`<TEA-path>/static/`.
+Static input data (masks, threshold grids, etc.) produced by `calc_TEA.py` and 
+`create_region_masks.py` are stored in `<TEA-path>/static/`.
 
 ## Shapefiles
 
@@ -54,7 +54,7 @@ WEGN: 32633 \
 EOBS: 4326 \
 INCA: 31287
 
-**Note** that to for regridded SPARTACUS data, the same coordinate system as the WEGN data 
+**Note** that for regridded SPARTACUS data, the same coordinate system as the WEGN data 
 (EPSG:32633) has to be passed in `create_region_masks.py`.
 
 ## AGR definitions
