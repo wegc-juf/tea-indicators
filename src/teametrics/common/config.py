@@ -147,6 +147,8 @@ def _get_default_opts(fname, opts):
     # general options
     if 'gui' not in opts:
         opts.gui = False
+    if 'use_dask' not in opts:
+        opts.use_dask = False
     
     # calc_TEA.py options
     if fname == 'calc_TEA':
@@ -168,8 +170,6 @@ def _get_default_opts(fname, opts):
             opts.compare_to_ref = False
         if 'spreads' not in opts:
             opts.spreads = False
-        if 'use_dask' not in opts:
-            opts.use_dask = False
     
     # create_region_masks.py options
     if fname == 'create_region_masks':
