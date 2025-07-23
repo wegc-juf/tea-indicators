@@ -21,20 +21,12 @@ def _getopts():
                         default='../TEA_CFG.yaml',
                         help='TEA configuration file (default: TEA_CFG.yaml)')
 
-    parser.add_argument('--script-name',
-                        dest='sname',
-                        type=str,
-                        default='calc_TEA',
-                        choices=['calc_TEA', 'create_region_masks',],
-                        help='Name of the script to show and edit CFG paramerters for '
-                             '(default: calc_TEA).')
-
     myopts = parser.parse_args()
 
     return myopts
 
 
-def show_parameters(opts):
+def run_gui(opts):
     """
     Create a window that lists all currently defined CFG parameter
     Args:
@@ -169,7 +161,7 @@ def edit_parameters(window, opts, yaml_fname):
         # Close all windows and open main window again
         edit_window.destroy()
         window.destroy()
-        show_parameters(opts)
+        run_gui(opts)
 
     tk.Button(edit_window, text='Confirm',
               command=confirm_edit).grid(row=len(entries), column=1)
@@ -217,10 +209,6 @@ def update_yaml(fname, opts):
                 continue
             nvalue = new_params[key]
             if ovalue != nvalue:
-                if key == 'outpath':
-                    if f'{sec}.py' != new_params['script']:
-                        new_file.write(line)
-                        continue
                 if ovalue == 'null' and nvalue == '':
                     new_file.write(line)
                     continue
@@ -241,6 +229,16 @@ def update_yaml(fname, opts):
     os.system(f'mv {new_name} {fname}')
 
 
+def flatten_yaml(data, parent_key='', sep='_'):
+    items = {}
+    for key, value in data.items():
+        new_key = f"{key}" if parent_key else key
+        if isinstance(value, dict):
+            items.update(flatten_yaml(value, new_key, sep=sep))
+        else:
+            items[new_key] = value
+    return items
+
 def run():
     # get command line parameters
     cmd_opts = _getopts()
@@ -248,15 +246,18 @@ def run():
     # load CFG parameters
     with open(cmd_opts.config_file, 'r') as stream:
         opts = yaml.safe_load(stream)
-        opts = opts[cmd_opts.sname]
-        opts = argparse.Namespace(**opts)
 
-    # add name of script and CFG file
-    opts.script = f'{cmd_opts.sname}.py'
+    # Convert the loaded YAML data to a Namespace object
+    flattened_data = flatten_yaml(opts)
+    # Create a dictionary with all parameters
+    params = {key: value for key, value in flattened_data.items() if value is not None}
+    opts = argparse.Namespace(**params)
+
+    # add name of CFG file
     opts.cfg_file = cmd_opts.config_file
 
-    show_parameters(opts)
-
+    # run gui to show parameters
+    run_gui(opts)
 
 
 if __name__ == '__main__':
