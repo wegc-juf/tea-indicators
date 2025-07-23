@@ -260,7 +260,7 @@ def check_type(key, value):
         'wegnfile': 'path',
     }
     expected_type = types.get(key, str)
-    if value == None or 'file' in key:
+    if value is None or 'file' in key:
         return
     if expected_type == float:
         try:
