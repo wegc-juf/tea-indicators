@@ -13,7 +13,7 @@ for regions in Africa are stored in `<TEA-path>/CFG-files/TEA-paper-data/` and
 
 ## Input data (SPARTACUS, ERA5, ERA5-Land)
 
-Preprocessed SPARTACUSv2, ERA5, and ERA5-Land data are stored in the following directories:
+Preprocessed SPARTACUSv2 (and v1.5), ERA5, and ERA5-Land data are stored in the following directories:
 
 - `<TEA-path>/SPARTACUS/` (output of `regrid_SPARTACUS_to_WEGNext.py`)
 - `<TEA-path>/ERA5/` (output of `prep_ERA5.py`)
@@ -52,7 +52,7 @@ ERA5: 4326 \
 ERA5-Land: 4326 \
 WEGN: 32633 \
 EOBS: 4326 \
-INCA: 31287 \
+INCA: 31287 
 
 **Note** that to for regridded SPARTACUS data, the same coordinate system as the WEGN data 
 (EPSG:32633) has to be passed in `create_region_masks.py`.
