@@ -7,12 +7,10 @@ import glob
 
 import argparse
 import pandas as pd
-import numpy as np
 import yaml
 import cfunits
 import warnings
 
-from .cfg_paramter_gui import show_parameters
 import teametrics
 
 
@@ -146,7 +144,7 @@ def _get_default_opts(fname, opts):
     if 'ref_period' not in opts:
         opts.ref_period = '1961-1990'
     if 'perc_period_yrs' not in opts:
-        opts.perc_period_yrs = '1961-1990'
+        opts.perc_period_yrs = opts.ref_period
     if 'perc_period' not in opts:
         opts.perc_period = 'annual'
     if 'cc_period' not in opts:
@@ -162,8 +160,6 @@ def _get_default_opts(fname, opts):
             opts.input_data_path = opts.data_path
     
     # general options
-    if 'gui' not in opts:
-        opts.gui = False
     if 'use_dask' not in opts:
         opts.use_dask = False
     
@@ -253,7 +249,7 @@ def check_type(key, value):
         'period': str,
         'perc_period': str,
         'decadal_window': str,
-        
+
         # general
         'gui': bool,
         
@@ -392,12 +388,7 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     opts = _get_default_opts(fname, opts)
     set_variables(opts_dict=vars(opts))
     check_config(opts_dict=vars(opts))
-    
-    if opts.gui:
-        # show set parameters
-        show_parameters(opts)
-        set_variables(opts_dict=vars(opts))
-        check_config(opts_dict=vars(opts))
+
         
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:

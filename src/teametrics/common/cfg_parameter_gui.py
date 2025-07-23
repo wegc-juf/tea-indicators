@@ -1,6 +1,37 @@
+import argparse
 import tkinter as tk
 from tkinter import ttk
 import os
+import yaml
+
+
+def _getopts():
+    """
+    get command line arguments
+
+    Returns:
+        opts: command line parameters
+    """
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--config-file', '-cf',
+                        dest='config_file',
+                        type=str,
+                        default='../TEA_CFG.yaml',
+                        help='TEA configuration file (default: TEA_CFG.yaml)')
+
+    parser.add_argument('--script-name',
+                        dest='sname',
+                        type=str,
+                        default='calc_TEA',
+                        choices=['calc_TEA', 'create_region_masks',],
+                        help='Name of the script to show and edit CFG paramerters for '
+                             '(default: calc_TEA).')
+
+    myopts = parser.parse_args()
+
+    return myopts
 
 
 def show_parameters(opts):
@@ -208,3 +239,25 @@ def update_yaml(fname, opts):
                 new_file.write(line)
 
     os.system(f'mv {new_name} {fname}')
+
+
+def run():
+    # get command line parameters
+    cmd_opts = _getopts()
+
+    # load CFG parameters
+    with open(cmd_opts.config_file, 'r') as stream:
+        opts = yaml.safe_load(stream)
+        opts = opts[cmd_opts.sname]
+        opts = argparse.Namespace(**opts)
+
+    # add name of script and CFG file
+    opts.script = f'{cmd_opts.sname}.py'
+    opts.cfg_file = cmd_opts.config_file
+
+    show_parameters(opts)
+
+
+
+if __name__ == '__main__':
+    run()
