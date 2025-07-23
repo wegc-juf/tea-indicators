@@ -1190,7 +1190,7 @@ class TEAIndicators:
 
     # ### Decadal mean functions ###
 
-    def calc_decadal_indicators(self, decadal_window=[10, 5, 4], calc_spread=False, drop_annual_results=True,
+    def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False, drop_annual_results=True,
                                 min_duration=10):
         """
         calculate decadal mean for all CTP indicators
@@ -1198,7 +1198,7 @@ class TEAIndicators:
 
         Args:
             decadal_window (tuple([int, int, int]), optional): Parameters that define the decadal
-            window used: [window_size,-deltayears,+deltayears]. Defaults to (10,5,4).
+                window used: [window_size,-delta_years,+delta_years]. Defaults to (10, 5, 4).
             calc_spread: calculate spread estimators (equation 25)
             drop_annual_results: delete annual results after calculation
             min_duration: minimum cumulative duration of events in days/decade to keep in decadal results (default: 10)
