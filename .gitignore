@@ -10,3 +10,4 @@ __pycache__
 /tests/tea_examples/
 /src/teametrics/config/WEGC/*_wegnet.yaml
 *.swp
+/poetry.toml
