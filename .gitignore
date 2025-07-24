@@ -11,3 +11,5 @@ __pycache__
 /internal/config/WEGC/*_wegnet.yaml
 *.swp
 /poetry.toml
+/internal/config/paper_data
+/internal/config/Africa
