@@ -18,22 +18,10 @@ def get_attrs(vname=None, dec=False, spread=None, period='', data_unit=''):
     Returns:
         attributes: dict with attributes
     """
-    # define some global attributes
-    institution = 'Wegener Center for Climate and Global Change, University of Graz'
-    cf_conv = 'CF-1.12'
 
     if 'DTEA' in vname and not data_unit:
         data_unit = '100 km^2'
     attrs = {
-        'CTP_global_attrs': {'title': f'TEA indicators for annual climatic time period: {period}',
-                             'institution': institution, 'conventions': cf_conv},
-        'decadal_global_attrs': {
-            'title': f'TEA decadal-mean indicator variables for climatic time period: '
-                     f'{period}', 'institution': institution, 'conventions': cf_conv},
-        'amplification_global_attrs': {
-            'title': f'TEA decadal-mean amplification factors for climatic time period:'
-                     f' {period}', 'institution': institution, 'conventions': cf_conv},
-
         'ctp': {'long_name': f'climatic time period ({period})'},
         'CTP': {'long_name': f'start date of climatic time period {period}'},
         'decadal': {
