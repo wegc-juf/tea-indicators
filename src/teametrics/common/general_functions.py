@@ -11,7 +11,6 @@ import xarray as xr
 import pandas as pd
 
 from .. import __version__
-from .config import check_config
 from .TEA_logger import logger
 
 
