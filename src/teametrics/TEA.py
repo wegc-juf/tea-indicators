@@ -647,9 +647,6 @@ class TEAIndicators:
         if ctp not in valid_dec_periods:
             raise ValueError(f"Invalid CTP: {ctp}. Allowed values: {valid_dec_periods}")
         self.CTP = ctp
-        # ctp_attrs = get_global_attrs(indicators='CTP', period=ctp)
-        # TODO: add CF-Convention compatible attributes...
-        # self.ctp_results.attrs = ctp_attrs
 
     def _calc_annual_event_frequency(self):
         """
