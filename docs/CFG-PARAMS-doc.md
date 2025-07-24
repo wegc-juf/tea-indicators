@@ -69,7 +69,6 @@
 | *orofile*            | File with orography information of target grid.                                                                                                         | path   | null                                 |
 | *altitude_threshold* | Minimum altitude in m for creating the mask file. All grid cells below this altitude will be set to NaN. Set to 0 to disable.                           | float  | 1500                                 |
 | *lsmfile*            | Only necessary if mask for EUR should be created. File with land-sea-mask of target grid.                                                               | path   | null                                 |
-| *outpath*            | Path of output directory for mask.                                                                                                                      | path   | null                                 |
 
 ## regrid_SPARTACUS_to_WEGNext
 ### Only necessary for SPARTACUS data, to regrid SPARTACUS data to WEGNext grid.
