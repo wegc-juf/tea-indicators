@@ -23,7 +23,7 @@ def get_opts():
     parser = ArgumentParser(description='TEA example script.')
     
     parser.add_argument('--no-gui', dest='no_gui', action='store_true',
-                        help='Run without GUI (default: False)')
+                        help='Run without displaying the plots on screen (default: False)')
     
     opts = parser.parse_args()
     
