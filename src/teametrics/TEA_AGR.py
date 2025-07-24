@@ -13,6 +13,7 @@ from tqdm import trange
 
 from .common.var_attrs import get_attrs
 from .common.TEA_logger import logger
+from .common.general_functions import create_tea_history
 from .TEA import TEAIndicators
 
 
@@ -157,15 +158,6 @@ class TEAAgr(TEAIndicators):
 
         self._dbv_gr_grid_results.loc[dict(lat=lat, lon=lon)] = dbv_results
 
-    def save_dbv_results(self, filepath):
-        """
-        save all daily basis variable results for grid of GeoRegions to filepath
-        """
-        with warnings.catch_warnings():
-            # ignore warnings due to nan multiplication
-            warnings.simplefilter("ignore")
-            self._dbv_gr_grid_results.to_netcdf(filepath)
-
     def set_ctp_results(self, lat, lon, ctp_results):
         """
         set CTP variables for point
@@ -207,10 +199,12 @@ class TEAAgr(TEAIndicators):
         """
         return self.ctp_results
 
-    def save_ctp_results(self, filepath):
+    def save_ctp_results(self, opts, filepath):
         """
         save all CTP results to filepath
         """
+        # add global attributes
+        create_tea_history(opts=opts, cfg_params=opts, tea=self, dataset='ctp_results')
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
