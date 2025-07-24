@@ -5,7 +5,6 @@
 """
 
 import os
-import sys
 import gc
 import math
 import warnings
@@ -16,7 +15,8 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 
-from .common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref, get_gridded_data,
+from .common.general_functions import (create_history_from_cfg,  compare_to_ref,
+                                       get_gridded_data,
                                        get_csv_data, create_threshold_grid)
 from .common.config import load_opts
 from .common.TEA_logger import logger
@@ -24,6 +24,7 @@ from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplif
                                             get_decadal_outpath, get_amplification_outpath)
 from .TEA import TEAIndicators
 from .TEA_AGR import TEAAgr
+
 
 def calc_tea_indicators(opts):
     """
@@ -180,14 +181,15 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
 
         # save results
-        create_tea_history(cfg_params=opts, tea=tea, dataset='daily_results')
-        tea.save_daily_results(dbv_filename)
+        tea.save_daily_results(opts=opts, filepath=dbv_filename)
     else:
         # load existing results
-        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme, unit=opts.unit,
+        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
+                            unit=opts.unit,
                             land_sea_mask=lsm)
-        logger.info(f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
-                    'set --recalc-daily.')
+        logger.info(
+            f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
+            'set --recalc-daily.')
         tea.load_daily_results(dbv_filename)
     return tea
 
@@ -310,7 +312,6 @@ def _save_ctp_output(opts, tea, start, end):
         start: start year
         end: end year
     """
-    create_tea_history(cfg_params=opts, tea=tea, dataset='ctp_results')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
@@ -331,7 +332,7 @@ def _save_ctp_output(opts, tea, start, end):
     path_ref = outpath.replace('.nc', '_ref.nc')
 
     logger.info(f'Saving CTP indicators to {outpath}')
-    tea.save_ctp_results(outpath)
+    tea.save_ctp_results(opts=opts, filepath=outpath)
 
     if opts.compare_to_ref:
         _compare_to_ctp_ref(tea, path_ref)
@@ -524,8 +525,9 @@ def _check_data_extent(data, ref_data):
         True if data extent is the same, False otherwise
 
     """
-    if not np.array_equal(data.lat.values, ref_data.lat.values) or not np.array_equal(data.lon.values,
-                                                                                      ref_data.lon.values):
+    if not np.array_equal(data.lat.values, ref_data.lat.values) or not np.array_equal(
+            data.lon.values,
+            ref_data.lon.values):
         return False
     else:
         return True
@@ -559,9 +561,8 @@ def _calc_agr_mean_and_spread(opts, tea):
     if os.path.exists(outpath_decadal):
         os.remove(outpath_decadal)
     create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
-    tea.save_decadal_results(outpath_decadal)
+    tea.save_decadal_results(opts=opts, filepath=outpath_decadal)
     logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
-    create_tea_history(cfg_params=opts, tea=tea, dataset='amplification_factors')
     tea.save_amplification_factors(outpath_ampl)
 
 
@@ -594,8 +595,9 @@ def _load_gr_grid_static(opts):
     except FileNotFoundError:
         if opts.decadal_only:
             # TODO: make AGR code work without area grid (assuming all grid cells have same area)
-            raise FileNotFoundError(f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for '
-                                    f'AGR calculations.')
+            raise FileNotFoundError(
+                f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for '
+                f'AGR calculations.')
         gr_grid_areas = None
     return gr_grid_mask, gr_grid_areas
 

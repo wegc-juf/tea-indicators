@@ -228,7 +228,7 @@ def run():
     altitude = calc_altitude(ds_in=files[0], orog=opts.orog)
 
     # Save altitude in separate file
-    altitude = create_history_from_cli_params(cli_params=sys.argv, ds=altitude)
+    altitude = create_history_from_cli_params(cli_params=sys.argv, ds=altitude, dsname='ERA5Land')
     alt_out = altitude.copy()
     alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
     alt_out.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
@@ -257,7 +257,7 @@ def run():
         # Create output ds
         ds_out = xr.merge([tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, wind, pressure,
                            humidity, altitude])
-        ds_out = create_history_from_cli_params(cli_params=sys.argv, ds=ds_out)
+        ds_out = create_history_from_cli_params(cli_params=sys.argv, ds=ds_out, dsname='ERA5Land')
         ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
 
         ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
