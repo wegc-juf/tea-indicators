@@ -245,6 +245,11 @@ def _get_threshold(opts):
         else:
             logger.info(f'Loading threshold grid from {threshold_file}')
             threshold_grid = xr.open_dataset(threshold_file).threshold
+
+    # from now on, only deviations from the threshold are considered ==> set unit to Kelvin
+    if opts.unit == 'degC':
+        opts.unit = 'K'
+
     return threshold_grid
 
 
