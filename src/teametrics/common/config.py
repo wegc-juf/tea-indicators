@@ -36,33 +36,17 @@ def float_1pcd(value):
     return float(value)
 
 
-def bools(param, val):
-    if not isinstance(val, bool):
-        raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
-                                         f'Please pass a boolean (true/false).')
-
-
-def strs(param, val):
-    if not isinstance(param, str):
-        raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
-                                         f'Please pass a string.')
-
-
 def choices(param, val, poss_vals):
     if val not in poss_vals:
         raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
                                          f'Please choose one of hte following: {poss_vals}.')
 
 
-def ints(param, val):
-    if not isinstance(val, int):
+def max_current_year(param, val):
+    if val > pd.to_datetime('today').year:
         raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
-                                         f'Please pass an integer.')
-    if param in ['start', 'end']:
-        if val > pd.to_datetime('today').year:
-            raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
-                                             f'Please pass a year before the current year or the '
-                                             f'current year.')
+                                         f'Please pass a year before the current year or the '
+                                         f'current year.')
 
 
 def _get_default_opts(fname, opts):
@@ -208,6 +192,8 @@ def _get_default_opts(fname, opts):
                 opts.xy_name = None
             else:
                 raise ValueError(f'Unknown dataset {opts.dataset}. Please set xy_name manually in options.')
+        if 'altitude_threshold' not in opts:
+            opts.altitude_threshold = 1500
     
     # regrid_SPARTACUS_to_WEGNext.py options
     if fname == 'regrid_SPARTACUS_to_WEGNext':
@@ -230,6 +216,7 @@ def check_type(key, value):
         'station': str,
         'agr': str,
         'agr_cell_size': float,
+        'agr_range': str,  # comma-separated string of floats
         'grg_grid_spacing': float,
         'land_frac_min': float,
         
@@ -248,11 +235,21 @@ def check_type(key, value):
         'end': int,
         'period': str,
         'perc_period': str,
+        'ref_period': str,  # e.g. '1961-1990'
+        'cc_period': str,  # e.g. '2010-2024'
+        'perc_period_yrs': str,  # e.g. '1961-1990'
         'decadal_window': str,
-
-        # general
-        'gui': bool,
         
+        # paths
+        'input_data_path': str,
+        'statpath': 'path',
+        'maskpath': 'path',
+        'mask_sub': str,
+        'outpath': 'path',
+        
+        # general options
+        'use_dask': bool,
+
         # calc_TEA.py
         'recalc_threshold': bool,
         'hourly': bool,
@@ -261,11 +258,13 @@ def check_type(key, value):
         'recalc_decadal': bool,
         'decadal_only': bool,
         'spreads': bool,
-        'use_dask': bool,
         'compare_to_ref': bool,
         
         # create_region_masks.py
         'gr_type': str,
+        'sw_corner': str,
+        'ne_corner': str,
+        'center': str,
         'we_len': float,
         'ns_len': float,
         'subreg': bool,
@@ -273,13 +272,20 @@ def check_type(key, value):
         'xy_name': str,
         'shpfile': 'path',
         'orofile': 'path',
+        'altitude_threshold': int,
         'lsmfile': 'path',
         
         # regrid_SPARTACUS_to_WEGNext.py
         'orography': bool,
         'wegnfile': 'path',
+        
+        # hidden parameters
+        'script': str,  # name of the script
+        'cfg_file': str,  # path to the CFG file
     }
-    expected_type = types.get(key, str)
+    if key not in types:
+        raise ValueError(f'Unknown parameter {key} in options. Please check the CFG file.')
+    expected_type = types.get(key)
     if value is None or 'file' in key:
         return
     if expected_type == float:
@@ -287,6 +293,11 @@ def check_type(key, value):
             value = float(value)
         except ValueError:
             raise argparse.ArgumentTypeError(f'Expected a float for {key}, but got {value} instead.')
+    if expected_type == int:
+        try:
+            value = int(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f'Expected an integer for {key}, but got {value} instead.')
     if not isinstance(value, expected_type):
         raise argparse.ArgumentTypeError(f'Expected type {expected_type} for {key}, '
                                          f'but got {value} of type {type(value)} instead.')
@@ -344,17 +355,12 @@ def check_config(opts_dict):
             check_type(param, opts_dict[param])
         if 'file' in param:
             is_file(opts_dict[param])
-        if param in ['precip', 'low_extreme', 'decadal', 'spreads', 'decadal_only',
-                     'recalc_daily', 'orography', 'recalc_decadal', 'gui']:
-            bools(param=param, val=opts_dict[param])
-        if param in ['region', 'parameter', 'unit', 'subreg', 'dataset', 'xy_name']:
-            strs(param=param, val=opts_dict[param])
         if param == 'threshold':
             float_1pcd(opts_dict[param])
         if param in choice_vals.keys():
             choices(param=param, val=opts_dict[param], poss_vals=choice_vals[param])
-        if param in ['start', 'end', 'target_sys', 'smoothing']:
-            ints(param=param, val=opts_dict[param])
+        if param in ['start', 'end']:
+            max_current_year(param=param, val=opts_dict[param])
     
     if 'create_region_masks' not in opts_dict['script']:
         if 'input_data_path' not in opts_dict:
@@ -390,7 +396,6 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
     set_variables(opts_dict=vars(opts))
     check_config(opts_dict=vars(opts))
 
-        
     # add strings that are often needed to parameters
     if fname not in ['create_region_masks']:
         pstr = opts.parameter
