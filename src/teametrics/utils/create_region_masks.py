@@ -3,8 +3,6 @@
 create region masks for TEA indicator calculation
 author: hst
 """
-import os
-import sys
 
 import geopandas as gpd
 import numpy as np
@@ -450,14 +448,16 @@ def run():
         # Initialize mask array
         mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
 
-        # The following part is very sensible to the shape file that is used.
-        # Lots of trial and error here...
-        geom = shp.geometry.iloc[0]
+        if len(shp) == 1:
+            pass
+        elif 'CNTR_ID' in shp.columns:
+            shp = shp[shp.CNTR_ID == opts.region]
+        elif 'LAND_NAME' in shp.columns:
+            shp = shp[shp.LAND_NAME == opts.region]
+        elif 'GEM_NAME' in shp.columns:
+            shp = shp[shp.GEM_NAME == opts.region]
 
-        if isinstance(geom, MultiPolygon):
-            poly = geom.geoms[0]
-        else:
-            poly = geom
+        poly = shp.geometry.iloc[0]
 
         cells = create_cell_polygons(opts=opts, xvals=xvals, yvals=yvals, offset=offset)
 
