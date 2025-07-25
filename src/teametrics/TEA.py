@@ -413,15 +413,12 @@ class TEAIndicators:
         if not self.use_dask:
             self.daily_results = self.daily_results.compute()
 
-    def save_daily_results(self, opts, filepath):
+    def save_daily_results(self, filepath):
         """
         save all variables to filepath
         Args:
-            opts: CFG parameter
             filepath: path to save the results.
         """
-        # add global attributes
-        create_tea_history(opts=opts, cfg_params=opts, tea=self, dataset='daily_results')
 
         with warnings.catch_warnings():
             # TODO: implement compression for all netCDF files and use float instead of double if possible
@@ -1157,11 +1154,11 @@ class TEAIndicators:
         self.ctp_results['time'].attrs = ctp_attrs
         self.ctp_results.attrs['CTP'] = self.CTP
 
-    def save_ctp_results(self, opts, filepath):
+    def save_ctp_results(self, filepath):
         """
         save all CTP results to filepath
         """
-        create_tea_history(opts=opts, cfg_params=opts, tea=self, dataset='ctp_results')
+
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
@@ -1240,7 +1237,6 @@ class TEAIndicators:
             self._calc_spread_estimators()
         self.CTP = self.ctp_results.attrs['CTP']
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
-        # self.decadal_results.attrs = get_global_attrs(indicators='DEC', period=self.CTP)
         self.decadal_results.attrs['CTP'] = self.CTP
         self.decadal_results = self._duplicate_vars(self.decadal_results)
 
@@ -1250,11 +1246,10 @@ class TEAIndicators:
             del self._CTP_resample_mean
             del self._CTP_resample_sum
 
-    def save_decadal_results(self, opts, filepath):
+    def save_decadal_results(self, filepath):
         """
         save all decadal results to filepath
         """
-        create_tea_history(opts=opts, cfg_params=opts, tea=self, dataset='decadal_results')
 
         if os.path.exists(filepath):
             os.remove(filepath)
@@ -1648,11 +1643,10 @@ class TEAIndicators:
                     ds[vvar.replace(equal_var, repl_var)] = ds[vvar]
         return ds
 
-    def save_amplification_factors(self, opts, filepath):
+    def save_amplification_factors(self, filepath):
         """
         save amplification factors to filepath
         """
-        create_tea_history(opts=opts, cfg_params=opts, tea=self, dataset='amplification_factors')
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")

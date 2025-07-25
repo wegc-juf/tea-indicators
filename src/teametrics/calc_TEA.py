@@ -15,7 +15,7 @@ import numpy as np
 from pathlib import Path
 import xarray as xr
 
-from .common.general_functions import (create_history_from_cfg,  compare_to_ref,
+from .common.general_functions import (create_history_from_cfg, create_tea_history, compare_to_ref,
                                        get_gridded_data,
                                        get_csv_data, create_threshold_grid)
 from .common.config import load_opts
@@ -181,7 +181,8 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
 
         # save results
-        tea.save_daily_results(opts=opts, filepath=dbv_filename)
+        create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='daily_results')
+        tea.save_daily_results(filepath=dbv_filename)
     else:
         # load existing results
         tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
@@ -317,6 +318,7 @@ def _save_ctp_output(opts, tea, start, end):
         start: start year
         end: end year
     """
+    create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='ctp_results')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
@@ -337,7 +339,7 @@ def _save_ctp_output(opts, tea, start, end):
     path_ref = outpath.replace('.nc', '_ref.nc')
 
     logger.info(f'Saving CTP indicators to {outpath}')
-    tea.save_ctp_results(opts=opts, filepath=outpath)
+    tea.save_ctp_results(filepath=outpath)
 
     if opts.compare_to_ref:
         _compare_to_ctp_ref(tea, path_ref)
@@ -565,10 +567,11 @@ def _calc_agr_mean_and_spread(opts, tea):
     # remove outpath_decadal if it exists
     if os.path.exists(outpath_decadal):
         os.remove(outpath_decadal)
-    create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
-    tea.save_decadal_results(opts=opts, filepath=outpath_decadal)
+    create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='decadal_results')
+    tea.save_decadal_results(filepath=outpath_decadal)
     logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
-    tea.save_amplification_factors(outpath_ampl)
+    create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='amplification_factors')
+    tea.save_amplification_factors(filepath=outpath_ampl)
 
 
 def _load_gr_grid_static(opts):

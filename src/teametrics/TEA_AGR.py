@@ -199,12 +199,10 @@ class TEAAgr(TEAIndicators):
         """
         return self.ctp_results
 
-    def save_ctp_results(self, opts, filepath):
+    def save_ctp_results(self, filepath):
         """
         save all CTP results to filepath
         """
-        # add global attributes
-        create_tea_history(opts=opts, cfg_params=opts, tea=self, dataset='ctp_results')
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
