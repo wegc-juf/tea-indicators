@@ -582,7 +582,7 @@ def _load_gr_grid_static(opts):
     gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
-        gr_grid_mask = gr_grid_mask.mask_lt1500
+        gr_grid_mask = gr_grid_mask.mask
     except FileNotFoundError:
         if opts.decadal_only:
             logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
