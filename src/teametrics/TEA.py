@@ -11,7 +11,7 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-from .common.var_attrs import get_attrs, get_global_attrs, equal_vars
+from .common.var_attrs import get_attrs, equal_vars
 from .common.TEA_logger import logger
 from .common.general_functions import create_tea_history
 
@@ -1621,8 +1621,6 @@ class TEAIndicators:
         self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
         self.amplification_factors.time.attrs = get_attrs(vname='amplification',
                                                           period=self.CTP)
-        self.amplification_factors.attrs = get_global_attrs(level='amplification_factors',
-                                                            period=self.CTP)
         self.amplification_factors = self._duplicate_vars(self.amplification_factors)
 
     @staticmethod
