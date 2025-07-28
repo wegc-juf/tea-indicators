@@ -136,10 +136,11 @@ def _prep_lsm(opts):
 
     data = xr.open_dataset(opts.orofile)
     data = data.altitude
-
-    step = 0.25
-    if opts.dataset == 'ERA5Land':
-        step = 0.1
+    
+    # get lat resolution
+    lat_resolution = round(abs(data.lat.values[0] - data.lat.values[1]), 4)
+    
+    step = lat_resolution
 
     # split to eastern and western hemisphere (from 0 ... 360 to -180 .. 180)
     lsm_e = lsm_raw.sel(longitude=slice(180 + step, 360))
@@ -173,13 +174,8 @@ def create_agr_mask(opts):
     if 'ERA5' not in opts.dataset:
         raise AttributeError('AGR mask can only be created for ERA5(Land) data.')
 
-    # load LSM and only keep cells with more than 50% land in them
-    lsm = _prep_lsm(opts=opts)
-    lsm = lsm.where(lsm > 0.5)
-
-    # create weighted mask
-    mask = lsm.copy()
-    mask = mask.where(mask > 0)
+    mask = _prep_lsm(opts=opts)
+    mask = mask.where(mask > opts.land_frac_min)
     mask = mask.rename('mask')
     mask.attrs = {'long_name': 'weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
