@@ -11,22 +11,23 @@ import xarray as xr
 import pandas as pd
 
 from .. import __version__
-from .config import check_config
 from .TEA_logger import logger
+from .var_attrs import get_global_attrs
 
 
-def create_history_from_cli_params(cli_params, ds):
+def create_history_from_cli_params(cli_params, ds, dsname):
     """
     add history to dataset
     :param cli_params: CLI parameter
     :param ds: dataset
+    :param dsname: name of the dataset (e.g. 'SPARTACUS', 'ERA5', etc.)
     :return: ds with history in attrs
     """
 
     script = cli_params[0].split('/')[-1]
     cli_params = cli_params[1:]
     
-    _create_history_for_dataset(ds, cli_params, script)
+    _create_history_for_dataset(ds, cli_params, script, dsname=dsname)
 
 
 def create_history_from_cfg(cfg_params, ds):
@@ -46,28 +47,39 @@ def create_history_from_cfg(cfg_params, ds):
 
     script = cfg_params.script.split('/')[-1]
     
-    _create_history_for_dataset(ds, params, script)
+    _create_history_for_dataset(ds, params, script, dsname=cfg_params.dataset)
 
 
-def create_tea_history(cfg_params, tea, dataset):
+def create_tea_history(opts, cfg_params, tea, dataset):
     """
     add history and version to dataset
+    :param opts: CFG parameters
     :param cfg_params: yaml config parameters
     :param tea: TEA object
     :param dataset: dataset (e.g. 'CTP_results')
     """
     ds = getattr(tea, f'{dataset}')
 
+    # create history from CFG parameters
     create_history_from_cfg(cfg_params, ds)
 
+    # get global attributes
+    glob_attrs = get_global_attrs(level=dataset, period=opts.period)
+    glob_attrs.update(ds.attrs)
 
-def _create_history_for_dataset(ds, params, script):
+    # update dataset attributes
+    ds.attrs = glob_attrs
+
+
+
+def _create_history_for_dataset(ds, params, script, dsname):
     """
     Helper function to create history and version for a dataset.
     Args:
         ds: Xarray Dataset
         params: configuration parameters as a string
         script: name of the script that generated the dataset
+        dsname: name of the dataset (e.g. 'SPARTACUS', 'ERA5', etc.)
 
     Returns:
 
@@ -79,6 +91,8 @@ def _create_history_for_dataset(ds, params, script):
         ds.attrs['history'] = new_hist
     if 'version' not in ds.attrs:
         ds.attrs['version'] = __version__
+    if 'source' not in ds.attrs:
+        ds.attrs['source'] = dsname
 
 
 def create_natvar_history(cfg_params, nv):
@@ -103,7 +117,7 @@ def create_natvar_history(cfg_params, nv):
     else:
         new_hist = f'{dt.datetime.now():%FT%H:%M:%S} {script} {params}'
 
-    nv.create_history_from_cli_params(new_hist)
+    nv.create_history_from_cli_params(new_hist, dsname=cfg_params.dataset)
 
 
 def ref_cc_params():
