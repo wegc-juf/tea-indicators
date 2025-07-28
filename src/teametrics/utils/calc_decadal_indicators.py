@@ -7,10 +7,10 @@ import warnings
 from pathlib import Path
 import xarray as xr
 
-from teametrics.common.var_attrs import get_attrs
-from teametrics.common.general_functions import compare_to_ref, create_tea_history
-from teametrics.common.TEA_logger import logger
-from teametrics.TEA import TEAIndicators
+from ..common.var_attrs import get_attrs
+from ..common.general_functions import compare_to_ref, create_tea_history
+from ..common.TEA_logger import logger
+from ..TEA import TEAIndicators
 
 logging.basicConfig(
     level=logging.INFO,
