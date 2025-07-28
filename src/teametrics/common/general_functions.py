@@ -50,10 +50,10 @@ def create_history_from_cfg(cfg_params, ds):
     _create_history_for_dataset(ds, params, script, dsname=cfg_params.dataset)
 
 
-def create_tea_history(opts, cfg_params, tea, dataset):
+def create_tea_history(cfg_params, tea, dataset):
     """
     add history and version to dataset
-    :param opts: CFG parameters
+    
     :param cfg_params: yaml config parameters
     :param tea: TEA object
     :param dataset: dataset (e.g. 'CTP_results')
@@ -64,12 +64,11 @@ def create_tea_history(opts, cfg_params, tea, dataset):
     create_history_from_cfg(cfg_params, ds)
 
     # get global attributes
-    glob_attrs = get_global_attrs(level=dataset, period=opts.period)
+    glob_attrs = get_global_attrs(level=dataset, period=cfg_params.period)
     glob_attrs.update(ds.attrs)
 
     # update dataset attributes
     ds.attrs = glob_attrs
-
 
 
 def _create_history_for_dataset(ds, params, script, dsname):
@@ -379,9 +378,11 @@ def calc_percentiles(opts, threshold_min=None, data=None):
 
     # load data if not provided
     if data is None:
-        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1], opts=opts, period=opts.period)
+        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1], opts=opts,
+                                period=opts.period)
     else:
-        data = extract_period(ds=data, period=opts.perc_period, start_year=opts.perc_period_yrs[0], end_year=opts.perc_period_yrs[1])
+        data = extract_period(ds=data, period=opts.perc_period, start_year=opts.perc_period_yrs[0],
+                              end_year=opts.perc_period_yrs[1])
 
     if threshold_min is not None:
         data = data.where(data > threshold_min)

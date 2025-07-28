@@ -13,7 +13,6 @@ from tqdm import trange
 
 from .common.var_attrs import get_attrs
 from .common.TEA_logger import logger
-from .common.general_functions import create_tea_history
 from .TEA import TEAIndicators
 
 
