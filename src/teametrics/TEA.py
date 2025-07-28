@@ -1621,7 +1621,7 @@ class TEAIndicators:
         self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
         self.amplification_factors.time.attrs = get_attrs(vname='amplification',
                                                           period=self.CTP)
-        self.amplification_factors.attrs = get_global_attrs(level='AF',
+        self.amplification_factors.attrs = get_global_attrs(level='amplification_factors',
                                                             period=self.CTP)
         self.amplification_factors = self._duplicate_vars(self.amplification_factors)
 
