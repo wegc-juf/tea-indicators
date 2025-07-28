@@ -1,3 +1,7 @@
+stages:
+  - test
+  - publish
+
 publish:package:
   stage: publish
   script:
