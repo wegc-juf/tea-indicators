@@ -1,3 +1,9 @@
+default:
+  before_script:
+    # install poetry
+    - python -m pip install "poetry>=2.1.0"
+    - python -m pip install "poetry-dynamic-versioning>=1.1.0,<2.0.0"
+
 stages:
 #  - test
   - publish
