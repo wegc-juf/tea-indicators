@@ -71,9 +71,6 @@ class TEAAgr(TEAIndicators):
         self.gr_grid_mask = gr_grid_mask
         self.gr_grid_areas = gr_grid_areas
 
-        # daily basis variables for grid of GeoRegions
-        self._dbv_gr_grid_results = None
-
         # filter input data to valid cells
         if self.land_sea_mask is not None and self.input_data is not None:
             self.input_data = self.input_data.where(self.land_sea_mask > 0)
@@ -135,29 +132,6 @@ class TEAAgr(TEAIndicators):
         tea_sub_gr.set_daily_results(cell_data)
         return tea_sub_gr
 
-    def _set_dbv_results(self, lat, lon, dbv_results):
-        """
-        set daily basis variables for point
-        Args:
-            lat: latitude
-            lon: longitude
-            dbv_results: daily basis GR data for point
-        """
-        if self._dbv_gr_grid_results is None:
-            data_vars = [var for var in dbv_results.data_vars]
-            var_dict = {}
-            lats, lons = self._get_lats_lons()
-            for var in data_vars:
-                var_dict[var] = (['time', 'lat', 'lon'], np.nan * np.ones((len(dbv_results.time),
-                                                                           len(lats), len(lons))))
-            self._dbv_gr_grid_results = xr.Dataset(coords=dict(time=dbv_results.time,
-                                                               lon=lons,
-                                                               lat=lats),
-                                                   data_vars=var_dict,
-                                                   attrs=dbv_results.attrs)
-
-        self._dbv_gr_grid_results.loc[dict(lat=lat, lon=lon)] = dbv_results
-
     def set_ctp_results(self, lat, lon, ctp_results):
         """
         set CTP variables for point
@@ -210,10 +184,8 @@ class TEAAgr(TEAIndicators):
 
     def _apply_gr_grid_mask(self):
         """
-        apply GR grid mask to daily basis variables and CTP results
+        apply GR grid mask to CTP results
         """
-        if self._dbv_gr_grid_results is not None:
-            self._dbv_gr_grid_results = self._dbv_gr_grid_results.where(self.gr_grid_mask > 0)
         if self.ctp_results is not None:
             self.ctp_results = self.ctp_results.where(self.gr_grid_mask > 0)
 
@@ -616,7 +588,7 @@ class TEAAgr(TEAIndicators):
         gr_grid_mask = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
                                     coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},
                                     dims={'lat': (['lat'], lats), 'lon': (['lon'], lons)})
-        gr_grid_mask = gr_grid_mask.rename('mask_lt1500')
+        gr_grid_mask = gr_grid_mask.rename('mask')
 
         gr_grid_areas = xr.DataArray(data=np.ones((len(lats), len(lons))) * np.nan,
                                      coords={'lat': (['lat'], lats), 'lon': (['lon'], lons)},

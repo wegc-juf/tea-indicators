@@ -8,5 +8,8 @@ __pycache__
 *.log
 /dist/
 /tests/tea_examples/
-/src/teametrics/config/WEGC/*_wegnet.yaml
+/internal/config/WEGC/*_wegnet.yaml
 *.swp
+/poetry.toml
+/internal/config/paper_data
+/internal/config/Africa

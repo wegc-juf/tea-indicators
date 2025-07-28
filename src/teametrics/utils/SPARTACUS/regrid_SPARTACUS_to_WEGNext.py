@@ -5,7 +5,6 @@
 
 """
 
-import glob
 import numpy as np
 import os
 from pathlib import Path
@@ -31,8 +30,7 @@ def define_wegn_grid_1000x1000(opts):
     """
 
     # Load sample SPARTACUS data
-    original_grid = xr.open_dataset(
-        os.path.join(f'{opts.inpath}', f'SPARTACUS2-DAILY_{opts.parameter.upper()}_2000.nc'))
+    original_grid = xr.open_dataset(Path(opts.input_data_path) / f'SPARTACUS2-DAILY_{opts.parameter.upper()}_2000.nc')
 
     # Open WEGN sample data
     wegnet = xr.open_dataset(opts.wegnfile)
@@ -162,9 +160,9 @@ def regrid_orog(opts):
     oro_new.attrs['crs'] = 'EPSG:32633'
     oro_new = oro_new.drop(['lat', 'lon'])
 
-    path = Path(f'{opts.outpath}')
+    path = Path(opts.outpath)
     path.mkdir(parents=True, exist_ok=True)
-    oro_new.to_netcdf(f'{opts.outpath}SPARTACUSreg_orography.nc')
+    oro_new.to_netcdf(path / 'SPARTACUSreg_orography.nc')
 
 
 def _getopts():
@@ -198,9 +196,12 @@ def run():
     if opts.orography:
         regrid_orog(opts=opts)
     else:
-        input_files = sorted(glob.glob(f'{opts.inpath}/*{opts.parameter}*.nc'))
+        input_path = Path(opts.input_data_path)
+        input_files = sorted(input_path.glob(f'*{opts.parameter}*.nc'))
+        if len(input_files) == 0:
+            raise FileNotFoundError(f'No input files found in {input_path}/*{opts.parameter}*.nc')
         for ifile in trange(len(input_files), desc='Regridding files'):
-            filename = input_files[ifile].split('/')[-1]
+            filename = input_files[ifile].name
 
             # Open SPARTACUS file
             ds = xr.open_dataset(input_files[ifile], engine='netcdf4')
@@ -228,12 +229,11 @@ def run():
             encoding = {opts.parameter: {'dtype': 'int16', 'scale_factor': 0.1,
                                          '_FillValue': -9999}}
 
-            path = Path(f'{opts.outpath}')
+            path = Path(opts.outpath)
             path.mkdir(parents=True, exist_ok=True)
             filename_parts = filename.split(opts.parameter.upper())
             filename_out = f'{filename_parts[0]}{opts.parameter}{filename_parts[1]}'
-            ds_new.to_netcdf(f'{opts.outpath}{filename_out}', encoding=encoding,
-                             engine='netcdf4')
+            ds_new.to_netcdf(path / filename_out, encoding=encoding, engine='netcdf4')
 
 
 if __name__ == '__main__':

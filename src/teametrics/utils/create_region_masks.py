@@ -16,7 +16,7 @@ from ..common.config import load_opts
 from ..calc_TEA import _getopts
 
 
-def load_shp(opts):
+def _load_shp(opts):
     """
     load shp file for given region
     Args:
@@ -46,7 +46,7 @@ def load_shp(opts):
     return shp
 
 
-def create_cell_polygons(opts, xvals, yvals, offset):
+def _create_cell_polygons(opts, xvals, yvals, offset):
     """
     create list of polygons for each cell
     Args:
@@ -62,9 +62,9 @@ def create_cell_polygons(opts, xvals, yvals, offset):
 
     out_region = opts.region
 
-    path = Path(f'{opts.maskpath}/{opts.mask_sub}/polygons/{out_region}_EPSG{opts.target_sys}_{opts.dataset}/')
+    path = Path(opts.maskpath) / opts.mask_sub / 'polygons' / f'{out_region}_EPSG{opts.target_sys}_{opts.dataset}/'
     path.mkdir(parents=True, exist_ok=True)
-    fname = f'{path}/{out_region}_cells_EPSG{opts.target_sys}_{opts.dataset}.shp'
+    fname = path / f'{out_region}_cells_EPSG{opts.target_sys}_{opts.dataset}.shp'
 
     try:
         gdf = gpd.read_file(fname)
@@ -97,75 +97,35 @@ def create_cell_polygons(opts, xvals, yvals, offset):
     return cells
 
 
-def create_lt1500m_mask(opts, da_nwmask):
-    """
-    create mask of all cells with an altitude lower than 1500m
-    Args:
-        opts: CLI parameter
-        da_nwmask: non weighted mask da
-
-    Returns:
-        lt1500_mask: lower than 1500m mask da
-
-    """
-    orog = xr.open_dataset(opts.orofile)
-    if 'altitude' in orog.data_vars:
-        orog = orog.altitude
-    else:
-        orog = orog.orog
-
-    lt1500_mask = da_nwmask.copy()
-    lt1500_mask = lt1500_mask.where(orog < 1500)
-    lt1500_mask = lt1500_mask.rename('lt1500_mask')
-    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
-                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    return lt1500_mask
-
-
-def run_sea(opts):
+def create_sea_mask(opts):
     """
     create SEA mask (part of SAR that's within AUT)
     Args:
-        opts: CLI parameter
+        opts: Options as defined in config file
 
     Returns:
 
     """
 
     try:
-        aut = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/AUT_masks_{opts.dataset}.nc')
-        sar = xr.open_dataset(f'{opts.maskpath}/{opts.mask_sub}/SAR_masks_{opts.dataset}.nc')
+        aut = xr.open_dataset(Path(opts.maskpath) / opts.mask_sub / f'AUT_mask_{opts.dataset}.nc')
+        sar = xr.open_dataset(Path(opts.maskpath) / opts.mask_sub / f'SAR_mask_{opts.dataset}.nc')
     except FileNotFoundError:
         raise FileNotFoundError('For SEA mask, run create_region_masks.py for AUT and SAR first.')
 
-    mask = aut['mask'].where(sar['nw_mask'].notnull())
+    mask = aut['mask'].where(sar['mask'].notnull())
     mask = mask.rename('mask')
     mask.attrs = {'long_name': 'weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
+    ds = mask.to_dataset()
 
-    nwmask = mask.copy()
-    nwmask = nwmask.where(mask.isnull(), 1)
-    nwmask = nwmask.rename('nw_mask')
-    nwmask.attrs = {'long_name': 'non weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    lt1500_mask = sar['lt1500_mask'].where(aut['lt1500_mask'].notnull())
-    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
-                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    if 'ERA5' in opts.dataset:
-        lsm = aut['LSM_EUR'].copy()
-        lt1500_eur = aut['lt1500_mask_EUR'].copy()
-        ds = xr.merge([mask, nwmask, lt1500_mask, lsm, lt1500_eur])
-    else:
-        ds = xr.merge([mask, nwmask, lt1500_mask])
     create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    save_output(ds, opts)
+    _save_output(ds, opts)
 
 
-def prep_lsm(opts):
+def _prep_lsm(opts):
     """
-    load LSM and convert coordinates
+    load Land-Sea-Mask and convert coordinates
     Args:
         opts: CLI parameter
 
@@ -201,9 +161,9 @@ def prep_lsm(opts):
     return lsm
 
 
-def run_agr(opts):
+def create_agr_mask(opts):
     """
-    create EUR mask
+    create mask for AGRs
     Args:
         opts: CLI parameter
 
@@ -211,10 +171,10 @@ def run_agr(opts):
 
     """
     if 'ERA5' not in opts.dataset:
-        raise AttributeError('EUR mask can only be created for ERA5(Land) data.')
+        raise AttributeError('AGR mask can only be created for ERA5(Land) data.')
 
     # load LSM and only keep cells with more than 50% land in them
-    lsm = prep_lsm(opts=opts)
+    lsm = _prep_lsm(opts=opts)
     lsm = lsm.where(lsm > 0.5)
 
     # create weighted mask
@@ -223,29 +183,39 @@ def run_agr(opts):
     mask = mask.rename('mask')
     mask.attrs = {'long_name': 'weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
 
-    # create non weighted mask
-    nwmask = mask.copy()
-    nwmask = nwmask.where(mask.isnull(), 1)
-    nwmask = nwmask.rename('nw_mask')
-    nwmask.attrs = {'long_name': 'non weighted mask', 'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    # load orography
-    orog = xr.open_dataset(opts.orofile)
-    orog = orog.altitude
-    # create below 1500 m mask
-    lt1500_mask = nwmask.copy()
-    lt1500_mask = lt1500_mask.where(orog < 1500)
-    lt1500_mask = lt1500_mask.rename('lt1500_mask')
-    lt1500_mask.attrs = {'long_name': 'below 1500m mask',
-                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
-
-    ds = xr.merge([mask, nwmask, lt1500_mask])
+    # apply altitude threshold if set
+    if opts.altitude_threshold != 0:
+        mask = _apply_altitude_threshold(mask, opts)
+    ds = mask.to_dataset()
+    
     create_history_from_cfg(cfg_params=opts, ds=ds)
 
-    save_output(ds, opts)
+    _save_output(ds, opts)
 
 
-def find_closest(coords, corner_val, direction):
+def _apply_altitude_threshold(mask, opts):
+    """
+    apply altitude threshold to mask
+    Args:
+        mask: mask DataArray
+        opts: Config parameters
+
+    Returns:
+        mask: mask DataArray with altitude threshold applied
+
+    """
+    # load orography
+    orog = xr.open_dataset(opts.orofile)
+    if 'altitude' in orog.data_vars:
+        orog = orog.altitude
+    else:
+        orog = orog.orog
+
+    mask = mask.where(orog < opts.altitude_threshold)
+    return mask
+
+
+def _find_closest(coords, corner_val, direction):
     """
     Find the closest value in sorted_list to the target with a given direction.
     direction=-1 means the closest on the left (smaller than target)
@@ -265,7 +235,7 @@ def find_closest(coords, corner_val, direction):
         raise ValueError('Direction must be either -1 or 1.')
 
 
-def save_output(ds, opts, out_region=None):
+def _save_output(ds, opts, out_region=None):
     """
     save output to netcdf files
     Args:
@@ -278,14 +248,9 @@ def save_output(ds, opts, out_region=None):
     """
     if out_region is None:
         out_region = opts.region
-    # outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_masks_{opts.dataset}.nc'
-    # print(f'Saving old masks file to {outpath}')
-    # ds.to_netcdf(outpath)
-    simple_mask = ds.lt1500_mask * ds.mask
-    simple_mask.name = 'mask'
-    outpath = f'{opts.maskpath}/{opts.mask_sub}/{out_region}_mask_{opts.dataset}.nc'
+    outpath = Path(opts.maskpath) / opts.mask_sub / f'{out_region}_mask_{opts.dataset}.nc'
     print(f'Saving mask file to {outpath}')
-    simple_mask.to_netcdf(outpath)
+    ds.to_netcdf(outpath)
 
 
 def create_rectangular_gr(opts):
@@ -354,17 +319,17 @@ def create_rectangular_gr(opts):
     else:
         # Find the closest x and y for the corners and calculate fractions of cell area
         if 'ERA5' in opts.dataset:
-            closest_sw_y = find_closest(template_file[y][::-1], yn, direction=1)
-            closest_ne_y = find_closest(template_file[y][::-1], yx, direction=-1)
+            closest_sw_y = _find_closest(template_file[y][::-1], yn, direction=1)
+            closest_ne_y = _find_closest(template_file[y][::-1], yx, direction=-1)
             s_frac = (closest_sw_y - yn) / dy
             n_frac = (yx - closest_ne_y) / dy
         else:
-            closest_sw_y = find_closest(template_file[y], yn, direction=-1)
-            closest_ne_y = find_closest(template_file[y], yx, direction=1)
+            closest_sw_y = _find_closest(template_file[y], yn, direction=-1)
+            closest_ne_y = _find_closest(template_file[y], yx, direction=1)
             s_frac = (yn - closest_sw_y) / dy
             n_frac = (closest_ne_y - yx) / dy
-        closest_sw_x = find_closest(template_file[x], xn, direction=-1)
-        closest_ne_x = find_closest(template_file[x], xx, direction=1)
+        closest_sw_x = _find_closest(template_file[x], xn, direction=-1)
+        closest_ne_x = _find_closest(template_file[x], xx, direction=1)
         w_frac = (xn - closest_sw_x) / dx
         e_frac = (closest_ne_x - xx) / dx
 
@@ -382,29 +347,93 @@ def create_rectangular_gr(opts):
         da_mask.loc[:, closest_ne_x] = da_mask.loc[:, closest_ne_x] * e_frac
         da_mask.loc[closest_ne_y, :] = da_mask.loc[closest_ne_y, :] * n_frac
 
-    lt1500_mask = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
+    if opts.altitude_threshold != 0:
+        da_mask = _apply_altitude_threshold(da_mask, opts)
+    ds_mask = da_mask.to_dataset()
 
-    if 'ERA5' in opts.dataset:
-        lsm = prep_lsm(opts=opts)
-        lsm = lsm.where(lsm > 0.5)
-        lsm = lsm.rename('LSM_EUR')
-        lsm.attrs = {'long_name': 'land sea mask (EUR)',
-                     'coordinate_sys': f'EPSG:{opts.target_sys}'}
-        ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm])
-    else:
-        ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-    create_history_from_cfg(cfg_params=opts, ds=ds)
+    create_history_from_cfg(cfg_params=opts, ds=ds_mask)
 
     out_region = f'SW_{xn}_{yn}-NE_{xx}_{yx}'
-    save_output(ds, opts, out_region)
+    _save_output(ds_mask, opts, out_region)
 
 
-def match_dimension_dtypes(src, dest):
-    for dim in dest.dims:
-        if dim not in src.dims:
-            continue
-        if dest[dim].dtype != src[dim].dtype:
-            dest[dim] = np.round(dest[dim].astype(src[dim].dtype), decimals=5)
+def create_mask_file(opts):
+    """
+    create mask file for given region
+    Args:
+        opts: Options as defined in config file
+
+    Returns:
+
+    """
+    # Load template file
+    template_file = get_gridded_data(opts.start, opts.start + 1, opts)
+    xy = opts.xy_name.split(',')
+    x, y = xy[0], xy[1]
+
+    # Load shp file and transform it to desired coordinate system
+    shp = _load_shp(opts=opts)
+    # Define the cell grid
+    xvals, yvals = template_file[x], template_file[y]
+
+    # Get grid spacing
+    # Coordinates of ERA5(Land) have some precision trouble
+    if opts.dataset in ['ERA5', 'ERA5Land']:
+        dx = set(abs(np.round(xvals[1:].values - xvals[:-1].values, 2)))
+        dy = set(abs(np.round(yvals[1:].values - yvals[:-1].values, 2)))
+    else:
+        dx = set(abs(xvals[1:].values - xvals[:-1].values))
+        dy = set(abs(yvals[1:].values - yvals[:-1].values))
+    if len(dx) > 1 or len(dy) > 1 or dx != dy:
+        raise ValueError('The given test file does not have a regular grid. '
+                         'Provide a file with a regular grid.')
+    dx, dy = list(dx)[0], list(dy)[0]
+    offset = dx / 2
+
+    # Initialize mask array
+    mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
+
+    if len(shp) == 1:
+        pass
+    elif 'CNTR_ID' in shp.columns:
+        shp = shp[shp.CNTR_ID == opts.region]
+    elif 'LAND_NAME' in shp.columns:
+        shp = shp[shp.LAND_NAME == opts.region]
+    elif 'GEM_NAME' in shp.columns:
+        shp = shp[shp.GEM_NAME == opts.region]
+
+    poly = shp.geometry.iloc[0]
+
+    cells = _create_cell_polygons(opts=opts, xvals=xvals, yvals=yvals, offset=offset)
+
+    # Check intersections and calculate mask values
+    total_cells = len(cells)
+    for i in trange(total_cells, desc='Calculating fractions for cells'):
+        icell = cells[i]
+        ix, iy, cell = icell['ix'], icell['iy'], icell['geometry']
+        intersection = poly.intersection(cell)
+        if not intersection.is_empty:
+            mask[ix, iy] += intersection.area / cell.area
+
+    # Set cells outside of region to nan
+    mask[np.where(mask == 0)] = np.nan
+
+    # Create non-weighted mask
+    nw_mask = mask.copy()
+    nw_mask[np.where(mask > 0)] = 1
+
+    # Convert to da
+    da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
+                           attrs={'long_name': 'weighted mask',
+                                  'coordinate_sys': f'EPSG:{opts.target_sys}'},
+                           name='mask')
+    if opts.altitude_threshold != 0:
+        da_mask = _apply_altitude_threshold(da_mask, opts)
+        
+    ds_mask = da_mask.to_dataset()
+    create_history_from_cfg(cfg_params=opts, ds=ds_mask)
+    out_region = opts.region
+    _save_output(ds_mask, opts, out_region)
 
 
 def run():
@@ -412,102 +441,15 @@ def run():
     
     # load CFG parameter
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
-
+    
     if opts.gr_type != 'polygon':
         create_rectangular_gr(opts=opts)
     elif opts.region == 'SEA':
-        run_sea(opts=opts)
+        create_sea_mask(opts=opts)
     elif opts.region in ['EUR', 'AFR']:
-        run_agr(opts=opts)
+        create_agr_mask(opts=opts)
     else:
-        # Load template file
-        template_file = get_gridded_data(opts.start, opts.start + 1, opts)
-        xy = opts.xy_name.split(',')
-        x, y = xy[0], xy[1]
-
-        # Load shp file and transform it to desired coordinate system
-        shp = load_shp(opts=opts)
-
-        # Define the cell grid
-        xvals, yvals = template_file[x], template_file[y]
-
-        # Get grid spacing
-        # Coordinates of ERA5(Land) have some precision trouble
-        if opts.dataset in ['ERA5', 'ERA5Land']:
-            dx = set(abs(np.round(xvals[1:].values - xvals[:-1].values, 2)))
-            dy = set(abs(np.round(yvals[1:].values - yvals[:-1].values, 2)))
-        else:
-            dx = set(abs(xvals[1:].values - xvals[:-1].values))
-            dy = set(abs(yvals[1:].values - yvals[:-1].values))
-        if len(dx) > 1 or len(dy) > 1 or dx != dy:
-            raise ValueError('The given test file does not have a regular grid. '
-                             'Provide a file with a regular grid.')
-        dx, dy = list(dx)[0], list(dy)[0]
-        offset = dx / 2
-
-        # Initialize mask array
-        mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
-
-        if len(shp) == 1:
-            pass
-        elif 'CNTR_ID' in shp.columns:
-            shp = shp[shp.CNTR_ID == opts.region]
-        elif 'LAND_NAME' in shp.columns:
-            shp = shp[shp.LAND_NAME == opts.region]
-        elif 'GEM_NAME' in shp.columns:
-            shp = shp[shp.GEM_NAME == opts.region]
-
-        poly = shp.geometry.iloc[0]
-
-        cells = create_cell_polygons(opts=opts, xvals=xvals, yvals=yvals, offset=offset)
-
-        # Check intersections and calculate mask values
-        total_cells = len(cells)
-        for i in trange(total_cells, desc='Calculating fractions for cells'):
-            icell = cells[i]
-            ix, iy, cell = icell['ix'], icell['iy'], icell['geometry']
-            intersection = poly.intersection(cell)
-            if not intersection.is_empty:
-                mask[ix, iy] += intersection.area / cell.area
-
-        # Set cells outside of region to nan
-        mask[np.where(mask == 0)] = np.nan
-
-        # Create non-weighted mask
-        nw_mask = mask.copy()
-        nw_mask[np.where(mask > 0)] = 1
-
-        # Convert to da
-        da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
-                               attrs={'long_name': 'weighted mask',
-                                      'coordinate_sys': f'EPSG:{opts.target_sys}'},
-                               name='mask')
-        da_nwmask = xr.DataArray(data=nw_mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
-                                 attrs={'long_name': 'non weighted mask',
-                                        'coordinate_sys': f'EPSG:{opts.target_sys}'},
-                                 name='nw_mask')
-
-        # Create below 1500m mask
-        lt1500_mask = create_lt1500m_mask(opts=opts, da_nwmask=da_nwmask)
-
-        # add EUR LSM if ERA5(Land) data is used
-        if 'ERA5' in opts.dataset:
-            lsm = prep_lsm(opts=opts)
-            if lsm.lon.dtype != da_mask.lon.dtype or lsm.lat.dtype != da_mask.lat.dtype:
-                print('Warning: LSM File has different coordinate dtype than mask file. Matching dtypes...')
-                match_dimension_dtypes(da_mask, lsm)
-            lsm = lsm.where(lsm > 0.5)
-            lsm = lsm.rename('LSM_EUR')
-            lsm.attrs = {'long_name': 'land sea mask (EUR)',
-                         'coordinate_sys': f'EPSG:{opts.target_sys}'}
-            ds = xr.merge([da_mask, da_nwmask, lt1500_mask, lsm])
-        else:
-            ds = xr.merge([da_mask, da_nwmask, lt1500_mask])
-        create_history_from_cfg(cfg_params=opts, ds=ds)
-
-        out_region = opts.region
-
-        save_output(ds, opts, out_region)
+        create_mask_file(opts)
 
 
 if __name__ == '__main__':

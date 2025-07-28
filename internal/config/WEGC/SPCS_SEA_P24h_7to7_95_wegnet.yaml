@@ -1,7 +1,6 @@
 common_params:
   GeoRegion: &GR
     region: SEA
-    agr: AUT
     # use full data without land, border, and altitude masks
     gr_type: polygon
     sw_corner: null
@@ -27,29 +26,31 @@ common_params:
   dataset: &DATA
     dataset: SPARTACUS
   paths: &PATHS
-    # maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
-    maskpath: /home/wegnet/results/TEA_indicators/static/masks/
-    # statpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
-    statpath: /home/wegnet/results/TEA_indicators/static/
+    statpath: &statpath /home/wegnet/results/static/
+    maskpath: *statpath
+    mask_sub: masks/
     tmppath: /home/wegnet/results/TEA_indicators/tmp/
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
-  inpath: /data/users/hst/TEA-clean/SPARTACUS/
+  parameter: RR
+  input_data_path: /data/reloclim/backup/ZAMG_SPARTACUS/data/v202402_v2.1/
   orography: false
   orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
-  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  wegnfile: /var/wegnet/netcdf/WEA/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  outpath: /home/wegnet/tmp/
 
 create_region_masks:
   <<: *GR
   <<: *DATA
-  subreg: custom
+  <<: *PATHS
+  <<: *TIME
+  subreg: false
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
-  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
-  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+  lsmfile: /data/arsclisys/backup/clim-hydro/TEA-Indicators/ERA5/ERA5_LSM.nc
+  outpath: /home/wegnet/tmp/
 
 create_static_files:
   <<: *GR
@@ -58,7 +59,7 @@ create_static_files:
   <<: *DATA
   <<: *PATHS
   smoothing: 7
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  input_data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /home/wegnet/results/TEA_indicators/static/
 
 calc_TEA:
@@ -67,7 +68,7 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  inpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+  input_data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
   outpath: /home/wegnet/results/TEA_indicators/
   recalc_daily: true
   decadal: true
