@@ -1,0 +1,9 @@
+publish:package:
+  stage: publish
+  script:
+    - poetry config repositories.wegc $PYPI_SERVER
+    - poetry config http-basic.wegc $PYPI_USERNAME $PYPI_PASSWORD
+    - poetry build
+    - poetry publish -r wegc
+  only:
+    - tags
