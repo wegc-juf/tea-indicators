@@ -102,10 +102,11 @@ def calc_decadal_indicators(opts, tea, outpath=None):
         logger.info("Calculating decadal indicators")
         tea.calc_decadal_indicators(decadal_window=opts.decadal_window, calc_spread=opts.spreads,
                                     drop_annual_results=True)
+        create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='decadal_results')
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath}')
-        tea.save_decadal_results(opts=opts, filepath=outpath)
+        tea.save_decadal_results(filepath=outpath)
     else:
         logger.info(
             f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')
