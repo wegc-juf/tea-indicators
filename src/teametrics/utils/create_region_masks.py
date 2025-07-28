@@ -3,8 +3,6 @@
 create region masks for TEA indicator calculation
 author: hst
 """
-import os
-import sys
 
 import geopandas as gpd
 import numpy as np
@@ -372,10 +370,12 @@ def create_mask_file(opts):
     template_file = get_gridded_data(opts.start, opts.start + 1, opts)
     xy = opts.xy_name.split(',')
     x, y = xy[0], xy[1]
+
     # Load shp file and transform it to desired coordinate system
     shp = _load_shp(opts=opts)
     # Define the cell grid
     xvals, yvals = template_file[x], template_file[y]
+
     # Get grid spacing
     # Coordinates of ERA5(Land) have some precision trouble
     if opts.dataset in ['ERA5', 'ERA5Land']:
@@ -389,16 +389,23 @@ def create_mask_file(opts):
                          'Provide a file with a regular grid.')
     dx, dy = list(dx)[0], list(dy)[0]
     offset = dx / 2
+
     # Initialize mask array
     mask = np.zeros(shape=(len(yvals), len(xvals)), dtype='float32')
-    # The following part is very sensible to the shape file that is used.
-    # Lots of trial and error here...
-    geom = shp.geometry.iloc[0]
-    if isinstance(geom, MultiPolygon):
-        poly = geom.geoms[0]
-    else:
-        poly = geom
+
+    if len(shp) == 1:
+        pass
+    elif 'CNTR_ID' in shp.columns:
+        shp = shp[shp.CNTR_ID == opts.region]
+    elif 'LAND_NAME' in shp.columns:
+        shp = shp[shp.LAND_NAME == opts.region]
+    elif 'GEM_NAME' in shp.columns:
+        shp = shp[shp.GEM_NAME == opts.region]
+
+    poly = shp.geometry.iloc[0]
+
     cells = _create_cell_polygons(opts=opts, xvals=xvals, yvals=yvals, offset=offset)
+
     # Check intersections and calculate mask values
     total_cells = len(cells)
     for i in trange(total_cells, desc='Calculating fractions for cells'):
@@ -407,11 +414,14 @@ def create_mask_file(opts):
         intersection = poly.intersection(cell)
         if not intersection.is_empty:
             mask[ix, iy] += intersection.area / cell.area
+
     # Set cells outside of region to nan
     mask[np.where(mask == 0)] = np.nan
+
     # Create non-weighted mask
     nw_mask = mask.copy()
     nw_mask[np.where(mask > 0)] = 1
+
     # Convert to da
     da_mask = xr.DataArray(data=mask, coords={y: ([y], yvals.data), x: ([x], xvals.data)},
                            attrs={'long_name': 'weighted mask',

@@ -33,12 +33,12 @@ Static input data (masks, threshold grids, etc.) produced by `calc_TEA.py` and
 
 Shapefiles are stored in `<TEA-path>/shapefiles/`. The following shapefiles are used:
 
-- `GLOBAL.shp`: Global shapefile containing all countries.
-- `AUSTRIA.shp`: Shapefile of Austria.
-- `AUSTRIA_Bundeslaender.shp`: Shapefile of Austrian Bundeslaender.
-- `AUSTRIA_Gemeinden.shp`: Shapefile of Austrian Gemeinden.
-- `SAR.shp`: Shapefile of Southeast Austria Region (SAR) region.
-- `FBR.shp`: Shapefile of the Feldbach (FBR) region.
+- `GLOBAL/CNTR_RG_01M_2020_4326.shp.zip`: Global shapefile containing all countries.
+- `AUSTRIA/AUSTRIA.shp`: Shapefile of Austria.
+- `AUSTRIA-Bundeslaender/LAND_AUT_.shp`: Shapefile of Austrian Bundeslaender.
+- `AUSTRIA-Gemeinden/GEM_AUT_.shp`: Shapefile of Austrian Gemeinden.
+- `SAR/SARext_shape.shp`: Shapefile of Southeast Austria Region (SAR) region.
+- `FBR/FBR_polygon.shp`: Shapefile of the Feldbach (FBR) region.
 
 ## Orography files and Land Sea Masks
 

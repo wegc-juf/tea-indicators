@@ -11,8 +11,9 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-from .common.var_attrs import get_attrs, equal_vars
+from .common.var_attrs import get_attrs, get_global_attrs, equal_vars
 from .common.TEA_logger import logger
+from .common.general_functions import create_tea_history
 
 
 class TEAIndicators:
@@ -26,7 +27,8 @@ class TEAIndicators:
     Preprint – April 2025. 40 pp. Wegener Center, University of Graz, Graz, Austria, 2025.
     """
 
-    def __init__(self, input_data=None, threshold=None, min_area=1., area_grid=None, low_extreme=False,
+    def __init__(self, input_data=None, threshold=None, min_area=1., area_grid=None,
+                 low_extreme=False,
                  unit='', mask=None, apply_mask=True, ctp=None, use_dask=False, **kwargs):
         """
         Initialize TEAIndicators object
@@ -93,13 +95,16 @@ class TEAIndicators:
         self.CTP = ctp
         pd_major, pd_minor = pd.__version__.split('.')[:2]
         if int(pd_major) > 2 or (int(pd_major) == 2 and int(pd_minor) >= 2):
-            self.CTP_freqs = {'annual': 'YS', 'seasonal': 'QS-DEC', 'WAS': 'YS-APR', 'ESS': 'YS-MAY', 'JJA': 'YS-JUN',
+            self.CTP_freqs = {'annual': 'YS', 'seasonal': 'QS-DEC', 'WAS': 'YS-APR',
+                              'ESS': 'YS-MAY', 'JJA': 'YS-JUN',
                               'DJF': 'YS-DEC', 'EWS': 'YS-NOV', 'monthly': 'MS'}
         else:
-            self.CTP_freqs = {'annual': 'AS', 'seasonal': 'QS-DEC', 'WAS': 'AS-APR', 'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
+            self.CTP_freqs = {'annual': 'AS', 'seasonal': 'QS-DEC', 'WAS': 'AS-APR',
+                              'ESS': 'AS-MAY', 'JJA': 'AS-JUN',
                               'DJF': 'AS-DEC', 'EWS': 'AS-NOV', 'monthly': 'MS'}
         self._overlap_ctps = ['EWS', 'DJF']
-        self.CTP_months = {'WAS': [4, 5, 6, 7, 8, 9, 10], 'ESS': [5, 6, 7, 8, 9], 'EWS': [11, 12, 1, 2, 3],
+        self.CTP_months = {'WAS': [4, 5, 6, 7, 8, 9, 10], 'ESS': [5, 6, 7, 8, 9],
+                           'EWS': [11, 12, 1, 2, 3],
                            'JJA': [6, 7, 8], 'DJF': [12, 1, 2]}
         self._CTP_resample_sum = None
         self._CTP_resample_mean = None
@@ -414,6 +419,7 @@ class TEAIndicators:
         Args:
             filepath: path to save the results.
         """
+
         with warnings.catch_warnings():
             # TODO: implement compression for all netCDF files and use float instead of double if possible
             # ignore warnings due to nan multiplication
@@ -480,7 +486,8 @@ class TEAIndicators:
         new_sample = xr.DataArray(
             data=[np.nan],
             dims=["time"],
-            coords={"time": [dtec_gr.time[-1].values + np.timedelta64(1, "D")]}  # Add one day to the last time
+            coords={"time": [dtec_gr.time[-1].values + np.timedelta64(1, "D")]}
+            # Add one day to the last time
         )
         dtec_gr = xr.concat([dtec_gr, new_sample], dim="time")
 
@@ -637,9 +644,6 @@ class TEAIndicators:
         if ctp not in valid_dec_periods:
             raise ValueError(f"Invalid CTP: {ctp}. Allowed values: {valid_dec_periods}")
         self.CTP = ctp
-        ctp_attrs = get_attrs(vname='CTP_global_attrs', period=ctp)
-        # TODO: add CF-Convention compatible attributes...
-        self.ctp_results.attrs = ctp_attrs
 
     def _calc_annual_event_frequency(self):
         """
@@ -688,7 +692,8 @@ class TEAIndicators:
 
         if 'DTEEC' in self._daily_results_filtered:
             # # process grid data
-            event_doy = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC > 0)
+            event_doy = self._daily_results_filtered.doy.where(
+                self._daily_results_filtered.DTEEC > 0)
             resampler = event_doy.resample(time=self.CTP_freqs[self.CTP])
 
             # equation 13_1
@@ -712,7 +717,8 @@ class TEAIndicators:
 
         if 'DTEEC_GR' in self._daily_results_filtered:
             # # process GR data
-            event_doy_gr = self._daily_results_filtered.doy.where(self._daily_results_filtered.DTEEC_GR > 0)
+            event_doy_gr = self._daily_results_filtered.doy.where(
+                self._daily_results_filtered.DTEEC_GR > 0)
             resampler_gr = event_doy_gr.resample(time=self.CTP_freqs[self.CTP])
 
             # equation 13_4
@@ -877,28 +883,28 @@ class TEAIndicators:
             em_gr_avg_max = em_gr_max / self.ctp_results.ED_GR
             em_gr_avg_max.attrs = get_attrs(vname='EM_avg_Max_GR', data_unit=self.unit)
             self.ctp_results['EM_avg_Max_GR'] = em_gr_avg_max
-    
+
     def _calc_annual_htEX(self):
         """
         calculate htEX (hourly temporal events extremity) - equation TBD
         """
-        
+
         if 'h_avg' in self.ctp_results:
             # process grid data
-            
+
             tEX = self.ctp_results.EM
             htEX = tEX * self.ctp_results.h_avg
-            
+
             htEX.attrs = get_attrs(vname='htEX', data_unit=self.unit)
             self.ctp_results['htEX'] = htEX
-        
+
         if 'h_avg_GR' in self.ctp_results:
             tEX_GR = self.ctp_results.EM_GR
             htEX_GR = tEX_GR * self.ctp_results.h_avg_GR
-            
+
             htEX_GR.attrs = get_attrs(vname='htEX_GR', data_unit=self.unit)
             self.ctp_results['htEX_GR'] = htEX_GR
-    
+
     def _calc_annual_total_events_extremity(self):
         """
         calculate annual total events extremity (equation 21_3)
@@ -931,7 +937,7 @@ class TEAIndicators:
         tex.attrs = get_attrs(vname='TEX_GR', data_unit=self.unit)
         tex.rename('TEX_GR')
         return tex
-    
+
     def _calc_hourly_total_events_extremity(self, tex, h_avg):
         """
         calculate hourly total events extremity (equation TBD)
@@ -944,20 +950,20 @@ class TEAIndicators:
         htex.attrs = get_attrs(vname='hTEX_GR', data_unit=self.unit)
         htex.rename('hTEX_GR')
         return htex
-    
+
     def _calc_annual_hourly_total_events_extremity(self):
         """
         calculate annual hourly_total events extremity (equation TBD)
         """
         if 'TEX_GR' not in self.ctp_results or 'h_avg_GR' not in self.ctp_results:
             return
-        
+
         tex = self.ctp_results.TEX_GR
         h_avg_GR = self.ctp_results.h_avg_GR
         hTEX_GR = self._calc_hourly_total_events_extremity(tex, h_avg_GR)
         hTEX_GR.attrs = get_attrs(vname='hTEX_GR', data_unit=self.unit)
         self.ctp_results['hTEX_GR'] = hTEX_GR
-        
+
     def _calc_annual_exceedance_area(self):
         """
         calculate exceedance area (equation 21_1)
@@ -993,7 +999,7 @@ class TEAIndicators:
         es_avg = self._calc_event_severity(self.ctp_results.ED_avg_GR, self.ctp_results.EM_avg_GR,
                                            self.ctp_results.EA_avg_GR)
         self.ctp_results['ES_avg_GR'] = es_avg
-    
+
     def _calc_hourly_event_severity(self, es, h_avg):
         """
         calculate event severity (equation TBD)
@@ -1013,8 +1019,9 @@ class TEAIndicators:
         """
         if 'ES_avg_GR' not in self.ctp_results or 'h_avg_GR' not in self.ctp_results:
             return
-        
-        hes_avg = self._calc_hourly_event_severity(self.ctp_results.ES_avg_GR, self.ctp_results.h_avg_GR)
+
+        hes_avg = self._calc_hourly_event_severity(self.ctp_results.ES_avg_GR,
+                                                   self.ctp_results.h_avg_GR)
         self.ctp_results['hES_avg_GR'] = hes_avg
 
     def _calc_annual_exceedance_heat_content(self):
@@ -1151,6 +1158,7 @@ class TEAIndicators:
         """
         save all CTP results to filepath
         """
+
         with warnings.catch_warnings():
             # ignore warnings due to nan multiplication
             warnings.simplefilter("ignore")
@@ -1167,7 +1175,8 @@ class TEAIndicators:
             # avoid using dask when calculating spreads
             self.ctp_results.load()
         if 'units' not in self.ctp_results.EM_avg.attrs:
-            logger.warning("No unit attribute found in CTP results. Please set the unit attribute manually.")
+            logger.warning(
+                "No unit attribute found in CTP results. Please set the unit attribute manually.")
         else:
             self.unit = self.ctp_results.EM_avg.attrs['units']
 
@@ -1213,11 +1222,12 @@ class TEAIndicators:
 
         self._calc_decadal_mean(decadal_window=decadal_window)
         self._calc_decadal_compound_vars()
-        
+
         # backup self.decadal_results.ED
-        self._decadal_ED = xr.Dataset({var: self.decadal_results[var] for var in self.decadal_results.data_vars if
-                                       'ED' in var})
-        
+        self._decadal_ED = xr.Dataset(
+            {var: self.decadal_results[var] for var in self.decadal_results.data_vars if
+             'ED' in var})
+
         # apply minimum duration to decadal results
         if min_duration_avg > 0:
             self._apply_min_duration(self.decadal_results, min_duration_avg)
@@ -1226,7 +1236,6 @@ class TEAIndicators:
             self._calc_spread_estimators()
         self.CTP = self.ctp_results.attrs['CTP']
         self.decadal_results['time'].attrs = get_attrs(vname='decadal', period=self.CTP)
-        self.decadal_results.attrs = get_attrs(vname='decadal_global_attrs', period=self.CTP)
         self.decadal_results.attrs['CTP'] = self.CTP
         self.decadal_results = self._duplicate_vars(self.decadal_results)
 
@@ -1240,6 +1249,7 @@ class TEAIndicators:
         """
         save all decadal results to filepath
         """
+
         if os.path.exists(filepath):
             os.remove(filepath)
         with warnings.catch_warnings():
@@ -1261,16 +1271,20 @@ class TEAIndicators:
         """
         # check if CTP_results contain at least a decade of data
         if len(self.ctp_results.time) < 10:
-            raise ValueError("For calculating decadal results, CTP results and daily data must contain at least a "
-                             "decade of data")
+            raise ValueError(
+                "For calculating decadal results, CTP results and daily data must contain at least a "
+                "decade of data")
         for var in self.ctp_results.data_vars:
             if self.ctp_results[var].attrs['metric_type'] == 'basic':
-                self.decadal_results[var] = self.ctp_results[var].rolling(time=decadal_window[0], center=True, min_periods=1).mean(
+                self.decadal_results[var] = self.ctp_results[var].rolling(time=decadal_window[0],
+                                                                          center=True,
+                                                                          min_periods=1).mean(
                     skipna=True)
                 # set first and last 5 years to nan
                 self.decadal_results[var][:decadal_window[1]] = np.nan
                 self.decadal_results[var][-decadal_window[2]:] = np.nan
-                self.decadal_results[var].attrs = get_attrs(vname=var, dec=True, data_unit=self.unit)
+                self.decadal_results[var].attrs = get_attrs(vname=var, dec=True,
+                                                            data_unit=self.unit)
 
     def _calc_decadal_compound_vars(self):
         """
@@ -1306,14 +1320,14 @@ class TEAIndicators:
         EM_Md = self._calc_temporal_events_extremity(ed=data['ED'], m=data['EM_avg_Md'])
         EM_Md.attrs = get_attrs(vname='EM_Md', dec=True, data_unit=self.unit)
         data['EM_Md'] = EM_Md
-        
+
         # calculate hourly tEX (cf. equation TBD)
         if f'h_avg' in data:
             h_avg = data[f'h_avg']
             htEX = data[f'EM'] * h_avg
             htEX.attrs = get_attrs(vname=f'htEX', dec=True, data_unit=self.unit)
             data[f'htEX'] = htEX
-        
+
         if 'EF_GR' in data:
             # calculate cumulative events duration (equation 15_2)
             ED_GR = self._calc_cumulative_events_duration(f=data['EF_GR'], d=data['ED_avg_GR'])
@@ -1331,14 +1345,14 @@ class TEAIndicators:
                 'EM_avg_GR_Md'])
             EM_GR_Md.attrs = get_attrs(vname='EM_GR_Md', dec=True, data_unit=self.unit)
             data['EM_GR_Md'] = EM_GR_Md
-        
+
             # calculate hourly tEX (cf. equation TBD)
             if f'h_avg_GR' in data:
                 h_avg = data[f'h_avg_GR']
                 htEX = data[f'EM_GR'] * h_avg
                 htEX.attrs = get_attrs(vname=f'htEX_GR', dec=True, data_unit=self.unit)
                 data[f'htEX_GR'] = htEX
-                
+
         if 'EM_avg_Max_GR' in data:
             gvar = '_GR'
         elif 'EM_avg_Max' in data:
@@ -1366,25 +1380,26 @@ class TEAIndicators:
         data[f'TEX{gvar}'] = TEX
 
         # calculate exceedance heat content (cf. equation 22)
-        H_AEHC_avg, H_AEHC = self._calc_exceedance_heat_content(s_avg=es_avg, d_avg=data[f'ED_avg{gvar}'],
+        H_AEHC_avg, H_AEHC = self._calc_exceedance_heat_content(s_avg=es_avg,
+                                                                d_avg=data[f'ED_avg{gvar}'],
                                                                 tex=TEX)
         H_AEHC_avg.attrs = get_attrs(vname=f'H_AEHC_avg{gvar}', dec=True, data_unit=self.unit)
         H_AEHC.attrs = get_attrs(vname=f'H_AEHC{gvar}', dec=True, data_unit=self.unit)
         data[f'H_AEHC_avg{gvar}'] = H_AEHC_avg
         data[f'H_AEHC{gvar}'] = H_AEHC
-        
+
         # calculate hourly parameters (cf. equation TBD)
         if f'h_avg{gvar}' in data:
             h_avg = data[f'h_avg{gvar}']
             htEX = data[f'EM{gvar}'] * h_avg
             htEX.attrs = get_attrs(vname=f'htEX{gvar}', dec=True, data_unit=self.unit)
             data[f'htEX{gvar}'] = htEX
-            
+
             es_avg = data[f'ES_avg{gvar}']
             hES_avg = self._calc_hourly_event_severity(es_avg, h_avg)
             hES_avg.attrs = get_attrs(vname=f'hES_avg{gvar}', dec=True, data_unit=self.unit)
             data[f'hES_avg{gvar}'] = hES_avg
-            
+
             TEX = data[f'TEX{gvar}']
             hTEX = self._calc_hourly_total_events_extremity(TEX, h_avg)
             hTEX.attrs = get_attrs(vname=f'hTEX{gvar}', dec=True, data_unit=self.unit)
@@ -1410,11 +1425,13 @@ class TEAIndicators:
 
             cupp_sum = cupp.sum(dim='time')
             cupp_sum = cupp_sum.where(cupp_sum > 0, 1)
-            supp_per = np.sqrt(1 / cupp_sum * ((cupp * (one_decade - center_val)**2).sum(dim='time')))
+            supp_per = np.sqrt(
+                1 / cupp_sum * ((cupp * (one_decade - center_val) ** 2).sum(dim='time')))
 
             clow_sum = (1 - cupp).sum(dim='time')
             clow_sum = clow_sum.where(clow_sum > 0, 1)
-            slow_per = np.sqrt(1 / clow_sum * (((1 - cupp) * (one_decade - center_val)**2).sum(dim='time')))
+            slow_per = np.sqrt(
+                1 / clow_sum * (((1 - cupp) * (one_decade - center_val) ** 2).sum(dim='time')))
 
             logger.debug(f"assigning spread values for {cy.values} to decadal results")
             # TODO: optimize this code for dask!
@@ -1464,7 +1481,8 @@ class TEAIndicators:
         for vvar in ref_mean.data_vars:
             ref_mean[vvar].attrs = self.decadal_results[vvar].attrs
             if 'long_name' in ref_mean[vvar].attrs:
-                ref_mean[vvar].attrs['long_name'] = 'Ref mean of ' + ref_mean[vvar].attrs['long_name']
+                ref_mean[vvar].attrs['long_name'] = 'Ref mean of ' + ref_mean[vvar].attrs[
+                    'long_name']
         self._ref_mean = ref_mean
 
     def _calc_gmean_decadal(self, start_year, end_year, data=None, skipna=True):
@@ -1486,7 +1504,8 @@ class TEAIndicators:
         start_cy_date = f'{start_cy}-01-01'
         end_cy_date = f'{end_cy}-12-31'
         if start_cy < data.time.min().dt.year or end_cy > data.time.max().dt.year:
-            raise ValueError(f"Selected period {start_cy} - {end_cy} not within time range of decadal results")
+            raise ValueError(
+                f"Selected period {start_cy} - {end_cy} not within time range of decadal results")
 
         # get data for selected period
         period_data = data.sel(time=slice(start_cy_date, end_cy_date))
@@ -1503,9 +1522,10 @@ class TEAIndicators:
             period_mean['h_rise_avg'].values = h_rise
             period_mean['h_set_avg'].values = h_set
         if 'h_rise_avg_GR' in period_mean:
-            h_rise_gr, h_set_gr = self._calc_h_rise_set_adjustment(h_rise=period_mean.h_rise_avg_GR.values,
-                                                                   h_set=period_mean.h_set_avg_GR.values,
-                                                                   h_avg=period_mean.h_avg_GR.values)
+            h_rise_gr, h_set_gr = self._calc_h_rise_set_adjustment(
+                h_rise=period_mean.h_rise_avg_GR.values,
+                h_set=period_mean.h_set_avg_GR.values,
+                h_avg=period_mean.h_avg_GR.values)
             period_mean['h_rise_avg_GR'].values = h_rise_gr
             period_mean['h_set_avg_GR'].values = h_set_gr
 
@@ -1516,13 +1536,15 @@ class TEAIndicators:
         period_mean['doy_last'].values = doy_last
 
         if 'doy_first_GR' in period_mean:
-            doy_first_gr, doy_last_gr = self._calc_doy_adjustment(doy_first=period_mean.doy_first_GR.values,
-                                                                  doy_last=period_mean.doy_last_GR.values,
-                                                                  aep=period_mean.AEP_GR.values)
+            doy_first_gr, doy_last_gr = self._calc_doy_adjustment(
+                doy_first=period_mean.doy_first_GR.values,
+                doy_last=period_mean.doy_last_GR.values,
+                aep=period_mean.AEP_GR.values)
             period_mean['doy_first_GR'].values = doy_first_gr
             period_mean['doy_last_GR'].values = doy_last_gr
 
         return period_mean
+
 
     @staticmethod
     def _apply_min_duration(ds, min_duration, duration_data=None):
@@ -1542,7 +1564,8 @@ class TEAIndicators:
                 duration = duration_data.ED_GR if duration_data is not None else ds.ED_GR
                 ds[vvar] = xr.where(duration >= min_duration, ds[vvar], np.nan)
 
-    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024), min_duration=15):
+    def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024),
+                                   min_duration=15):
         """
         calculate amplification factors (equation 27)
 
@@ -1562,7 +1585,8 @@ class TEAIndicators:
         cc_mean = self._cc_mean
         ref_mean = self._ref_mean
         if min_duration > 0:
-            ed = self._decadal_ED.sel(time=slice(f'{ref_period[0]+5}-01-01', f'{ref_period[1]-4}-12-31'))
+            ed = self._decadal_ED.sel(
+                time=slice(f'{ref_period[0] + 5}-01-01', f'{ref_period[1] - 4}-12-31'))
             ed_min = ed.min(dim='time', skipna=True)
             self._apply_min_duration(ref_mean, min_duration_avg, duration_data=ed_min)
         amplification_factors = self.decadal_results / ref_mean
@@ -1571,10 +1595,12 @@ class TEAIndicators:
         cc_amplification = cc_amplification.where(ref_mean > 0)
 
         # drop all spread variables
-        amplification_factors = amplification_factors.drop_vars([vvar for vvar in amplification_factors.data_vars if
-                                                                'slow' in vvar or 'supp' in vvar])
-        cc_amplification = cc_amplification.drop_vars([vvar for vvar in cc_amplification.data_vars if
-                                                       'slow' in vvar or 'supp' in vvar])
+        amplification_factors = amplification_factors.drop_vars(
+            [vvar for vvar in amplification_factors.data_vars if
+             'slow' in vvar or 'supp' in vvar])
+        cc_amplification = cc_amplification.drop_vars(
+            [vvar for vvar in cc_amplification.data_vars if
+             'slow' in vvar or 'supp' in vvar])
 
         for vvar in amplification_factors.data_vars:
             # update attributes
@@ -1595,8 +1621,8 @@ class TEAIndicators:
         self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
         self.amplification_factors.time.attrs = get_attrs(vname='amplification',
                                                           period=self.CTP)
-        self.amplification_factors.attrs = get_attrs(vname='amplification_global_attrs',
-                                                     period=self.CTP)
+        self.amplification_factors.attrs = get_global_attrs(level='AF',
+                                                            period=self.CTP)
         self.amplification_factors = self._duplicate_vars(self.amplification_factors)
 
     @staticmethod
@@ -1685,7 +1711,8 @@ class TEAIndicators:
 
         # Find the starts and ends of sequences
         change = np.diff(np.concatenate(
-            ([np.zeros((1,) + dtec_np.shape[1:]), dtec_np, np.zeros((1,) + dtec_np.shape[1:])]), axis=0), axis=0)
+            ([np.zeros((1,) + dtec_np.shape[1:]), dtec_np, np.zeros((1,) + dtec_np.shape[1:])]),
+            axis=0), axis=0)
         starts = np.where(change == 1)
         ends = np.where(change == -1)
 
@@ -1713,7 +1740,8 @@ class TEAIndicators:
             return
 
         months = self.CTP_months[self.CTP]
-        self._daily_results_filtered = self.daily_results.sel(time=self.daily_results.time.dt.month.isin(months))
+        self._daily_results_filtered = self.daily_results.sel(
+            time=self.daily_results.time.dt.month.isin(months))
 
     def _resample_to_CTP(self, ctp=None):
         """
@@ -1727,8 +1755,9 @@ class TEAIndicators:
 
         # drop all non GR variables
         if not self._calc_grid:
-            self.daily_results = self.daily_results.drop_vars([var for var in self.daily_results.data_vars if 'GR' not
-                                                               in var])
+            self.daily_results = self.daily_results.drop_vars(
+                [var for var in self.daily_results.data_vars if 'GR' not
+                 in var])
 
         # filter according to CTP definition (e.g. summer months)
         self._filter_CTP()
@@ -1750,7 +1779,8 @@ class TEAIndicators:
             if var in self._daily_results_filtered:
                 self._daily_results_filtered[var].load()
                 # equation 19_1 and equation 19_3
-                daily_results_gt0 = self._daily_results_filtered[var].where(self._daily_results_filtered[var] > 0)
+                daily_results_gt0 = self._daily_results_filtered[var].where(
+                    self._daily_results_filtered[var] > 0)
                 resampler = daily_results_gt0.resample(time=self.CTP_freqs[self.CTP])
                 self._CTP_resample_median[var] = resampler.median('time', skipna=True)
         if self.CTP in self._overlap_ctps:

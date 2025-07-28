@@ -112,7 +112,7 @@ def _get_default_opts(fname, opts):
         if opts.precip:
             opts.unit = 'mm'
         else:
-            opts.unit = 'degC'
+            opts.unit = 'K'
     if 'low_extreme' not in opts:
         opts.low_extreme = False
     if 'min_exceedance_area' not in opts:

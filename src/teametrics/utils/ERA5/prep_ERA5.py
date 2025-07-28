@@ -280,7 +280,7 @@ def run():
     altitude, delta_utc, time_zones = calc_altitude_dt(data=files[0])
 
     # Save altitude in separate file
-    create_history_from_cli_params(cli_params=sys.argv, ds=altitude)
+    create_history_from_cli_params(cli_params=sys.argv, ds=altitude, dsname='ERA5')
     alt_out = altitude.copy()
     alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
     alt_out.to_netcdf(Path(opts.outpath) / 'ERA5_orography.nc')
@@ -314,7 +314,7 @@ def run():
         # Create output ds
         ds_out = xr.merge([tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, wind, pressure,
                            humidity, altitude])
-        create_history_from_cli_params(cli_params=sys.argv, ds=ds_out)
+        create_history_from_cli_params(cli_params=sys.argv, ds=ds_out, dsname='ERA5')
 
         ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
 
