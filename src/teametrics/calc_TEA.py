@@ -356,7 +356,8 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
     create_history_from_cfg(cfg_params=opts, ds=grg_areas)
-    area_grid_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    area_grid_file = Path(opts.statpath) / f'area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    logger.info(f'Saving GR area grid to {area_grid_file}')
     try:
         grg_areas.to_netcdf(area_grid_file)
     except PermissionError:
@@ -365,7 +366,8 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
 
     # save GRG mask
     create_history_from_cfg(cfg_params=opts, ds=grg_mask)
-    mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    mask_file = Path(opts.maskpath) / opts.mask_sub / f'{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    logger.info(f'Saving GR mask to {mask_file}')
     try:
         grg_mask.to_netcdf(mask_file)
     except PermissionError:
@@ -588,7 +590,8 @@ def _load_gr_grid_static(opts):
     """
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
-    gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    gr_grid_mask_file = Path(opts.maskpath) / opts.mask_sub / f'{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    logger.info(f'Loading GR mask from {gr_grid_mask_file}')
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
         gr_grid_mask = gr_grid_mask.mask
@@ -596,7 +599,8 @@ def _load_gr_grid_static(opts):
         if opts.decadal_only:
             logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
         gr_grid_mask = None
-    gr_grid_areas_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    gr_grid_areas_file = Path(opts.statpath) / f'area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    logger.info(f'Loading GR area grid from {gr_grid_areas_file}')
     try:
         gr_grid_areas = xr.open_dataset(gr_grid_areas_file)
         gr_grid_areas = gr_grid_areas.area_grid
