@@ -494,6 +494,7 @@ def _getopts():
                         action='version',
                         version=TEA_VERSION,
                         help='show version and exit')
+    
     myopts = parser.parse_args()
 
     return myopts
