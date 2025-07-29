@@ -24,6 +24,7 @@ from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplif
                                             get_decadal_outpath, get_amplification_outpath)
 from .TEA import TEAIndicators
 from .TEA_AGR import TEAAgr
+from . import __version__ as TEA_VERSION
 
 
 def calc_tea_indicators(opts):
@@ -489,6 +490,10 @@ def _getopts():
                         default='../TEA_CFG.yaml',
                         help='TEA configuration file (default: TEA_CFG.yaml)')
 
+    parser.add_argument('--version', '-v',
+                        action='version',
+                        version=TEA_VERSION,
+                        help='show version and exit')
     myopts = parser.parse_args()
 
     return myopts
