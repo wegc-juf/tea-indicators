@@ -1544,7 +1544,6 @@ class TEAIndicators:
 
         return period_mean
 
-
     @staticmethod
     def _apply_min_duration(ds, min_duration, duration_data=None):
         """
@@ -1558,10 +1557,10 @@ class TEAIndicators:
         for vvar in ds.data_vars:
             if len(ds[vvar].dims) > 1:
                 duration = duration_data.ED if duration_data is not None else ds.ED
-                ds[vvar] = xr.where(duration >= min_duration, ds[vvar], np.nan)
+                ds[vvar] = ds[vvar].where(duration >= min_duration)
             elif ds[vvar].dims == ('time',) and 'ED_GR' in ds and ds.ED_GR is not None:
                 duration = duration_data.ED_GR if duration_data is not None else ds.ED_GR
-                ds[vvar] = xr.where(duration >= min_duration, ds[vvar], np.nan)
+                ds[vvar] = ds[vvar].where(duration >= min_duration)
 
     def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024),
                                    min_duration=15):
