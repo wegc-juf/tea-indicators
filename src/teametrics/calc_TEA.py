@@ -553,7 +553,7 @@ def _calc_agr_mean_and_spread(opts, tea):
     Returns:
 
     """
-    if opts.agr_range:
+    if opts.agr_range is not None:
         agr_lat_range = opts.agr_range[:2]
         agr_lon_range = opts.agr_range[-2:]
     else:

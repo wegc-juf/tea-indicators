@@ -88,6 +88,7 @@ def _get_default_opts(fname, opts):
             elif opts.agr == 'AFR':
                 opts.agr_range = '-36,40,-16,56'
             elif opts.agr == opts.region:
+                opts.agr_range = None
                 warnings.warn(f'agr_range not set for {opts.agr}, full {opts.region} will be used.')
             else:
                 raise ValueError(f'Unknown AGR {opts.agr}. '
@@ -423,7 +424,7 @@ def load_opts(fname, config_file='./config/TEA_CFG.yaml'):
         dec_options = opts.decadal_window.split(',')
         opts.decadal_window = [int(x) for x in dec_options]
 
-    if 'agr_range' in opts:
+    if 'agr_range' in opts and opts.agr_range is not None:
         agr_lims = opts.agr_range.split(',')
         opts.agr_range = [float(x) for x in agr_lims]
 
