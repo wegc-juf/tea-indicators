@@ -39,7 +39,7 @@ def float_1pcd(value):
 def choices(param, val, poss_vals):
     if val not in poss_vals:
         raise argparse.ArgumentTypeError(f'{val} is not a valid value for {param}. '
-                                         f'Please choose one of hte following: {poss_vals}.')
+                                         f'Please choose one of the following: {poss_vals}.')
 
 
 def max_current_year(param, val):

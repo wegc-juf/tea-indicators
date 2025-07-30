@@ -4,6 +4,7 @@ from tkinter import ttk
 import os
 import yaml
 
+from .config import check_config
 
 def _getopts():
     """
@@ -179,15 +180,15 @@ def update_yaml(fname, opts):
     new_params = vars(opts)
 
     # fix threshold_type if 'abs' was selected (somehow gets converted to builtin_function_or_method)
-    if new_params['threshold_type'] not in ['perc', 'abs']:
-        new_params['threshold_type'] = 'abs'
+    # if new_params['threshold_type'] not in ['perc', 'abs']:
+    #     new_params['threshold_type'] = 'abs'
 
     # Create a filename for the new CFG file
     new_name = '../NEW_' + fname.split('/')[1]
 
-    scripts = ['regrid_SPARTACUS_to_WEGNext', 'create_region_masks',
-               'create_static_files', 'calc_TEA', 'calc_station_TEA',
-               'calc_amplification_factors', 'calc_AGR_vars']
+    scripts = ['regrid_SPARTACUS_to_WEGNext', 'create_region_masks', 'calc_TEA']
+
+    check_config(opts_dict=new_params)
 
     # Open old CFG file and check for new values
     with open(fname, 'r') as original_file, open(new_name, 'w') as new_file:
