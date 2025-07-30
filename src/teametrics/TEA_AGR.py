@@ -358,13 +358,14 @@ class TEAAgr(TEAIndicators):
             pval095 = np.nan
         return pval005, pval095
 
-    def calc_agr_vars(self, lat_range=None, lon_range=None):
+    def calc_agr_vars(self, lat_range=None, lon_range=None, spreads=True):
         """
         calculate AGR variables
 
         Args:
             lat_range: Latitude range (min, max). Default: Full region
             lon_range: Longitude range (min, max). Default: Full region
+            spreads: if True, calculate spreads and percentiles for AGR variables
         """
         # filter data to spatial extent of aggregated GeoRegion
         if lat_range is not None or lon_range is not None:
@@ -398,7 +399,10 @@ class TEAAgr(TEAIndicators):
         x_s_agr[dict(time=slice(-4, None))] = np.nan
 
         # calculate spread estimates (equation 38)
-        x_s_spreads = self._calc_agr_spread(data=self.decadal_results, ref=x_s_agr)
+        if spreads:
+            x_s_spreads = self._calc_agr_spread(data=self.decadal_results, ref=x_s_agr)
+        else:
+            x_s_spreads = xr.Dataset()
 
         # calculate CC period averages (equation 36)
         x_cc_agr = self._calc_gmean_decadal(start_year=self.cc_period[0], end_year=self.cc_period[1], data=x_s_agr)
@@ -413,20 +417,26 @@ class TEAAgr(TEAIndicators):
         rename_dict = {var: f'{var}_AGR_AF_CC' for var in af_cc_agr.data_vars}
         af_cc_agr = af_cc_agr.rename(rename_dict)
 
-        # calculate spread estimates (equation 38)
-        af_spreads = self._calc_agr_spread(data=self.amplification_factors, ref=af_agr)
-        af_spreads = af_spreads.rename({var: var.replace('AF_AGR', 'AGR_AF') for var in af_spreads.data_vars})
+        if spreads:
+            # calculate spread estimates (equation 38)
+            af_spreads = self._calc_agr_spread(data=self.amplification_factors, ref=af_agr)
+            af_spreads = af_spreads.rename({var: var.replace('AF_AGR', 'AGR_AF') for var in af_spreads.data_vars})
 
-        # calculate spread estimates for CC period (equation 39)
-        # # select only variables containing 'CC' in name of self.amplification_factors
-        af_cc = self.amplification_factors[[var for var in self.amplification_factors.data_vars if 'CC' in var]]
-        af_cc_spreads = self._calc_agr_spread(data=af_cc, ref=af_cc_agr)
-        af_cc_spreads = af_cc_spreads.rename({var: var.replace('AF_CC_AGR', 'AGR_AF_CC') for var in
-                                              af_cc_spreads.data_vars})
-        x_cc_spreads = self._calc_agr_spread(data=self._cc_mean, ref=x_cc_agr)
+            # calculate spread estimates for CC period (equation 39)
+            # # select only variables containing 'CC' in name of self.amplification_factors
+            af_cc = self.amplification_factors[[var for var in self.amplification_factors.data_vars if 'CC' in var]]
+            af_cc_spreads = self._calc_agr_spread(data=af_cc, ref=af_cc_agr)
+            af_cc_spreads = af_cc_spreads.rename({var: var.replace('AF_CC_AGR', 'AGR_AF_CC') for var in
+                                                  af_cc_spreads.data_vars})
+            x_cc_spreads = self._calc_agr_spread(data=self._cc_mean, ref=x_cc_agr)
 
-        # calculate spread estimates for reference period (equation 40)
-        x_ref_spreads = self._calc_agr_spread(data=self._ref_mean, ref=x_ref_agr)
+            # calculate spread estimates for reference period (equation 40)
+            x_ref_spreads = self._calc_agr_spread(data=self._ref_mean, ref=x_ref_agr)
+        else:
+            af_spreads = xr.Dataset()
+            af_cc_spreads = xr.Dataset()
+            x_cc_spreads = xr.Dataset()
+            x_ref_spreads = xr.Dataset()
 
         # calculate error estimates for AGR mean (equation 42TODEFINE)
         r_earth = 6371
@@ -435,10 +445,11 @@ class TEAAgr(TEAIndicators):
         A_GR_full = (u_earth / 360 * self.cell_size_lat) ** 2 / 100
         N_dof = int(A_AGR / A_GR_full)
 
-        # add p5 and p95 values (equation 41TODEFINE)
-        # TODO: optimize this
-        self._calc_agr_percentiles(data=self.decadal_results)
-        self._calc_agr_percentiles(data=self.amplification_factors)
+        if spreads:
+            # add p5 and p95 values (equation 41TODEFINE)
+            # TODO: optimize this
+            self._calc_agr_percentiles(data=self.decadal_results)
+            self._calc_agr_percentiles(data=self.amplification_factors)
 
         # add attributes
         for vvar in af_agr.data_vars:

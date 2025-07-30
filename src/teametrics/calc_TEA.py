@@ -566,7 +566,7 @@ def _calc_agr_mean_and_spread(opts, tea):
         agr_lat_range = None
         agr_lon_range = None
 
-    tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range)
+    tea.calc_agr_vars(lat_range=agr_lat_range, lon_range=agr_lon_range, spreads=opts.spreads)
 
     # save results
     outpath_decadal = get_decadal_outpath(opts, opts.agr)
