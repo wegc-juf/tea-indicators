@@ -436,6 +436,7 @@ class TEAAgr(TEAIndicators):
         N_dof = int(A_AGR / A_GR_full)
 
         # add p5 and p95 values (equation 41TODEFINE)
+        # TODO: optimize this
         self._calc_agr_percentiles(data=self.decadal_results)
         self._calc_agr_percentiles(data=self.amplification_factors)
 
