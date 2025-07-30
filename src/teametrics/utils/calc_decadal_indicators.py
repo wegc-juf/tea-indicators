@@ -7,10 +7,10 @@ import warnings
 from pathlib import Path
 import xarray as xr
 
-from teametrics.common.var_attrs import get_attrs
-from teametrics.common.general_functions import compare_to_ref, create_tea_history
-from teametrics.common.TEA_logger import logger
-from teametrics.TEA import TEAIndicators
+from ..common.var_attrs import get_attrs
+from ..common.general_functions import compare_to_ref, create_tea_history
+from ..common.TEA_logger import logger
+from ..TEA import TEAIndicators
 
 logging.basicConfig(
     level=logging.INFO,
@@ -102,10 +102,11 @@ def calc_decadal_indicators(opts, tea, outpath=None):
         logger.info("Calculating decadal indicators")
         tea.calc_decadal_indicators(decadal_window=opts.decadal_window, calc_spread=opts.spreads,
                                     drop_annual_results=True)
+        create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
         path = Path(f'{opts.outpath}/dec_indicator_variables/')
         path.mkdir(parents=True, exist_ok=True)
         logger.info(f'Saving decadal indicators to {outpath}')
-        tea.save_decadal_results(opts=opts, filepath=outpath)
+        tea.save_decadal_results(filepath=outpath)
     else:
         logger.info(
             f'Loading decadal indicators from {outpath}. To recalculate use --recalc-decadal')

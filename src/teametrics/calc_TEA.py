@@ -24,6 +24,7 @@ from .utils.calc_decadal_indicators import (calc_decadal_indicators, calc_amplif
                                             get_decadal_outpath, get_amplification_outpath)
 from .TEA import TEAIndicators
 from .TEA_AGR import TEAAgr
+from . import __version__ as TEA_VERSION
 
 
 def calc_tea_indicators(opts):
@@ -181,7 +182,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             _calc_hourly_indicators(tea=tea, opts=opts, start=start, end=end)
 
         # save results
-        create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='daily_results')
+        create_tea_history(cfg_params=opts, tea=tea, dataset='daily_results')
         tea.save_daily_results(filepath=dbv_filename)
     else:
         # load existing results
@@ -318,7 +319,7 @@ def _save_ctp_output(opts, tea, start, end):
         start: start year
         end: end year
     """
-    create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='ctp_results')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='ctp_results')
 
     path = Path(f'{opts.outpath}/ctp_indicator_variables/')
     path.mkdir(parents=True, exist_ok=True)
@@ -356,7 +357,8 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
     create_history_from_cfg(cfg_params=opts, ds=grg_areas)
-    area_grid_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    area_grid_file = Path(opts.statpath) / f'area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    logger.info(f'Saving GR area grid to {area_grid_file}')
     try:
         grg_areas.to_netcdf(area_grid_file)
     except PermissionError:
@@ -365,7 +367,8 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
 
     # save GRG mask
     create_history_from_cfg(cfg_params=opts, ds=grg_mask)
-    mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    mask_file = Path(opts.maskpath) / opts.mask_sub / f'{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    logger.info(f'Saving GR mask to {mask_file}')
     try:
         grg_mask.to_netcdf(mask_file)
     except PermissionError:
@@ -487,6 +490,11 @@ def _getopts():
                         default='../TEA_CFG.yaml',
                         help='TEA configuration file (default: TEA_CFG.yaml)')
 
+    parser.add_argument('--version', '-v',
+                        action='version',
+                        version=TEA_VERSION,
+                        help='show version and exit')
+    
     myopts = parser.parse_args()
 
     return myopts
@@ -551,7 +559,7 @@ def _calc_agr_mean_and_spread(opts, tea):
     Returns:
 
     """
-    if opts.agr_range:
+    if opts.agr_range is not None:
         agr_lat_range = opts.agr_range[:2]
         agr_lon_range = opts.agr_range[-2:]
     else:
@@ -567,10 +575,10 @@ def _calc_agr_mean_and_spread(opts, tea):
     # remove outpath_decadal if it exists
     if os.path.exists(outpath_decadal):
         os.remove(outpath_decadal)
-    create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='decadal_results')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='decadal_results')
     tea.save_decadal_results(filepath=outpath_decadal)
     logger.info(f'Saving AGR amplification factors to {outpath_ampl}')
-    create_tea_history(opts=opts, cfg_params=opts, tea=tea, dataset='amplification_factors')
+    create_tea_history(cfg_params=opts, tea=tea, dataset='amplification_factors')
     tea.save_amplification_factors(filepath=outpath_ampl)
 
 
@@ -588,15 +596,17 @@ def _load_gr_grid_static(opts):
     """
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
-    gr_grid_mask_file = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    gr_grid_mask_file = Path(opts.maskpath) / opts.mask_sub / f'{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    logger.info(f'Loading GR mask from {gr_grid_mask_file}')
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)
-        gr_grid_mask = gr_grid_mask.mask_lt1500
+        gr_grid_mask = gr_grid_mask.mask
     except FileNotFoundError:
         if opts.decadal_only:
             logger.warning(f'No GR mask found at {gr_grid_mask_file}.')
         gr_grid_mask = None
-    gr_grid_areas_file = f'{opts.statpath}/area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    gr_grid_areas_file = Path(opts.statpath) / f'area_grid_{res_str}_{opts.region}_{opts.dataset}.nc'
+    logger.info(f'Loading GR area grid from {gr_grid_areas_file}')
     try:
         gr_grid_areas = xr.open_dataset(gr_grid_areas_file)
         gr_grid_areas = gr_grid_areas.area_grid

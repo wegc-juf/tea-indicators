@@ -12,7 +12,7 @@
 | *agr_cell_size*       | Size of AGR sub-cell in degrees, in case *agr* is defined.                                                                                                                                                                                                             | float | 1 for precip and 2 for all other parameters   |
 | *agr_range*           | Range covered by AGR given as `lat_min,lat_max,lon_min,lon_max`. Only necessary if AGR != region and AGR not `EUR`, `N-EUR`, `C-EUR`,` S-EUR`, or `AFR`.                                                                                                               | str   | null                                          |
 | *grg_grid_spacing*    | Spacing of AGR grid of GRs in degrees or meters, in case *agr* is defined.                                                                                                                                                                                             | float | 0.5 deg                                       |
-| *land_frac_min*       | Minimum land fraction per sub-cell for AGR calculation; only used if *agr* is defined.                                                                                                                                                                                 | float | 0.5                                           |
+| *land_frac_min*       | Minimum land fraction per sub-cell for AGR calculation; also minimum land fraction for mask generation of `EUR` and `AFR`.                                                                                                                                             | float | 0.5                                           |
 | **parameters**        | Information about parameter and threshold.                                                                                                                                                                                                                             |       |                                               |
 | *parameter*           | Name of parameter (key variable) for TEA calculation. Must match parameter name in input data file. E.g. `Tx`, `Tn`, `P`, `Px1h`, `P24h`, ...                                                                                                                          | str   | Tx                                            |
 | *precip*              | Marks if precipitation data is used; set true if input is precipitation data.                                                                                                                                                                                          | bool  | false                                         |
@@ -38,7 +38,6 @@
 | *mask_sub*            | Subdirectory of mask directory.                                                                                                                                                                                                                                        | str   | masks                                         |
 | *outpath*             | Path of output directory for results.                                                                                                                                                                                                                                  | path  | null                                          |
 | **general**           | General parameters.                                                                                                                                                                                                                                                    |       |                                               |
-| *gui*                 | Set if configuration GUI (shows set CFG parameters and enables editing of parameters) should be displayed.                                                                                                                                                             | bool  | false                                         |
 | *use_dask*            | Set if Dask should be used for parallel processing.                                                                                                                                                                                                                    | bool  | false                                         |
 
 ## calc_TEA
@@ -55,32 +54,31 @@
 
 ## create_region_masks
 ### Only necessary if you want to create your own GeoRegion (GR) mask.
-| NAME         | DESCRIPTION                                                                                                                                                                                                                    | TYPE   | DEFAULT                              |
-|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------|--------------------------------------|
-| *gr_type*    | Method to define GR; `polygon`, `corners`, or `center`.                                                                                                                                                                        | str    | polygon                              |
-| *subreg*     | If set to True, desired shape is a subregion of the region provided in the shapefile.                                                                                                                                          | bool   | False                                |
-| *sw_corner*  | Only if *gr_type* `corners`, southwest corner of GR; lon,lat or x,y separated by ",".                                                                                                                                          | x,y    | null                                 |
-| *ne_corner*  | Only if *gr_type* `corners`, northeast corner of GR; lon,lat or x,y separated by ",".                                                                                                                                          | x,y    | null                                 |
-| *center*     | Only if *gr_type* `center`, center of GR; lon,lat or x,y separated by ",".                                                                                                                                                     | x,y    | null                                 |
-| *we_len*     | Only if *gr_type* `center`,length of GR west to east.                                                                                                                                                                          | float  | null                                 |
-| *ns_len*     | Only if *gr_type* `center`,length of GR north to south.                                                                                                                                                                        | float  | null                                 |
-| *subreg*     | Only necessary if selected region is not the entire region in the shp file (Austrian states, european countries etc.). In case of Austrian states, give name of state. In case of european country, give ISO2 code of country. | str    | null                                 |
-| *target_sys* | ID of wanted coordinate System (https://epsg.io) which should be used for mask.                                                                                                                                                | int    | 3416 for SPARTACUS and 4326 for ERA5 |
-| *xy_name*    | Names of x and y coordinates in testfile, separated by ",".                                                                                                                                                                    | string | x,y for SPARTACUS, lon,lat for ERA5  |
-| *shpfile*    | Shape file of region.                                                                                                                                                                                                          | path   | null                                 |
-| *orofile*    | File with orography information of target grid.                                                                                                                                                                                | path   | null                                 |
-| *lsmfile*    | Only necessary if mask for EUR should be created. File with land-sea-mask of target grid.                                                                                                                                      | path   | null                                 |
-| *outpath*    | Path of output directory for mask.                                                                                                                                                                                             | path   | null                                 |
+| NAME                 | DESCRIPTION                                                                                                                                             | TYPE   | DEFAULT                              |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|--------|--------------------------------------|
+| *gr_type*            | Method to define GR; `polygon`, `corners`, or `center`.                                                                                                 | str    | polygon                              |
+| *shpfile*            | Only if *gr_type* `polygon`. Shape file of region.                                                                                                      | path   | null                                 |
+| *subreg*             | Only if *gr_type* `polygon`, optional. If true, try to get a subregion with the name defined in the <br/>*region* parameter out of the given *shpfile*. | bool   | false                                |
+| *sw_corner*          | Only if *gr_type* `corners`, southwest corner of GR; lon,lat or x,y separated by ",".                                                                   | x,y    | null                                 |
+| *ne_corner*          | Only if *gr_type* `corners`, northeast corner of GR; lon,lat or x,y separated by ",".                                                                   | x,y    | null                                 |
+| *center*             | Only if *gr_type* `center`, center of GR; lon,lat or x,y separated by ",".                                                                              | x,y    | null                                 |
+| *we_len*             | Only if *gr_type* `center`,length of GR west to east.                                                                                                   | float  | null                                 |
+| *ns_len*             | Only if *gr_type* `center`,length of GR north to south.                                                                                                 | float  | null                                 |
+| *target_sys*         | ID of wanted coordinate System (https://epsg.io) which should be used for mask.                                                                         | int    | 3416 for SPARTACUS and 4326 for ERA5 |
+| *xy_name*            | Names of x and y coordinates in testfile, separated by ",".                                                                                             | string | x,y for SPARTACUS, lon,lat for ERA5  |
+| *orofile*            | File with orography information of target grid.                                                                                                         | path   | null                                 |
+| *altitude_threshold* | Minimum altitude in m for creating the mask file. All grid cells below this altitude will be set to NaN. Set to 0 to disable.                           | float  | 1500                                 |
+| *lsmfile*            | Only necessary if mask for EUR should be created. File with land-sea-mask of target grid.                                                               | path   | null                                 |
 
 ## regrid_SPARTACUS_to_WEGNext
 ### Only necessary for SPARTACUS data, to regrid SPARTACUS data to WEGNext grid.
-| NAME        | DESCRIPTION                             | TYPE | DEFAULT |
-|-------------|-----------------------------------------|------|---------|
-| *inpath*    | Path of input data.                     | path | null    |
-| *orography* | Marks if orography should be regridded. | bool | false   |
-| *orofile*   | Path of orography file.                 | path | null    |
-| *wegnfile*  | Dummy WEGN file to extract grid.        | path | null    |
-| *outpath*   | Path of output directory.               | path | null    |
+| NAME              | DESCRIPTION                             | TYPE | DEFAULT |
+|-------------------|-----------------------------------------|------|---------|
+| *input_data_path* | Path of input data.                     | path | null    |
+| *orography*       | Marks if orography should be regridded. | bool | false   |
+| *orofile*         | Path of orography file.                 | path | null    |
+| *wegnfile*        | Dummy WEGN file to extract grid.        | path | null    |
+| *outpath*         | Path of output directory.               | path | null    |
 
 
 ## List of allowed variables (you can use these as a placeholder in your config files, values will be replaced at runtime)

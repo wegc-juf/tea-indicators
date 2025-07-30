@@ -156,9 +156,9 @@ def get_global_attrs(level=None, period=''):
         'daily_results': f'Daily basis TEA indicator variables',
         'ctp_results': f'TEA indicators for annual climatic time period: {period}',
         'decadal_results': f'TEA decadal-mean indicator variables for climatic time period: '
-               f'{period}',
+                           f'{period}',
         'amplification_factors': f'TEA decadal-mean amplification factors for climatic time period:'
-              f' {period}'}
+                                 f' {period}'}
 
     # define general global attributes
     institution = 'Wegener Center for Climate and Global Change, University of Graz'
@@ -167,6 +167,5 @@ def get_global_attrs(level=None, period=''):
 
     vattrs = {'Conventions': cf_conv, 'title': titles[level], 'institution': institution,
               'contact': contact, 'description': descriptions[level]}
-
 
     return vattrs

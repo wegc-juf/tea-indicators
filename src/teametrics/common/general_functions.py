@@ -50,10 +50,10 @@ def create_history_from_cfg(cfg_params, ds):
     _create_history_for_dataset(ds, params, script, dsname=cfg_params.dataset)
 
 
-def create_tea_history(opts, cfg_params, tea, dataset):
+def create_tea_history(cfg_params, tea, dataset):
     """
     add history and version to dataset
-    :param opts: CFG parameters
+    
     :param cfg_params: yaml config parameters
     :param tea: TEA object
     :param dataset: dataset (e.g. 'CTP_results')
@@ -64,12 +64,11 @@ def create_tea_history(opts, cfg_params, tea, dataset):
     create_history_from_cfg(cfg_params, ds)
 
     # get global attributes
-    glob_attrs = get_global_attrs(level=dataset, period=opts.period)
+    glob_attrs = get_global_attrs(level=dataset, period=cfg_params.period)
     glob_attrs.update(ds.attrs)
 
     # update dataset attributes
     ds.attrs = glob_attrs
-
 
 
 def _create_history_for_dataset(ds, params, script, dsname):
@@ -364,62 +363,6 @@ def interpolate_gaps(opts, data):
     return data
 
 
-def area_grid(opts, masks):
-    """
-    creates grid where each grid cell gets assigned the size of each grid cell in
-    areals (1 areal = 100 km^2)
-    Args:
-        opts: CLI parameter
-        masks: masks
-
-    Returns:
-        agrid: area grid
-    """
-
-    if opts.dataset == 'SPARTACUS':
-        # creates area grid in areals
-        agrid = masks['nw_mask'] / 100
-
-    else:
-        if opts.dataset == 'ERA5':
-            delta_fac = 4  # to get 0.25° resolution
-        else:
-            delta_fac = 10  # to get 0.1°
-
-        lat = masks.lat.values
-        r_mean = 6371
-        u_mean = 2 * np.pi * r_mean
-
-        # calculate earth radius at different latitudes
-        r_lat = np.cos(np.deg2rad(lat)) * r_mean
-
-        # calculate earth circumference at latitude
-        u_lat = 2 * np.pi * r_lat
-
-        # calculate length of 0.25°/0.1° in m for x and y dimension
-        x_len = (u_lat / 360) / delta_fac
-        y_len = (u_mean / 360) / delta_fac
-
-        # calculate size of cells in areals
-        x_len_da = xr.DataArray(data=x_len, coords={'lat': (['lat'], lat)})
-        mask_template = masks['nw_mask']
-        agrid = mask_template * y_len * x_len_da
-        agrid = agrid / 100
-
-    # apply GR mask
-    agrid = agrid.where(masks['lt1500_mask'] == 1)
-    agrid = agrid * masks['mask']
-    agrid = agrid.rename('area_grid')
-    agrid.attrs = {'units': 'areals'}
-
-    # calculate GR size
-    gr_size = agrid.sum()
-    gr_size = gr_size.rename('GR_size')
-    gr_size.attrs = {'units': 'areals'}
-
-    return agrid, gr_size
-
-
 def calc_percentiles(opts, threshold_min=None, data=None):
     """
     calculate percentile of reference period for each grid point
@@ -435,9 +378,11 @@ def calc_percentiles(opts, threshold_min=None, data=None):
 
     # load data if not provided
     if data is None:
-        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1], opts=opts, period=opts.period)
+        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1], opts=opts,
+                                period=opts.period)
     else:
-        data = extract_period(ds=data, period=opts.perc_period, start_year=opts.perc_period_yrs[0], end_year=opts.perc_period_yrs[1])
+        data = extract_period(ds=data, period=opts.perc_period, start_year=opts.perc_period_yrs[0],
+                              end_year=opts.perc_period_yrs[1])
 
     if threshold_min is not None:
         data = data.where(data > threshold_min)

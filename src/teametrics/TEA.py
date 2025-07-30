@@ -11,9 +11,8 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
-from .common.var_attrs import get_attrs, get_global_attrs, equal_vars
+from .common.var_attrs import get_attrs, equal_vars
 from .common.TEA_logger import logger
-from .common.general_functions import create_tea_history
 
 
 class TEAIndicators:
@@ -1199,8 +1198,7 @@ class TEAIndicators:
 
     # ### Decadal mean functions ###
 
-    def calc_decadal_indicators(self, decadal_window=[10, 5, 4], calc_spread=False,
-                                drop_annual_results=True,
+    def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False, drop_annual_results=True,
                                 min_duration=10):
         """
         calculate decadal mean for all CTP indicators
@@ -1208,7 +1206,7 @@ class TEAIndicators:
 
         Args:
             decadal_window (tuple([int, int, int]), optional): Parameters that define the decadal
-            window used: [window_size,-deltayears,+deltayears]. Defaults to (10,5,4).
+                window used: [window_size,-delta_years,+delta_years]. Defaults to (10, 5, 4).
             calc_spread: calculate spread estimators (equation 25)
             drop_annual_results: delete annual results after calculation
             min_duration: minimum cumulative duration of events in days/decade to keep in decadal results (default: 10)
@@ -1546,7 +1544,6 @@ class TEAIndicators:
 
         return period_mean
 
-
     @staticmethod
     def _apply_min_duration(ds, min_duration, duration_data=None):
         """
@@ -1560,10 +1557,10 @@ class TEAIndicators:
         for vvar in ds.data_vars:
             if len(ds[vvar].dims) > 1:
                 duration = duration_data.ED if duration_data is not None else ds.ED
-                ds[vvar] = xr.where(duration >= min_duration, ds[vvar], np.nan)
+                ds[vvar] = ds[vvar].where(duration >= min_duration)
             elif ds[vvar].dims == ('time',) and 'ED_GR' in ds and ds.ED_GR is not None:
                 duration = duration_data.ED_GR if duration_data is not None else ds.ED_GR
-                ds[vvar] = xr.where(duration >= min_duration, ds[vvar], np.nan)
+                ds[vvar] = ds[vvar].where(duration >= min_duration)
 
     def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024),
                                    min_duration=15):
@@ -1622,8 +1619,6 @@ class TEAIndicators:
         self.amplification_factors = xr.merge([amplification_factors, cc_amplification])
         self.amplification_factors.time.attrs = get_attrs(vname='amplification',
                                                           period=self.CTP)
-        self.amplification_factors.attrs = get_global_attrs(level='AF',
-                                                            period=self.CTP)
         self.amplification_factors = self._duplicate_vars(self.amplification_factors)
 
     @staticmethod

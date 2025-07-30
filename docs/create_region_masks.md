@@ -1,5 +1,5 @@
 # create_region_masks.py
-Information about input data for `create_region_masks.py`
+WEGC internal information about input data for `create_region_masks.py`
 
 ### shp file paths
 GLOB: `/data/arsclisys/backup/clim-hydro/TEA-Indicators/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip` \

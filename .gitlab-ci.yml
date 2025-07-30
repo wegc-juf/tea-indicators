@@ -1,0 +1,19 @@
+default:
+  before_script:
+    # install poetry
+    - python -m pip install "poetry>=2.1.0"
+    - python -m pip install "poetry-dynamic-versioning>=1.1.0,<2.0.0"
+
+stages:
+#  - test
+  - publish
+
+publish:package:
+  stage: publish
+  script:
+    - poetry config repositories.wegc $PYPI_SERVER
+    - poetry config http-basic.wegc $PYPI_USERNAME $PYPI_PASSWORD
+    - poetry build
+    - poetry publish -r wegc
+  only:
+    - tags

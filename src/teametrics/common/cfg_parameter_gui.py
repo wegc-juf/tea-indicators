@@ -239,6 +239,7 @@ def flatten_yaml(data, parent_key='', sep='_'):
             items[new_key] = value
     return items
 
+
 def run():
     # get command line parameters
     cmd_opts = _getopts()
