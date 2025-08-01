@@ -277,9 +277,11 @@ def check_type(key, value):
         'lsmfile': 'path',
         
         # regrid_SPARTACUS_to_WEGNext.py
+        'raw_data_path': 'path',
+        'regridded_data_path': 'path',
+        'wegn_file': 'path',
         'orography': bool,
-        'wegnfile': 'path',
-        
+
         # hidden parameters
         'script': str,  # name of the script
         'cfg_file': str,  # path to the CFG file
