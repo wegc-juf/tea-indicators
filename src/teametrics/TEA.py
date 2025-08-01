@@ -175,7 +175,7 @@ class TEAIndicators:
     def _find_dim_names(self, data):
         # TODO: make this more dynamic, maybe add x and y names in CFG
         try:
-            spatial_dims = [dim for dim in data.dims if dim not in ['time', 'days']]
+            spatial_dims = [dim for dim in data.dims if dim != 'time']
 
             dim_mapping = {'x': ('x', 'y'),
                            'X': ('X', 'Y'),
@@ -202,7 +202,6 @@ class TEAIndicators:
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
         """
-
         # add dim names
         self._find_dim_names(data=input_data_grid)
 
@@ -216,7 +215,9 @@ class TEAIndicators:
             # set time index
             if 'days' in input_data_grid.dims:
                 self.input_data = self.input_data.rename({'days': 'time'})
+                self.tdim = 'time'
             elif 'time' in input_data_grid.dims:
+                self.tdim = 'time'
                 pass
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
@@ -225,6 +226,7 @@ class TEAIndicators:
                     raise ValueError("Input data and threshold results must have the same area")
                 if self.input_data.shape[-2:] != self.area_grid.shape:
                     raise ValueError("Input data and area results must have the same shape")
+
 
     def _calc_DTEC(self):
         """
@@ -276,15 +278,20 @@ class TEAIndicators:
         dteec = xr.full_like(dtec, np.nan)
 
         if self.gridded:
-            dtec_3d = dtec.values
             # loop through all rows and calculate DTEEC
-            for iy in range(len(dtec_3d[0, :, 0])):
-                dtec_row = dtec_3d[:, iy, :]
+            for iy in range(len(dtec[self.ydim])):
+                dtec_row = dtec.isel({self.ydim: iy})
                 # skip all nan rows
-                if np.isnan(dtec_row).all():
+                if np.isnan(dtec_row.values).all():
                     continue
-                dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
-                dteec[:, iy, :] = dteec_row
+                tdim_idx = np.where(np.array(dtec_row.dims) == self.tdim)[0][0]
+                dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=tdim_idx,
+                                                arr=dtec_row.values)
+
+                ydim_idx = np.where(np.array(dtec.dims) == self.ydim)[0][0]
+                dteec_slice = [slice(None)] * dteec.ndim
+                dteec_slice[ydim_idx] = iy
+                dteec[tuple(dteec_slice)] = dteec_row
         else:
             dteec[:] = self._calc_dteec_1d(dtec_cell=dtec.values)
 
