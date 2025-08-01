@@ -586,7 +586,7 @@ class TEAIndicators:
         # replace 0 values with nan to avoid division by 0
         a_gr = a_gr.where(a_gr > 0, np.nan)
 
-        N_hours_gr = (a_nl / a_gr * N_hours).sum(axis=(1, 2), skipna=True)
+        N_hours_gr = (a_nl / a_gr * N_hours).sum(dim=(self.xdim, self.ydim), skipna=True)
         N_hours_gr.attrs = get_attrs(vname='Nhours_GR', data_unit='h')
         self.daily_results['Nhours_GR'] = N_hours_gr
         self.daily_results['DTED_GR'] = self.daily_results.Nhours_GR
@@ -648,7 +648,7 @@ class TEAIndicators:
 
         for var in ['t_hfirst', 't_hlast', 't_hmax']:
             t_h = self.daily_results[var]
-            t_h_gr = (a_nl / a_gr * t_h).sum(axis=(1, 2), skipna=True)
+            t_h_gr = (a_nl / a_gr * t_h).sum(dim=(self.xdim, self.ydim), skipna=True)
             t_h_gr = t_h_gr.where(self.daily_results.Nhours_GR > 0, np.nan)
             t_h_gr.attrs = get_attrs(vname=f'{var}_GR')
             self.daily_results[f'{var}_GR'] = t_h_gr
