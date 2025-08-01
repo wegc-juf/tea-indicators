@@ -30,10 +30,10 @@ def define_wegn_grid_1000x1000(opts):
     """
 
     # Load sample SPARTACUS data
-    original_grid = xr.open_dataset(Path(opts.input_data_path) / f'SPARTACUS2-DAILY_{opts.parameter.upper()}_2000.nc')
+    original_grid = xr.open_dataset(Path(opts.raw_data_path) / f'SPARTACUS2-DAILY_{opts.parameter.upper()}_2000.nc')
 
     # Open WEGN sample data
-    wegnet = xr.open_dataset(opts.wegnfile)
+    wegnet = xr.open_dataset(opts.wegn_file)
     # Select 2020-08-15 (just a random date)
     wegnet_first = wegnet.isel(time=14)
 
@@ -153,14 +153,14 @@ def regrid_orog(opts):
 
     """
 
-    orog_file = xr.open_dataset(opts.orofile)
+    orog_file = xr.open_dataset(opts.orog_file)
     oro_new = regrid_spartacus(opts=opts, ds_in=orog_file.orog, method='linear')
     oro_new = oro_new.assign_attrs(grid_mapping='UTM33N')
     create_history_from_cfg(cfg_params=opts, ds=oro_new)
     oro_new.attrs['crs'] = 'EPSG:32633'
-    oro_new = oro_new.drop(['lat', 'lon'])
+    oro_new = oro_new.drop_vars(['lat', 'lon'])
 
-    path = Path(opts.outpath)
+    path = Path(opts.regridded_data_path)
     path.mkdir(parents=True, exist_ok=True)
     oro_new.to_netcdf(path / 'SPARTACUSreg_orography.nc')
 
@@ -196,8 +196,8 @@ def run():
     if opts.orography:
         regrid_orog(opts=opts)
     else:
-        input_path = Path(opts.input_data_path)
-        input_files = sorted(input_path.glob(f'*{opts.parameter}*.nc'))
+        input_path = Path(opts.raw_data_path)
+        input_files = sorted(input_path.glob(f'*{opts.parameter.upper()}*.nc'))
         if len(input_files) == 0:
             raise FileNotFoundError(f'No input files found in {input_path}/*{opts.parameter}*.nc')
         for ifile in trange(len(input_files), desc='Regridding files'):
@@ -223,13 +223,13 @@ def run():
                 opts.parameter = 'Tn'
 
             # drop unnecessary coords
-            ds_new = ds_new.drop(['lat', 'lon'])
+            ds_new = ds_new.drop_vars(['lat', 'lon'])
 
             # Save output
             encoding = {opts.parameter: {'dtype': 'int16', 'scale_factor': 0.1,
                                          '_FillValue': -9999}}
 
-            path = Path(opts.outpath)
+            path = Path(opts.regridded_data_path)
             path.mkdir(parents=True, exist_ok=True)
             filename_parts = filename.split(opts.parameter.upper())
             filename_out = f'{filename_parts[0]}{opts.parameter}{filename_parts[1]}'
