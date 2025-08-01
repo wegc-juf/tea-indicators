@@ -172,15 +172,10 @@ class TEAIndicators:
         lon_range = [lon_min, lon_max]
         self._crop_to_rect(lat_range, lon_range)
 
-    def _set_input_data_grid(self, input_data_grid):
-        """
-        set input data grid
-        Args:
-            input_data_grid: gridded input data (e.g. temperature, precipitation)
-        """
+    def _find_dim_names(self, data):
         # TODO: make this more dynamic, maybe add x and y names in CFG
         try:
-            spatial_dims = [dim for dim in input_data_grid.dims if dim not in ['time', 'days']]
+            spatial_dims = [dim for dim in data.dims if dim not in ['time', 'days']]
 
             dim_mapping = {'x': ('x', 'y'),
                            'X': ('X', 'Y'),
@@ -200,6 +195,16 @@ class TEAIndicators:
         except:
             raise ValueError("Name of time dim of input data could not be determined. "
                              "Please provide data with common time names (time, days).")
+
+    def _set_input_data_grid(self, input_data_grid):
+        """
+        set input data grid
+        Args:
+            input_data_grid: gridded input data (e.g. temperature, precipitation)
+        """
+
+        # add dim names
+        self._find_dim_names(data=input_data_grid)
 
         if self.mask is not None and self.apply_mask:
             self.input_data = input_data_grid.where(self.mask > 0)
@@ -455,6 +460,7 @@ class TEAIndicators:
         self.area_grid = self.daily_results.area_grid
         self.gr_size = self.area_grid.sum().values
         self.unit = self.daily_results.DTEM.attrs['units']
+        self._find_dim_names(data=self.daily_results)
 
     def set_daily_results(self, daily_results):
         """
