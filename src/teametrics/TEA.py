@@ -44,7 +44,7 @@ class TEAIndicators:
             use_dask: use dask for calculations. Default: False
         """
         if threshold is not None and isinstance(threshold, (int, float)):
-            threshold = xr.full_like(input_data[0], threshold)
+            threshold = xr.full_like(mask, threshold)
         self.threshold_grid = threshold
 
         self.mask = mask
