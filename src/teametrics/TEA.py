@@ -134,12 +134,12 @@ class TEAIndicators:
         """
         rename_dict_inv = {}
         if 'lon' not in self.input_data.dims:
-            rename_dict = {'x': 'lon', 'y': 'lat'}
+            rename_dict = {self.xdim: 'lon', self.ydim: 'lat'}
             self.input_data = self.input_data.rename(rename_dict)
             self.area_grid = self.area_grid.rename(rename_dict)
             self.mask = self.mask.rename(rename_dict)
             self.threshold_grid = self.threshold_grid.rename(rename_dict)
-            rename_dict_inv = {'lon': 'x', 'lat': 'y'}
+            rename_dict_inv = {'lon': self.xdim, 'lat': self.ydim}
 
         self.input_data = self.input_data.sel(lat=slice(lat_range[1], lat_range[0]),
                                               lon=slice(lon_range[0], lon_range[1]))
@@ -160,13 +160,11 @@ class TEAIndicators:
         crop all grids to the mask extents
         """
         mask = self.mask
-        if 'lon' not in mask.dims:
-            mask = mask.rename({'x': 'lon', 'y': 'lat'})
         idx_with_data = np.where(mask > 0)
-        lon_min = mask.lon[idx_with_data[1]].min().values
-        lon_max = mask.lon[idx_with_data[1]].max().values
-        lat_min = mask.lat[idx_with_data[0]].min().values
-        lat_max = mask.lat[idx_with_data[0]].max().values
+        lon_min = mask[self.xdim][idx_with_data[1]].min().values
+        lon_max = mask[self.xdim][idx_with_data[1]].max().values
+        lat_min = mask[self.ydim][idx_with_data[0]].min().values
+        lat_max = mask[self.ydim][idx_with_data[0]].max().values
         if 'lon' in self.mask.dims:
             lat_range = [lat_min, lat_max]
         else:
@@ -180,6 +178,29 @@ class TEAIndicators:
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
         """
+        # TODO: make this more dynamic, maybe add x and y names in CFG
+        try:
+            spatial_dims = [dim for dim in input_data_grid.dims if dim not in ['time', 'days']]
+
+            dim_mapping = {'x': ('x', 'y'),
+                           'X': ('X', 'Y'),
+                           'lon': ('lon', 'lat'),
+                           'longitude': ('longitude', 'latitude'),
+                           'Longitude': ('Longitude', 'Latitude')}
+
+            for key, (xdim, ydim) in dim_mapping.items():
+                if key in spatial_dims:
+                    self.xdim = xdim
+                    self.ydim = ydim
+                    break
+            else:
+                raise ValueError("Names of x- and y-dim of input data could not be determined. "
+                                 "Please provide data with common dimension names (x/y, X/Y, lon/lat, "
+                                 "longitude/latitude, Longitude/Latitude).")
+        except:
+            raise ValueError("Name of time dim of input data could not be determined. "
+                             "Please provide data with common time names (time, days).")
+
         if self.mask is not None and self.apply_mask:
             self.input_data = input_data_grid.where(self.mask > 0)
             self._crop_to_mask_extents()
@@ -312,7 +333,7 @@ class TEAIndicators:
         if 'DTEA' not in self.daily_results:
             self._calc_DTEA()
         dtea = self.daily_results.DTEA
-        dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
+        dtea_gr = dtea.sum(dim=(self.xdim, self.ydim), skipna=True)
         if relative:
             dtea_gr = dtea_gr / self.gr_size
             dtea_gr.attrs = get_attrs(vname='DTEA_GR', data_unit='%')
@@ -375,7 +396,7 @@ class TEAIndicators:
         if self.area_grid is None:
             self._create_area_grid(dtem)
         area_fac = self.area_grid / dtea_gr
-        dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
+        dtem_gr = (dtem * area_fac).sum(dim=(self.xdim, self.ydim), skipna=True)
         dtem_gr = dtem_gr.where(dtec_gr == 1, self.null_val)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR', data_unit=self.unit)
@@ -1198,7 +1219,8 @@ class TEAIndicators:
 
     # ### Decadal mean functions ###
 
-    def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False, drop_annual_results=True,
+    def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False,
+                                drop_annual_results=True,
                                 min_duration=10):
         """
         calculate decadal mean for all CTP indicators
