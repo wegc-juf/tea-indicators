@@ -259,8 +259,11 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
 
-    filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path,
-                                    param_str=param_str, hourly=hourly)
+    if opts.dataset != 'EOBS':
+        filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path,
+                                        param_str=param_str, hourly=hourly)
+    else:
+        filenames = sorted(glob.glob(f'{opts.input_data_path}{opts.parameter}*.nc'))
 
     # load relevant years
     logger.info(f'Loading data from {filenames}...')
@@ -273,6 +276,12 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     # select variable
     if opts.dataset == 'SPARTACUS' and parameter == 'P24h_7to7':
         ds = ds.rename({'RR': parameter})
+
+    if opts.dataset == 'EOBS':
+        if opts.parameter == 'Tx':
+            ds = ds.rename({'tx': parameter})
+        elif opts.parameter == 'Tn':
+            ds = ds.rename({'tn': parameter})
     data = ds[parameter]
 
     # get only values from selected period
