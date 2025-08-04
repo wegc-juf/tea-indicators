@@ -265,7 +265,24 @@ def _load_mask_file(opts):
         mask: GR mask (Xarray DataArray)
 
     """
-    maskpath = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc'
+    if opts.gr_type == 'polygon':
+        maskpath = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc'
+    elif opts.gr_type == 'corners':
+        sw_coords = opts.sw_corner.split(',')
+        sw_coords = '_'.join([f'{float(coord):.1f}' for coord in sw_coords])
+        ne_coords = opts.ne_corner.split(',')
+        ne_coords = '_'.join([f'{float(coord):.1f}' for coord in ne_coords])
+        maskpath = f'{opts.maskpath}/{opts.mask_sub}/SW_{sw_coords}-NE_{ne_coords}_mask_{opts.dataset}.nc'
+    else:
+        center_coords = opts.center.split(',')
+        center_coords = [float(ii) for ii in center_coords]
+        sw_coords = [center_coords[0] - float(opts.we_len) / 2,
+                     center_coords[1] - float(opts.ns_len) / 2]
+        sw_coords = '_'.join([f'{float(coord):.1f}' for coord in sw_coords])
+        ne_coords = [center_coords[0] + float(opts.we_len) / 2,
+                     center_coords[1] + float(opts.ns_len) / 2]
+        ne_coords = '_'.join([f'{float(coord):.1f}' for coord in ne_coords])
+        maskpath = f'{opts.maskpath}/{opts.mask_sub}/SW_{sw_coords}-NE_{ne_coords}_mask_{opts.dataset}.nc'
     logger.info(f'Loading mask from {maskpath}')
     mask_file = xr.open_dataset(maskpath)
 
