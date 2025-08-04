@@ -178,7 +178,7 @@ def _get_default_opts(fname, opts):
         if 'target_sys' not in opts and 'natural_variability' not in fname:
             if opts.dataset == 'SPARTACUS':
                 opts.target_sys = 3416
-            elif 'ERA' in opts.dataset:
+            elif 'ERA' in opts.dataset or opts.dataset == 'EOBS':
                 opts.target_sys = 4326
             elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
                 opts.target_sys = None
@@ -189,6 +189,8 @@ def _get_default_opts(fname, opts):
                 opts.xy_name = 'x,y'
             elif 'ERA' in opts.dataset:
                 opts.xy_name = 'lon,lat'
+            elif opts.dataset == 'EOBS':
+                opts.xy_name = 'longitude,latitude'
             elif 'station' in opts:
                 opts.xy_name = None
             else:
