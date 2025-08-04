@@ -175,6 +175,8 @@ def plot_map(opts, fig, ax, data):
 
     if 'x' in data.dims:
         xvar, yvar = 'x', 'y'
+    elif 'longitude' in data.dims:
+        xvar, yvar = 'longitude', 'latitude'
     else:
         xvar, yvar = 'lon', 'lat'
     map_vals = ax.contourf(data[xvar], data[yvar], data, cmap=props['cmap'])
