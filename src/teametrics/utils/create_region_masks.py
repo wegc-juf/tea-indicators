@@ -204,6 +204,8 @@ def _apply_altitude_threshold(mask, opts):
     orog = xr.open_dataset(opts.orofile)
     if 'altitude' in orog.data_vars:
         orog = orog.altitude
+    elif 'elevation' in orog.data_vars:
+        orog = orog.elevation
     else:
         orog = orog.orog
 
