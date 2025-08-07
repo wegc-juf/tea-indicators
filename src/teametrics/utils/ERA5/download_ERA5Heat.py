@@ -4,7 +4,7 @@ API request to download ERA5 Heat data
 import cdsapi
 
 if __name__ == "__main__":
-    YEARS = ["%d" % y for y in range(1961, 2025)]
+    YEARS = ["%d" % y for y in range(1967, 2025)]
 
     for yr in YEARS:
         request = {
