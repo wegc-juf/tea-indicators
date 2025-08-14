@@ -84,6 +84,10 @@ class TEAIndicators:
 
         self._calc_grid = True
         self._calc_gr = True
+        
+        # set default x and y dim names
+        self.xdim = 'lon'
+        self.ydim = 'lat'
 
         if input_data is not None:
             if self.threshold_grid is None:
