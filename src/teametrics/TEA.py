@@ -51,8 +51,15 @@ class TEAIndicators:
             else:
                 raise ValueError("Either input_data grid or mask must be provided for using a fixed threshold!")
         self.threshold_grid = threshold
+        
+        # set default x and y dim names
+        self.xdim = 'lon'
+        self.ydim = 'lat'
 
         self.mask = mask
+        if mask is not None:
+            self._find_dim_names(data=mask)
+        
         self.apply_mask = apply_mask
 
         self.use_dask = use_dask
@@ -90,10 +97,6 @@ class TEAIndicators:
         self._calc_grid = True
         self._calc_gr = True
         
-        # set default x and y dim names
-        self.xdim = 'lon'
-        self.ydim = 'lat'
-
         if input_data is not None:
             if self.threshold_grid is None:
                 raise ValueError("Threshold grid must be set together with input data")
