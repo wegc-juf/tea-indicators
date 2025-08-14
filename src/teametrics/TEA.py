@@ -296,11 +296,19 @@ class TEAIndicators:
                 # skip all nan rows
                 if np.isnan(dtec_row.values).all():
                     continue
-                tdim_idx = np.where(np.array(dtec_row.dims) == self.tdim)[0][0]
+                try:
+                    tdim_idx = dtec_row.dims.index(self.tdim)
+                except ValueError:
+                    raise ValueError(f"Time dimension '{self.tdim}' not found in DTEC data. "
+                                     f"Available dimensions: {dtec_row.dims}")
                 dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=tdim_idx,
                                                 arr=dtec_row.values)
 
-                ydim_idx = np.where(np.array(dtec.dims) == self.ydim)[0][0]
+                try:
+                    ydim_idx = dtec.dims.index(self.ydim)
+                except ValueError:
+                    raise ValueError(f"Y dimension '{self.ydim}' not found in DTEC data. "
+                                     f"Available dimensions: {dtec.dims}")
                 dteec_slice = [slice(None)] * dteec.ndim
                 dteec_slice[ydim_idx] = iy
                 dteec[tuple(dteec_slice)] = dteec_row
