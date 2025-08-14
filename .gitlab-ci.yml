@@ -1,5 +1,7 @@
 default:
   before_script:
+    - apt-get update -yq --allow-releaseinfo-change
+    - apt install python3 -y
     # install poetry
     - python -m pip install "poetry>=2.1.0"
     - python -m pip install "poetry-dynamic-versioning>=1.1.0,<2.0.0"
