@@ -150,6 +150,8 @@ def _get_default_opts(fname, opts):
     
     # calc_TEA.py options
     if fname == 'calc_TEA':
+        if 'gr_type' not in opts:
+            opts.gr_type = 'polygon'
         if 'recalc_threshold' not in opts:
             opts.recalc_threshold = False
         if 'recalc_daily' not in opts:
