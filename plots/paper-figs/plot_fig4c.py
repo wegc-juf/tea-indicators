@@ -91,7 +91,7 @@ def run():
     axs.minorticks_on()
     axs.grid(color='gray', which='major', linestyle=':')
     axs.set_xlim(1960, 2025)
-    axs.set_ylim(0, 30)
+    axs.set_ylim(0, 25)
     axs.xaxis.set_minor_locator(mticker.FixedLocator(np.arange(1960, 2025)))
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
