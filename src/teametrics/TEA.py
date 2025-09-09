@@ -44,10 +44,22 @@ class TEAIndicators:
             use_dask: use dask for calculations. Default: False
         """
         if threshold is not None and isinstance(threshold, (int, float)):
-            threshold = xr.full_like(mask, threshold)
+            if input_data is not None:
+                threshold = xr.full_like(input_data[0], threshold)
+            elif mask is not None:
+                threshold = xr.full_like(mask, threshold)
+            else:
+                raise ValueError("Either input_data grid or mask must be provided for using a fixed threshold!")
         self.threshold_grid = threshold
+        
+        # set default x and y dim names
+        self.xdim = 'lon'
+        self.ydim = 'lat'
 
         self.mask = mask
+        if mask is not None:
+            self._find_dim_names(data=mask)
+        
         self.apply_mask = apply_mask
 
         self.use_dask = use_dask
@@ -84,7 +96,7 @@ class TEAIndicators:
 
         self._calc_grid = True
         self._calc_gr = True
-
+        
         if input_data is not None:
             if self.threshold_grid is None:
                 raise ValueError("Threshold grid must be set together with input data")
@@ -284,11 +296,19 @@ class TEAIndicators:
                 # skip all nan rows
                 if np.isnan(dtec_row.values).all():
                     continue
-                tdim_idx = np.where(np.array(dtec_row.dims) == self.tdim)[0][0]
+                try:
+                    tdim_idx = dtec_row.dims.index(self.tdim)
+                except ValueError:
+                    raise ValueError(f"Time dimension '{self.tdim}' not found in DTEC data. "
+                                     f"Available dimensions: {dtec_row.dims}")
                 dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=tdim_idx,
                                                 arr=dtec_row.values)
 
-                ydim_idx = np.where(np.array(dtec.dims) == self.ydim)[0][0]
+                try:
+                    ydim_idx = dtec.dims.index(self.ydim)
+                except ValueError:
+                    raise ValueError(f"Y dimension '{self.ydim}' not found in DTEC data. "
+                                     f"Available dimensions: {dtec.dims}")
                 dteec_slice = [slice(None)] * dteec.ndim
                 dteec_slice[ydim_idx] = iy
                 dteec[tuple(dteec_slice)] = dteec_row
