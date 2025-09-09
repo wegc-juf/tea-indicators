@@ -286,6 +286,11 @@ def run():
 
     create_legend(fig=fig, ax=axs[0, 0], land=land)
 
+    labels = ['a)', 'd)', 'b)', 'e)', 'c)', 'f)']
+    for i, ax in enumerate(axs.flat):
+        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
+                va='top', ha='left')
+
     if land:
         fstr = 'Figure3'
         sdir = 'figure3/'

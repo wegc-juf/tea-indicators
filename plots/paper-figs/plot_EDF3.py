@@ -101,21 +101,43 @@ def plot_gr_data(ax, adata, ddata, afdata, su, sl):
     ax.set_ylabel(props['ylbl'], fontsize=12)
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    if ddata.name in ['EA_avg_GR', 'TEX_GR']:
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+    else:
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     ax.set_xlim(1960, 2025)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
     ax.set_title(props['title'], fontsize=14)
     ax.set_ylim(0, props['yx'])
     ax.yaxis.set_major_locator(FixedLocator(np.arange(0, props['yx'] + props['dy'], props['dy'])))
 
-    ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
-            + f'{ref:.2f}' + r'$\,$|$\,$'
-            + f'{cc:.2f} {props["unit"]} \n'
-            + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
-            + f'{afdata:.2f}',
-            horizontalalignment='left',
-            verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
-            fontsize=9)
+    if ddata.name == 'EA_avg_GR':
+        ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
+                + f'{ref:.1f}' + r'$\,$|$\,$'
+                + f'{cc:.1f} {props["unit"]} \n'
+                + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
+                + f'{afdata:.1f}',
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
+                fontsize=9)
+    elif ddata.name == 'TEX_GR':
+        ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
+                + f'{ref:.0f}' + r'$\,$|$\,$'
+                + f'{cc:.0f} {props["unit"]} \n'
+                + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
+                + f'{afdata:.0f}',
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
+                fontsize=9)
+    else:
+        ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
+                + f'{ref:.2f}' + r'$\,$|$\,$'
+                + f'{cc:.2f} {props["unit"]} \n'
+                + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
+                + f'{afdata:.2f}',
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
+                fontsize=9)
 
 
 def map_plot_params(vname):
@@ -200,9 +222,9 @@ def run():
         plot_map(fig=fig, ax=axs[irow, 1], data=mdata)
 
     # iterate over each subplot and add a text label
-    labels = ['a', 'e', 'b', 'f', 'c', 'g', 'd', 'h']
+    labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
     for i, ax in enumerate(axs.flat):
-        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14, fontweight='bold',
+        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
                 va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
