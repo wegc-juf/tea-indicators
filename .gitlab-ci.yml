@@ -1,11 +1,22 @@
+image: python:3.11-bookworm
+
 default:
   before_script:
     - apt-get update -yq --allow-releaseinfo-change
-    - which python3 || apt-get install -y python3
-    - which pip3 || apt install -y python3-pip
+    - which python
+    # - which python3 || apt-get install -y python3
+    - python -m pip install poetry>=2.1.0
+    - python -m pip install poetry-dynamic-versioning>=1.1.0,<2.0.0
+    - python -m pip install poetry-plugin-export==1.9.0
+
+    # add wegcpypi-server
+    - echo "[global]" > /etc/pip.conf
+    - echo "extra-index-url = https://wegcpypi.uni-graz.at/simple" >> /etc/pip.conf
+
+    #- which pip3 || apt-get install -y python3-pip
     # install poetry
-    - pip3 install "poetry>=2.1.0"
-    - pip3 install "poetry-dynamic-versioning>=1.1.0,<2.0.0"
+    #- pip3 install "poetry>=2.1.0"
+    #- pip3 install "poetry-dynamic-versioning>=1.1.0,<2.0.0"
 
 stages:
 #  - test
