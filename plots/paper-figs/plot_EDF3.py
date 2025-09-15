@@ -116,7 +116,7 @@ def plot_gr_data(ax, adata, ddata, afdata, su, sl):
                 + f'{ref:.1f}' + r'$\,$|$\,$'
                 + f'{cc:.1f} {props["unit"]} \n'
                 + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
-                + f'{afdata:.1f}',
+                + f'{afdata:.2f}',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
                 fontsize=9)
@@ -125,7 +125,7 @@ def plot_gr_data(ax, adata, ddata, afdata, su, sl):
                 + f'{ref:.0f}' + r'$\,$|$\,$'
                 + f'{cc:.0f} {props["unit"]} \n'
                 + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
-                + f'{afdata:.0f}',
+                + f'{afdata:.2f}',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
                 fontsize=9)
