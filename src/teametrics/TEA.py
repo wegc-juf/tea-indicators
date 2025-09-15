@@ -230,7 +230,6 @@ class TEAIndicators:
                 self.tdim = 'time'
             elif 'time' in input_data_grid.dims:
                 self.tdim = 'time'
-                pass
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
             if self.input_data.ndim > 1:
