@@ -9,6 +9,7 @@ import datetime as dt
 import numpy as np
 import xarray as xr
 import pandas as pd
+from pathlib import Path
 
 from .. import __version__
 from .TEA_logger import logger
@@ -26,7 +27,7 @@ def create_history_from_cli_params(cli_params, ds, dsname):
 
     script = cli_params[0].split('/')[-1]
     cli_params = cli_params[1:]
-    
+
     _create_history_for_dataset(ds, cli_params, script, dsname=dsname)
 
 
@@ -46,7 +47,7 @@ def create_history_from_cfg(cfg_params, ds):
     params = ' '.join(parts)
 
     script = cfg_params.script.split('/')[-1]
-    
+
     _create_history_for_dataset(ds, params, script, dsname=cfg_params.dataset)
 
 
@@ -147,7 +148,7 @@ def compare_to_ref(tea_result, tea_ref, relative=False):
             print(f'{vvar} not found in reference file.')
 
 
-def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=False):
+def get_input_filenames(start, end, inpath, param_str, ds, period='annual', hourly=False):
     """
     get input filenames
 
@@ -157,6 +158,7 @@ def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=F
     :type end: int
     :param inpath: input path
     :param param_str: parameter string
+    :param ds: name of dataset of input data
     :param period: period of interest. Default is 'annual'
     :type period: str
     :param hourly: if True, return hourly data filenames
@@ -164,29 +166,34 @@ def get_input_filenames(start, end, inpath, param_str, period='annual', hourly=F
 
     :return: list of filenames
     """
-    # check if inpath is file
-    if os.path.isfile(inpath):
-        return inpath
-    elif '*' in inpath and glob.glob(inpath):
-        return sorted(glob.glob(inpath))
 
-    if hourly:
-        inpath = f'{inpath}/hourly/'
-        h_string = 'hourly_'
-    else:
-        h_string = ''
+    if ds == 'EOBS':
+        filenames = Path.glob(f'{inpath}{param_str}*.nc')
 
-    # select only files of interest, if chosen period is 'seasonal' append one year in the
-    # beginning to have the first winter fully included
-    filenames = []
-    if period == 'seasonal' and start != '1961':
-        yrs = np.arange(start - 1, end + 1)
     else:
-        yrs = np.arange(start, end + 1)
-    for yr in yrs:
-        year_files = sorted(glob.glob(
-            f'{inpath}*{param_str}_{h_string}{yr}*.nc'))
-        filenames.extend(year_files)
+        # check if inpath is file
+        if os.path.isfile(inpath):
+            return inpath
+        elif '*' in inpath and glob.glob(inpath):
+            return sorted(glob.glob(inpath))
+
+        if hourly:
+            inpath = f'{inpath}/hourly/'
+            h_string = 'hourly_'
+        else:
+            h_string = ''
+
+        # select only files of interest, if chosen period is 'seasonal' append one year in the
+        # beginning to have the first winter fully included
+        filenames = []
+        if period == 'seasonal' and start != '1961':
+            yrs = np.arange(start - 1, end + 1)
+        else:
+            yrs = np.arange(start, end + 1)
+        for yr in yrs:
+            year_files = sorted(glob.glob(
+                f'{inpath}*{param_str}_{h_string}{yr}*.nc'))
+            filenames.extend(year_files)
     return filenames
 
 
@@ -259,11 +266,9 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
     elif opts.dataset == 'SPARTACUS' and opts.precip:
         param_str = 'RR'
 
-    if opts.dataset != 'EOBS':
-        filenames = get_input_filenames(period=period, start=start, end=end, inpath=opts.input_data_path,
-                                        param_str=param_str, hourly=hourly)
-    else:
-        filenames = sorted(glob.glob(f'{opts.input_data_path}{opts.parameter}*.nc'))
+    filenames = get_input_filenames(period=period, start=start, end=end,
+                                    inpath=opts.input_data_path,
+                                    param_str=param_str, hourly=hourly, ds=opts.dataset)
 
     # load relevant years
     logger.info(f'Loading data from {filenames}...')
@@ -387,7 +392,8 @@ def calc_percentiles(opts, threshold_min=None, data=None):
 
     # load data if not provided
     if data is None:
-        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1], opts=opts,
+        data = get_gridded_data(start=opts.perc_period_yrs[0], end=opts.perc_period_yrs[1],
+                                opts=opts,
                                 period=opts.period)
     else:
         data = extract_period(ds=data, period=opts.perc_period, start_year=opts.perc_period_yrs[0],
@@ -460,5 +466,6 @@ def create_threshold_grid(opts, data=None):
     else:
         ref_str = 'Ref'
     vname = f'{opts.parameter}-p{opts.threshold}{opts.period} {ref_str}{opts.ref_period[0]}-{opts.ref_period[1]}'
-    thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname, 'percentile': f'{opts.threshold}'}
+    thr_grid.attrs = {'units': opts.unit, 'methods_variable_name': vname,
+                      'percentile': f'{opts.threshold}'}
     return thr_grid
