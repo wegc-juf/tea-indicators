@@ -39,13 +39,18 @@ To prepare the input datasets (ERA5, ERA5-Land, or SPARTACUS) run one of the fol
 - `prep_ERA5Land --inpath INPATH --outpath OUTPATH --orog-file PATH_TO_OROG_FILE` -- for preparing 
   ERA5-Land data
   (aggregates hourly data to daily data).
+- `prep_ERA5_old --inpath INPATH --outpath OUTPATH` -- for preparing ERA5 data that was downloaded 
+  with the old CDS API (aggregates hourly data to
+  daily data).
+- `prep_ERA5Land_old --inpath INPATH --outpath OUTPATH --orog-file PATH_TO_OROG_FILE` -- for preparing 
+  ERA5-Land data that was downloaded with the old CDS API (aggregates hourly data to daily data).
 - `regrid_SPARTACUS_to_WEGNext --config-file CONFIG_FILE` -- only needed for SPARTACUS data for regridding 
   SPARTACUS to a regular 1 km x 1 km
   grid which is congruent with the 1 km x 1 km WEGN grid within FBR. Attention: run twice, once for regular data
   and once for orography data.
 
 ### 3) Creation of mask file (optional)
-In case you want do define your own GeoRegion (GR) mask, you can create a mask file using the script
+In case you want to define your own GeoRegion (GR) mask, you can create a mask file using the script
 `create_region_masks --config-file CONFIG_FILE`\
 This script allows you to create a mask file for your GR based on a shapefile or coordinates.
 The configuration options for the script are documented in [`CFG-PARAMS-doc.md`](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/blob/main/docs/CFG-PARAMS-doc.md) \
