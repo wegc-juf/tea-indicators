@@ -115,7 +115,7 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
     cc_abs = gmean(ddata.sel(time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
 
     if data.name == 'EA_avg_GR_AF':
-        ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:3]}' + r'$_\mathrm{Ref | CC}$ = '
+        ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:2]}' + r'$_\mathrm{Ref | CC}$ = '
                 + f'{ref_abs:.1f}' + r'$\,$|$\,$'
                 + f'{cc_abs:.1f} {props["unit"]} \n'
                 + props['acc'] + ' = ' + f'{af_cc:.2f}',
@@ -124,7 +124,7 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
                 fontsize=9)
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
     else:
-        ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:3]}' + r'$_\mathrm{Ref | CC}$ = '
+        ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:2]}' + r'$_\mathrm{Ref | CC}$ = '
                 + f'{ref_abs:.2f}' + r'$\,$|$\,$'
                 + f'{cc_abs:.2f} {props["unit"]} \n'
                 + props['acc'] + ' = ' + f'{af_cc:.2f}',
