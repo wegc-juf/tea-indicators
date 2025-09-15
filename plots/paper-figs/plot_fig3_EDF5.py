@@ -254,7 +254,7 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = True
+    land = False
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']
