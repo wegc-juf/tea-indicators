@@ -118,7 +118,7 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
         ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:3]}' + r'$_\mathrm{Ref | CC}$ = '
                 + f'{ref_abs:.1f}' + r'$\,$|$\,$'
                 + f'{cc_abs:.1f} {props["unit"]} \n'
-                + props['acc'] + ' = ' + f'{af_cc:.1f}',
+                + props['acc'] + ' = ' + f'{af_cc:.2f}',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
                 fontsize=9)
