@@ -1838,20 +1838,13 @@ class TEAIndicators:
             self._CTP_resample_sum = self._CTP_resample_sum.isel(time=slice(1, -1))
             self._CTP_resample_median = self._CTP_resample_median.isel(time=slice(1, -1))
 
-    def _create_area_grid_lat_lon(self, template_grid, lname=False, capitalized=False):
+    def _create_area_grid_lat_lon(self, template_grid):
         """
         create area grid for grid cells out of lat lon info
         Args:
             template_grid: template grid to create area grid from
-            lname: if True, use 'latitude' and 'longitude' as dimension names
-            capitalized: if True, use capitalized names for latitude and longitude dimensions
         """
-        latname, lonname = 'lat', 'lon'
-        if lname:
-            latname, lonname = 'latitude', 'longitude'
-            if capitalized:
-                latname = latname.capitalize()
-                lonname = lonname.capitalize()
+        latname, lonname = self.ydim, self.xdim
 
         # circumference of earth at equator
         c_lon_eq = 40075
@@ -1866,21 +1859,18 @@ class TEAIndicators:
         # create area size grid (in areals)
         self.area_grid = lon_size * (lat_size * xr.ones_like(template_grid[lonname])) / 100
 
-    def _create_area_grid_regular_cartesian(self, template_grid, capitalized=False):
+    def _create_area_grid_regular_cartesian(self, template_grid):
         """
         create area grid for regular cartesian grid
         Args:
             template_grid: template grid to create area grid from
             capitalized: if True, use capitalized names for x and y dimensions
         """
-        xname, yname = 'x', 'y'
-        if capitalized:
-            xname, yname = 'X', 'Y'
 
         area_grid = xr.full_like(template_grid[0, :, :], 1)
         # get size of one grid cell (in km2)
-        x_size = abs(template_grid[xname][1] - template_grid[xname][0]) / 1000
-        y_size = abs(template_grid[yname][1] - template_grid[yname][0]) / 1000
+        x_size = abs(template_grid[self.xdim][1] - template_grid[self.xdim][0]) / 1000
+        y_size = abs(template_grid[self.ydim][1] - template_grid[self.ydim][0]) / 1000
         cell_area = x_size * y_size
 
         # create area size grid (in areals)
@@ -1894,21 +1884,11 @@ class TEAIndicators:
         Args:
             template_grid: template grid to create area grid from
         """
-        if 'lat' in template_grid.dims and 'lon' in template_grid.dims:
-            # calculate area grid out of lat lon info
-            self._create_area_grid_lat_lon(template_grid)
-        elif 'latitude' in template_grid.dims and 'longitude' in template_grid.dims:
-            # calculate area grid out of lat lon info
-            self._create_area_grid_lat_lon(template_grid, lname=True)
-        elif 'Latitude' in template_grid.dims and 'Longitude' in template_grid.dims:
-            # calculate area grid out of lat lon info
-            self._create_area_grid_lat_lon(template_grid, lname=True, capitalized=True)
-        elif 'x' in template_grid.dims and 'y' in template_grid.dims:
-            # calculate equal area grid
+        if self.xdim in ['x', 'X'] and self.ydim in ['y', 'Y']:
             self._create_area_grid_regular_cartesian(template_grid)
-        elif 'X' in template_grid.dims and 'Y' in template_grid.dims:
-            # calculate equal area grid
-            self._create_area_grid_regular_cartesian(template_grid, capitalized=True)
+        elif (self.xdim in ['lon', 'Lon', 'longitude', 'Longitude'] and
+              self.ydim in ['lat', 'Lat', 'latitude', 'Latitude']):
+            self._create_area_grid_lat_lon(template_grid)
         else:
             raise ValueError("Input data grid must contain lat lon or x y dimensions")
 
