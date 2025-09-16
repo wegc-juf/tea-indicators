@@ -13,3 +13,4 @@ __pycache__
 /poetry.toml
 /internal/config/paper_data
 /internal/config/Africa
+/src/teametrics/tea_examples/*.nc
