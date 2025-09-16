@@ -221,6 +221,11 @@ def run():
                                                  'x': (['x'], dec.x.values)}, name=map_var)
         plot_map(fig=fig, ax=axs[irow, 1], data=mdata)
 
+    axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+                   horizontalalignment='left', verticalalignment='center',
+                   transform=axs[2, 1].transAxes, backgroundcolor='mistyrose',
+                   fontsize=8)
+
     # iterate over each subplot and add a text label
     labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
     for i, ax in enumerate(axs.flat):
