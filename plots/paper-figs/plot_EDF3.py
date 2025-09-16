@@ -178,9 +178,9 @@ def plot_map(fig, ax, data):
     range_vals = find_range(data=data)
 
     map = ax.contourf(data, cmap=props['cmap'], levels=props['lvls'], extend=ext)
-    ax.add_patch(pat.Rectangle(xy=(473, 76), height=20, width=25, edgecolor='black',
+    ax.add_patch(pat.Rectangle(xy=(473, 53), height=20, width=25, edgecolor='black',
                                fill=False, linewidth=1))
-    ax.add_patch(pat.Rectangle(xy=(410, 48), height=92, width=125, edgecolor='black',
+    ax.add_patch(pat.Rectangle(xy=(410, 25), height=92, width=125, edgecolor='black',
                                fill=False, linewidth=1))
     ax.axis('off')
     divider = make_axes_locatable(ax)
