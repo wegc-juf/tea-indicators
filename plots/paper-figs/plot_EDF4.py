@@ -28,23 +28,23 @@ def gr_plot_params(vname):
                            'ylbl': r'EF amplification $(\mathcal{A}^\mathrm{F})$',
                            'title': 'Event Frequency (Annual)',
                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$',
-                           'nv_name': 's_EF_AF_NV', 'unit': 'ev/yr'},
+                           'nv_name': 's_EF_AF_NV', 'unit': 'ev/yr', 'legend_name': 'EF'},
               'ED_avg_GR_AF': {'col': 'tab:purple',
                                'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
                                'title': 'Average Event Duration (events-mean)',
                                'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
-                               'nv_name': 's_ED_avg_AF_NV', 'unit': 'days'},
+                               'nv_name': 's_ED_avg_AF_NV', 'unit': 'days', 'legend_name': 'ED'},
               'EM_avg_GR_Md_AF': {'col': 'tab:orange',
                                   'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
                                   'title': 'Average Exceedance Magnitude (daily-median)',
                                   'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
-                                  'nv_name': 's_EM_avg_Md_AF_NV', 'unit': 'mm'},
+                                  'nv_name': 's_EM_avg_Md_AF_NV', 'unit': 'mm', 'legend_name': 'EM'},
               'tEX_GR_AF': {'col': 'tab:orange',
                             'ylbl': r'tEX amplification $(\mathcal{A}^\mathrm{t})$',
                             'title': 'Temporal Events Extremity (Annual)',
                             'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{tEX}$',
                             'nv_name': 's_tEX_AF_NV',
-                            'unit': 'mm days/yr'}
+                            'unit': 'mm days/yr', 'legend_name': 'tEX'}
               }
 
     return params[vname]
@@ -53,19 +53,19 @@ def gr_plot_params(vname):
 def map_plot_params(vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
-                           'title': 'Event Frequency (EF) amplification (CC2008-2022)',
+                           'title': 'Event Frequency (EF) amplification (CC2008-2024)',
                            'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'ED_avg_AF_CC': {'cmap': 'Purples',
                                'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                               'title': 'Event Duration (ED) amplification (CC2008-2022)',
+                               'title': 'Event Duration (ED) amplification (CC2008-2024)',
                                'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'EM_avg_Md_AF_CC': {'cmap': 'Oranges',
                                   'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                                  'title': 'Exceedance Magnitude (EM) amplification (CC2008-2022)',
+                                  'title': 'Exceedance Magnitude (EM) amplification (CC2008-2024)',
                                   'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'tEX_AF_CC': {'cmap': 'Oranges',
                             'lbl': r'$\mathcal{A}^\mathrm{tEX}_\mathrm{CC}$',
-                            'title': 'Temporal Events Extremity (tEX) Ampl. (CC2008-2022)',
+                            'title': 'Temporal Events Extremity (tEX) Ampl. (CC2008-2024)',
                             'lvls': np.arange(0.25, 2.25, 0.25), 'vn': 0.25, 'vx': 2}
               }
 
@@ -121,7 +121,7 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     ref = gmean(ddata.sel(time=slice(params['REF']['start_cy'], params['REF']['end_cy'])).values)
     cc = gmean(ddata.sel(time=slice(params['CC']['start_cy'], params['CC']['end_cy'])).values)
 
-    ax.text(0.02, 0.9, f'P24H-p95WAS-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
+    ax.text(0.02, 0.9, f'P24H-p95WAS-{props["legend_name"]}' + r'$_\mathrm{Ref | CC}$ = '
             + f'{ref:.2f}' + r'$\,$|$\,$'
             + f'{cc:.2f} {props["unit"]} \n'
             + props['acc'] + ' = ' + f'{af_cc:.2f}',
@@ -218,6 +218,16 @@ def run():
     map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_Md_AF_CC', 'tEX_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
+
+    axs[3, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+                   horizontalalignment='left', verticalalignment='center',
+                   transform=axs[3, 1].transAxes, backgroundcolor='mistyrose',
+                   fontsize=8)
+
+    labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
+    for i, ax in enumerate(axs.flat):
+        ax.text(-0.15, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
+                va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'

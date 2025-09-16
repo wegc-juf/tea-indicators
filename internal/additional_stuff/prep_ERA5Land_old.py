@@ -5,16 +5,19 @@
 """
 
 import argparse
-import glob
+
+from pathlib import Path
 from metpy import calc
-from metpy.units import units
 import numpy as np
 import os
 import sys
 from tqdm import trange
 import xarray as xr
 
-from common.general_functions import create_history_from_cli_params
+try:
+    from common.general_functions import create_history_from_cli_params
+except ImportError:
+    from src.teametrics.common.general_functions import create_history_from_cli_params
 
 
 def get_opts():
@@ -32,7 +35,7 @@ def get_opts():
             raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
 
     parser.add_argument('--inpath',
-                        default='/data/users/hst/TEA-clean/ERA5Land/raw/',
+                        default='/data/arsclisys/normal/ERA5_land/hourly/',
                         type=dir_path,
                         help='Input directory.')
 
@@ -43,30 +46,20 @@ def get_opts():
 
     parser.add_argument('--orog-file',
                         default='/data/users/hst/cdrDPS/orographies/ERA5Land_geopotential.nc',
-                        dest='orog',
+                        dest='orog_file',
                         help='Orography file.')
-
-    parser.add_argument('--start',
-                        default=2025,
-                        type=int,
-                        help='First year that should be prepped.')
-
-    parser.add_argument('--end',
-                        default=2025,
-                        type=int,
-                        help='Last year that should be prepped.')
 
     myopts = parser.parse_args()
 
     return myopts
 
 
-def calc_altitude(ds_in, orog):
+def calc_altitude(ds_in, orog_file):
     """
     calc altitude from geopotential
     Args:
         ds_in: input ds
-        orog: orography data
+        orog_file: filename of orography data
 
     Returns:
         altitude: altitude
@@ -75,7 +68,7 @@ def calc_altitude(ds_in, orog):
     data = xr.open_dataset(ds_in)
 
     # altitude
-    ds_geop = xr.open_dataset(orog)
+    ds_geop = xr.open_dataset(orog_file)
 
     lat_min = data.latitude.values.min()
     lat_max = data.latitude.values.max()
@@ -87,19 +80,9 @@ def calc_altitude(ds_in, orog):
 
     # height
     altitude = ds_geop_aut.z.resample(time='1D').mean() / 9.80665
-    altitude = altitude[0, :, :]
+    altitude = altitude.rename('altitude')
 
-    # set coords to .1f
-    altitude = xr.DataArray(data=altitude.values, dims=('latitude', 'longitude'),
-                            coords={
-                                'longitude': (['longitude'], (
-                                        np.arange(altitude.longitude[0] * 10,
-                                                  (altitude.longitude[-1] + 0.1) * 10,
-                                                  0.1 * 10) / 10)),
-                                'latitude': (['latitude'], (np.arange(altitude.latitude[-1] * 10,
-                                                            (altitude.latitude[0] + 0.1) * 10,
-                                                            0.1 * 10) / 10)[::-1])},
-                            name='altitude')
+    altitude = altitude[0, :, :]
 
     return altitude
 
@@ -117,8 +100,8 @@ def resample_temperature(ds_in):
 
     """
 
-    ds_in = ds_in.shift(valid_time=1)
-    t_resampled = ds_in.resample(valid_time='1D')
+    ds_in = ds_in.shift(time=1)
+    t_resampled = ds_in.resample(time='1D')
     tav = t_resampled.mean() - 273.15
     tav = tav.rename('T')
     tmin = t_resampled.min() - 273.15
@@ -147,15 +130,15 @@ def resample_precipitation(ds_in, shift=0):
 
     """
 
-    ds_in = ds_in.shift(valid_time=(1 + shift))
+    ds_in = ds_in.shift(time=(1+shift))
     # precip is given in m in ERA5Land data, change to mm
-    p24h = ds_in.resample(valid_time='1D').max() * 1000
+    p24h = ds_in.resample(time='1D').max() * 1000
 
     # shift data again to get hourly precipitation amount
-    ds_shift = ds_in.shift(valid_time=(1 + shift))
+    ds_shift = ds_in.shift(time=(1+shift))
     diff = ds_shift - ds_in
     # find maximum hourly precipitation amount
-    px1h = diff.resample(valid_time='1D').max() * 1000
+    px1h = diff.resample(time='1D').max() * 1000
 
     p24h_name, px1h_name, shift_str = 'P24h', 'Px1h', ''
     if shift > 0:
@@ -186,10 +169,10 @@ def calc_wind(ds_in):
 
     data_u, data_v = ds_in.u10, ds_in.v10
 
-    data_u = data_u.shift(valid_time=1)
-    data_v = data_v.shift(valid_time=1)
-    ucom = data_u.resample(valid_time='1D').mean()
-    vcom = data_v.resample(valid_time='1D').mean()
+    data_u = data_u.shift(time=1)
+    data_v = data_v.shift(time=1)
+    ucom = data_u.resample(time='1D').mean()
+    vcom = data_v.resample(time='1D').mean()
     wind = np.sqrt(ucom ** 2 + vcom ** 2)
 
     wind = wind.rename('WindSpeed')
@@ -208,8 +191,8 @@ def resample_pressure(ds_in):
         pressure: daily pressure data
     """
 
-    ds_in = ds_in.shift(valid_time=1)
-    pressure = ds_in.resample(valid_time='1D').mean()
+    ds_in = ds_in.shift(time=1)
+    pressure = ds_in.resample(time='1D').mean()
     pressure = pressure.rename('p')
     pressure.attrs = {'units': 'Pa', 'long_name': 'surface pressure'}
 
@@ -227,10 +210,10 @@ def calc_specific_hum(t_dp, pressure):
         q: daily specific humidity data
     """
 
-    t_dp = t_dp.shift(valid_time=1)
-    pressure = pressure.shift(valid_time=1)
+    t_dp = t_dp.shift(time=1)
+    pressure = pressure.shift(time=1)
     q = calc.specific_humidity_from_dewpoint(pressure, t_dp)
-    q = q.resample(valid_time='1D').mean()
+    q = q.resample(time='1D').mean()
 
     q = q.rename('q')
     q.attrs = {'units': '1', 'long_name': 'specific humidity'}
@@ -241,70 +224,47 @@ def calc_specific_hum(t_dp, pressure):
 def run():
     opts = get_opts()
 
-    files = sorted(glob.glob(f'{opts.inpath}*ERA5Land*nc'))
-    if opts.end > opts.start:
-        years = np.arange(opts.start, opts.end + 1)
-    elif opts.start == opts.end:
-        years = [opts.start]
-    else:
-        raise UserWarning('End year is smaller than start year.')
+    files = sorted(Path(opts.inpath).glob('*ERA5Land*nc'))
 
-    altitude = calc_altitude(ds_in=files[0], orog=opts.orog)
+    altitude = calc_altitude(ds_in=files[0], orog_file=opts.orog_file)
 
     # Save altitude in separate file
-    create_history_from_cli_params(cli_params=sys.argv, ds=altitude)
+    altitude = create_history_from_cli_params(cli_params=sys.argv, ds=altitude, dsname='ERA5Land')
     alt_out = altitude.copy()
     alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
-    alt_out.to_netcdf(f'{opts.outpath}ERA5Land_orography.nc')
+    alt_out.to_netcdf(Path(opts.outpath) / 'ERA5Land_orography.nc')
 
-    for iyr in trange(len(years), desc='Preparing ERA5Land data'):
-        basename = f'{opts.inpath}ERA5Land_{years[iyr]}'
+    for ifile in trange(len(files), desc='Preparing ERA5Land data'):
+        file = files[ifile]
+        ds_in = xr.open_dataset(file, mask_and_scale=True)
+        filename = file.name
 
         # Temperature
-        da_t2m = xr.open_dataarray(f'{basename}_2m_temperature.nc',
-                                   mask_and_scale=True)
-        tav, tmin, tmax = resample_temperature(ds_in=da_t2m)
-        da_t2m.close()
+        tav, tmin, tmax = resample_temperature(ds_in=ds_in.t2m)
 
         # Precipitation
-        da_tp = xr.open_dataarray(f'{basename}_total_precipitation.nc',
-                                  mask_and_scale=True)
-        p24h, p1h = resample_precipitation(ds_in=da_tp)
-        p24h_7to7, p1h_7to7 = resample_precipitation(ds_in=da_tp, shift=7)
-        da_tp.close()
+        p24h, p1h = resample_precipitation(ds_in=ds_in.tp)
+        p24h_7to7, p1h_7to7 = resample_precipitation(ds_in=ds_in.tp, shift=7)
 
         # Wind
-        windfiles = sorted(glob.glob(f'{basename}_10m_*_component_of_wind.nc'))
-        ds_wind = xr.open_mfdataset(windfiles, mask_and_scale=True)
-        wind = calc_wind(ds_in=ds_wind)
-        ds_wind.close()
+        wind = calc_wind(ds_in=ds_in)
 
         # Surface pressure
-        da_p = xr.open_dataarray(f'{basename}_surface_pressure.nc', mask_and_scale=True)
-        pressure = resample_pressure(ds_in=da_p)
+        pressure = resample_pressure(ds_in=ds_in.sp)
 
         # Specific humidity
-        da_dp = xr.open_dataarray(f'{basename}_2m_dewpoint_temperature.nc',
-                                  mask_and_scale=True)
-        humidity = calc_specific_hum(t_dp=da_dp, pressure=da_p)
-        da_p.close()
-        da_dp.close()
+        humidity = calc_specific_hum(t_dp=ds_in.d2m, pressure=ds_in.sp)
 
         # Create output ds
         ds_out = xr.merge([tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, wind, pressure,
-                           humidity])
-        # add altitude data and history
-        ds_out['altitude'] = (['latitude', 'longitude'], altitude.values)
-        create_history_from_cli_params(cli_params=sys.argv, ds=ds_out)
-        # drop unnecessary variables and rename coords
-        ds_out = ds_out.drop_vars(['number'])
-        ds_out = ds_out.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
-        ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
-        ds_out['lat'].attrs = {}
-        ds_out['lon'] = (np.arange(ds_out.lon[0] * 10, (ds_out.lon[-1] * 10) + 1) / 10)
-        ds_out['lon'].attrs = {}
+                           humidity, altitude])
+        ds_out = create_history_from_cli_params(cli_params=sys.argv, ds=ds_out, dsname='ERA5Land')
+        ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
 
-        ds_out.to_netcdf(f'{opts.outpath}ERA5Land_{years[iyr]}.nc')
+        ds_out['lat'] = (np.arange(ds_out.lat[-1] * 10, (ds_out.lat[0] * 10) + 1) / 10)[::-1]
+        ds_out['lon'] = (np.arange(ds_out.lon[0] * 10, (ds_out.lon[-1] * 10) + 1) / 10)
+
+        ds_out.to_netcdf(Path(opts.outpath) / filename)
 
 
 if __name__ == '__main__':

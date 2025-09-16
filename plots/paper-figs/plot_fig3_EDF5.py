@@ -254,7 +254,7 @@ def create_legend(fig, ax, land):
 
 
 def run():
-    land = True
+    land = False
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']
@@ -285,6 +285,11 @@ def run():
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
     create_legend(fig=fig, ax=axs[0, 0], land=land)
+
+    labels = ['a)', 'd)', 'b)', 'e)', 'c)', 'f)']
+    for i, ax in enumerate(axs.flat):
+        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
+                va='top', ha='left')
 
     if land:
         fstr = 'Figure3'

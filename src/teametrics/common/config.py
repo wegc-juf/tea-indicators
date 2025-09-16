@@ -150,6 +150,8 @@ def _get_default_opts(fname, opts):
     
     # calc_TEA.py options
     if fname == 'calc_TEA':
+        if 'gr_type' not in opts:
+            opts.gr_type = 'polygon'
         if 'recalc_threshold' not in opts:
             opts.recalc_threshold = False
         if 'recalc_daily' not in opts:
@@ -178,7 +180,7 @@ def _get_default_opts(fname, opts):
         if 'target_sys' not in opts and 'natural_variability' not in fname:
             if opts.dataset == 'SPARTACUS':
                 opts.target_sys = 3416
-            elif 'ERA' in opts.dataset:
+            elif 'ERA' in opts.dataset or opts.dataset == 'EOBS':
                 opts.target_sys = 4326
             elif opts.dataset == 'HistAlp' or opts.dataset == 'TAWES':
                 opts.target_sys = None
@@ -189,6 +191,8 @@ def _get_default_opts(fname, opts):
                 opts.xy_name = 'x,y'
             elif 'ERA' in opts.dataset:
                 opts.xy_name = 'lon,lat'
+            elif opts.dataset == 'EOBS':
+                opts.xy_name = 'longitude,latitude'
             elif 'station' in opts:
                 opts.xy_name = None
             else:
@@ -277,9 +281,11 @@ def check_type(key, value):
         'lsmfile': 'path',
         
         # regrid_SPARTACUS_to_WEGNext.py
+        'raw_data_path': 'path',
+        'regridded_data_path': 'path',
+        'wegn_file': 'path',
         'orography': bool,
-        'wegnfile': 'path',
-        
+
         # hidden parameters
         'script': str,  # name of the script
         'cfg_file': str,  # path to the CFG file

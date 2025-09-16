@@ -204,6 +204,8 @@ def _apply_altitude_threshold(mask, opts):
     orog = xr.open_dataset(opts.orofile)
     if 'altitude' in orog.data_vars:
         orog = orog.altitude
+    elif 'elevation' in orog.data_vars:
+        orog = orog.elevation
     else:
         orog = orog.orog
 
@@ -274,19 +276,18 @@ def create_rectangular_gr(opts):
     elif opts.gr_type == 'center':
         center_coords = opts.center.split(',')
         center_coords = [float(ii) for ii in center_coords]
-        sw_coords = [center_coords[0] - float(opts.we_len), center_coords[1] - float(opts.ns_len)]
-        ne_coords = [center_coords[0] + float(opts.we_len), center_coords[1] + float(opts.ns_len)]
+        sw_coords = [center_coords[0] - float(opts.we_len) / 2, center_coords[1] - float(opts.ns_len) / 2]
+        ne_coords = [center_coords[0] + float(opts.we_len) / 2, center_coords[1] + float(opts.ns_len) / 2]
     else:
         raise ValueError('gr_type must be either "polygon", "corners", or "center".')
 
     if 'ERA5' in opts.dataset:
-        xn, xx = sw_coords[0], ne_coords[0]
-        yn, yx = ne_coords[1], sw_coords[1]
         yidxn, yidxx = -1, 0
     else:
-        xn, xx = sw_coords[0], ne_coords[0]
-        yn, yx = sw_coords[1], ne_coords[1]
         yidxn, yidxx = 0, -1
+
+    xn, xx = sw_coords[0], ne_coords[0]
+    yn, yx = sw_coords[1], ne_coords[1]
 
     # check if corners are within grid
     if any(xv < template_file[x][0] for xv in [xn, xx]) or any(xv > template_file[x][-1] for xv in [xn, xx]):
@@ -330,7 +331,10 @@ def create_rectangular_gr(opts):
         e_frac = (closest_ne_x - xx) / dx
 
         # set values in non-weighted mask within GR to 1
-        da_nwmask.loc[closest_sw_y:closest_ne_y, closest_sw_x:closest_ne_x] = 1
+        if 'ERA5' in opts.dataset:
+            da_nwmask.loc[closest_ne_y:closest_sw_y, closest_sw_x:closest_ne_x] = 1
+        else:
+            da_nwmask.loc[closest_sw_y:closest_ne_y, closest_sw_x:closest_ne_x] = 1
 
         # create weighted mask
         da_mask = da_nwmask.copy()

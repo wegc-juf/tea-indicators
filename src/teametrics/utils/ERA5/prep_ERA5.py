@@ -5,7 +5,8 @@
 """
 
 import argparse
-from pathlib import Path
+import gc
+import glob
 from metpy import calc
 import numpy as np
 import os
@@ -14,18 +15,14 @@ from tqdm import trange
 import warnings
 import xarray as xr
 
-try:
-    from common.general_functions import create_history_from_cli_params
-except ImportError:
-    from ...common.general_functions import create_history_from_cli_params
+from teametrics.common.general_functions import create_history_from_cli_params
 
 
 def get_opts():
     """
-    get CLI parameter
+    loads CLI parameter
     Returns:
         myopts: CLI parameter
-
     """
     parser = argparse.ArgumentParser()
 
@@ -36,7 +33,7 @@ def get_opts():
             raise argparse.ArgumentTypeError(f'{path} is not a valid path.')
 
     parser.add_argument('--inpath',
-                        default='/data/arsclisys/normal/ERA5/hourly/single_levels/',
+                        default='/data/users/hst/TEA-clean/ERA5/raw/',
                         type=dir_path,
                         help='Input directory.')
 
@@ -45,34 +42,49 @@ def get_opts():
                         type=dir_path,
                         help='Output directory.')
 
-    parser.add_argument('--preliminary',
-                        default=False,
-                        action='store_true',
-                        dest='prelim',
-                        help='True if input data are ERA5 preliminary data. (default: False)')
+    parser.add_argument('--start',
+                        default=2025,
+                        type=int,
+                        help='First year that should be prepped.')
+
+    parser.add_argument('--end',
+                        default=2025,
+                        type=int,
+                        help='Last year that should be prepped.')
+
+    parser.add_argument('--vars',
+                        default='T',
+                        type=str,
+                        help='List of variables to prepare separated by ",".')
 
     myopts = parser.parse_args()
 
     return myopts
 
 
-def calc_altitude_dt(data):
+def calc_altitude_dt(opts):
     """
     calculates altitude in m and time difference to UTC
     Args:
-        data: file containing geopotential height
+        opts: CLI parameter
 
     Returns:
         altitude: altitude grid
         dt_utc: difference to UTC on grid
         tz: time zones array
     """
-    ds_alt = xr.open_dataset(data)
+
+    geop_files = sorted(glob.glob(f'{opts.inpath}*geopotential*'))
+
+    ds_alt = xr.open_dataset(geop_files[0])
     altitude = ds_alt.z[0, :, :] / 9.80665
     altitude = altitude.rename('altitude')
+    altitude = altitude.rename({'valid_time': 'time'})
     altitude.attrs = {'units': 'm', 'long_name': 'altitude'}
+    altitude = altitude.drop_vars(['expver', 'number'])
 
-    lon_grid = xr.DataArray(data=np.tile(ds_alt.longitude.values, (169, 1)),
+    nlat = len(altitude.latitude)
+    lon_grid = xr.DataArray(data=np.tile(ds_alt.longitude.values, (nlat, 1)),
                             dims={'latitude': (['latitude'], ds_alt.latitude.values),
                                   'longitude': (['longitude'], ds_alt.longitude.values)},
                             coords={'latitude': (['latitude'], ds_alt.latitude.values),
@@ -109,8 +121,8 @@ def resample_temperature(data, delta, tz):
 
     for itz, tz in enumerate(tz):
         tz_data = data.where(delta == tz, 0)
-        tz_data = tz_data.shift(time=tz)
-        t_resampled = tz_data.resample(time='1D')
+        tz_data = tz_data.shift(valid_time=tz)
+        t_resampled = tz_data.resample(valid_time='1D')
 
         tav_tz = t_resampled.mean()
         tmin_tz = t_resampled.min()
@@ -153,10 +165,10 @@ def resample_precipitation(data, delta, tz, shift=0):
     p24h, px1h = xr.full_like(data, 0), xr.full_like(data, 0)
     for itz, tz in enumerate(tz):
         tz_data = data.where(delta == tz, 0)
-        tz_data = tz_data.shift(time=(tz + shift))
+        tz_data = tz_data.shift(valid_time=(tz + shift))
 
-        tz_p24h = tz_data.resample(time='1D').sum()
-        tz_p1h = tz_data.resample(time='1D').max()
+        tz_p24h = tz_data.resample(valid_time='1D').sum()
+        tz_p1h = tz_data.resample(valid_time='1D').max()
 
         p24h = p24h + tz_p24h
         px1h = px1h + tz_p1h
@@ -195,12 +207,12 @@ def calc_wind(data, delta, tz):
     wind = xr.full_like(data_u, 0)
     for itz, tz in enumerate(tz):
         tz_data_u = data_u.where(delta == tz, 0)
-        tz_data_u = tz_data_u.shift(time=tz)
+        tz_data_u = tz_data_u.shift(valid_time=tz)
         tz_data_v = data_v.where(delta == tz, 0)
-        tz_data_v = tz_data_v.shift(time=tz)
+        tz_data_v = tz_data_v.shift(valid_time=tz)
 
-        ucom = tz_data_u.resample(time='1D').mean()
-        vcom = tz_data_v.resample(time='1D').mean()
+        ucom = tz_data_u.resample(valid_time='1D').mean()
+        vcom = tz_data_v.resample(valid_time='1D').mean()
         tz_wind = np.sqrt(ucom ** 2 + vcom ** 2)
 
         wind = wind + tz_wind
@@ -226,9 +238,9 @@ def resample_pressure(data, delta, tz):
     pressure = xr.full_like(data, 0)
     for itz, tz in enumerate(tz):
         tz_data = data.where(delta == tz, 0)
-        tz_data = tz_data.shift(time=tz)
+        tz_data = tz_data.shift(valid_time=tz)
 
-        tz_pressure = tz_data.resample(time='1D').mean()
+        tz_pressure = tz_data.resample(valid_time='1D').mean()
         pressure = pressure + tz_pressure
 
     pressure = pressure.rename('p')
@@ -253,73 +265,143 @@ def calc_specific_hum(t_dp, pressure, delta, tz):
     q = xr.full_like(pressure, 0)
     for itz, tz in enumerate(tz):
         tz_data_tdp = t_dp.where(delta == tz, 0)
-        tz_data_tdp = tz_data_tdp.shift(time=tz)
+        tz_data_tdp = tz_data_tdp.shift(valid_time=tz)
         tz_data_p = pressure.where(delta == tz, 0)
-        tz_data_p = tz_data_p.shift(time=tz)
+        tz_data_p = tz_data_p.shift(valid_time=tz)
 
         q_tz = calc.specific_humidity_from_dewpoint(tz_data_p, tz_data_tdp)
-        q_tz = q_tz.resample(time='1D').mean()
+        q_tz = q_tz.resample(valid_time='1D').mean()
         q_tz = q_tz.where(q_tz.notnull(), 0)
 
         q = q + q_tz
 
-    q = q.rename('q')
     q.attrs = {'units': '1', 'long_name': 'specific humidity'}
+
+    # create new da that is not a quantity (leads to errors in merge later)
+    q = xr.DataArray(data=q.values, coords=q.coords, dims=q.dims, attrs=q.attrs, name='q')
 
     return q
 
 
 def run():
     warnings.filterwarnings(action='ignore', message='invalid value encountered in divide')
-    warnings.filterwarnings(action='ignore', message='invalid value encountered in true_divide')
+    # warnings.filterwarnings(action='ignore', message='invalid value encountered in true_divide')
     warnings.filterwarnings(action='ignore', message='overflow encountered in exp')
 
     opts = get_opts()
 
-    files = sorted(Path(opts.inpath).glob('*ERA5*.nc'))
-    altitude, delta_utc, time_zones = calc_altitude_dt(data=files[0])
+    if opts.end > opts.start:
+        years = np.arange(opts.start, opts.end + 1)
+    elif opts.start == opts.end:
+        years = [opts.start]
+    else:
+        raise UserWarning('End year is smaller than start year.')
+
+    proc_vars = opts.vars.split(',')
+
+    altitude, delta_utc, time_zones = calc_altitude_dt(opts=opts)
 
     # Save altitude in separate file
     create_history_from_cli_params(cli_params=sys.argv, ds=altitude, dsname='ERA5')
-    alt_out = altitude.copy()
-    alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
-    alt_out.to_netcdf(Path(opts.outpath) / 'ERA5_orography.nc')
+    # alt_out = altitude.copy()
+    # alt_out = alt_out.rename({'latitude': 'lat', 'longitude': 'lon'})
+    # alt_out.to_netcdf(f'{opts.outpath}ERA5_orography.nc')
 
-    for ifile in trange(len(files), desc='Preparing ERA5 data'):
-        file = files[ifile]
-        ds_in = xr.open_dataset(file, mask_and_scale=True, engine='netcdf4')
+    tname, pname = '2m_temperature', 'total_precipitation'
+    # tname, pname = 'instant', 'accum'
 
-        filename = file.name
-        if opts.prelim:
-            filename = filename[:4] + filename[7:]
+    dataarrays = [altitude]
+    for iyr in trange(len(years), desc='Preparing ERA5 data'):
+        basename = f'{opts.inpath}ERA5_{years[iyr]}'
 
         # Temperature
-        tav, tmin, tmax = resample_temperature(data=ds_in.t2m, delta=delta_utc, tz=time_zones)
+        if 'T' in proc_vars:
+            da_t2m = xr.open_dataarray(f'{basename}_{tname}.nc',
+                                       mask_and_scale=True).chunk()
+            da_t2m = da_t2m.drop_vars(['expver'])
+            tav, tmin, tmax = resample_temperature(data=da_t2m, delta=delta_utc, tz=time_zones)
+            dataarrays.append(tav)
+            dataarrays.append(tmin)
+            dataarrays.append(tmax)
+            da_t2m.close()
+            del da_t2m
 
         # Precipitation
-        p24h, p1h = resample_precipitation(data=ds_in.tp, delta=delta_utc, tz=time_zones)
-        p24h_7to7, p1h_7to7 = resample_precipitation(data=ds_in.tp, delta=delta_utc, tz=time_zones,
-                                                     shift=7)
+        if 'P' in proc_vars:
+            da_tp = xr.open_dataarray(f'{basename}_{pname}.nc',
+                                      mask_and_scale=True).chunk()
+            da_tp = da_tp.drop_vars(['expver'])
+            p24h, p1h = resample_precipitation(data=da_tp, delta=delta_utc, tz=time_zones)
+            p24h_7to7, p1h_7to7 = resample_precipitation(data=da_tp, delta=delta_utc, tz=time_zones,
+                                                         shift=7)
+            dataarrays.append(p24h)
+            dataarrays.append(p1h)
+            dataarrays.append(p24h_7to7)
+            dataarrays.append(p1h_7to7)
+            da_tp.close()
+            del da_tp
 
         # Wind
-        wind = calc_wind(data=ds_in, delta=delta_utc, tz=time_zones)
+        if 'wind' in proc_vars:
+            windfiles = sorted(glob.glob(f'{basename}_10m_*_component_of_wind.nc'))
+            ds_wind = xr.open_mfdataset(windfiles, mask_and_scale=True).chunk()
+            ds_wind = ds_wind.drop_vars(['expver'])
+            wind = calc_wind(data=ds_wind, delta=delta_utc, tz=time_zones)
+            dataarrays.append(wind)
+            ds_wind.close()
+            del ds_wind
 
         # Surface pressure
-        pressure = resample_pressure(data=ds_in.sp, delta=delta_utc, tz=time_zones)
+        if 'p' in proc_vars or 'q' in proc_vars:
+            da_p = xr.open_dataarray(f'{basename}_surface_pressure.nc',
+                                     mask_and_scale=True).chunk()
+            da_p = da_p.drop_vars(['expver'])
+            pressure = resample_pressure(data=da_p, delta=delta_utc, tz=time_zones)
+            dataarrays.append(pressure)
 
-        # Specific humidity
-        humidity = calc_specific_hum(t_dp=ds_in.d2m, pressure=ds_in.sp, delta=delta_utc,
-                                     tz=time_zones)
+            # Specific humidity
+            if 'q' in proc_vars:
+                da_dp = xr.open_dataarray(f'{basename}_2m_dewpoint_temperature.nc',
+                                          mask_and_scale=True).chunk()
+                da_dp = da_dp.drop_vars(['expver'])
+                humidity = calc_specific_hum(t_dp=da_dp, pressure=da_p, delta=delta_utc,
+                                             tz=time_zones)
+                dataarrays.append(humidity)
+                da_dp.close()
+                del da_dp
+            da_p.close()
+            del da_p
 
         # Create output ds
-        ds_out = xr.merge([tav, tmin, tmax, p24h, p1h, p24h_7to7, p1h_7to7, wind, pressure,
-                           humidity, altitude])
+        ds_out = xr.merge(dataarrays)
         create_history_from_cli_params(cli_params=sys.argv, ds=ds_out, dsname='ERA5')
+        ds_out = ds_out.drop_vars(['time', 'number'])
+        ds_out = ds_out.rename({'valid_time': 'time', 'latitude': 'lat', 'longitude': 'lon'})
 
-        ds_out = ds_out.rename({'latitude': 'lat', 'longitude': 'lon'})
+        ds_out.to_netcdf(f'{opts.outpath}ERA5_{years[iyr]}.nc')
 
-        ds_out.to_netcdf(Path(opts.outpath) / filename)
+        # collect garbage
+        gc.collect()
+
+
+def manually_merge_2024_data():
+    """
+    running all vars at once crashed all the time, therefore variables need to be merged manually
+    Returns:
+
+    """
+    ds1 = xr.open_dataset('/data/users/hst/TEA-clean/ERA5/ERA5_2024_mainVARS.nc')
+    ds2 = xr.open_dataset('/data/users/hst/TEA-clean/ERA5/ERA5_2024_auxVARS.nc')
+    ds3 = xr.open_dataset('/data/users/hst/TEA-clean/ERA5/ERA5_2024_auxVARS-sh.nc')
+
+    ds2 = ds2.drop_vars(['altitude'])
+    ds3 = ds3.drop_vars(['altitude'])
+
+    ds_out = xr.merge([ds1, ds2, ds3])
+    ds_out.attrs['history'] = ds1.attrs['history']
+    ds_out.to_netcdf(f'/data/users/hst/TEA-clean/ERA5/ERA5_2024.nc')
 
 
 if __name__ == '__main__':
     run()
+    # manually_merge_2024_data()

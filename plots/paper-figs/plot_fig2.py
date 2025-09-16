@@ -114,17 +114,23 @@ def plot_gr_data(ax, data, af_cc, ddata, nv):
     ref_abs = gmean(ddata.sel(time=slice(PARAMS['REF']['start_cy'], PARAMS['REF']['end_cy'])))
     cc_abs = gmean(ddata.sel(time=slice(PARAMS['CC']['start_cy'], PARAMS['CC']['end_cy'])))
 
-    ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:3]}' + r'$_\mathrm{Ref | CC}$ = '
-            + f'{ref_abs:.2f}' + r'$\,$|$\,$'
-            + f'{cc_abs:.2f} {props["unit"]} \n'
-            + props['acc'] + ' = ' + f'{af_cc:.2f}',
-            horizontalalignment='left',
-            verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
-            fontsize=9)
-
     if data.name == 'EA_avg_GR_AF':
+        ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:2]}' + r'$_\mathrm{Ref | CC}$ = '
+                + f'{ref_abs:.1f}' + r'$\,$|$\,$'
+                + f'{cc_abs:.1f} {props["unit"]} \n'
+                + props['acc'] + ' = ' + f'{af_cc:.2f}',
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
+                fontsize=9)
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
-
+    else:
+        ax.text(0.02, 0.9, f'TMax-p99ANN-{data.name[:2]}' + r'$_\mathrm{Ref | CC}$ = '
+                + f'{ref_abs:.2f}' + r'$\,$|$\,$'
+                + f'{cc_abs:.2f} {props["unit"]} \n'
+                + props['acc'] + ' = ' + f'{af_cc:.2f}',
+                horizontalalignment='left',
+                verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
+                fontsize=9)
 
 def plot_tex_es(ax, data, af_cc, ddata,  nv):
     xvals = data.time
@@ -148,7 +154,7 @@ def plot_tex_es(ax, data, af_cc, ddata,  nv):
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
     ax.set_xlim(1960, 2025)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
 
@@ -286,10 +292,15 @@ def run():
                 ddata=dec_data[['TEX_GR', 'ES_avg_GR']],
                 af_cc=data[[f'TEX_GR_AF_CC', f'ES_avg_GR_AF_CC']], nv=natv)
 
+    axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+                   horizontalalignment='left', verticalalignment='center',
+                   transform=axs[2, 1].transAxes, backgroundcolor='mistyrose',
+                   fontsize=8)
+
     # iterate over each subplot and add a text label
-    labels = ['a', 'e', 'b', 'f', 'c', 'g', 'd', 'h']
+    labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
     for i, ax in enumerate(axs.flat):
-        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14, fontweight='bold',
+        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
                 va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)

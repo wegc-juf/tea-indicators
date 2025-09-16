@@ -152,7 +152,7 @@ def plot_af(fig, axs, data, nax):
     xticks = np.arange(1961, 2025)
 
     cc_vals = {}
-    lims = {1: {'yn': 0.5, 'yx': 2, 'dmaj': 0.25, 'dmin': 0.125},
+    lims = {1: {'yn': 0, 'yx': 2.5, 'dmaj': 0.5, 'dmin': 0.1},
             3: {'yn': 0, 'yx': 5, 'dmaj': 1, 'dmin': 0.25},
             5: {'yn': 0, 'yx': 5, 'dmaj': 1, 'dmin': 0.25}}
     yn, yx = lims[nax]['yn'], lims[nax]['yx']
@@ -241,9 +241,9 @@ def run():
     fig.subplots_adjust(hspace=0.4, wspace=0.25)
 
     # iterate over each subplot and add a text label
-    labels = ['a', 'b', 'c', 'd', 'e', 'f']
+    labels = ['a)', 'b)', 'c)', 'd)', 'e)', 'f)']
     for i, ax in enumerate(axs.flat):
-        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14, fontweight='bold',
+        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
                 va='top', ha='left')
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)

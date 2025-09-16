@@ -11,7 +11,7 @@ import numpy as np
 import os
 import xarray as xr
 
-from common.config import load_opts
+from teametrics.common.config import load_opts
 from teametrics.common.general_functions import ref_cc_params
 
 PARAMS = ref_cc_params()
@@ -47,17 +47,17 @@ def load_data(opts):
     Returns:
 
     """
-    agr_str = ''
-    if opts.agr:
-        agr_str = 'AGR-'
+    agr_str, gr_str = '', 'GR'
+    if 'agr' in opts:
+        agr_str, gr_str = 'AGR-', 'GR'
 
     ds = xr.open_dataset(f'{opts.outpath}/dec_indicator_variables/amplification/'
                          f'AF_{opts.param_str}_{agr_str}{opts.region}_{opts.period}_{opts.dataset}'
                          f'_{opts.start}to{opts.end}.nc')
 
     # only keep relevant variables
-    vvars = ['EF_AGR_AF', 'ED_avg_AGR_AF', 'EM_avg_AGR_AF', 'EA_avg_AGR_AF', 'TEX_AGR_AF',
-             'ES_avg_AGR_AF', 'EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
+    vvars = [f'EF_{gr_str}_AF', f'ED_avg_{gr_str}_AF', f'EM_avg_{gr_str}_AF', f'EA_avg_{gr_str}_AF',
+             f'TEX_{gr_str}_AF', f'ES_avg_{gr_str}_AF', 'EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
     ds = ds[vvars]
 
     return ds
@@ -73,74 +73,29 @@ def gr_plot_params(vname):
             params: dict with properties for plotting
 
         """
-    params = {'EF_AGR_AF': {'col': 'tab:blue',
-                            'ylbl': r'EF amplification $(\mathcal{A}^\mathrm{F})$',
-                            'title': 'Event Frequency (Annual)',
-                            'unit': 'ev/yr'},
-              'ED_avg_AGR_AF': {'col': 'tab:purple',
-                                'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
-                                'title': 'Average Event Duration (events-mean)',
-                                'unit': 'days'},
-              'EM_avg_AGR_AF': {'col': 'tab:orange',
-                                'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
-                                'title': 'Average Exceedance Magnitude (daily-mean)',
-                                'unit': '°C'},
-              'EA_avg_AGR_AF': {'col': 'tab:red',
-                                'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
-                                'title': 'Average Exceedance Area (daily-mean)',
-                                'unit': 'areals'}
+
+    key = vname.split('_')[:-2]
+    key = '_'.join(key)
+
+    params = {'EF': {'col': 'tab:blue',
+                     'ylbl': r'EF amplification $(\mathcal{A}^\mathrm{F})$',
+                     'title': 'Event Frequency (Annual)',
+                     'unit': 'ev/yr'},
+              'ED_avg': {'col': 'tab:purple',
+                         'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
+                         'title': 'Average Event Duration (events-mean)',
+                         'unit': 'days'},
+              'EM_avg': {'col': 'tab:orange',
+                         'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
+                         'title': 'Average Exceedance Magnitude (daily-mean)',
+                         'unit': '°C'},
+              'EA_avg': {'col': 'tab:red',
+                         'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
+                         'title': 'Average Exceedance Area (daily-mean)',
+                         'unit': 'areals'}
               }
 
-    return params[vname]
-
-
-def get_lims(data, rval):
-    """
-    get min and max values and round them for plotting
-    Args:
-        data: input data to get lims for
-        rval: rounding value
-
-    Returns:
-        vmin: rounded minimum value
-        vmax: rounded maximum value
-    """
-
-    v_min, v_max = None, None
-    try:
-        for vvar in data.data_vars:
-            da = data[vvar]
-
-            vn = da.min().values
-            vx = da.max().values
-
-            # round to next round val (rval)
-            vmin = np.floor(vn / rval) * rval
-            vmax = np.ceil(vx / rval) * rval
-
-            if v_min is None or v_min > vmin:
-                v_min = vmin
-
-            if v_max is None or v_max < vmax:
-                v_max = vmax
-
-    except AttributeError:
-        vn = data.min().values
-        vx = data.max().values
-
-        # round to next round val (rval)
-        vmin = np.floor(vn / rval) * rval
-        vmax = np.ceil(vx / rval) * rval
-
-        if v_min is None or v_min > vmin:
-            v_min = vmin
-
-        if v_max is None or v_max < vmax:
-            v_max = vmax
-
-    lims = [v_min, v_max, rval]
-
-    return lims
+    return params[key]
 
 
 def map_plot_params(vname):
@@ -167,14 +122,13 @@ def map_plot_params(vname):
     return params[vname]
 
 
-def plot_gr_data(opts, ax, data, lims):
+def plot_gr_data(opts, ax, data):
     """
     plot GR data
     Args:
         opts: CLI parameter
         ax: axis to plot on
         data: data to plot
-        lims: limits for y-axis
 
     Returns:
 
@@ -188,22 +142,18 @@ def plot_gr_data(opts, ax, data, lims):
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
     xn, xx = np.floor(opts.start / 5) * 5, np.ceil(opts.end / 5) * 5
     ax.set_xlim(xn, xx)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(xn, xx)))
 
-    ax.set_yticks(np.arange(lims[0], lims[1] + lims[2] * 2, lims[2] * 2))
-    ax.set_ylim(lims[0], lims[1])
-
     ax.set_title(props['title'], fontsize=14)
 
-    if data.name == 'EA_avg_AGR_AF':
+    if 'EA_avg' in data.name:
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
 
 
-def plot_map(opts, fig, ax, data, lims):
+def plot_map(opts, fig, ax, data):
     """
     plot map data
     Args:
@@ -211,15 +161,19 @@ def plot_map(opts, fig, ax, data, lims):
         fig: figure to plot on
         ax: axis to plot on
         data: data to plot
-        lims: limits for colorbar
 
     Returns:
 
     """
     props = map_plot_params(vname=data.name)
 
-    lvls = np.arange(lims[0], lims[1] + lims[2], lims[2])
-    map_vals = ax.contourf(data, cmap=props['cmap'], levels=lvls)
+    if 'x' in data.dims:
+        xvar, yvar = 'x', 'y'
+    elif 'longitude' in data.dims:
+        xvar, yvar = 'longitude', 'latitude'
+    else:
+        xvar, yvar = 'lon', 'lat'
+    map_vals = ax.contourf(data[xvar], data[yvar], data, cmap=props['cmap'])
 
     ax.axis('off')
     divider = make_axes_locatable(ax)
@@ -227,40 +181,38 @@ def plot_map(opts, fig, ax, data, lims):
     cb = fig.colorbar(map_vals, cax=cax, orientation='vertical')
     cb.set_label(label=f'{opts.param_str}-{props["lbl"]}', fontsize=12)
     cb.ax.tick_params(labelsize=10)
-    cb.ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     ax.set_title(props["title"], fontsize=14)
 
 
-def plot_tex_es(opts, ax, data, lims):
+def plot_tex_es(opts, ax, data):
     """
     plot ES and TEX data
     Args:
         opts: CLI parameter
         ax: axis to plot on
         data: data to plot
-        lims: limits for y-axis
 
     Returns:
 
     """
     xticks = np.arange(opts.start, opts.end + 1)
 
-    ax.plot(xticks, data[f'ES_avg_AGR_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
-    ax.plot(xticks, data[f'TEX_AGR_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
+    gr_str = 'GR'
+    if 'agr' in opts:
+        gr_str = 'AGR'
+
+    ax.plot(xticks, data[f'ES_avg_{gr_str}_AF'], 'o-', color='tab:grey', markersize=3, linewidth=2)
+    ax.plot(xticks, data[f'TEX_{gr_str}_AF'], 'o-', color='tab:red', markersize=3, linewidth=2)
 
     ax.set_ylabel(r'ES|TEX amplification $(\mathcal{A}^\mathrm{S}, \mathcal{A}^\mathrm{T})$',
                   fontsize=12)
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.minorticks_on()
     ax.grid(color='gray', which='major', linestyle=':')
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
     xn, xx = np.floor(opts.start / 5) * 5, np.ceil(opts.end / 5) * 5
     ax.set_xlim(xn, xx)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(xn, xx)))
-
-    ax.set_yticks(np.arange(lims[0], lims[1] + lims[2], lims[2]))
-    ax.set_ylim(lims[0], lims[1])
 
     ax.set_title('Avg. Event Severity and Total Events Extremity', fontsize=14)
     ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
@@ -278,23 +230,24 @@ def plot_data(opts, data):
     """
     fig, axs = plt.subplots(4, 2, figsize=(14, 16))
 
+    gr_str = 'GR'
+    if 'agr' in opts:
+        gr_str = 'AGR'
+
     # plot GR data
-    gr_vars = ['EF_AGR_AF', 'ED_avg_AGR_AF', 'EM_avg_AGR_AF', 'EA_avg_AGR_AF']
+    gr_vars = [f'EF_{gr_str}_AF', f'ED_avg_{gr_str}_AF', f'EM_avg_{gr_str}_AF',
+               f'EA_avg_{gr_str}_AF']
     rval = 0.2
-    lims = get_lims(data[gr_vars], rval=rval)
     for irow, gr_var in enumerate(gr_vars):
-        plot_gr_data(opts=opts, ax=axs[irow, 0], data=data[gr_var], lims=lims)
+        plot_gr_data(opts=opts, ax=axs[irow, 0], data=data[gr_var])
 
     # plot maps
     map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC']
-    mlims = get_lims(data[gr_vars], rval=rval)
     for irow, map_var in enumerate(map_vars):
-        plot_map(opts=opts, fig=fig, ax=axs[irow, 1], data=data[map_var], lims=mlims)
+        plot_map(opts=opts, fig=fig, ax=axs[irow, 1], data=data[map_var])
 
     # plot ES and TEX
-    rval_tex = 5
-    tex_lims = get_lims(data[f'TEX_AGR_AF'], rval=rval_tex)
-    plot_tex_es(opts=opts, ax=axs[-1, -1], data=data, lims=tex_lims)
+    plot_tex_es(opts=opts, ax=axs[-1, -1], data=data)
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
 

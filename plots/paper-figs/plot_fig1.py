@@ -192,9 +192,9 @@ def plot_fig1d():
     plot_map(fig=fig, ax=axs, data=t99.values, levels=lvls, cbar_ticks=np.arange(19, 33, 3),
              ext='neither')
 
-    axs.add_patch(pat.Rectangle(xy=(473, 56), height=20, width=25, edgecolor='black',
+    axs.add_patch(pat.Rectangle(xy=(473, 73), height=20, width=25, edgecolor='black',
                                 fill=False, linewidth=2))
-    axs.add_patch(pat.Rectangle(xy=(410, 28), height=92, width=125, edgecolor='black',
+    axs.add_patch(pat.Rectangle(xy=(410, 45), height=92, width=125, edgecolor='black',
                                 fill=False, linewidth=2))
 
     axs.axis('off')
@@ -238,8 +238,8 @@ def plot_fig1e():
 
 def run():
     # plot_fig1c()
-    # plot_fig1d()
-    plot_fig1e()
+    plot_fig1d()
+    # plot_fig1e()
 
 
 if __name__ == '__main__':

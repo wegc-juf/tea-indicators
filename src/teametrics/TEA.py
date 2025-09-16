@@ -44,10 +44,22 @@ class TEAIndicators:
             use_dask: use dask for calculations. Default: False
         """
         if threshold is not None and isinstance(threshold, (int, float)):
-            threshold = xr.full_like(input_data[0], threshold)
+            if input_data is not None:
+                threshold = xr.full_like(input_data[0], threshold)
+            elif mask is not None:
+                threshold = xr.full_like(mask, threshold)
+            else:
+                raise ValueError("Either input_data grid or mask must be provided for using a fixed threshold!")
         self.threshold_grid = threshold
+        
+        # set default x and y dim names
+        self.xdim = 'lon'
+        self.ydim = 'lat'
 
         self.mask = mask
+        if mask is not None:
+            self._find_dim_names(data=mask)
+        
         self.apply_mask = apply_mask
 
         self.use_dask = use_dask
@@ -84,7 +96,7 @@ class TEAIndicators:
 
         self._calc_grid = True
         self._calc_gr = True
-
+        
         if input_data is not None:
             if self.threshold_grid is None:
                 raise ValueError("Threshold grid must be set together with input data")
@@ -134,12 +146,12 @@ class TEAIndicators:
         """
         rename_dict_inv = {}
         if 'lon' not in self.input_data.dims:
-            rename_dict = {'x': 'lon', 'y': 'lat'}
+            rename_dict = {self.xdim: 'lon', self.ydim: 'lat'}
             self.input_data = self.input_data.rename(rename_dict)
             self.area_grid = self.area_grid.rename(rename_dict)
             self.mask = self.mask.rename(rename_dict)
             self.threshold_grid = self.threshold_grid.rename(rename_dict)
-            rename_dict_inv = {'lon': 'x', 'lat': 'y'}
+            rename_dict_inv = {'lon': self.xdim, 'lat': self.ydim}
 
         self.input_data = self.input_data.sel(lat=slice(lat_range[1], lat_range[0]),
                                               lon=slice(lon_range[0], lon_range[1]))
@@ -160,13 +172,11 @@ class TEAIndicators:
         crop all grids to the mask extents
         """
         mask = self.mask
-        if 'lon' not in mask.dims:
-            mask = mask.rename({'x': 'lon', 'y': 'lat'})
         idx_with_data = np.where(mask > 0)
-        lon_min = mask.lon[idx_with_data[1]].min().values
-        lon_max = mask.lon[idx_with_data[1]].max().values
-        lat_min = mask.lat[idx_with_data[0]].min().values
-        lat_max = mask.lat[idx_with_data[0]].max().values
+        lon_min = mask[self.xdim][idx_with_data[1]].min().values
+        lon_max = mask[self.xdim][idx_with_data[1]].max().values
+        lat_min = mask[self.ydim][idx_with_data[0]].min().values
+        lat_max = mask[self.ydim][idx_with_data[0]].max().values
         if 'lon' in self.mask.dims:
             lat_range = [lat_min, lat_max]
         else:
@@ -174,12 +184,39 @@ class TEAIndicators:
         lon_range = [lon_min, lon_max]
         self._crop_to_rect(lat_range, lon_range)
 
+    def _find_dim_names(self, data):
+        # TODO: make this more dynamic, maybe add x and y names in CFG
+        try:
+            spatial_dims = [dim for dim in data.dims if dim != 'time']
+
+            dim_mapping = {'x': ('x', 'y'),
+                           'X': ('X', 'Y'),
+                           'lon': ('lon', 'lat'),
+                           'longitude': ('longitude', 'latitude'),
+                           'Longitude': ('Longitude', 'Latitude')}
+
+            for key, (xdim, ydim) in dim_mapping.items():
+                if key in spatial_dims:
+                    self.xdim = xdim
+                    self.ydim = ydim
+                    break
+            else:
+                raise ValueError("Names of x- and y-dim of input data could not be determined. "
+                                 "Please provide data with common dimension names (x/y, X/Y, lon/lat, "
+                                 "longitude/latitude, Longitude/Latitude).")
+        except:
+            raise ValueError("Name of time dim of input data could not be determined. "
+                             "Please provide data with common time names (time, days).")
+
     def _set_input_data_grid(self, input_data_grid):
         """
         set input data grid
         Args:
             input_data_grid: gridded input data (e.g. temperature, precipitation)
         """
+        # add dim names
+        self._find_dim_names(data=input_data_grid)
+
         if self.mask is not None and self.apply_mask:
             self.input_data = input_data_grid.where(self.mask > 0)
             self._crop_to_mask_extents()
@@ -190,8 +227,9 @@ class TEAIndicators:
             # set time index
             if 'days' in input_data_grid.dims:
                 self.input_data = self.input_data.rename({'days': 'time'})
+                self.tdim = 'time'
             elif 'time' in input_data_grid.dims:
-                pass
+                self.tdim = 'time'
             else:
                 raise ValueError("Input data must have a 'days' or 'time' dimension")
             if self.input_data.ndim > 1:
@@ -199,6 +237,7 @@ class TEAIndicators:
                     raise ValueError("Input data and threshold results must have the same area")
                 if self.input_data.shape[-2:] != self.area_grid.shape:
                     raise ValueError("Input data and area results must have the same shape")
+
 
     def _calc_DTEC(self):
         """
@@ -250,15 +289,28 @@ class TEAIndicators:
         dteec = xr.full_like(dtec, np.nan)
 
         if self.gridded:
-            dtec_3d = dtec.values
             # loop through all rows and calculate DTEEC
-            for iy in range(len(dtec_3d[0, :, 0])):
-                dtec_row = dtec_3d[:, iy, :]
+            for iy in range(len(dtec[self.ydim])):
+                dtec_row = dtec.isel({self.ydim: iy})
                 # skip all nan rows
-                if np.isnan(dtec_row).all():
+                if np.isnan(dtec_row.values).all():
                     continue
-                dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=0, arr=dtec_row)
-                dteec[:, iy, :] = dteec_row
+                try:
+                    tdim_idx = dtec_row.dims.index(self.tdim)
+                except ValueError:
+                    raise ValueError(f"Time dimension '{self.tdim}' not found in DTEC data. "
+                                     f"Available dimensions: {dtec_row.dims}")
+                dteec_row = np.apply_along_axis(self._calc_dteec_1d, axis=tdim_idx,
+                                                arr=dtec_row.values)
+
+                try:
+                    ydim_idx = dtec.dims.index(self.ydim)
+                except ValueError:
+                    raise ValueError(f"Y dimension '{self.ydim}' not found in DTEC data. "
+                                     f"Available dimensions: {dtec.dims}")
+                dteec_slice = [slice(None)] * dteec.ndim
+                dteec_slice[ydim_idx] = iy
+                dteec[tuple(dteec_slice)] = dteec_row
         else:
             dteec[:] = self._calc_dteec_1d(dtec_cell=dtec.values)
 
@@ -312,7 +364,7 @@ class TEAIndicators:
         if 'DTEA' not in self.daily_results:
             self._calc_DTEA()
         dtea = self.daily_results.DTEA
-        dtea_gr = dtea.sum(axis=(1, 2), skipna=True)
+        dtea_gr = dtea.sum(dim=(self.xdim, self.ydim), skipna=True)
         if relative:
             dtea_gr = dtea_gr / self.gr_size
             dtea_gr.attrs = get_attrs(vname='DTEA_GR', data_unit='%')
@@ -375,7 +427,7 @@ class TEAIndicators:
         if self.area_grid is None:
             self._create_area_grid(dtem)
         area_fac = self.area_grid / dtea_gr
-        dtem_gr = (dtem * area_fac).sum(axis=(1, 2), skipna=True)
+        dtem_gr = (dtem * area_fac).sum(dim=(self.xdim, self.ydim), skipna=True)
         dtem_gr = dtem_gr.where(dtec_gr == 1, self.null_val)
         dtem_gr = dtem_gr.rename(f'{dtem.name}_GR')
         dtem_gr.attrs = get_attrs(vname='DTEM_GR', data_unit=self.unit)
@@ -434,6 +486,7 @@ class TEAIndicators:
         self.area_grid = self.daily_results.area_grid
         self.gr_size = self.area_grid.sum().values
         self.unit = self.daily_results.DTEM.attrs['units']
+        self._find_dim_names(data=self.daily_results)
 
     def set_daily_results(self, daily_results):
         """
@@ -552,7 +605,7 @@ class TEAIndicators:
         # replace 0 values with nan to avoid division by 0
         a_gr = a_gr.where(a_gr > 0, np.nan)
 
-        N_hours_gr = (a_nl / a_gr * N_hours).sum(axis=(1, 2), skipna=True)
+        N_hours_gr = (a_nl / a_gr * N_hours).sum(dim=(self.xdim, self.ydim), skipna=True)
         N_hours_gr.attrs = get_attrs(vname='Nhours_GR', data_unit='h')
         self.daily_results['Nhours_GR'] = N_hours_gr
         self.daily_results['DTED_GR'] = self.daily_results.Nhours_GR
@@ -614,7 +667,7 @@ class TEAIndicators:
 
         for var in ['t_hfirst', 't_hlast', 't_hmax']:
             t_h = self.daily_results[var]
-            t_h_gr = (a_nl / a_gr * t_h).sum(axis=(1, 2), skipna=True)
+            t_h_gr = (a_nl / a_gr * t_h).sum(dim=(self.xdim, self.ydim), skipna=True)
             t_h_gr = t_h_gr.where(self.daily_results.Nhours_GR > 0, np.nan)
             t_h_gr.attrs = get_attrs(vname=f'{var}_GR')
             self.daily_results[f'{var}_GR'] = t_h_gr
@@ -1198,7 +1251,8 @@ class TEAIndicators:
 
     # ### Decadal mean functions ###
 
-    def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False, drop_annual_results=True,
+    def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False,
+                                drop_annual_results=True,
                                 min_duration=10):
         """
         calculate decadal mean for all CTP indicators
@@ -1790,29 +1844,33 @@ class TEAIndicators:
         Args:
             template_grid: template grid to create area grid from
         """
+        latname, lonname = self.ydim, self.xdim
+
         # circumference of earth at equator
         c_lon_eq = 40075
         # circumference of earth though poles
         c_lat = 40008
 
         # size of one grid cell (in km)
-        lat_size = abs(template_grid.lat[1] - template_grid.lat[0]) * c_lat / 360
-        lon_size = ((template_grid.lon[1] - template_grid.lon[0]) * c_lon_eq / 360 *
-                    np.cos(np.deg2rad(template_grid.lat)))
+        lat_size = abs(template_grid[latname][1] - template_grid[latname][0]) * c_lat / 360
+        lon_size = ((template_grid[lonname][1] - template_grid[lonname][0]) * c_lon_eq / 360 *
+                    np.cos(np.deg2rad(template_grid[latname])))
 
         # create area size grid (in areals)
-        self.area_grid = lon_size * (lat_size * xr.ones_like(template_grid.lon)) / 100
+        self.area_grid = lon_size * (lat_size * xr.ones_like(template_grid[lonname])) / 100
 
     def _create_area_grid_regular_cartesian(self, template_grid):
         """
         create area grid for regular cartesian grid
         Args:
             template_grid: template grid to create area grid from
+            capitalized: if True, use capitalized names for x and y dimensions
         """
+
         area_grid = xr.full_like(template_grid[0, :, :], 1)
         # get size of one grid cell (in km2)
-        x_size = abs(template_grid.x[1] - template_grid.x[0]) / 1000
-        y_size = abs(template_grid.y[1] - template_grid.y[0]) / 1000
+        x_size = abs(template_grid[self.xdim][1] - template_grid[self.xdim][0]) / 1000
+        y_size = abs(template_grid[self.ydim][1] - template_grid[self.ydim][0]) / 1000
         cell_area = x_size * y_size
 
         # create area size grid (in areals)
@@ -1826,12 +1884,11 @@ class TEAIndicators:
         Args:
             template_grid: template grid to create area grid from
         """
-        if 'lat' in template_grid.dims and 'lon' in template_grid.dims:
-            # calculate area grid out of lat lon info
-            self._create_area_grid_lat_lon(template_grid)
-        elif 'x' in template_grid.dims and 'y' in template_grid.dims:
-            # calculate equal area grid
+        if self.xdim in ['x', 'X'] and self.ydim in ['y', 'Y']:
             self._create_area_grid_regular_cartesian(template_grid)
+        elif (self.xdim in ['lon', 'Lon', 'longitude', 'Longitude'] and
+              self.ydim in ['lat', 'Lat', 'latitude', 'Latitude']):
+            self._create_area_grid_lat_lon(template_grid)
         else:
             raise ValueError("Input data grid must contain lat lon or x y dimensions")
 

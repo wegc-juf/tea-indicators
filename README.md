@@ -45,7 +45,7 @@ To prepare the input datasets (ERA5, ERA5-Land, or SPARTACUS) run one of the fol
   and once for orography data.
 
 ### 3) Creation of mask file (optional)
-In case you want do define your own GeoRegion (GR) mask, you can create a mask file using the script
+In case you want to define your own GeoRegion (GR) mask, you can create a mask file using the script
 `create_region_masks --config-file CONFIG_FILE`\
 This script allows you to create a mask file for your GR based on a shapefile or coordinates.
 The configuration options for the script are documented in [`CFG-PARAMS-doc.md`](https://wegcgitlab.uni-graz.at/hst/tea-indicators/-/blob/main/docs/CFG-PARAMS-doc.md) \

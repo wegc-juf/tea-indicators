@@ -289,9 +289,9 @@ def run():
     create_legend(fig=fig, axs=axes[0], reg=reg)
 
     # iterate over each subplot and add a text label
-    labels = ['a', 'd', 'b', 'e', 'c', 'f']
+    labels = ['a)', 'd)', 'b)', 'e)', 'c)', 'f)']
     for i, ax in enumerate(axs.flat):
-        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14, fontweight='bold',
+        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
                 va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)

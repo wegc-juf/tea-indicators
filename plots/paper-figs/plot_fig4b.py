@@ -90,8 +90,8 @@ def set_plot_props(ax, reg, acc, refv, tpoint):
     :return: props
     """
 
-    xmin, xmax = 0, 4
-    ymin, ymax = 0, 8
+    xmin, xmax = 0, 3
+    ymin, ymax = 0, 7
     ax.set_xticks(np.arange(xmin, xmax + 1, 1))
     ax.set_yticks(np.arange(ymin, ymax + 1, 1))
 
