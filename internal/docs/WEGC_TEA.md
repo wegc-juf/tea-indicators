@@ -3,7 +3,7 @@
 ## General information
 
 All TEA related input data are stored in the `/data/arsclisys/normal/clim-hydro/TEA-Indicators/`
-directory. Henceforth, refered to as `<TEA-path>`.
+directory. Henceforth, referred to as `<TEA-path>`.
 
 ## CFG files
 
