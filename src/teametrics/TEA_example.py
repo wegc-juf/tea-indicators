@@ -2,8 +2,8 @@
 """
 Example for using the TEA class
 """
-import sys
 import os
+import requests
 
 import xarray as xr
 import matplotlib.pyplot as plt
@@ -30,6 +30,49 @@ def get_opts():
     return opts
 
 
+def get_binary_file(filename,
+                    url="https://cloud.uni-graz.at/s/xrN7pSkMPZfcJiE/download",
+                    cache_dir="~/.my_package_data") -> str:
+    """
+    Ensures the binary file is available locally.
+    Downloads it if missing.
+
+    Parameters
+    ----------
+    url : str
+        Direct download URL for the file.
+    filename : str
+        Name to save the file as.
+    cache_dir : str
+        Directory to store the file (default: ~/.my_package_data).
+
+    Returns
+    -------
+    str
+        Path to the local file.
+    """
+    cache_dir = os.path.expanduser(cache_dir)
+    os.makedirs(cache_dir, exist_ok=True)
+
+    file_path = os.path.join(cache_dir, filename)
+
+    if not os.path.exists(file_path):
+        print(f"Downloading {filename} ...")
+        resp = requests.get(url, stream=True)
+        resp.raise_for_status()
+
+        with open(file_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        print(f"Saved to {file_path}")
+    else:
+        print(f"Using cached file at {file_path}")
+
+    return file_path
+
+
 def run():
     """
     Run the TEA example.
@@ -38,10 +81,13 @@ def run():
     """
     opts = get_opts()
     
-    # load example data (ERA5 Switzerland, 1956-2024, daily maximum temperature)
+    # download example file
     ERA5_file = 'ERA5_Tx_1956-2024_CH.nc'
-    my_path = os.path.dirname(os.path.abspath(__file__))
-    input_data = xr.open_dataset(f'{my_path}/data/examples/{ERA5_file}')
+    example_path = get_binary_file(filename=ERA5_file)
+    print(f"Binary ready at: {example_path}")
+    
+    # load example data (ERA5 Switzerland, 1956-2024, daily maximum temperature)
+    input_data = xr.open_dataset(example_path)
     
     # create TEA object; set threshold to THRESHOLD degC
     tea_obj = TEAIndicators(input_data=input_data.Tx, threshold=THRESHOLD, unit='degC')
