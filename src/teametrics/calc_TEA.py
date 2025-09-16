@@ -240,7 +240,10 @@ def _get_threshold(opts):
     else:
         threshold_file = f'{opts.statpath}/threshold_{opts.param_str}_{opts.period}_{opts.region}_{opts.dataset}.nc'
         if opts.recalc_threshold or not os.path.exists(threshold_file):
-            logger.info('Calculating percentiles...')
+            if not os.path.exists(threshold_file):
+                logger.info(f'Threshold file {threshold_file} not found. Calculating percentiles...')
+            else:
+                logger.info('Calculating percentiles...')
             threshold_grid = create_threshold_grid(opts=opts)
             logger.info(f'Saving threshold grid to {threshold_file}')
             threshold_grid.to_netcdf(threshold_file)
