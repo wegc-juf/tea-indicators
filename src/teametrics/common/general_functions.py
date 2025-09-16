@@ -148,7 +148,7 @@ def compare_to_ref(tea_result, tea_ref, relative=False):
             print(f'{vvar} not found in reference file.')
 
 
-def get_input_filenames(start, end, inpath, param_str, ds, period='annual', hourly=False):
+def get_input_filenames(start, end, inpath, param_str, ds_name, period='annual', hourly=False):
     """
     get input filenames
 
@@ -158,7 +158,7 @@ def get_input_filenames(start, end, inpath, param_str, ds, period='annual', hour
     :type end: int
     :param inpath: input path
     :param param_str: parameter string
-    :param ds: name of dataset of input data
+    :param ds_name: name of dataset of input data
     :param period: period of interest. Default is 'annual'
     :type period: str
     :param hourly: if True, return hourly data filenames
@@ -167,7 +167,7 @@ def get_input_filenames(start, end, inpath, param_str, ds, period='annual', hour
     :return: list of filenames
     """
 
-    if ds == 'EOBS':
+    if ds_name == 'EOBS':
         filenames = Path.glob(f'{inpath}{param_str}*.nc')
 
     else:
@@ -268,7 +268,7 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
 
     filenames = get_input_filenames(period=period, start=start, end=end,
                                     inpath=opts.input_data_path,
-                                    param_str=param_str, hourly=hourly, ds=opts.dataset)
+                                    param_str=param_str, hourly=hourly, ds_name=opts.dataset)
 
     # load relevant years
     logger.info(f'Loading data from {filenames}...')
