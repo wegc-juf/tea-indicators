@@ -15,9 +15,9 @@ common_params:
     ref_period: 1961-1990
     cc_period: 2010-2024
   dataset: &DATA
-    dataset: ERA5
+    dataset: ERA5Land
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
     statpath: /home/wegnet/results/TEA_indicators_test/static/
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/
     mask_sub: masks/

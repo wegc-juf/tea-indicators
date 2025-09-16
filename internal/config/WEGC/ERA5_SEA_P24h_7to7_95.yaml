@@ -1,6 +1,6 @@
 common_params:
   GeoRegion: &GR
-    region: FBR
+    region: SEA
   parameter: &PARAM
     parameter: P24h_7to7
     precip: true
