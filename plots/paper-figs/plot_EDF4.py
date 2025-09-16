@@ -219,6 +219,11 @@ def run():
     for irow, map_var in enumerate(map_vars):
         plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
 
+    axs[3, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+                   horizontalalignment='left', verticalalignment='center',
+                   transform=axs[3, 1].transAxes, backgroundcolor='mistyrose',
+                   fontsize=8)
+
     labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
     for i, ax in enumerate(axs.flat):
         ax.text(-0.15, 1.2, labels[i], transform=ax.transAxes, fontsize=14,

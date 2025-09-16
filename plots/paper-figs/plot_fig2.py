@@ -292,6 +292,11 @@ def run():
                 ddata=dec_data[['TEX_GR', 'ES_avg_GR']],
                 af_cc=data[[f'TEX_GR_AF_CC', f'ES_avg_GR_AF_CC']], nv=natv)
 
+    axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+                   horizontalalignment='left', verticalalignment='center',
+                   transform=axs[2, 1].transAxes, backgroundcolor='mistyrose',
+                   fontsize=8)
+
     # iterate over each subplot and add a text label
     labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
     for i, ax in enumerate(axs.flat):
