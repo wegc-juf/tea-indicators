@@ -121,10 +121,10 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     ref = gmean(ddata.sel(time=slice(params['REF']['start_cy'], params['REF']['end_cy'])).values)
     cc = gmean(ddata.sel(time=slice(params['CC']['start_cy'], params['CC']['end_cy'])).values)
 
-    ax.text(0.02, 0.9, f'P24H-p95WAS-{props["legend_name"]}' + r'$_\mathrm{Ref | CC}$ = '
+    ax.text(0.02, 0.87, f'P24H-p95WAS-{props["legend_name"]}' + r'$_\mathrm{Ref | CC}$ = '
             + f'{ref:.2f}' + r'$\,$|$\,$'
             + f'{cc:.2f} {props["unit"]} \n'
-            + props['acc'] + ' = ' + f'{af_cc:.2f}',
+            + props['acc'] + ' = ' + f'{cc/ref:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
             fontsize=9)
@@ -208,28 +208,28 @@ def plot_map(fig, ax, data):
 def run():
     data, natv, ddata = get_data()
 
-    fig, axs = plt.subplots(4, 2, figsize=(14, 16))
+    fig, axs = plt.subplots(3, 2, figsize=(12, 10))
 
-    gr_vars = ['EF_GR', 'ED_avg_GR', 'EM_avg_GR_Md', 'tEX_GR']
+    gr_vars = ['EF_GR', 'ED_avg_GR', 'EM_avg_GR_Md']
     for irow, gr_var in enumerate(gr_vars):
         plot_gr_data(ax=axs[irow, 0], data=data[f'{gr_var}_AF'], ddata=ddata[gr_var],
                      af_cc=data[f'{gr_var}_AF_CC'], nv=natv)
 
-    map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_Md_AF_CC', 'tEX_AF_CC']
+    map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_Md_AF_CC']
     for irow, map_var in enumerate(map_vars):
         plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
 
-    axs[3, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
+    axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
                    horizontalalignment='left', verticalalignment='center',
-                   transform=axs[3, 1].transAxes, backgroundcolor='mistyrose',
+                   transform=axs[2, 1].transAxes, backgroundcolor='mistyrose',
                    fontsize=8)
 
-    labels = ['a)', 'e)', 'b)', 'f)', 'c)', 'g)', 'd)', 'h)']
+    labels = ['a)', 'd)', 'b)', 'e)', 'c)', 'f)']
     for i, ax in enumerate(axs.flat):
-        ax.text(-0.15, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
+        ax.text(-0.25, 1.3, labels[i], transform=ax.transAxes, fontsize=14,
                 va='top', ha='left')
 
-    fig.subplots_adjust(wspace=0.2, hspace=0.33)
+    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.4, hspace=0.45)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
                 'ExtDataFig4.png', dpi=300, bbox_inches='tight')
 

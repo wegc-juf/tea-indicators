@@ -61,7 +61,10 @@ def plot_maps(fig, spcus, era5, land):
 
     levels = np.arange(0.25, 2.25, 0.25)
 
-    era5 = regrid_era5(ds=era5['tEX_AF_CC'], grid=spcus['tEX_AF_CC'])
+    if land:
+        era5 = regrid_era5(ds=era5, grid=spcus['tEX_AF_CC'])
+    else:
+        era5 = regrid_era5(ds=era5['tEX_AF_CC'], grid=spcus['tEX_AF_CC'])
 
     params = {
         'SPARTACUS': {'data': spcus['tEX_AF_CC'], 'ax': fig.add_axes([0.53, 0.69, 0.17, 0.18]),
@@ -252,6 +255,21 @@ def create_legend(fig, ax, land):
                 r'$\mathcal{A}^\mathrm{t}$', r'$\mathcal{A}^\mathrm{T}$'),
                ncol=6, loc=(0.27, 0.01))
 
+def load_e5l_data():
+
+    sar = get_data(reg='SAR', var='Precip24Hsum_7to7', ds='ERA5Land')
+    aut = get_data(reg='AUT', var='Precip24Hsum_7to7', ds='ERA5Land')
+
+    sar = sar['tEX_AF_CC']
+    aut = aut['tEX_AF_CC']
+
+    aut = aut.sel(lon=slice(sar.lon.min().values-1, sar.lon.max().values+1),
+                  lat=slice(sar.lat.max().values+1, sar.lat.min().values-1))
+
+    aut.loc[dict(lon=sar.lon, lat=sar.lat)] = sar
+
+    return aut
+
 
 def run():
     land = False
@@ -273,8 +291,11 @@ def run():
             e5_data = get_data(reg=reg, var=vvar, ds=e5_ds)
             sp_data = get_data(reg=reg, var=vvar, ds='SPARTACUS')
             if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
-                e5_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
-                plot_maps(fig=fig, spcus=sp_data, era5=e5_data, land=land)
+                if e5_ds == 'ERA5':
+                    e5_map_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
+                else:
+                    e5_map_data = load_e5l_data()
+                plot_maps(fig=fig, spcus=sp_data, era5=e5_map_data, land=land)
             plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=vvar, reg=reg,
                          land=land)
 

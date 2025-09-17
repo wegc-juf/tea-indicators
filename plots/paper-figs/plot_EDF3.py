@@ -124,7 +124,7 @@ def plot_gr_data(ax, adata, ddata, afdata, su, sl):
         ax.text(0.02, 0.89, f'TMax-p99ANN-{props["nv_name"]}' + r'$_\mathrm{Ref | CC}$ = '
                 + f'{ref:.0f}' + r'$\,$|$\,$'
                 + f'{cc:.0f} {props["unit"]} \n'
-                + r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$ = '
+                + r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = '
                 + f'{afdata:.2f}',
                 horizontalalignment='left',
                 verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
