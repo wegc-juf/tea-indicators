@@ -124,12 +124,12 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     ax.text(0.02, 0.87, f'P24H-p95WAS-{props["legend_name"]}' + r'$_\mathrm{Ref | CC}$ = '
             + f'{ref:.2f}' + r'$\,$|$\,$'
             + f'{cc:.2f} {props["unit"]} \n'
-            + props['acc'] + ' = ' + f'{cc/ref:.2f}',
+            + props['acc'] + ' = ' + f'{af_cc:.2f}',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes, backgroundcolor='whitesmoke',
-            fontsize=9)
+            fontsize=9) #cc/ref
 
-    if data.name == 'EA_avg_GR_AF':
+    if data.name == 'EM_avg_GR_Md_AF':
         ax.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
 
 

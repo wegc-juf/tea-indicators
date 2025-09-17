@@ -62,12 +62,12 @@ def plot_maps(fig, spcus, era5, land):
     levels = np.arange(0.25, 2.25, 0.25)
 
     if land:
-        era5 = regrid_era5(ds=era5, grid=spcus['tEX_AF_CC'])
+        era5 = regrid_era5(ds=era5, grid=spcus["EM_Md_AF_CC"])
     else:
-        era5 = regrid_era5(ds=era5['tEX_AF_CC'], grid=spcus['tEX_AF_CC'])
+        era5 = regrid_era5(ds=era5["EM_Md_AF_CC"], grid=spcus["EM_Md_AF_CC"])
 
     params = {
-        'SPARTACUS': {'data': spcus['tEX_AF_CC'], 'ax': fig.add_axes([0.53, 0.69, 0.17, 0.18]),
+        'SPARTACUS': {'data': spcus["EM_Md_AF_CC"], 'ax': fig.add_axes([0.53, 0.69, 0.17, 0.18]),
                       'title': 'SPCUS-P24H-p95WAS-'
                                + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$'},
         'ERA5': {'data': era5, 'ax': fig.add_axes([0.71, 0.69, 0.19, 0.18]),
@@ -75,7 +75,7 @@ def plot_maps(fig, spcus, era5, land):
                           + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$'}}
 
     # create mask
-    mask = spcus['tEX_AF_CC']
+    mask = spcus["EM_Md_AF_CC"]
     mask = mask.where(mask.isnull(), 1)
 
     for ids in ['SPARTACUS', 'ERA5']:
@@ -114,10 +114,11 @@ def plot_maps(fig, spcus, era5, land):
 
 def plot_subplot(ax, spcus, era5, var, reg, land):
 
-    cols = {'EF': 'tab:blue', 'FD': 'tab:purple', 'tEX': 'tab:orange', 'TEX': 'tab:red'}
+    cols = {'EF': 'tab:blue', 'FD': 'tab:purple', 'EM': 'tab:orange',
+            'tEX': 'tab:orange', 'TEX': 'tab:red'}
 
     if var == 'Precip24Hsum_7to7':
-        plot_vars = ['EF', 'FD', 'tEX']
+        plot_vars = ['EF', 'FD', 'EM']
         ymin, ymax = 0.6, 1.8
     else:
         plot_vars = ['EF', 'FD', 'tEX', 'TEX']
@@ -146,19 +147,23 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
 
     acc = 100
     for ivar, pvar in enumerate(plot_vars):
+        if pvar == 'EM':
+            plt_var = 'EM_GR_Md_AF'
+        else:
+            plt_var = f'{pvar}_{gr_str}_AF'
         try:
-            ax.plot(xticks, era5[f'{pvar}_{gr_str}_AF'], '--', color=cols[pvar], linewidth=1.5,
+            ax.plot(xticks, era5[plt_var], '--', color=cols[pvar], linewidth=1.5,
                     alpha=0.5)
-            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{pvar}_{gr_str}_AF_CC'].values,
+            ax.plot(xticks[49:], np.ones(len(xticks[49:])) * era5[f'{plt_var}_CC'].values,
                     '--',
                     alpha=0.5, color=cols[pvar], linewidth=2)
         except KeyError:
             pass
-        ax.plot(xticks, spcus[f'{pvar}_{gr_str}_AF'], color=cols[pvar], linewidth=2, markersize=3)
-        ax.plot(xticks[49:], np.ones(len(xticks[49:])) * spcus[f'{pvar}_GR_AF_CC'].values,
+        ax.plot(xticks, spcus[f'{plt_var}'], color=cols[pvar], linewidth=2, markersize=3)
+        ax.plot(xticks[49:], np.ones(len(xticks[49:])) * spcus[f'{plt_var}_CC'].values,
                 color=cols[pvar], linewidth=2)
-        if spcus[f'{pvar}_{gr_str}_AF_CC'] < acc:
-            acc = spcus[f'{pvar}_{gr_str}_AF_CC'].values
+        if spcus[f'{plt_var}_CC'] < acc:
+            acc = spcus[f'{plt_var}_CC'].values
 
     ref_col = 'tab:red'
     if var == 'Precip24Hsum_7to7':
@@ -203,9 +208,9 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t}$'
         e5_var = f'tEX_{gr_str}_AF_CC'
         box_txt = ((('SPCUS-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = '
-                     + f'{np.round(spcus["tEX_GR_AF_CC"], 2):.2f}\n')
+                     + f'{spcus["EM_GR_Md_AF_CC"]:.2f}\n')
                     + f'{e5}-P24H-p95WAS-' + r'$\mathcal{A}_\mathrm{CC}^\mathrm{t}$ = ')
-                   + f'{np.round(era5[e5_var], 2):.2f}')
+                   + f'{era5["EM_GR_Md_AF_CC"]:.2f}')
     else:
         ax.set_ylabel(
             'F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX' + r'$\,$|$\,$' + 'TEX amplification',
@@ -260,8 +265,8 @@ def load_e5l_data():
     sar = get_data(reg='SAR', var='Precip24Hsum_7to7', ds='ERA5Land')
     aut = get_data(reg='AUT', var='Precip24Hsum_7to7', ds='ERA5Land')
 
-    sar = sar['tEX_AF_CC']
-    aut = aut['tEX_AF_CC']
+    sar = sar["EM_Md_AF_CC"]
+    aut = aut["EM_Md_AF_CC"]
 
     aut = aut.sel(lon=slice(sar.lon.min().values-1, sar.lon.max().values+1),
                   lat=slice(sar.lat.max().values+1, sar.lat.min().values-1))
