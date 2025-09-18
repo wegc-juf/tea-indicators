@@ -104,7 +104,7 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     ax.set_xlim(1960, 2025)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
 
-    ymin, ymax = 0.4, 1.6
+    ymin, ymax = 0.4, 1.8
     maj_ticks = np.arange(ymin, ymax + 0.1, 0.1)
     ax.set_yticks(maj_ticks)
     ax.set_ylim(ymin, ymax)
