@@ -201,9 +201,9 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
         ax.set_ylabel('F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX amplification', fontsize=10)
         xpos, ypos = 0.02, 0.28
         if land:
-            off = 0.36
+            off = 0.1
         else:
-            off = 0.33
+            off = 0.1
         xpos_cc, ypos_cc = 0.87, ((acc - ymin) / (ymax - ymin)) + off,
         cc_name = r'$\mathcal{A}_\mathrm{CC}^\mathrm{F, FD, t}$'
         e5_var = f'tEX_{gr_str}_AF_CC'
