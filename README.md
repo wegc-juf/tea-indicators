@@ -85,7 +85,11 @@ Just open an issue on the [GitHub repository](https://wegcgitlab.uni-graz.at/ars
   (gottfried.kirchengast@uni-graz.at)
 
 ## License
-Gnu General Public License v3.0 (GPL-3.0)
+This project is licensed under the Gnu General Public License v3.0 (GPL-3.0). See the LICENSE file for details.
+
+## Citation
+If you use this code, please cite:
+TODO: add Zenodo citation
 
 ## Contributing
 Always welcome - just get in touch with the project developers.
