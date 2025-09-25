@@ -193,9 +193,9 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
     ax.yaxis.set_major_formatter(ScalarFormatter())
 
-    e5 = 'E5'
+    e5 = 'ERA5'
     if land:
-        e5 = 'E5L'
+        e5 = 'ERA5L'
     if var == 'Precip24Hsum_7to7':
         ax.yaxis.set_major_locator(FixedLocator(np.arange(0.6, 2.2, 0.4)))
         ax.set_ylabel('F' + r'$\,$|$\,$' + 'FD' + r'$\,$|$\,$' + 'tEX amplification', fontsize=10)
@@ -277,7 +277,7 @@ def load_e5l_data():
 
 
 def run():
-    land = False
+    land = True
 
     vvars = ['Temperature', 'Precip24Hsum_7to7']
     regions = ['AUT', 'SEA', 'FBR']

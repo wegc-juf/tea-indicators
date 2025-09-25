@@ -66,7 +66,7 @@ def run():
 
     axs.plot(xticks[1:31], np.ones(len(xticks[1:31])), color='tab:gray', linewidth=2)
 
-    axs.text(0.02, 0.8,
+    axs.text(0.016, 0.78,
              r'ERA5-TMax-p99ANN-$\mathcal{A}^\mathrm{T}_\mathrm{CC}$' + '\n'
              + f'EUR: {np.round(cc_vals["EUR"]["mean"], 1):.1f} '
                f'[{np.round(cc_vals["EUR"]["low"], 1):.1f} to '
@@ -83,6 +83,8 @@ def run():
              horizontalalignment='left', verticalalignment='center', transform=axs.transAxes,
              fontsize=10, backgroundcolor='whitesmoke')
 
+    fig.legend(loc=(0.22, 0.03), ncol=4)
+
     axs.set_title('Total Events Extremity (TEX) amplification | EUR & Europe regions',
                   fontsize=12)
     axs.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
@@ -94,6 +96,7 @@ def run():
     axs.set_ylim(0, 25)
     axs.xaxis.set_minor_locator(mticker.FixedLocator(np.arange(1960, 2025)))
 
+    fig.subplots_adjust(bottom=0.25, top=0.9, left=0.1, right=0.9)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
                 'Figure4c.png',
                 bbox_inches='tight', dpi=300)
