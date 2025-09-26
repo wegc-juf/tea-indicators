@@ -88,11 +88,11 @@ def plot_props(vvar):
              'EM_avg_AF_CC': {'cb_lbl': 'ERA5-TMax-p99ANN-EM'
                                         + r'$_\mathrm{CC}$ amplification '
                                           r'($\mathcal{A}_\mathrm{CC}^\mathrm{M}$)',
-                              'title': 'Event Magnitude (EM) amplification | Heat'},
+                              'title': 'Exceedance Magnitude (EM) amplification | Heat'},
              'EA_avg_AF_CC': {'cb_lbl': 'ERA5-TMax-p99ANN-EA'
                                         + r'$_\mathrm{CC}$ amplification '
                                           r'($\mathcal{A}_\mathrm{CC}^\mathrm{A}$)',
-                              'title': 'Event Area (EA) amplification | Heat'}}
+                              'title': 'Exceedance Area (EA) amplification | Heat'}}
 
     return props[vvar]
 
@@ -169,6 +169,24 @@ def add_clutter(axs):
              transform=axs.transAxes, fontsize=10, rotation=-10)
 
 
+def check_affected_area(data):
+
+    gt8 = data.sel(lat=slice(70, 35), lon=slice(-11, 40)).where(data > 8)
+    gt10 = data.sel(lat=slice(55, 45), lon=slice(-11, 40)).where(data > 10)
+
+    areas = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
+                            'area_grid_0p5_EUR_ERA5.nc')
+    areas = areas.sel(lon=slice(-11, 40), lat=slice(70, 35))
+    eur_area = areas.sum()
+    ceur_area = areas.sel(lat=slice(55, 45)).sum()
+
+    # percentage of EUR with AF > 8
+    pct_gt8 = areas.where(gt8.notnull()).sum()/eur_area * 100
+
+    # percentage of C-EUR with AF > 10
+    pct_gt10 = areas.where(gt10.notnull()).sum()/ceur_area * 100
+
+
 def run():
     data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
@@ -208,8 +226,8 @@ def run():
         cb_ticks = list(np.arange(0, cx + dc, dc))
         cb_ticks.insert(1, 1)
         cb = plt.colorbar(im, pad=0.03, ticks=cb_ticks, extend=ext)
-        cb.set_label(label=props['cb_lbl'], fontsize=10)
-        cb.ax.tick_params(labelsize=8)
+        cb.set_label(label=props['cb_lbl'], fontsize=12)
+        cb.ax.tick_params(labelsize=10)
 
         # add borders, gridlines, etc.
         axs.add_feature(cfea.BORDERS)
@@ -223,12 +241,12 @@ def run():
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
         axs.set_extent([-10, 40, 30, 75])
-        axs.tick_params(axis='both', which='major', labelsize=10)
+        axs.tick_params(axis='both', which='major', labelsize=12)
 
         # add additional boxes and labels
         add_clutter(axs=axs)
 
-        plt.title(props['title'], fontsize=14)
+        plt.title(props['title'], fontsize=16)
         plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}.png',
                     dpi=300, bbox_inches='tight')
 

@@ -12,15 +12,23 @@ from teametrics.common.general_functions import ref_cc_params
 def get_data():
     af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
                          'amplification/'
-                         'AF_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
+                         'AF_P24h_7to7_95.0p_FBR_WAS_SPARTACUS_1961to2024.nc')
 
     nv = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
                          'NV_AF_P24h_7to7_95.0p_SEA.nc')
 
     dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                          'DEC_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
+                          'DEC_P24h_7to7_95.0p_FBR_WAS_SPARTACUS_1961to2024.nc')
 
     return af, nv, dec
+
+
+def get_map_data():
+    af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+                         'amplification/'
+                         'AF_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
+
+    return af
 
 
 def gr_plot_params(vname):
@@ -96,7 +104,7 @@ def plot_gr_data(ax, data, af_cc, nv, ddata):
     ax.set_xlim(1960, 2025)
     ax.xaxis.set_minor_locator(FixedLocator(np.arange(1960, 2025)))
 
-    ymin, ymax = 0.6, 1.6
+    ymin, ymax = 0.4, 1.8
     maj_ticks = np.arange(ymin, ymax + 0.1, 0.1)
     ax.set_yticks(maj_ticks)
     ax.set_ylim(ymin, ymax)
@@ -207,6 +215,7 @@ def plot_map(fig, ax, data):
 
 def run():
     data, natv, ddata = get_data()
+    map_data = get_map_data()
 
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
 
@@ -217,7 +226,7 @@ def run():
 
     map_vars = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_Md_AF_CC']
     for irow, map_var in enumerate(map_vars):
-        plot_map(fig=fig, ax=axs[irow, 1], data=data[map_var])
+        plot_map(fig=fig, ax=axs[irow, 1], data=map_data[map_var])
 
     axs[2, 1].text(0, 0, 'Alpine data at z > 1500m excluded.',
                    horizontalalignment='left', verticalalignment='center',
@@ -231,7 +240,7 @@ def run():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.4, hspace=0.45)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
-                'ExtDataFig4.png', dpi=300, bbox_inches='tight')
+                'ExtDataFig4_FBR.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

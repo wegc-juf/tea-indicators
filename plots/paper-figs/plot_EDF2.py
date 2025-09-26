@@ -169,6 +169,12 @@ def plot_subplot(axs, data, ii, nv, rdata, param, region, sfac, no_facs):
                 fac = 1
             plot_data = rdata[props[ii]['var']] * fac + 1 - fac
 
+            # some values are negative for Wien in ED, gki wants them to be zero
+            if ii == 2 and reg == 'Wien':
+                plot_data = plot_data.where(plot_data > 0, 0)
+                plot_data[:5] = np.nan
+                plot_data[-4:] = np.nan
+
             axs.plot(xticks, plot_data, color=colors[-(ireg + 1)], label=reg,
                      zorder=1, linestyle=props[ii]['ls'])
 
