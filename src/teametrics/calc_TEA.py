@@ -657,6 +657,12 @@ def run():
 
     # load CFG parameters
     opts = load_opts(fname=__file__, config_file=cmd_opts.config_file)
+    
+    # download example file if specified in config
+    if 'example' in opts.input_data_path:
+        from .TEA_example import dl_example_file
+        eRA5_file, example_path = dl_example_file()
+        opts.input_data_path = example_path
 
     # calculate TEA indicators
     calc_tea_indicators(opts)

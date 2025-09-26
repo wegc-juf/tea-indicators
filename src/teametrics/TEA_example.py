@@ -73,6 +73,13 @@ def get_binary_file(filename,
     return file_path
 
 
+def dl_example_file() -> tuple[str, str]:
+    ERA5_file = 'ERA5_Tx_1956-2024_CH.nc'
+    example_path = get_binary_file(filename=ERA5_file)
+    print(f"Binary ready at: {example_path}")
+    return ERA5_file, example_path
+
+
 def run():
     """
     Run the TEA example.
@@ -82,9 +89,7 @@ def run():
     opts = get_opts()
     
     # download example file
-    ERA5_file = 'ERA5_Tx_1956-2024_CH.nc'
-    example_path = get_binary_file(filename=ERA5_file)
-    print(f"Binary ready at: {example_path}")
+    ERA5_file, example_path = dl_example_file()
     
     # load example data (ERA5 Switzerland, 1956-2024, daily maximum temperature)
     input_data = xr.open_dataset(example_path)

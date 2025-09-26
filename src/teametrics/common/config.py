@@ -357,6 +357,8 @@ def check_config(opts_dict):
 
     for param in opts_dict.keys():
         if 'path' in param or 'file' in param:
+            if 'example' in opts_dict[param]:
+                continue
             is_dir_path(opts_dict[param])
         else:
             check_type(param, opts_dict[param])
