@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: "teametrics"
+authors:
+  - family-names: Fuchsberger
+    given-names: Jürgen
+    orcid: "https://orcid.org/0000-0002-8961-6260"
+    affiliation: "Wegener Center for Climate and Global Change, University of Graz, Graz, Austria"
+  - family-names: Haas
+    given-names: Stephanie Juliane
+    orcid: "https://orcid.org/0000-0001-9891-7818"
+    affiliation: "Wegener Center for Climate and Global Change, University of Graz, Graz, Austria"
+  - family-names: Kirchengast
+    given-names: Gottfried
+    orcid: "https://orcid.org/0000-0001-9187-937X"
+    affiliation: "Wegener Center for Climate and Global Change, University of Graz, Graz, Austria"
+license: "GPL-3.0-or-later"
