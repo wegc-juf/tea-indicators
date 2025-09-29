@@ -1,0 +1,21 @@
+{
+  "title": "teametrics",
+  "creators": [
+    {
+      "name": "Fuchsberger, Jürgen",
+      "orcid": "0000-0002-8961-6260",
+      "affiliation": "Wegener Center for Climate and Global Change, University of Graz, Graz, Austria"
+    },
+    {
+      "name": "Haas, Stephanie",
+      "orcid": "0000-0001-9891-7818",
+      "affiliation": "Wegener Center for Climate and Global Change, University of Graz, Graz, Austria",
+    },
+    {
+      "name": "Kirchengast, Gottfried",
+      "orcid": "0000-0001-9187-937X",
+      "affiliation": "Wegener Center for Climate and Global Change, University of Graz, Graz, Austria"
+    }
+  ],
+  "license": "GPL-3.0-or-later"
+}
