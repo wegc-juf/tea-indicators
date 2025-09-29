@@ -1,6 +1,6 @@
 # teametrics
 
-[![DOI](https://zenodo.org/badge/1064755797.svg)](https://doi.org/10.5281/zenodo.17210239)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17210239.svg)](https://doi.org/10.5281/zenodo.17210239)
 
 A python package to calculate threshold-exceedance-amount (TEA) indicators 
     as described in https://doi.org/10.48550/arXiv.2504.18964.
