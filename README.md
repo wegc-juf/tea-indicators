@@ -71,7 +71,7 @@ In case you want a more fine-grained control over the TEA Indicator calculations
 `teametrics.TEA.TEAIndicators` for normal GeoRegions, and \
 `teametrics.TEA_AGR.TEAAgr` for Aggregated GeoRegions.
 
-A simple use example can be found in the script [`tea_example`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/TEA_example.py). \
+A simple example can be found in the script [`tea_example`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/TEA_example.py).
 
 [//]: # (Source code documentation for the classes can be found in TODO: add source code doc link - use auto doc tools.)
 
