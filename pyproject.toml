@@ -55,7 +55,7 @@ build-backend = "poetry_dynamic_versioning.backend"
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
-style = "pep440"
+style = "semver"
 
 [tool.poetry-dynamic-versioning.substitution]
 folders = [
@@ -63,9 +63,11 @@ folders = [
         '''(^__version__\s*(?::.*?)?=\s*['"])[^'"]*(['"])''',
         { value = '''(^__version_tuple__\s*(?::.*?)?=\s*\()[^)]*(\))''', mode = "tuple" },
     ]  },
+    {path = ".", files = ["README.md"], patterns = ['''(teametrics-)[^ ]+(-py3)''']},
 ]
 
 [tool.poetry]
 
-include = ["src/teametrics/config/*.yaml", "src/teametrics/data/examples/ERA5_Tx_1956-2024_CH.nc"]
+include = ["src/teametrics/config/*.yaml", "src/teametrics/data/examples/ERA5_Tx_1956-2024_CH.nc", "README.md",
+    "LICENSE"]
 version = "0.0.0"
