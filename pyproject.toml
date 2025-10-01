@@ -44,8 +44,7 @@ regrid_SPARTACUS_to_WEGNext = "teametrics.utils.SPARTACUS.regrid_SPARTACUS_to_WE
 # gui_calc_tea = "teametrics.gui.calcTEA:run"
 
 [project.urls]
-#homepage = "TODO"
-repository = "https://wegcgitlab.uni-graz.at/hst/tea-indicators/"
+repository = "https://github.com/wegc-juf/tea-indicators/"
 
 [build-system]
 requires = ["poetry-core>=2.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
