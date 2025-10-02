@@ -67,8 +67,13 @@ folders = [
     {path = ".", files = ["README.md"], patterns = ['''(teametrics-)[^ ]+(-py3)''']},
 ]
 
-[tool.poetry]
+[tool.poetry-dynamic-versioning.files."README.md"]
+persistent-substitution = true
 
+[tool.poetry-dynamic-versioning.files."src/teametrics/__init__.py"]
+persistent-substitution = true
+
+[tool.poetry]
 include = ["src/teametrics/config/*.yaml", "src/teametrics/data/examples/ERA5_Tx_1956-2024_CH.nc", "README.md",
     "LICENSE"]
 version = "0.4.5"
