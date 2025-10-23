@@ -136,26 +136,30 @@ def _prep_lsm(opts):
 
     data = xr.open_dataset(opts.orofile)
     data = data.altitude
-    
-    # get lat resolution
-    lat_resolution = round(abs(data.lat.values[0] - data.lat.values[1]), 4)
-    
-    step = lat_resolution
 
-    # split to eastern and western hemisphere (from 0 ... 360 to -180 .. 180)
-    lsm_e = lsm_raw.sel(longitude=slice(180 + step, 360))
-    lsm_w = lsm_raw.sel(longitude=slice(0, 180))
-    lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]), axis=1)
+    if opts.region != 'GLO':
+        # get lat resolution
+        lat_resolution = round(abs(data.lat.values[0] - data.lat.values[1]), 4)
 
-    lsm_lon = np.arange(-180, 180, step).astype('float32')
-    lsm_lat = lsm_raw.latitude.values
+        step = lat_resolution
 
-    lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
-        'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_lat)})
-    
-    if opts.dataset == 'ERA5Land':
-        lsm = lsm.interp(lon=(np.arange(-1800, 1800, step * 10) / 10),
-                         lat=(np.arange(-900, 900, step * 10) / 10)[::-1])
+        # split to eastern and western hemisphere (from 0 ... 360 to -180 .. 180)
+        lsm_e = lsm_raw.sel(longitude=slice(180 + step, 360))
+        lsm_w = lsm_raw.sel(longitude=slice(0, 180))
+        lsm_values = np.concatenate((lsm_e.lsm.values[0, :, :], lsm_w.lsm.values[0, :, :]), axis=1)
+
+        lsm_lon = np.arange(-180, 180, step).astype('float32')
+        lsm_lat = lsm_raw.latitude.values
+
+        lsm = xr.DataArray(data=lsm_values, dims=('lat', 'lon'), coords={
+            'lon': (['lon'], lsm_lon), 'lat': (['lat'], lsm_lat)})
+
+        if opts.dataset == 'ERA5Land':
+            lsm = lsm.interp(lon=(np.arange(-1800, 1800, step * 10) / 10),
+                             lat=(np.arange(-900, 900, step * 10) / 10)[::-1])
+    else:
+        lsm = lsm_raw.lsm.sel(time=lsm_raw.time[0])
+        lsm = lsm.rename({'latitude': 'lat', 'longitude': 'lon'})
 
     lsm = lsm.sel(lat=data.lat.values, lon=data.lon.values)
 
@@ -446,7 +450,7 @@ def run():
         create_rectangular_gr(opts=opts)
     elif opts.region == 'SEA':
         create_sea_mask(opts=opts)
-    elif opts.region in ['EUR', 'AFR']:
+    elif opts.region in ['EUR', 'AFR', 'GLO']:
         create_agr_mask(opts=opts)
     else:
         create_mask_file(opts)
