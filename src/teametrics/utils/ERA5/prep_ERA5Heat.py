@@ -4,7 +4,7 @@ import os
 import xarray as xr
 
 def combine_daily_files():
-    directory = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Heat/'
+    directory = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Heat_GLO/'
 
     zip_files = sorted(glob.glob(os.path.join(directory, 'raw', '*')))
 
@@ -49,5 +49,5 @@ def reduce_file_size():
 
 
 if __name__ == "__main__":
-    # combine_daily_files()
-    reduce_file_size()
+    combine_daily_files()
+    # reduce_file_size()
