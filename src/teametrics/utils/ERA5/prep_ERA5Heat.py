@@ -29,6 +29,14 @@ def combine_daily_files():
         for tmp_file in nc_files:
             os.remove(tmp_file)
 
+        # reduce file size
+        ds = xr.open_dataset(os.path.join(directory, f'ERA5Heat_{year}.nc'))
+        ds.to_netcdf(os.path.join(directory, 'compressed', f'ERA5Heat_{year}.nc'),
+                     encoding={'utci': {'dtype': 'float32', 'zlib': True, 'complevel': 5}},)
+
+        # remove large uncompressed file
+        os.remove(os.path.join(directory, f'ERA5Heat_{year}.nc'))
+
 
 def reduce_file_size():
     """
@@ -36,7 +44,7 @@ def reduce_file_size():
     Returns:
 
     """
-    directory = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Heat/'
+    directory = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Heat_GLO/'
     files = sorted(glob.glob(os.path.join(directory, '*')))
 
     for file in files:
