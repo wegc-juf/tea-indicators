@@ -14,7 +14,7 @@ def combine_daily_files():
 
         # find year in the filename
         year = file.split('/')[-1].split('_')[1][:4]
-        if int(year) < 2003:
+        if int(year) != 2002:
             continue
 
         # Extract the zip file
