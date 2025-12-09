@@ -159,6 +159,13 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         # TODO: use this also for non-AGR and test
         if 'agr' in opts:
             data, mask, threshold = _reduce_region(opts, data, mask, threshold)
+        
+        if opts.primary_threshold is not None:
+            logger.info(f'Applying primary threshold of {opts.primary_threshold} to input data')
+            if opts.low_extreme:
+                data = data.where(data <= opts.primary_threshold, opts.threshold)
+            else:
+                data = data.where(data >= opts.primary_threshold, opts.threshold)
 
         logger.info('Daily basis variables will be recalculated. Period set to annual.')
 
@@ -173,6 +180,10 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         # computation of daily basis variables (Methods chapter 3)
         if gridded:
             gr = opts.hourly
+            if opts.primary_threshold is not None:
+                gr = True
+            else:
+                gr = opts.hourly
         else:
             gr = False
         tea.calc_daily_basis_vars(gr=gr)

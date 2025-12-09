@@ -238,7 +238,6 @@ class TEAIndicators:
                 if self.input_data.shape[-2:] != self.area_grid.shape:
                     raise ValueError("Input data and area results must have the same shape")
 
-
     def _calc_DTEC(self):
         """
         calculate Daily Threshold Exceedance Count (equation 01)

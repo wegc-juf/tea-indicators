@@ -205,6 +205,9 @@ def _get_default_opts(fname, opts):
         if 'orography' not in opts:
             opts.orography = False
     
+    if 'primary_threshold' not in opts:
+        opts.primary_threshold = None
+    
     return opts
 
 
@@ -230,6 +233,7 @@ def check_type(key, value):
         'precip': bool,
         'threshold_type': str,
         'threshold': float,
+        'primary_threshold': float,
         'smoothing_radius': float,
         'unit': str,
         'low_extreme': bool,
@@ -247,6 +251,7 @@ def check_type(key, value):
         
         # paths
         'input_data_path': str,
+        'raw_data_path': str,
         'statpath': 'path',
         'maskpath': 'path',
         'mask_sub': str,
@@ -371,7 +376,7 @@ def check_config(opts_dict):
         if param in ['start', 'end']:
             max_current_year(param=param, val=opts_dict[param])
     
-    if 'create_region_masks' not in opts_dict['script']:
+    if 'create_region_masks' not in opts_dict['script'] and 'regrid_SPARTACUS_to_WEGNext' not in opts_dict['script']:
         if 'input_data_path' not in opts_dict:
             raise ValueError('input_data_path not set in options. Please set it in the CFG file.')
 
