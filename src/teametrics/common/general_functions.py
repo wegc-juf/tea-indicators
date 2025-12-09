@@ -271,6 +271,10 @@ def get_gridded_data(start, end, opts, period='annual', hourly=False):
                                     param_str=param_str, hourly=hourly, ds_name=opts.dataset)
 
     # load relevant years
+    if filenames == []:
+        raise FileNotFoundError(f'No input files found for {param_str} in {opts.input_data_path}. Please check '
+                                f'input_data_path and parameter settings.')
+    
     logger.info(f'Loading data from {filenames}...')
     try:
         ds = xr.open_mfdataset(filenames, combine='by_coords')

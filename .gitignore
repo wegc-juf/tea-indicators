@@ -14,3 +14,7 @@ __pycache__
 /internal/config/paper_data
 /internal/config/Africa
 /src/teametrics/tea_examples/*.nc
+/src/tea_examples/dec_indicator_variables/amplification/*.nc
+/src/tea_examples/ctp_indicator_variables/*.nc
+/src/tea_examples/daily_basis_variables/*.nc
+/src/tea_examples/dec_indicator_variables/*.nc
