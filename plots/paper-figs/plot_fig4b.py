@@ -1,4 +1,5 @@
 import matplotlib as mpl
+import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
@@ -96,22 +97,28 @@ def set_plot_props(ax, reg, acc, refv, tpoint):
     ax.set_yticks(np.arange(ymin, ymax + 1, 1))
 
     ax.annotate(r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ' + f'{(acc[0] * acc[1]):.1f}',
-                xy=(acc[0], acc[1]), textcoords='offset points', xytext=(10, -4))
+                xy=(acc[0], acc[1]), textcoords='offset points', xytext=(10, -4), fontsize=12)
     ax.annotate(r'$\mathcal{A}_\mathrm{Ref} = 1$',
-                xy=(1, 1), textcoords='offset points', xytext=(15, -4))
+                xy=(1, 1), textcoords='offset points', xytext=(15, -4), fontsize=12)
     ax.annotate(r'$\mathcal{A}_\mathrm{s}^\mathrm{T}(t)$',
-                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(-35, -4))
+                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(-35, -4), fontsize=12)
 
-    ax.text(0.03, 0.94,
+    ax.text(0.03, 0.93,
             'ERA5-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{s|CC}^\mathrm{T}$' + '\n'
             + f'({reg} Avg.Ref-TMax = {refv:.1f} °C)',
             horizontalalignment='left',
             verticalalignment='center', transform=ax.transAxes,
-            fontsize=10, backgroundcolor='whitesmoke')
+            fontsize=12, backgroundcolor='whitesmoke')
 
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
     ax.tick_params(axis='both', which='major', labelsize=12)
+
+    ax.xaxis.set_major_locator(mticker.FixedLocator([0, 0.5, 1, 2, 3]))
+    ax.xaxis.set_minor_locator(mticker.MultipleLocator(0.2))
+
+    ax.yaxis.set_major_locator(mticker.FixedLocator([0, 0.5, 1, 2, 3, 4, 5, 6, 7]))
+    ax.yaxis.set_minor_locator(mticker.MultipleLocator(0.2))
 
 
 def plot_scatter(fig, ax, ef, es, reg, ref):
@@ -148,25 +155,25 @@ def plot_scatter(fig, ax, ef, es, reg, ref):
 
     ax.set_title(subtitles[reg], fontsize=14)
     ax.set_xlabel(r'Event frequency amplification ($\mathcal{A}^\mathrm{F}$)',
-                  fontsize=12)
+                  fontsize=14)
 
     if reg == 'SCN':
         divider = make_axes_locatable(ax)
         cax = divider.append_axes('right', size='10%', pad=0.15)
         cb = fig.colorbar(dots, cax=cax, orientation='vertical',
                           ticks=np.arange(1961, 2025, 5)[1:])
-        cb.set_label(label='Time (core year of decadal-mean value)', fontsize=12)
+        cb.set_label(label='Time (core year of decadal-mean value)', fontsize=14)
         ylabels = [str(itick) for itick in np.arange(1965, 2025, 5)]
         cb.ax.set_yticklabels(ylabels)
-        cb.ax.tick_params(labelsize=10)
+        cb.ax.tick_params(labelsize=12)
 
     if reg == 'SAF':
         ax.set_ylabel(r'Event severity amplification ($\mathcal{A}^\mathrm{S}$)',
-                      fontsize=12)
+                      fontsize=14)
 
 
 def run():
-    fw, fh, dpi = scale_figsize(figwidth=12, figheight=5, figdpi=300)
+    fw, fh, dpi = scale_figsize(figwidth=14, figheight=5, figdpi=300)
     fig, axs = plt.subplots(1, 3, figsize=(fw, fh), dpi=dpi)
 
     data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
