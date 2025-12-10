@@ -16,7 +16,7 @@ def run():
             'C-EUR': sns.color_palette('RdYlGn', n_colors=10)[7],
             'N-EUR': sns.color_palette('Spectral', n_colors=10)[8]}
 
-    fig, axs = plt.subplots(1, 1, figsize=(7, 3.5))
+    fig, axs = plt.subplots(1, 1, figsize=(10, 9))
     xticks = np.arange(1960, 2025)
 
     axs.plot(np.arange(1960, 2025), np.ones(len(np.arange(1960, 2025))), linewidth=1,
@@ -32,11 +32,11 @@ def run():
                              y1=data['TEX_AGR_AF_p05'],
                              y2=data['TEX_AGR_AF_p95'],
                              color=cols[reg],
-                             alpha=0.1, zorder=2)
-            lw, ms = 2.5, 3.5
+                             alpha=0.15, zorder=2)
+            lw, ms = 3.5, 3.5
             vline_x = xticks[xv]
         else:
-            lw, ms = 2, 3
+            lw, ms = 3, 3
             xv += 1
             vline_x = xticks[xv]
 
@@ -46,7 +46,7 @@ def run():
 
         axs.vlines(x=vline_x, ymin=data['TEX_AGR_AF_CC_p05'], ymax=data['TEX_AGR_AF_CC_p95'],
                    colors=cols[reg],
-                   linewidth=3, alpha=0.35)
+                   linewidth=4, alpha=0.35)
 
         cc_low = (data['TEX_AGR_AF_CC']
                   - data['TEX_AGR_AF_CC_slow'] * (1 / np.sqrt(data['N_dof_AGR'])) * 1.645)
@@ -55,18 +55,18 @@ def run():
         axs.vlines(x=vline_x, ymin=cc_low,
                    ymax=cc_upp,
                    colors=cols[reg],
-                   linewidth=3, alpha=0.9)
+                   linewidth=4, alpha=0.9)
 
         axs.plot(xticks[1:], data['TEX_AGR_AF'], color=cols[reg], linewidth=lw, markersize=ms,
                  label=reg)
 
         axs.plot(xticks[-15:],
                  np.ones(len(xticks[-15:])) * data['TEX_AGR_AF_CC'].values,
-                 color=cols[reg], linewidth=2, alpha=0.7)
+                 color=cols[reg], linewidth=3, alpha=0.7)
 
-    axs.plot(xticks[1:31], np.ones(len(xticks[1:31])), color='tab:gray', linewidth=2)
+    axs.plot(xticks[1:31], np.ones(len(xticks[1:31])), color='tab:gray', linewidth=3)
 
-    axs.text(0.016, 0.78,
+    axs.text(0.016, 0.9,
              r'ERA5-TMax-p99ANN-$\mathcal{A}^\mathrm{T}_\mathrm{CC}$' + '\n'
              + f'EUR: {np.round(cc_vals["EUR"]["mean"], 1):.1f} '
                f'[{np.round(cc_vals["EUR"]["low"], 1):.1f} to '
@@ -81,22 +81,24 @@ def run():
                f'[{np.round(cc_vals["N-EUR"]["low"], 1):.1f} to '
                f'{np.round(cc_vals["N-EUR"]["upp"], 1):.1f}]',
              horizontalalignment='left', verticalalignment='center', transform=axs.transAxes,
-             fontsize=10, backgroundcolor='whitesmoke')
+             fontsize=14, backgroundcolor='whitesmoke')
 
-    fig.legend(loc=(0.22, 0.03), ncol=4)
+    fig.legend(loc=(0.3, 0.03), ncol=4)
 
     axs.set_title('Total Events Extremity (TEX) amplification | EUR & Europe regions',
-                  fontsize=12)
-    axs.set_xlabel('Time (core year of decadal-mean value)', fontsize=10)
+                  fontsize=16)
+    axs.set_xlabel('Time (core year of decadal-mean value)', fontsize=14)
     axs.set_ylabel(r'TEX amplification ($\mathcal{A}_\mathrm{CC}^\mathrm{T}$)',
-                   fontsize=10)
+                   fontsize=14)
     axs.minorticks_on()
     axs.grid(color='gray', which='major', linestyle=':')
     axs.set_xlim(1960, 2025)
-    axs.set_ylim(0, 25)
+    axs.set_ylim(0, 30)
     axs.xaxis.set_minor_locator(mticker.FixedLocator(np.arange(1960, 2025)))
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
 
-    fig.subplots_adjust(bottom=0.25, top=0.9, left=0.1, right=0.9)
+    fig.subplots_adjust(bottom=0.15, top=0.9, left=0.1, right=0.9)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
                 'Figure4c.png',
                 bbox_inches='tight', dpi=300)
