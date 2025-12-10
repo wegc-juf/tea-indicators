@@ -128,12 +128,12 @@ def add_clutter(axs):
         axs.scatter(center[0], center[1], marker='x', color='black', s=15,
                     transform=ccrs.PlateCarree())
 
-    axs.text(0.595, 0.68, 'SCN', horizontalalignment='left', verticalalignment='center',
-             transform=axs.transAxes, fontsize=8, rotation=10)
-    axs.text(0.53, 0.305, 'SAF', horizontalalignment='left', verticalalignment='center',
-             transform=axs.transAxes, fontsize=8)
-    axs.text(0.109, 0.178, 'IBE', horizontalalignment='left', verticalalignment='center',
-             transform=axs.transAxes, fontsize=8, rotation=-10)
+    axs.text(0.595, 0.74, 'SCN', horizontalalignment='left', verticalalignment='center',
+             transform=axs.transAxes, fontsize=10, rotation=10)
+    axs.text(0.53, 0.33, 'SAF', horizontalalignment='left', verticalalignment='center',
+             transform=axs.transAxes, fontsize=10)
+    axs.text(0.109, 0.192, 'IBE', horizontalalignment='left', verticalalignment='center',
+             transform=axs.transAxes, fontsize=10, rotation=-10)
 
     # add EUR box
     coords = []
@@ -149,7 +149,7 @@ def add_clutter(axs):
     geom_eur = geometry.Polygon(coords)
     axs.add_geometries([geom_eur], crs=ccrs.PlateCarree(),
                        edgecolor='black', facecolor='None', linewidth=1.5)
-    axs.text(0.25, 0.83, 'EUR', horizontalalignment='left', verticalalignment='center',
+    axs.text(0.245, 0.91, 'EUR', horizontalalignment='left', verticalalignment='center',
              transform=axs.transAxes, fontsize=14, rotation=-10)
 
     # add horizontal lines
@@ -161,12 +161,12 @@ def add_clutter(axs):
         axs.add_geometries([geom_hl], crs=ccrs.PlateCarree(), edgecolor='black',
                            facecolor='None', linewidth=1, linestyle='--')
 
-    axs.text(0.09, 0.28, 'S-EUR', horizontalalignment='left', verticalalignment='center',
-             transform=axs.transAxes, fontsize=10, rotation=-10)
-    axs.text(0.12, 0.39, 'C-EUR', horizontalalignment='left', verticalalignment='center',
-             transform=axs.transAxes, fontsize=10, rotation=-10)
-    axs.text(0.21, 0.7, 'N-EUR', horizontalalignment='left', verticalalignment='center',
-             transform=axs.transAxes, fontsize=10, rotation=-10)
+    axs.text(0.09, 0.31, 'S-EUR', horizontalalignment='left', verticalalignment='center',
+             transform=axs.transAxes, fontsize=12, rotation=-10)
+    axs.text(0.12, 0.42, 'C-EUR', horizontalalignment='left', verticalalignment='center',
+             transform=axs.transAxes, fontsize=12, rotation=-10)
+    axs.text(0.21, 0.78, 'N-EUR', horizontalalignment='left', verticalalignment='center',
+             transform=axs.transAxes, fontsize=12, rotation=-10)
 
 
 def check_affected_area(data):
@@ -226,8 +226,8 @@ def run():
         cb_ticks = list(np.arange(0, cx + dc, dc))
         cb_ticks.insert(1, 1)
         cb = plt.colorbar(im, pad=0.03, ticks=cb_ticks, extend=ext)
-        cb.set_label(label=props['cb_lbl'], fontsize=12)
-        cb.ax.tick_params(labelsize=10)
+        cb.set_label(label=props['cb_lbl'], fontsize=14)
+        cb.ax.tick_params(labelsize=12)
 
         # add borders, gridlines, etc.
         axs.add_feature(cfea.BORDERS)
@@ -240,7 +240,7 @@ def run():
         gl.ylocator = mticker.FixedLocator([35, 45, 55, 65, 75])
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
-        axs.set_extent([-10, 40, 30, 75])
+        axs.set_extent([-10, 40, 30, 72])
         axs.tick_params(axis='both', which='major', labelsize=12)
 
         # add additional boxes and labels
