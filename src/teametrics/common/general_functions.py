@@ -191,8 +191,10 @@ def get_input_filenames(start, end, inpath, param_str, ds_name, period='annual',
         else:
             yrs = np.arange(start, end + 1)
         for yr in yrs:
-            year_files = sorted(glob.glob(
-                f'{inpath}*{param_str}_{h_string}{yr}*.nc'))
+            file_mask = f'{inpath}/*{param_str}_{h_string}{yr}*.nc'
+            year_files = sorted(glob.glob(file_mask))
+            if not year_files:
+                logger.warning(f'No input files found for year {yr} with mask {file_mask}.')
             filenames.extend(year_files)
     return filenames
 

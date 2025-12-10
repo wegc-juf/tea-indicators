@@ -2,6 +2,7 @@ common_params:
   GeoRegion: &GR
     region: EUR
     agr: EUR
+    grg_grid_spacing: 0.5
     # use full data without land, border, and altitude masks
   parameter: &PARAM
     parameter: Tx
@@ -21,7 +22,7 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/EUR/daily/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/

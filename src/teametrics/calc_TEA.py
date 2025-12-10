@@ -173,9 +173,15 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         min_area = 0.0001
 
         # initialize TEA object
-        tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
-                            min_area=min_area, low_extreme=opts.low_extreme,
-                            unit=opts.unit, land_sea_mask=lsm)
+        if 'agr' in opts:
+            tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
+                                min_area=min_area, low_extreme=opts.low_extreme,
+                                unit=opts.unit, land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing,
+                                cell_size_lat=opts.agr_cell_size)
+        else:
+            tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
+                                min_area=min_area, low_extreme=opts.low_extreme,
+                                unit=opts.unit, land_sea_mask=lsm)
 
         # computation of daily basis variables (Methods chapter 3)
         if gridded:
@@ -197,9 +203,14 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         tea.save_daily_results(filepath=dbv_filename)
     else:
         # load existing results
-        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
-                            unit=opts.unit,
-                            land_sea_mask=lsm)
+        if 'agr' in opts:
+            tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
+                                unit=opts.unit,
+                                land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing, cell_size_lat=opts.agr_cell_size)
+        else:
+            tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
+                                unit=opts.unit,
+                                land_sea_mask=lsm)
         logger.info(
             f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
             'set --recalc-daily.')
