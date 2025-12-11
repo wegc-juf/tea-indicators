@@ -167,7 +167,11 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             else:
                 data = data.where(data >= opts.primary_threshold, opts.threshold)
 
-        logger.info('Daily basis variables will be recalculated. Period set to annual.')
+        if not os.path.exists(dbv_filename):
+            logger.info(f'Daily basis variable file {dbv_filename} not found. '
+                        'Daily basis variables will be calculated.')
+        else:
+            logger.info('recalc_daily is set: Daily basis variables will be recalculated. Period set to annual.')
 
         # set min area to < 1 grid cell area so that all exceedance days are considered
         min_area = 0.0001
