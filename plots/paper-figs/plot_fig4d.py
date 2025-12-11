@@ -145,12 +145,12 @@ def plot_panel1(axs, af, uc, ref, cc):
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[0].transAxes, fontsize=6)
 
-    axs[0].text(0.73, 0.88, f'   ERA5 AHC gain AHCg' + r'$_\mathrm{CC}$' + ' (EJ/yr)   \n\n\n\n',
+    axs[0].text(0.72, 0.88, f'     ERA5 AHC gain AHCg' + r'$_\mathrm{CC}$' + ' (EJ/yr)     \n\n\n\n',
                 horizontalalignment='center',
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[0].transAxes, fontsize=6)
 
-    axs[0].text(0.97, 0.86,
+    axs[0].text(0.96, 0.86,
                 f'GLOBAL (ANN) AHCg' + r'$_\mathrm{CC}$ = '
                 + f'{np.round(cc["GLOB"] * 10**3, 1)}\n'
                   f'NH20-90N (ANN) AHCg' + r'$_\mathrm{CC}$ = '
