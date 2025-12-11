@@ -1,7 +1,9 @@
 common_params:
   GeoRegion: &GR
     region: EUR
-    agr: S-EUR
+    agr: EUR
+    grg_grid_spacing: 0.25
+    land_frac_min: 0.25
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -18,7 +20,7 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/EUR/daily/
     statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
     maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ # *statpath
     mask_sub: masks/
@@ -29,12 +31,12 @@ calc_TEA:
   <<: *TIME
   <<: *DATA
   <<: *PATHS
-  outpath: /data/users/hst/TEA-clean/TEA/paper_data/
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/results/
   recalc_threshold: false
-  recalc_daily: false
+  recalc_daily: true
   decadal: true
   spreads: true
-  decadal_only: true
+  decadal_only: false
   recalc_decadal: true
 
 create_region_masks:
