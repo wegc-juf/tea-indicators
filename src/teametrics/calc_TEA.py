@@ -177,7 +177,7 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
             tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
                                 min_area=min_area, low_extreme=opts.low_extreme,
                                 unit=opts.unit, land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing,
-                                cell_size_lat=opts.agr_cell_size)
+                                cell_size_lat=opts.agr_cell_size, land_frac_min=opts.land_frac_min)
         else:
             tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
                                 min_area=min_area, low_extreme=opts.low_extreme,
@@ -205,8 +205,8 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         # load existing results
         if 'agr' in opts:
             tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
-                                unit=opts.unit,
-                                land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing, cell_size_lat=opts.agr_cell_size)
+                                unit=opts.unit, land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing,
+                                cell_size_lat=opts.agr_cell_size, land_frac_min=opts.land_frac_min)
         else:
             tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
                                 unit=opts.unit,
