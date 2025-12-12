@@ -238,6 +238,7 @@ def check_type(key, value):
         'unit': str,
         'low_extreme': bool,
         'min_exceedance_area': float,
+        'min_duration': float,
         
         # time parameters
         'start': int,
