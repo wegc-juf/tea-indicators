@@ -188,8 +188,9 @@ def check_affected_area(data):
 
 
 def run():
-    data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
+    #/data/users/hst/TEA-clean/TEA/paper_data/
     data = data.sel(lat=slice(72, 35), lon=slice(-11, 40))
     vkeep = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC', 'EA_avg_AF_CC', 'TEX_AF_CC']
     vdrop = [vvar for vvar in data.data_vars if vvar not in vkeep]
@@ -247,7 +248,7 @@ def run():
         add_clutter(axs=axs)
 
         plt.title(props['title'], fontsize=16)
-        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}.png',
+        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}_NEW.png',
                     dpi=300, bbox_inches='tight')
 
 
