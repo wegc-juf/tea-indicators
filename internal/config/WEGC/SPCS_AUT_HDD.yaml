@@ -23,6 +23,7 @@ common_params:
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/
+    altitude_threshold: 1000
 
 calc_TEA:
   <<: *GR
@@ -48,7 +49,6 @@ create_region_masks:
   shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
   target_sys: 32633
   orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/reproj_UTM33N/v2.1/SPARTACUSreg_orography.nc
-  altitude_threshold: 1000
 
 regrid_SPARTACUS_to_WEGNext:
   <<: *PARAM
