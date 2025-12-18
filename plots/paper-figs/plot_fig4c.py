@@ -6,9 +6,6 @@ import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
 
-PARAMS = ref_cc_params()
-
-
 def run():
     regs = ['EUR', 'S-EUR', 'C-EUR', 'N-EUR']
     cols = {'EUR': 'tab:grey',
@@ -25,7 +22,7 @@ def run():
     cc_vals = {}
     xv = -4
     for ireg, reg in enumerate(regs):
-        data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+        data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
                                f'amplification/AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         if reg == 'EUR':
             axs.fill_between(x=xticks[1:],
@@ -98,7 +95,7 @@ def run():
 
     fig.subplots_adjust(bottom=0.25, top=0.9, left=0.1, right=0.9)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4c.png',
+                'Figure4c_NEW.png',
                 bbox_inches='tight', dpi=300)
 
 
