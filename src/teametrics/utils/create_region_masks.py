@@ -246,7 +246,7 @@ def _save_output(ds, opts, out_region=None):
     """
     if out_region is None:
         out_region = opts.region
-    outpath = Path(opts.maskpath) / opts.mask_sub / f'{out_region}_mask_{opts.dataset}.nc'
+    outpath = Path(opts.maskpath) / opts.mask_sub / f'{out_region}_mask_{opts.dataset}_{opts.altitude_threshold}.nc'
     print(f'Saving mask file to {outpath}')
     ds.to_netcdf(outpath)
 

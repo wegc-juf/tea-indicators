@@ -170,7 +170,11 @@ def _get_default_opts(fname, opts):
             opts.compare_to_ref = False
         if 'spreads' not in opts:
             opts.spreads = False
-    
+        if 'min_duration' not in opts:
+            opts.min_duration = 10
+        if 'altitude_threshold' not in opts:
+            opts.altitude_threshold = 1500
+
     # create_region_masks.py options
     if fname == 'create_region_masks':
         if 'gr_type' not in opts:
@@ -238,6 +242,7 @@ def check_type(key, value):
         'unit': str,
         'low_extreme': bool,
         'min_exceedance_area': float,
+        'min_duration': float,
         
         # time parameters
         'start': int,

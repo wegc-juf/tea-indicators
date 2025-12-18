@@ -1251,8 +1251,7 @@ class TEAIndicators:
     # ### Decadal mean functions ###
 
     def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False,
-                                drop_annual_results=True,
-                                min_duration=10):
+                                drop_annual_results=True, min_duration=10):
         """
         calculate decadal mean for all CTP indicators
         equation 23_1 and equation 23_2
@@ -1616,14 +1615,14 @@ class TEAIndicators:
                 ds[vvar] = ds[vvar].where(duration >= min_duration)
 
     def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024),
-                                   min_duration=15):
+                                   min_duration=10):
         """
         calculate amplification factors (equation 27)
 
         Args:
             ref_period: reference period: tuple(start year, end year). Default: (1961, 1990)
             cc_period: current climate period: tuple(start year, end year). Default: (2008, 2022)
-            min_duration: minimum cumulative decadal event duration (10-yr sum) in days. Default: 15
+            min_duration: minimum cumulative decadal event duration (10-yr sum) in days. Default: 10
         """
         # TODO: write ref and cc period to output file
         min_duration_avg = min_duration / 10
