@@ -95,12 +95,16 @@ def set_plot_props(ax, reg, acc, refv, tpoint):
     ax.set_xticks(np.arange(xmin, xmax + 1, 1))
     ax.set_yticks(np.arange(ymin, ymax + 1, 1))
 
+    xoff = -37
+    if reg == 'SCN':
+        xoff = -40
+
     ax.annotate(r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ' + f'{(acc[0] * acc[1]):.1f}',
                 xy=(acc[0], acc[1]), textcoords='offset points', xytext=(10, -4))
     ax.annotate(r'$\mathcal{A}_\mathrm{Ref} = 1$',
                 xy=(1, 1), textcoords='offset points', xytext=(15, -4))
     ax.annotate(r'$\mathcal{A}_\mathrm{s}^\mathrm{T}(t)$',
-                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(-35, -4))
+                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(xoff, -4))
 
     ax.text(0.03, 0.94,
             'ERA5-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{s|CC}^\mathrm{T}$' + '\n'
@@ -166,10 +170,11 @@ def plot_scatter(fig, ax, ef, es, reg, ref):
 
 
 def run():
-    fw, fh, dpi = scale_figsize(figwidth=12, figheight=5, figdpi=300)
+    fw, fh, dpi = scale_figsize(figwidth=14, figheight=5, figdpi=300)
     fig, axs = plt.subplots(1, 3, figsize=(fw, fh), dpi=dpi)
 
-    data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
+                           'dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     thresh = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
                              'static_Tx99.0p_EUR_ERA5.nc')
@@ -194,7 +199,7 @@ def run():
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4b.png', dpi=300, bbox_inches='tight')
+                'Figure4b_NEW.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

@@ -83,7 +83,7 @@ def run():
              horizontalalignment='left', verticalalignment='center', transform=axs.transAxes,
              fontsize=10, backgroundcolor='whitesmoke')
 
-    fig.legend(loc=(0.22, 0.03), ncol=4)
+    fig.legend(loc=(0.22, 0.03), ncol=4, fontsize=10)
 
     axs.set_title('Total Events Extremity (TEX) amplification | EUR & Europe regions',
                   fontsize=12)

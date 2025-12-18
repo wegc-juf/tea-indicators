@@ -188,7 +188,8 @@ def check_affected_area(data):
 
 
 def run():
-    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
+    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
+                           'dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     #/data/users/hst/TEA-clean/TEA/paper_data/
     data = data.sel(lat=slice(72, 35), lon=slice(-11, 40))
@@ -227,8 +228,8 @@ def run():
         cb_ticks = list(np.arange(0, cx + dc, dc))
         cb_ticks.insert(1, 1)
         cb = plt.colorbar(im, pad=0.03, ticks=cb_ticks, extend=ext)
-        cb.set_label(label=props['cb_lbl'], fontsize=12)
-        cb.ax.tick_params(labelsize=10)
+        cb.set_label(label=props['cb_lbl'], fontsize=14)
+        cb.ax.tick_params(labelsize=12)
 
         # add borders, gridlines, etc.
         axs.add_feature(cfea.BORDERS)

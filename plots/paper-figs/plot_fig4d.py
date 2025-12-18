@@ -193,7 +193,7 @@ def plot_panel2(axs, af, uc, ref, ccs):
             axs[1].errorbar(x=xval, y=data[ixval], yerr=errors * 1.645, marker='o', linestyle='',
                             markersize=5, capsize=4, color=colors[iper][ixval])
 
-    axs[1].set_title('AEHC | EUR & Europe regions', fontsize=12)
+    axs[1].set_title('AEHC | EUR & Europe regions', fontsize=10)
     axs[1].set_xlim(0, 8)
     axs[1].xaxis.set_major_locator(mticker.FixedLocator(xvals))
     axs[1].set_xticklabels(['EUR', 'C-EUR', 'S-EUR', 'N-EUR'], fontsize=8)
@@ -269,7 +269,7 @@ def run():
     plt.setp(axs[1].get_yticklabels()[1], color='tab:gray')
 
     fig.suptitle(f'Climate change amplification of AHC gain and AEHC vs Ref1961-1990',
-                 fontsize=16 - 4)
+                 fontsize=12)
 
     fig.subplots_adjust(bottom=0.15, top=0.85, left=0.1, right=0.95, hspace=0.2, wspace=0.15)
 
