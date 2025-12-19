@@ -1599,7 +1599,7 @@ class TEAIndicators:
     @staticmethod
     def _apply_min_duration(ds, min_duration, duration_data=None):
         """
-        keep only values above min_duration
+        keep only values above min_duration events/year
 
         Args:
             ds: Xarray dataset (must contain 'ED' variable)
@@ -1635,6 +1635,7 @@ class TEAIndicators:
         cc_mean = self._cc_mean
         ref_mean = self._ref_mean
         if min_duration > 0:
+            # get ED in d/year for ref period (1 d/y = 10 d/decade)
             ed = self._decadal_ED.sel(
                 time=slice(f'{ref_period[0] + 5}-01-01', f'{ref_period[1] - 4}-12-31'))
             ed_min = ed.min(dim='time', skipna=True)
