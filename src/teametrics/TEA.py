@@ -1251,7 +1251,7 @@ class TEAIndicators:
     # ### Decadal mean functions ###
 
     def calc_decadal_indicators(self, decadal_window=(10, 5, 4), calc_spread=False,
-                                drop_annual_results=True, min_duration=10):
+                                drop_annual_results=True, min_duration=7):
         """
         calculate decadal mean for all CTP indicators
         equation 23_1 and equation 23_2
@@ -1599,7 +1599,7 @@ class TEAIndicators:
     @staticmethod
     def _apply_min_duration(ds, min_duration, duration_data=None):
         """
-        keep only values above min_duration
+        keep only values above min_duration events/year
 
         Args:
             ds: Xarray dataset (must contain 'ED' variable)
@@ -1615,7 +1615,7 @@ class TEAIndicators:
                 ds[vvar] = ds[vvar].where(duration >= min_duration)
 
     def calc_amplification_factors(self, ref_period=(1961, 1990), cc_period=(2008, 2024),
-                                   min_duration=10):
+                                   min_duration=7):
         """
         calculate amplification factors (equation 27)
 
@@ -1635,6 +1635,7 @@ class TEAIndicators:
         cc_mean = self._cc_mean
         ref_mean = self._ref_mean
         if min_duration > 0:
+            # get ED in d/year for ref period (1 d/y = 10 d/decade)
             ed = self._decadal_ED.sel(
                 time=slice(f'{ref_period[0] + 5}-01-01', f'{ref_period[1] - 4}-12-31'))
             ed_min = ed.min(dim='time', skipna=True)
