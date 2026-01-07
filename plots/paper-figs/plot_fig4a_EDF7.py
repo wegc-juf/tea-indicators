@@ -175,10 +175,20 @@ def check_affected_area(data):
     gt10 = data.sel(lat=slice(55, 45), lon=slice(-11, 40)).where(data > 10)
 
     areas = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                            'area_grid_0p5_EUR_ERA5.nc')
+                            'area_grid_0p25_EUR_ERA5.nc')
+    areas_old = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
+                              'area_grid_0p5_EUR_ERA5.nc')
     areas = areas.sel(lon=slice(-11, 40), lat=slice(70, 35))
     eur_area = areas.sum()
     ceur_area = areas.sel(lat=slice(55, 45)).sum()
+    neur = areas.sel(lat=slice(70, 55.5)).sum()
+    seur = areas.sel(lat=slice(44.5, 35)).sum()
+
+    areas_old = areas_old.sel(lon=slice(-11, 40), lat=slice(70, 35))
+    eur_area_old = areas_old.sum()
+    ceur_area_old = areas_old.sel(lat=slice(55, 45)).sum()
+    neur_old = areas_old.sel(lat=slice(70, 55.5)).sum()
+    seur_old = areas_old.sel(lat=slice(44.5, 35)).sum()
 
     # percentage of EUR with AF > 8
     pct_gt8 = areas.where(gt8.notnull()).sum()/eur_area * 100
@@ -186,14 +196,20 @@ def check_affected_area(data):
     # percentage of C-EUR with AF > 10
     pct_gt10 = areas.where(gt10.notnull()).sum()/ceur_area * 100
 
+    pass
+
 
 def run():
-    data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    #data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+     #                      'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
+    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     data = data.sel(lat=slice(72, 35), lon=slice(-11, 40))
     vkeep = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC', 'EA_avg_AF_CC', 'TEX_AF_CC']
     vdrop = [vvar for vvar in data.data_vars if vvar not in vkeep]
     data = data.drop_vars(vdrop)
+
+    check_affected_area(data=data['TEX_AF_CC'])
 
     cmap_tex = create_cmap_tex()
     cmax_tex = 30

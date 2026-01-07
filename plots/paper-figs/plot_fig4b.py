@@ -176,7 +176,9 @@ def run():
     fw, fh, dpi = scale_figsize(figwidth=14, figheight=5, figdpi=300)
     fig, axs = plt.subplots(1, 3, figsize=(fw, fh), dpi=dpi)
 
-    data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    #data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+     #                      'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
+    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     thresh = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
                              'static_Tx99.0p_EUR_ERA5.nc')
@@ -187,9 +189,9 @@ def run():
         lat_lim, lon_lim, center = get_lims(reg=reg)
         rdata = data.sel(lat=slice(lat_lim[1], lat_lim[0]), lon=slice(lon_lim[0], lon_lim[1]))
         rthresh = thresh.sel(lat=slice(lat_lim[1], lat_lim[0]), lon=slice(lon_lim[0], lon_lim[1]))
-        freq = rdata['EF_AF'].mean(dim=('lat', 'lon'))
-        sev = rdata['ES_avg_AF'].mean(dim=('lat', 'lon'))
-        rthresh = rthresh.mean(dim=('lat', 'lon'))
+        freq = rdata['EF_AF'].sel(lat=center[1], lon=center[0])
+        sev = rdata['ES_avg_AF'].sel(lat=center[1], lon=center[0])
+        rthresh = rthresh.sel(lat=center[1], lon=center[0])
 
         plot_scatter(fig=fig, ax=axs[ireg], ef=freq, es=sev, ref=rthresh, reg=reg)
 
@@ -201,7 +203,7 @@ def run():
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4b.png', dpi=300, bbox_inches='tight')
+                'Figure4b_NEW.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
