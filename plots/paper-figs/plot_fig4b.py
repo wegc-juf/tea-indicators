@@ -98,10 +98,13 @@ def set_plot_props(ax, reg, acc, refv, tpoint):
 
     xoff = -37
     if reg == 'SCN':
-        xoff = -40
+        xoff = -37
 
+    atcc_pos = (10, -4)
+    if reg == 'SAF':
+        atcc_pos = (5, 5)
     ax.annotate(r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ' + f'{(acc[0] * acc[1]):.1f}',
-                xy=(acc[0], acc[1]), textcoords='offset points', xytext=(10, -4), fontsize=12)
+                xy=(acc[0], acc[1]), textcoords='offset points', xytext=atcc_pos, fontsize=12)
     ax.annotate(r'$\mathcal{A}_\mathrm{Ref} = 1$',
                 xy=(1, 1), textcoords='offset points', xytext=(15, -4), fontsize=12)
     ax.annotate(r'$\mathcal{A}_\mathrm{s}^\mathrm{T}(t)$',
@@ -193,9 +196,9 @@ def run():
         lat_lim, lon_lim, center = get_lims(reg=reg)
         rdata = data.sel(lat=slice(lat_lim[1], lat_lim[0]), lon=slice(lon_lim[0], lon_lim[1]))
         rthresh = thresh.sel(lat=slice(lat_lim[1], lat_lim[0]), lon=slice(lon_lim[0], lon_lim[1]))
-        freq = rdata['EF_AF'].sel(lat=center[1], lon=center[0])
-        sev = rdata['ES_avg_AF'].sel(lat=center[1], lon=center[0])
-        rthresh = rthresh.sel(lat=center[1], lon=center[0])
+        freq = rdata['EF_AF'].sel(lat=center[1], lon=center[0])#.mean(dim=('lat', 'lon'))
+        sev = rdata['ES_avg_AF'].sel(lat=center[1], lon=center[0])#.mean(dim=('lat', 'lon')
+        rthresh = rthresh.sel(lat=center[1], lon=center[0])#.mean(dim=('lat', 'lon'))
 
         plot_scatter(fig=fig, ax=axs[ireg], ef=freq, es=sev, ref=rthresh, reg=reg)
 
@@ -207,7 +210,7 @@ def run():
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4b_2026-01-07.png', dpi=300, bbox_inches='tight')
+                'Figure4b_2026-01-07_CENTER.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
