@@ -96,12 +96,16 @@ def set_plot_props(ax, reg, acc, refv, tpoint):
     ax.set_xticks(np.arange(xmin, xmax + 1, 1))
     ax.set_yticks(np.arange(ymin, ymax + 1, 1))
 
+    xoff = -37
+    if reg == 'SCN':
+        xoff = -40
+
     ax.annotate(r'$\mathcal{A}_\mathrm{CC}^\mathrm{T}$ = ' + f'{(acc[0] * acc[1]):.1f}',
                 xy=(acc[0], acc[1]), textcoords='offset points', xytext=(10, -4), fontsize=12)
     ax.annotate(r'$\mathcal{A}_\mathrm{Ref} = 1$',
                 xy=(1, 1), textcoords='offset points', xytext=(15, -4), fontsize=12)
     ax.annotate(r'$\mathcal{A}_\mathrm{s}^\mathrm{T}(t)$',
-                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(-35, -4), fontsize=12)
+                xy=(tpoint[0], tpoint[1]), textcoords='offset points', xytext=(xoff, -4), fontsize=12)
 
     ax.text(0.03, 0.93,
             'ERA5-TMax-p99ANN-' + r'$\mathcal{A}_\mathrm{s|CC}^\mathrm{T}$' + '\n'
@@ -177,7 +181,7 @@ def run():
     fig, axs = plt.subplots(1, 3, figsize=(fw, fh), dpi=dpi)
 
     #data = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-     #                      'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
+    #                       'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     thresh = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
@@ -203,7 +207,7 @@ def run():
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4b_NEW.png', dpi=300, bbox_inches='tight')
+                'Figure4b_2026-01-07.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

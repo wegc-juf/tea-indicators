@@ -263,7 +263,7 @@ def run():
         add_clutter(axs=axs)
 
         plt.title(props['title'], fontsize=16)
-        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}.png',
+        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}_2026-01-07.png',
                     dpi=300, bbox_inches='tight')
 
 
