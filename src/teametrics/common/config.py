@@ -171,7 +171,7 @@ def _get_default_opts(fname, opts):
         if 'spreads' not in opts:
             opts.spreads = False
         if 'min_duration' not in opts:
-            opts.min_duration = 10
+            opts.min_duration = 7
         if 'altitude_threshold' not in opts:
             opts.altitude_threshold = 1500
 
