@@ -53,19 +53,19 @@ def gr_plot_params(vname):
 def map_plot_params(vname):
     params = {'EF_AF_CC': {'cmap': 'Blues',
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
-                           'title': 'Event Frequency (EF) amplification (CC2008-2024)',
+                           'title': 'Event Frequency (EF) amplification (CC2010-2024)',
                            'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'ED_avg_AF_CC': {'cmap': 'Purples',
                                'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                               'title': 'Event Duration (ED) amplification (CC2008-2024)',
+                               'title': 'Event Duration (ED) amplification (CC2010-2024)',
                                'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'EM_avg_Md_AF_CC': {'cmap': 'Oranges',
                                   'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                                  'title': 'Exceedance Magnitude (EM) amplification (CC2008-2024)',
+                                  'title': 'Exceedance Magnitude (EM) amplification (CC2010-2024)',
                                   'lvls': np.arange(0.4, 1.8, 0.2), 'vn': 0.4, 'vx': 1.6},
               'tEX_AF_CC': {'cmap': 'Oranges',
                             'lbl': r'$\mathcal{A}^\mathrm{tEX}_\mathrm{CC}$',
-                            'title': 'Temporal Events Extremity (tEX) Ampl. (CC2008-2024)',
+                            'title': 'Temporal Events Extremity (tEX) Ampl. (CC2010-2024)',
                             'lvls': np.arange(0.25, 2.25, 0.25), 'vn': 0.25, 'vx': 2}
               }
 
@@ -231,7 +231,7 @@ def run():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.4, hspace=0.45)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
-                'ExtDataFig4.png', dpi=300, bbox_inches='tight')
+                'ExtDataFig4_2026-01-08.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
