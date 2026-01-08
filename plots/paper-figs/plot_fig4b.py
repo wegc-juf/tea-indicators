@@ -194,7 +194,7 @@ def run():
         rthresh = thresh.sel(lat=slice(lat_lim[1], lat_lim[0]), lon=slice(lon_lim[0], lon_lim[1]))
         freq = rdata['EF_AF'].sel(lat=center[1], lon=center[0])#.mean(dim=('lat', 'lon'))
         sev = rdata['ES_avg_AF'].sel(lat=center[1], lon=center[0])#.mean(dim=('lat', 'lon')
-        rthresh = rthresh.sel(lat=center[1], lon=center[0])#.mean(dim=('lat', 'lon'))
+        rthresh = rthresh.mean(dim=('lat', 'lon'))
 
         plot_scatter(fig=fig, ax=axs[ireg], ef=freq, es=sev, ref=rthresh, reg=reg)
 
@@ -206,7 +206,7 @@ def run():
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4b_2026-01-07_CENTER.png', dpi=300, bbox_inches='tight')
+                'Figure4b_2026-01-08_CENTER.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

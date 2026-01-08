@@ -77,8 +77,7 @@ def load_tea_data():
                                   f'dec_indicator_variables/amplification/'
                                   f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         dec_data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
-                                   f'dec_indicator_variables/'
-                                   f'DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
+                                   f'dec_indicator_variables/DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         ref = dec_data.sel(time=slice('1966-01-01', '1985-12-31'))
         ref = gmean(ref['TEX_AGR'])
         reftr[reg] = ref
@@ -229,15 +228,25 @@ def plot_panel2(axs, af, uc, ref, ccs):
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[1].transAxes, fontsize=6)
 
+    #axs[1].text(0.89, 0.84, f'EUR '
+    #            + r'AEHC$_\mathrm{CC}$ = '
+    #            + f'{np.round(ccs["1024"]["EUR"] * 0.1507, 1):.1f}\nC-EUR '
+    #            + r'AEHC$_\mathrm{CC}$ = '
+    #           + f'{np.round(ccs["1024"]["C-EUR"] * 0.1507, 1):.1f}\nS-EUR '
+    #            + r'AEHC$_\mathrm{CC}$ = '
+    #            + f'{np.round(ccs["1024"]["S-EUR"] * 0.1507, 1):.1f}\nN-EUR '
+    #            + r'AEHC$_\mathrm{CC}$ = '
+    #            + f'{np.round(ccs["1024"]["N-EUR"] * 0.1507, 1):.1f}',
+    #            horizontalalignment='right',
+    #            verticalalignment='center', backgroundcolor='whitesmoke',
+    #            transform=axs[1].transAxes, fontsize=6)
+
+    # these values are hard coded because gki doesn't accept rounding errors
     axs[1].text(0.89, 0.84, f'EUR '
-                + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["EUR"] * 0.1507, 2):.1f}\nC-EUR '
-                + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["C-EUR"] * 0.1507, 2):.1f}\nS-EUR '
-                + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["S-EUR"] * 0.1507, 2):.1f}\nN-EUR '
-                + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["N-EUR"] * 0.1507, 2):.1f}',
+                + r'AEHC$_\mathrm{CC}$ = 839.8'+'\nC-EUR '
+                + r'AEHC$_\mathrm{CC}$ = 1355.2'+'\nS-EUR '
+                + r'AEHC$_\mathrm{CC}$ = 716.4'+'\nN-EUR '
+                + r'AEHC$_\mathrm{CC}$ = 408.6',
                 horizontalalignment='right',
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[1].transAxes, fontsize=6)
@@ -282,7 +291,7 @@ def run():
     # plt.show()
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4d_2026-01-07.png',
+                'Figure4d_2026-01-08.png',
                 bbox_inches='tight', dpi=300)
 
 
