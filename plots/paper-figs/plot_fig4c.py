@@ -100,7 +100,7 @@ def run():
 
     fig.subplots_adjust(bottom=0.15, top=0.9, left=0.1, right=0.9)
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4c_NEW.png',
+                'Figure4c_2026-01-07.png',
                 bbox_inches='tight', dpi=300)
 
 
