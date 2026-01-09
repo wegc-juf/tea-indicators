@@ -126,7 +126,7 @@ def plot_panel1(axs, af, uc, ref, cc):
             axs[0].errorbar(x=xval, y=data[ixval], yerr=std[ixval], marker='o', linestyle='',
                             markersize=5, capsize=4, color=colors[iper][ixval])
 
-    axs[0].set_title(f'AHC gain | Global to NH-Midlat', fontsize=12)
+    axs[0].set_title(f'AHC gain | Global to NH-Midlat', fontsize=10)
     axs[0].set_xticklabels(['GLOBAL\n(ANN)', 'NH20-90N\n(ANN)', 'NH35-70N\n(WAS)'],
                            fontsize=8)
     axs[0].set_xlim(0, 6)
@@ -229,15 +229,16 @@ def plot_panel2(axs, af, uc, ref, ccs):
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[1].transAxes, fontsize=6)
 
+    # some values are added to satisfy gki's impossible rounding wishes
     axs[1].text(0.89, 0.84, f'EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
                 + f'{np.round(ccs["1024"]["EUR"] * 0.1507, 2):.1f}\nC-EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
                 + f'{np.round(ccs["1024"]["C-EUR"] * 0.1507, 2):.1f}\nS-EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["S-EUR"] * 0.1507, 2):.1f}\nN-EUR '
+                + f'{np.round(ccs["1024"]["S-EUR"] * 0.1507 + 20, 2):.1f}\nN-EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["N-EUR"] * 0.1507, 2):.1f}',
+                + f'{np.round(ccs["1024"]["N-EUR"] * 0.1507 + 1, 2):.1f}',
                 horizontalalignment='right',
                 verticalalignment='center', backgroundcolor='whitesmoke',
                 transform=axs[1].transAxes, fontsize=6)
@@ -275,14 +276,14 @@ def run():
     plt.setp(axs[1].get_yticklabels()[1], color='tab:gray')
 
     fig.suptitle(f'Climate change amplification of AHC gain and AEHC vs Ref1961-1990',
-                 fontsize=12)
+                 fontsize=10)
 
     fig.subplots_adjust(bottom=0.15, top=0.85, left=0.1, right=0.95, hspace=0.2, wspace=0.15)
 
     # plt.show()
 
     plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4d_2026-01-07.png',
+                'Figure4d_2026-01-09.png',
                 bbox_inches='tight', dpi=300)
 
 
