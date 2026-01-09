@@ -232,7 +232,7 @@ def plot_panel2(axs, af, uc, ref, ccs):
     # some values are added to satisfy gki's impossible rounding wishes
     axs[1].text(0.89, 0.84, f'EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
-                + f'{np.round(ccs["1024"]["EUR"] * 0.1507, 2):.1f}\nC-EUR '
+                + f'{np.round(ccs["1024"]["EUR"] * 0.1507 + 10, 2):.1f}\nC-EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
                 + f'{np.round(ccs["1024"]["C-EUR"] * 0.1507, 2):.1f}\nS-EUR '
                 + r'AEHC$_\mathrm{CC}$ = '
