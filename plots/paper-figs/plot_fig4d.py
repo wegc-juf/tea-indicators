@@ -126,7 +126,7 @@ def plot_panel1(axs, af, uc, ref, cc):
             axs[0].errorbar(x=xval, y=data[ixval], yerr=std[ixval], marker='o', linestyle='',
                             markersize=5, capsize=4, color=colors[iper][ixval])
 
-    axs[0].set_title(f'AHC gain | Global to NH-Midlat', fontsize=10)
+    axs[0].set_title(f'AHC gain | Global to NH-Midlat', fontsize=12)
     axs[0].set_xticklabels(['GLOBAL\n(ANN)', 'NH20-90N\n(ANN)', 'NH35-70N\n(WAS)'],
                            fontsize=8)
     axs[0].set_xlim(0, 6)
@@ -275,15 +275,15 @@ def run():
     plt.setp(axs[1].get_yticklabels()[1], color='tab:gray')
 
     fig.suptitle(f'Climate change amplification of AHC gain and AEHC vs Ref1961-1990',
-                 fontsize=10)
+                 fontsize=12)
 
     fig.subplots_adjust(bottom=0.15, top=0.85, left=0.1, right=0.95, hspace=0.2, wspace=0.15)
 
-    plt.show()
+    # plt.show()
 
-    # plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-    #             'Figure4d_2026-01-07.png',
-    #            bbox_inches='tight', dpi=300)
+    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
+                'Figure4d_2026-01-07.png',
+                bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':
