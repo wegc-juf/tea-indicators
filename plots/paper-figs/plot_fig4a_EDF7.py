@@ -176,19 +176,11 @@ def check_affected_area(data):
 
     areas = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
                             'area_grid_0p25_EUR_ERA5.nc')
-    areas_old = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                              'area_grid_0p5_EUR_ERA5.nc')
     areas = areas.sel(lon=slice(-11, 40), lat=slice(70, 35))
     eur_area = areas.sum()
-    ceur_area = areas.sel(lat=slice(55, 45)).sum()
+    ceur_area = areas.sel(lat=slice(55.25, 45)).sum()
     neur = areas.sel(lat=slice(70, 55.5)).sum()
-    seur = areas.sel(lat=slice(44.5, 35)).sum()
-
-    areas_old = areas_old.sel(lon=slice(-11, 40), lat=slice(70, 35))
-    eur_area_old = areas_old.sum()
-    ceur_area_old = areas_old.sel(lat=slice(55, 45)).sum()
-    neur_old = areas_old.sel(lat=slice(70, 55.5)).sum()
-    seur_old = areas_old.sel(lat=slice(44.5, 35)).sum()
+    seur = areas.sel(lat=slice(44.75, 35)).sum()
 
     # percentage of EUR with AF > 8
     pct_gt8 = areas.where(gt8.notnull()).sum()/eur_area * 100
