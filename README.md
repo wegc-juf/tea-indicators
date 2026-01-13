@@ -94,7 +94,7 @@ This project is licensed under the Gnu General Public License v3.0 (GPL-3.0). Se
 
 ## Suggested Citation
 If you use this code, please cite:
-Fuchsberger, J., Haas, S. J., & Kirchengast, G. (2025). wegc-juf/tea-indicators: teametrics v0.4 (v0.4). Zenodo. https://doi.org/10.5281/zenodo.17210240
+Fuchsberger, J., Haas, S. J., & Kirchengast, G. (2025). wegc-juf/tea-indicators: teametrics v0.5. Zenodo. https://doi.org/10.5281/zenodo.17210239
 
 ## Contributing
 Always welcome - just get in touch with the project developers.
