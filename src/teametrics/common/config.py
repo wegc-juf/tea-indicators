@@ -170,7 +170,11 @@ def _get_default_opts(fname, opts):
             opts.compare_to_ref = False
         if 'spreads' not in opts:
             opts.spreads = False
-    
+        if 'min_duration' not in opts:
+            opts.min_duration = 7
+        if 'altitude_threshold' not in opts:
+            opts.altitude_threshold = 1500
+
     # create_region_masks.py options
     if fname == 'create_region_masks':
         if 'gr_type' not in opts:
@@ -205,6 +209,9 @@ def _get_default_opts(fname, opts):
         if 'orography' not in opts:
             opts.orography = False
     
+    if 'primary_threshold' not in opts:
+        opts.primary_threshold = None
+    
     return opts
 
 
@@ -230,10 +237,12 @@ def check_type(key, value):
         'precip': bool,
         'threshold_type': str,
         'threshold': float,
+        'primary_threshold': float,
         'smoothing_radius': float,
         'unit': str,
         'low_extreme': bool,
         'min_exceedance_area': float,
+        'min_duration': float,
         
         # time parameters
         'start': int,
@@ -247,6 +256,7 @@ def check_type(key, value):
         
         # paths
         'input_data_path': str,
+        'raw_data_path': str,
         'statpath': 'path',
         'maskpath': 'path',
         'mask_sub': str,
@@ -371,7 +381,7 @@ def check_config(opts_dict):
         if param in ['start', 'end']:
             max_current_year(param=param, val=opts_dict[param])
     
-    if 'create_region_masks' not in opts_dict['script']:
+    if 'create_region_masks' not in opts_dict['script'] and 'regrid_SPARTACUS_to_WEGNext' not in opts_dict['script']:
         if 'input_data_path' not in opts_dict:
             raise ValueError('input_data_path not set in options. Please set it in the CFG file.')
 

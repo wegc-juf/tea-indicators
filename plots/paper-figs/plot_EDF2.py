@@ -278,7 +278,7 @@ def run():
         data[ict] = load_data(city=ict, param=param)
 
     nat_var = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                         f'NV_AF_{pstr}_{reg}.nc')
+                              f'NV_AF_{pstr}_{reg}.nc')
     fac = nat_var['std_scaling_EA_DM'].values
 
     fig, axs = plt.subplots(3, 2, figsize=(14, 12))
@@ -306,8 +306,7 @@ def run():
         outname = 'ExtDataFig2'
     else:
         outname = f'misc-EDF2-{reg}-{param}'
-    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
-                f'{outname}.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'./{outname}.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

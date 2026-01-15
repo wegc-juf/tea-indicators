@@ -2,7 +2,8 @@ common_params:
   GeoRegion: &GR
     region: EUR
     agr: EUR
-    # use full data without land, border, and altitude masks
+    grg_grid_spacing: 0.25
+    land_frac_min: 0.25
   parameter: &PARAM
     parameter: Tx
     precip: false
@@ -12,7 +13,7 @@ common_params:
     low_extreme: false
   time_params: &TIME
     start: 1961
-    end: 2024
+    end: 1962
     period: WAS
     # ref period from-to (inclusive)
     ref_period: 1961-1990
@@ -21,7 +22,7 @@ common_params:
   dataset: &DATA
     dataset: ERA5
   paths: &PATHS
-    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/EUR/daily/
     statpath: &statpath /home/wegnet/results/static/
     maskpath: *statpath
     mask_sub: masks/

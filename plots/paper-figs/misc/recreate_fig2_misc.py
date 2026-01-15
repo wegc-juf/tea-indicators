@@ -382,9 +382,7 @@ def run():
                    fontsize=8)
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig2/'
-                f'Fig2_{opts.region}_{opts.threshold}degC.png',
-                bbox_inches='tight', dpi=300)
+    plt.savefig(f'./Fig2_{opts.region}_{opts.threshold}degC.png', bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':

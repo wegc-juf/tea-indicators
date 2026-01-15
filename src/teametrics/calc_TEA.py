@@ -159,20 +159,41 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         # TODO: use this also for non-AGR and test
         if 'agr' in opts:
             data, mask, threshold = _reduce_region(opts, data, mask, threshold)
+        
+        if opts.primary_threshold is not None:
+            logger.info(f'Applying primary threshold of {opts.primary_threshold} to input data')
+            if opts.low_extreme:
+                data = data.where(data <= opts.primary_threshold, opts.threshold)
+            else:
+                data = data.where(data >= opts.primary_threshold, opts.threshold)
 
-        logger.info('Daily basis variables will be recalculated. Period set to annual.')
+        if not os.path.exists(dbv_filename):
+            logger.info(f'Daily basis variable file {dbv_filename} not found. '
+                        'Daily basis variables will be calculated.')
+        else:
+            logger.info('recalc_daily is set: Daily basis variables will be recalculated. Period set to annual.')
 
         # set min area to < 1 grid cell area so that all exceedance days are considered
         min_area = 0.0001
 
         # initialize TEA object
-        tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
-                            min_area=min_area, low_extreme=opts.low_extreme,
-                            unit=opts.unit, land_sea_mask=lsm)
+        if 'agr' in opts:
+            tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
+                                min_area=min_area, low_extreme=opts.low_extreme,
+                                unit=opts.unit, land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing,
+                                cell_size_lat=opts.agr_cell_size, land_frac_min=opts.land_frac_min)
+        else:
+            tea = TEA_class_obj(input_data=data, threshold=threshold, mask=mask,
+                                min_area=min_area, low_extreme=opts.low_extreme,
+                                unit=opts.unit, land_sea_mask=lsm)
 
         # computation of daily basis variables (Methods chapter 3)
         if gridded:
             gr = opts.hourly
+            if opts.primary_threshold is not None:
+                gr = True
+            else:
+                gr = opts.hourly
         else:
             gr = False
         tea.calc_daily_basis_vars(gr=gr)
@@ -186,9 +207,14 @@ def calc_dbv_indicators(start, end, threshold, opts, mask=None, gridded=True):
         tea.save_daily_results(filepath=dbv_filename)
     else:
         # load existing results
-        tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
-                            unit=opts.unit,
-                            land_sea_mask=lsm)
+        if 'agr' in opts:
+            tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
+                                unit=opts.unit, land_sea_mask=lsm, gr_grid_res=opts.grg_grid_spacing,
+                                cell_size_lat=opts.agr_cell_size, land_frac_min=opts.land_frac_min)
+        else:
+            tea = TEA_class_obj(threshold=threshold, mask=mask, low_extreme=opts.low_extreme,
+                                unit=opts.unit,
+                                land_sea_mask=lsm)
         logger.info(
             f'Loading daily basis variables from {dbv_filename}; if you want to recalculate them, '
             'set --recalc-daily.')
@@ -269,13 +295,14 @@ def _load_mask_file(opts):
 
     """
     if opts.gr_type == 'polygon':
-        maskpath = f'{opts.maskpath}/{opts.mask_sub}/{opts.region}_mask_{opts.dataset}.nc'
+        maskpath = (Path(opts.maskpath) / opts.mask_sub /
+                    f'{opts.region}_mask_{opts.dataset}_{opts.altitude_threshold}.nc')
     elif opts.gr_type == 'corners':
         sw_coords = opts.sw_corner.split(',')
         sw_coords = '_'.join([f'{float(coord):.1f}' for coord in sw_coords])
         ne_coords = opts.ne_corner.split(',')
         ne_coords = '_'.join([f'{float(coord):.1f}' for coord in ne_coords])
-        maskpath = f'{opts.maskpath}/{opts.mask_sub}/SW_{sw_coords}-NE_{ne_coords}_mask_{opts.dataset}.nc'
+        maskpath = Path(opts.maskpath) / opts.mask_sub / f'SW_{sw_coords}-NE_{ne_coords}_mask_{opts.dataset}.nc'
     else:
         center_coords = opts.center.split(',')
         center_coords = [float(ii) for ii in center_coords]
@@ -285,7 +312,7 @@ def _load_mask_file(opts):
         ne_coords = [center_coords[0] + float(opts.we_len) / 2,
                      center_coords[1] + float(opts.ns_len) / 2]
         ne_coords = '_'.join([f'{float(coord):.1f}' for coord in ne_coords])
-        maskpath = f'{opts.maskpath}/{opts.mask_sub}/SW_{sw_coords}-NE_{ne_coords}_mask_{opts.dataset}.nc'
+        maskpath = Path(opts.maskpath) / opts.mask_sub / f'SW_{sw_coords}-NE_{ne_coords}_mask_{opts.dataset}.nc'
     logger.info(f'Loading mask from {maskpath}')
     mask_file = xr.open_dataset(maskpath)
 
@@ -387,7 +414,8 @@ def _save_grg_mask(opts, grg_mask, grg_areas):
 
     # save GRG mask
     create_history_from_cfg(cfg_params=opts, ds=grg_mask)
-    mask_file = Path(opts.maskpath) / opts.mask_sub / f'{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    mask_file = (Path(opts.maskpath) / opts.mask_sub /
+                 f'{opts.region}_mask_{res_str}_{opts.dataset}_{opts.altitude_threshold}.nc')
     logger.info(f'Saving GR mask to {mask_file}')
     try:
         grg_mask.to_netcdf(mask_file)
@@ -616,7 +644,8 @@ def _load_gr_grid_static(opts):
     """
     res = str(opts.grg_grid_spacing)
     res_str = res.replace('.', 'p')
-    gr_grid_mask_file = Path(opts.maskpath) / opts.mask_sub / f'{opts.region}_mask_{res_str}_{opts.dataset}.nc'
+    gr_grid_mask_file = (Path(opts.maskpath) / opts.mask_sub /
+                         f'{opts.region}_mask_{res_str}_{opts.dataset}_{opts.altitude_threshold}.nc')
     logger.info(f'Loading GR mask from {gr_grid_mask_file}')
     try:
         gr_grid_mask = xr.open_dataset(gr_grid_mask_file)

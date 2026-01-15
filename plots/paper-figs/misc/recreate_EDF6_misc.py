@@ -371,7 +371,7 @@ def run():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    outpath = f'/nas/home/hst/work/TEAclean/plots/misc/EDF6/EDF6_Tx{threshold}_{e5_ds}.png'
+    outpath = f'./EDF6_Tx{threshold}_{e5_ds}.png'
     plt.savefig(outpath, bbox_inches='tight', dpi=300)
 
     print(f'plot saved to: {outpath}')
@@ -416,10 +416,10 @@ def run_noe():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    outpath = f'/nas/home/hst/work/TEAclean/plots/misc/EDF6/EDF6_Tx25_{e5_ds}_L-AUT_TESTY.png'
+    outpath = f'./EDF6_Tx25_{e5_ds}_L-AUT_TESTY.png'
     plt.savefig(outpath, bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':
-    # run()
+    run()
     run_noe()

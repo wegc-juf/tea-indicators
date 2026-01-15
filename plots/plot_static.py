@@ -47,17 +47,19 @@ def load_data(opts):
     stat = {}
 
     # load mask(s) data
-    stat['mask'] = xr.open_dataarray(f'{opts.maskpath}/masks/{opts.region}_mask_{opts.dataset}.nc')
+    stat['mask'] = xr.open_dataarray(f'{opts.maskpath}/masks/{opts.region}_mask_{opts.dataset}_'
+                                     f'{opts.altitude_threshold}.nc')
     if opts.dataset == 'ERA5':
-        stat['mask_0p5'] = xr.open_dataarray(f'{opts.maskpath}/masks/{opts.region}_mask_0p5_ERA5.nc')
+        stat['mask_0p5'] = xr.open_dataarray(
+            f'{opts.maskpath}/masks/{opts.region}_mask_0p5_ERA5_{opts.altitude_threshold}.nc')
 
     # load static data
     stat['thresh'] = xr.open_dataarray(f'{opts.maskpath}/'
-                                     f'threshold_{opts.param_str}_{opts.period}_{opts.region}'
-                                     f'_{opts.dataset}.nc')
+                                       f'threshold_{opts.param_str}_{opts.period}_{opts.region}'
+                                       f'_{opts.dataset}.nc')
     if opts.dataset == 'ERA5':
         stat['area'] = xr.open_dataarray(f'{opts.maskpath}/'
-                                       f'area_grid_0p5_{opts.region}_{opts.dataset}.nc')
+                                         f'area_grid_0p5_{opts.region}_{opts.dataset}.nc')
 
     return stat
 

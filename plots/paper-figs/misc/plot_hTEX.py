@@ -215,7 +215,7 @@ def run():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    outpath = f'/nas/home/hst/work/TEAclean/plots/misc/hTEX_Tx25_{ds}_L-AUT.png'
+    outpath = f'./hTEX_Tx25_{ds}_L-AUT.png'
     plt.savefig(outpath, bbox_inches='tight', dpi=300)
 
 

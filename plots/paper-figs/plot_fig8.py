@@ -67,12 +67,6 @@ def load_tea_data():
     reftr = {}
 
     for reg in ['EUR', 'C-EUR', 'S-EUR', 'N-EUR']:
-        #af_data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/'
-        #                          f'dec_indicator_variables/amplification/'
-        #                          f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
-        #dec_data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/'
-        #                           f'dec_indicator_variables/'
-        #                           f'DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         af_data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
                                   f'dec_indicator_variables/amplification/'
                                   f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
@@ -280,11 +274,7 @@ def run():
 
     fig.subplots_adjust(bottom=0.15, top=0.85, left=0.1, right=0.95, hspace=0.2, wspace=0.15)
 
-    # plt.show()
-
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4d_2026-01-09.png',
-                bbox_inches='tight', dpi=300)
+    plt.savefig('./Figure8.png', bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':

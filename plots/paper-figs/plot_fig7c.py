@@ -6,9 +6,6 @@ import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
 
-PARAMS = ref_cc_params()
-
-
 def run():
     regs = ['EUR', 'S-EUR', 'C-EUR', 'N-EUR']
     cols = {'EUR': 'tab:grey',
@@ -99,9 +96,7 @@ def run():
     plt.yticks(fontsize=12)
 
     fig.subplots_adjust(bottom=0.15, top=0.9, left=0.1, right=0.9)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4c_2026-01-07.png',
-                bbox_inches='tight', dpi=300)
+    plt.savefig('./Figure7c.png', bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':

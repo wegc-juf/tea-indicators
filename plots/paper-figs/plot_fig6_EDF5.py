@@ -318,13 +318,11 @@ def run():
                 va='top', ha='left')
 
     if land:
-        fstr = 'Figure3'
-        sdir = 'figure3/'
+        fstr = 'Figure6'
     else:
         fstr = 'ExtDataFig5'
-        sdir = 'ExtDataFigs/'
-    plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{sdir}{fstr}.png',
-                dpi=300, bbox_inches='tight')
+        
+    plt.savefig(f'./{fstr}.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
