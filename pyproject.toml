@@ -5,6 +5,7 @@ description = "Code to calculate Threshold Exceedance Amount (TEA) indicators as
 authors = [
     {name = "Jürgen Fuchsberger",email = "juergen.fuchsberger@uni-graz.at"},
     {name = "Stephanie Haas",email = "stephanie.haas@uni-graz.at"},
+    {name = "Gottfried Kirchengast",email = "gottfried.kirchengast@uni-graz.at"},
 ]
 readme = "README.md"
 
@@ -25,6 +26,8 @@ dependencies = [
     "h5netcdf (>=1.6.3,<2.0.0)",
     "dask (>=2025.5.1,<2026.0.0)",
     "metpy (>=1.7.0,<2.0.0)",
+    "cartopy (>=0.25.0,<0.26.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
 ]
 
 dynamic = ["version", "classifiers"]
@@ -76,4 +79,4 @@ persistent-substitution = true
 [tool.poetry]
 include = ["src/teametrics/config/*.yaml", "src/teametrics/data/examples/ERA5_Tx_1956-2024_CH.nc", "README.md",
     "LICENSE"]
-version = "0.5.5"
+version = "0.5.6"

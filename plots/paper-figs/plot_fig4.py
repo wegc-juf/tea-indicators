@@ -304,8 +304,8 @@ def run():
                 va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure2/Figure2.png',
-                dpi=300, bbox_inches='tight')
+    plt.savefig('./Figure4.png', dpi=300, bbox_inches='tight')
+
 
 if __name__ == '__main__':
     run()

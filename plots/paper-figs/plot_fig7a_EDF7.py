@@ -191,11 +191,15 @@ def run():
     data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
                            'dec_indicator_variables/'
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
-    #/data/users/hst/TEA-clean/TEA/paper_data/
+    # /data/users/hst/TEA-clean/TEA/paper_data/
     data = data.sel(lat=slice(72, 35), lon=slice(-11, 40))
     vkeep = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC', 'EA_avg_AF_CC', 'TEX_AF_CC']
     vdrop = [vvar for vvar in data.data_vars if vvar not in vkeep]
     data = data.drop_vars(vdrop)
+    
+    # move longitude half a pixel eastward
+    pix_size = data.lon[1] - data.lon[0]
+    data = data.assign_coords(lon=data.lon + pix_size / 2)
 
     cmap_tex = create_cmap_tex()
     cmax_tex = 30
@@ -212,7 +216,7 @@ def run():
         if vvar == 'TEX_AF_CC':
             im = data[vvar].plot.imshow(ax=axs, transform=ccrs.PlateCarree(), cmap=cmap_tex,
                                         vmin=0, vmax=cmax_tex, add_colorbar=False)
-            outname = 'figure4/panels/Figure4a'
+            outname = 'Figure7a'
             cx = cmax_tex
             dc = 5
         else:
@@ -221,7 +225,7 @@ def run():
             cx = cmax
             dc = 0.5
             vstr = vvar.split('_')[0]
-            outname = f'ExtDataFigs/panels/EDF7/ExtDataFig7_{vstr}'
+            outname = f'ExtDataFig7_{vstr}'
         ext = 'neither'
         if data[vvar].max() > cx:
             ext = 'max'
@@ -249,8 +253,7 @@ def run():
         add_clutter(axs=axs)
 
         plt.title(props['title'], fontsize=16)
-        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/{outname}_NEW.png',
-                    dpi=300, bbox_inches='tight')
+        plt.savefig(f'./{outname}.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

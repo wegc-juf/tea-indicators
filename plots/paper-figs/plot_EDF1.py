@@ -72,7 +72,11 @@ def plot_eur_thresh():
 
     thr = thr.threshold
     thr = thr.sel(lat=slice(72, 35), lon=slice(-10, 40))
-
+    
+    # move longitude half a pixel eastward
+    pix_size = thr.lon[1] - thr.lon[0]
+    thr = thr.assign_coords(lon=thr.lon + pix_size / 2)
+    
     levels = np.arange(10, 42.5, 2.5)
     cmap = sns.color_palette('Reds', len(levels))
 
@@ -150,9 +154,7 @@ def plot_eur_thresh():
              verticalalignment='center', transform=axs.transAxes, backgroundcolor='whitesmoke',
              fontsize=10)
 
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/EDF1/'
-                'ExtDataFig1a.png',
-                bbox_inches='tight', dpi=300)
+    plt.savefig('./ExtDataFig1a.png', bbox_inches='tight', dpi=300)
 
 
 def plot_aut_era5land():
@@ -215,8 +217,7 @@ def plot_aut_era5land():
              verticalalignment='center', transform=axs.transAxes, backgroundcolor='whitesmoke',
              fontsize=10)
 
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/EDF1/'
-                'ExtDataFig1b.png', bbox_inches='tight', dpi=300)
+    plt.savefig('./ExtDataFig1b.png', bbox_inches='tight', dpi=300)
 
 
 def plot_sea_spartacus():
@@ -264,9 +265,7 @@ def plot_sea_spartacus():
 
         panels = {'Tx': 'c', 'P24h_7to7': 'd'}
 
-        plt.savefig(f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/panels/EDF1/'
-                    f'ExtDataFig1{panels[par]}.png',
-                    bbox_inches='tight', dpi=300)
+        plt.savefig(f'./ExtDataFig1{panels[par]}.png', bbox_inches='tight', dpi=300)
         plt.close()
 
 

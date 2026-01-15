@@ -7,7 +7,7 @@ import numpy as np
 from scipy.stats import gmean
 import xarray as xr
 
-from plot_fig2 import find_range
+from plot_fig4 import find_range
 
 from teametrics.common.general_functions import ref_cc_params
 
@@ -233,8 +233,7 @@ def run():
                 va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
-                'ExtDataFig3.png', dpi=300, bbox_inches='tight')
+    plt.savefig('./Figure5.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

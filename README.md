@@ -2,40 +2,41 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17210239.svg)](https://doi.org/10.5281/zenodo.17210239)
 
-A python package to calculate threshold-exceedance-amount (TEA) indicators 
-    as described in https://doi.org/10.48550/arXiv.2504.18964.
+This repository provides the necessary data and scripts to reproduce the data and figures of the paper _A new class 
+of climate hazard metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe_ 
+(https://doi.org/10.1016/j.wace.2026.100855).
 
 ## Installation
-Start by creating a new `virtualenv` for your project
+Start by creating a new `virtualenv` for your project e.g. by using `virtualenvwrapper` (https://virtualenvwrapper.readthedocs.io/en/latest/):
 ```bash
 mkvirtualenv <project_name>
 ```
 
 Then, install the package using `pip`:
 ```bash
-pip install https://wegenernet.org/downloads/teametrics/teametrics-0.5.5-py3-none-any.whl
+pip install https://wegenernet.org/downloads/teametrics/teametrics-0.5.6-py3-none-any.whl
 ```
 
 ## Changelog
 
-See [Releases](https://github.com/wegc-juf/tea-indicators/releases) and [Tags](https://github.com/wegc-juf/tea-indicators/tags) for a detailed changelog.
+See [Releases](https://github.com/wegc-juf/tea-metrics/releases) and [Tags](https://github.com/wegc-juf/tea-metrics/tags) for a detailed changelog.
 
 ## Usage
 
 ### 1) Download of input datasets
-To calculate TEA indicators, you need to download and prepare your input data first.
+To calculate TEA metrics, you need to download and prepare your input data first.
 
 Download input datasets (eg. ERA5, ERA5-Land, or SPARTACUS) if necessary. For ERA5 data, you can use the following 
 scripts
 as a starting point:
-- [`download_ERA5.py`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/utils/ERA5/download_ERA5.py) - for downloading ERA5 
+- [`download_ERA5.py`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/utils/ERA5/download_ERA5.py) - for downloading ERA5 
   data from the Copernicus Climate Data Store (CDS).
-- [`download_ERA5-Land.py`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/utils/ERA5/download_ERA5-Land.py) - for downloading 
+- [`download_ERA5-Land.py`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/utils/ERA5/download_ERA5-Land.py) - for downloading 
   ERA5-Land data from the Copernicus Climate Data Store (CDS).
-- [`other download scripts`](https://github.com/wegc-juf/tea-indicators/tree/main/src/teametrics/utils)
+- [`other download scripts`](https://github.com/wegc-juf/tea-metrics/tree/main/src/teametrics/utils)
 
 ### 2) Preparation of input datasets
-For calculation of daily TEA indicators, the input data must be aggregated to daily data.
+For calculation of daily TEA metrics, the input data must be aggregated to daily data.
 To prepare the input datasets (ERA5, ERA5-Land, or SPARTACUS) run one of the following data prep scripts:
 
 - `prep_ERA5 --inpath INPATH --outpath OUTPATH` -- for preparing ERA5 data (aggregates hourly data to
@@ -55,36 +56,36 @@ To prepare the input datasets (ERA5, ERA5-Land, or SPARTACUS) run one of the fol
 In case you want to define your own GeoRegion (GR) mask, you can create a mask file using the script
 `create_region_masks --config-file CONFIG_FILE`\
 This script allows you to create a mask file for your GR based on a shapefile or coordinates.
-The configuration options for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-indicators/blob/main/docs/CFG-PARAMS-doc.md) \
-(For WEGC users: input data filepaths are listed in [`create_region_masks.md`](https://github.com/wegc-juf/tea-indicators/blob/main/docs/create_region_masks.md))
+The configuration options (_run-control file_) for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md) \
+(For WEGC users: input data filepaths are listed in [`create_region_masks.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/create_region_masks.md))
 
 ### 4) Calculation of TEA Indicators
 After preparing all the necessary input and mask data, run `calc_tea --config-file CONFIG_FILE`.
 
-A minimal example config can be found in [`TEA_CFG_minimal.yaml`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/config/TEA_CFG_minimal.yaml).
-Template config files are [`TEA_CFG_template.yaml`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/config/TEA_CFG_template.yaml) for
-gridded data and [`TEA_CFG_template_station.yaml`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/config/TEA_CFG_template_station.yaml) for station data. \
-The configuration options for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-indicators/blob/main/docs/CFG-PARAMS-doc.md).
+A minimal example config can be found in [`TEA_CFG_minimal.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_minimal.yaml).
+Template config files are [`TEA_CFG_template.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template.yaml) for
+gridded data and [`TEA_CFG_template_station.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template_station.yaml) for station data. \
+The configuration options (_run-control file_) for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md).
 
 ### 5) Using the TEA Indicator classes TEAIndicators and TEAAgr (optional)
 In case you want a more fine-grained control over the TEA Indicator calculations, you can use the classes
 `teametrics.TEA.TEAIndicators` for normal GeoRegions, and \
 `teametrics.TEA_AGR.TEAAgr` for Aggregated GeoRegions.
 
-A simple example can be found in the script [`tea_example`](https://github.com/wegc-juf/tea-indicators/blob/main/src/teametrics/TEA_example.py).
+A simple example can be found in the script [`tea_example`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/TEA_example.py).
 
 [//]: # (Source code documentation for the classes can be found in TODO: add source code doc link - use auto doc tools.)
 
 ## Support
-Just open an issue on the [GitHub repository](https://github.com/wegc-juf/tea-indicators) or contact the authors directly.
+Just open an issue on the [GitHub repository](https://github.com/wegc-juf/tea-metrics) or contact the authors directly.
 
 ## Authors 
-- **Stephanie Haas** — Developer, Maintainer\
-  Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
-  (stephanie.haas@uni-graz.at)
 - **Jürgen Fuchsberger** — Developer, Maintainer\
   Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
   (juergen.fuchsberger@uni-graz.at)
+- **Stephanie Haas** — Developer, Maintainer\
+  Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
+  (stephanie.haas@uni-graz.at)
 - **Gottfried Kirchengast** — Project Lead, main concept\
   Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
   (gottfried.kirchengast@uni-graz.at)
@@ -92,9 +93,19 @@ Just open an issue on the [GitHub repository](https://github.com/wegc-juf/tea-in
 ## License
 This project is licensed under the Gnu General Public License v3.0 (GPL-3.0). See the LICENSE file for details.
 
-## Suggested Citation
+## Suggested Citations
 If you use this code, please cite:
-Fuchsberger, J., Haas, S. J., & Kirchengast, G. (2025). wegc-juf/tea-indicators: teametrics v0.5. Zenodo. https://doi.org/10.5281/zenodo.17210239
+
+***This repository:***
+Fuchsberger, J., Haas, S. J., and Kirchengast, G. (2026). Data and Code for _A new class of climate hazard metrics and 
+its demonstration: revealing a ten-fold increase of extreme heat over Europe_. teametrics (Version 0.5). Zenodo. 
+https://doi.org/10.5281/zenodo.17210239
+
+***The related paper:***
+Kirchengast, G., S. J. Haas, and J. Fuchsberger.
+A new class of climate hazard metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe.
+_Weather Clim. Extremes_, 100855, 2026
+https://doi.org/10.1016/j.wace.2026.100855.
 
 ## Contributing
 Always welcome - just get in touch with the project developers.

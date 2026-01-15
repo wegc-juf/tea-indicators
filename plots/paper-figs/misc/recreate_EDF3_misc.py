@@ -356,9 +356,7 @@ def run():
                    fontsize=8)
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/EDF3/'
-                f'EDF3_{opts.region}{opts.threshold:.1f}degC.png', dpi=300,
-                bbox_inches='tight')
+    plt.savefig(f'./EDF3_{opts.region}{opts.threshold:.1f}degC.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

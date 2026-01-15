@@ -273,9 +273,7 @@ def run():
 
     fig.subplots_adjust(bottom=0.15, top=0.85, left=0.1, right=0.95, hspace=0.2, wspace=0.15)
 
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4d.png',
-                bbox_inches='tight', dpi=300)
+    plt.savefig('./Figure8.png', bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':

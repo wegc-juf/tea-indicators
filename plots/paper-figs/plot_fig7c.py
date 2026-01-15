@@ -94,8 +94,7 @@ def run():
     axs.xaxis.set_minor_locator(mticker.FixedLocator(np.arange(1960, 2025)))
 
     fig.subplots_adjust(bottom=0.25, top=0.9, left=0.1, right=0.9)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4c_NEW.png',
+    plt.savefig('./Figure7c.png',
                 bbox_inches='tight', dpi=300)
 
 

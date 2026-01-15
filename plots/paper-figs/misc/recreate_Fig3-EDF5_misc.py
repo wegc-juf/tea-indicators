@@ -166,8 +166,7 @@ def run():
 
     create_legend(fig=fig, ax=axs[0, 0])
 
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig3-EDF5/'
-                f'Fig3-EDF5_{threshold}degC.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'./Fig3-EDF5_{threshold}degC.png', dpi=300, bbox_inches='tight')
 
 
 def run_noe():
@@ -191,10 +190,9 @@ def run_noe():
 
     create_legend(fig=fig, ax=axs[0])
 
-    plt.savefig(f'/nas/home/hst/work/TEAclean/plots/misc/Fig3-EDF5/'
-                f'Fig3-EDF5_Niederösterreich_25degC.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f'./Fig3-EDF5_Niederösterreich_25degC.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
-    # run()
+    run()
     run_noe()

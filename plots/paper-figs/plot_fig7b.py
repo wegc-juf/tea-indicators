@@ -198,8 +198,7 @@ def run():
     fig.tight_layout(rect=[0.05, 0.05, 0.93, 1])
     plt.subplots_adjust(hspace=0.15, wspace=0.2)
 
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4b_NEW.png', dpi=300, bbox_inches='tight')
+    plt.savefig('./Figure7b.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

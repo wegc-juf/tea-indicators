@@ -14,29 +14,6 @@ import xarray as xr
 from plot_EDF1 import get_lims
 
 
-def load_data(_reg):
-    """
-    load maximum temperature SPARTACUS data from 1961-1990 and apply the region and orography masks
-    :return:
-    """
-
-    # files = sorted(glob.glob('/data/users/hst/cdrDPS/spartacus/Tx*.nc'))
-    files = sorted(glob.glob('/data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/'
-                             '*Tx*.nc'))
-    files = files[0:30]
-
-    data = xr.open_mfdataset(files)
-    data = data.Tx
-
-    if _reg == 'FBR':
-        data = data.isel(x=slice(473, 498), y=slice(56, 76))
-        data = data.chunk({'time': len(data.time), 'x': 25, 'y': 20})
-    else:
-        data = data.chunk({'time': len(data.time), 'x': 16, 'y': 2})
-
-    return data
-
-
 def calc_percentile(_data):
     percentile = 0.99
 
@@ -80,12 +57,12 @@ def load_data_1c(file, var):
 
 
 def plot_fig1c():
-    lsm = load_data_1c(file='/data/arsclisys/normal/ERA5_land/hourly/invariants/'
+    lsm = load_data_1c(file='/data/arsclisys/normal/ERA5_land/invariants/'
                             'lsm_1279l4_0.1x0.1.grb_v4_unpack.nc', var='lsm')
     lsm = lsm.where(lsm > 0.5)
     lsm = lsm.where(lsm.isnull(), 1)
 
-    z = load_data_1c(file='/data/arsclisys/normal/ERA5_land/hourly/invariants/'
+    z = load_data_1c(file='/data/arsclisys/normal/ERA5_land/invariants/'
                           'geo_1279l4_0.1x0.1.grib2_v4_unpack.nc', var='z')
     altitude = z / 9.80665
 
@@ -106,7 +83,7 @@ def plot_fig1c():
     axs.set_extent([-12, 40, 30, 75])
 
     for reg in ['SAF', 'IBE', 'SCN']:
-        lat_lim, lon_lim, center = get_lims(_param='T', _reg=reg)
+        lat_lim, lon_lim, center = get_lims(param='T', reg=reg)
         geom = geometry.box(minx=lon_lim[0], maxx=lon_lim[1], miny=lat_lim[0], maxy=lat_lim[1])
         axs.add_geometries([geom], crs=ccrs.PlateCarree(),
                            edgecolor='black', facecolor='None', linewidth=1)
@@ -168,8 +145,7 @@ def plot_fig1c():
              transform=axs.transAxes, fontsize=8, rotation=-10)
 
     axs.axis('off')
-    fig.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure1/panels/'
-                'figure1c.png', dpi=300, bbox_inches='tight')
+    fig.savefig('./Figure1c.png', dpi=300, bbox_inches='tight')
     # plt.show()
 
 
@@ -198,9 +174,7 @@ def plot_fig1d():
                                 fill=False, linewidth=2))
 
     axs.axis('off')
-    fig.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure1/panels/figure1d.png',
-                dpi=300,
-                bbox_inches='tight')
+    fig.savefig('./Figure1d.png', dpi=300, bbox_inches='tight')
 
 
 def plot_fig1e():
@@ -231,15 +205,13 @@ def plot_fig1e():
     axs.add_patch(pat.Rectangle(xy=(0, 0), height=18, width=23, edgecolor='black',
                                 fill=False, linewidth=2))
 
-    fig.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure1/panels/figure1e.png',
-                dpi=300,
-                bbox_inches='tight')
+    fig.savefig('./Figure1e.png', dpi=300, bbox_inches='tight')
 
 
 def run():
-    # plot_fig1c()
+    plot_fig1c()
     plot_fig1d()
-    # plot_fig1e()
+    plot_fig1e()
 
 
 if __name__ == '__main__':
