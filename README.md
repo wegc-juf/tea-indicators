@@ -14,12 +14,8 @@ mkvirtualenv <project_name>
 
 Then, install the package using `pip`:
 ```bash
-pip install https://wegenernet.org/downloads/teametrics/teametrics-0.5.7-py3-none-any.whl
+pip install https://wegenernet.org/downloads/teametrics/teametrics-0.5.8-py3-none-any.whl
 ```
-
-## Changelog
-
-See [Releases](https://github.com/wegc-juf/tea-metrics/releases) and [Tags](https://github.com/wegc-juf/tea-metrics/tags) for a detailed changelog.
 
 ## Usage
 
@@ -59,7 +55,7 @@ This script allows you to create a mask file for your GR based on a shapefile or
 The configuration options (_run-control file_) for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md) \
 (For WEGC users: input data filepaths are listed in [`create_region_masks.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/create_region_masks.md))
 
-### 4) Calculation of TEA Indicators
+### 4) Calculation of TEA metrics
 After preparing all the necessary input and mask data, run `calc_tea --config-file CONFIG_FILE`.
 
 A minimal example config can be found in [`TEA_CFG_minimal.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_minimal.yaml).
@@ -67,8 +63,8 @@ Template config files are [`TEA_CFG_template.yaml`](https://github.com/wegc-juf/
 gridded data and [`TEA_CFG_template_station.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template_station.yaml) for station data. \
 The configuration options (_run-control file_) for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md).
 
-### 5) Using the TEA Indicator classes TEAIndicators and TEAAgr (optional)
-In case you want a more fine-grained control over the TEA Indicator calculations, you can use the classes
+### 5) Using the TEA metrics classes TEAIndicators and TEAAgr (optional)
+In case you want a more fine-grained control over the TEA metrics calculations, you can use the classes
 `teametrics.TEA.TEAIndicators` for normal GeoRegions, and \
 `teametrics.TEA_AGR.TEAAgr` for Aggregated GeoRegions.
 
@@ -76,19 +72,14 @@ A simple example can be found in the script [`tea_example`](https://github.com/w
 
 [//]: # (Source code documentation for the classes can be found in TODO: add source code doc link - use auto doc tools.)
 
-## Support
-Just open an issue on the [GitHub repository](https://github.com/wegc-juf/tea-metrics) or contact the authors directly.
+## Support (best-effort basis)
+Just open an issue on the [GitHub repository](https://github.com/wegc-juf/tea-metrics) or contact the authors 
+directly (see contacts below).
 
-## Authors 
-- **Jürgen Fuchsberger** — Developer, Maintainer\
-  Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
-  (juergen.fuchsberger@uni-graz.at)
-- **Stephanie Haas** — Developer, Maintainer\
-  Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
-  (stephanie.haas@uni-graz.at)
-- **Gottfried Kirchengast** — Project Lead, main concept\
-  Wegener Center for Climate and Global Change, University of Graz, Graz, Austria
-  (gottfried.kirchengast@uni-graz.at)
+## Contacts 
+- **Jürgen Fuchsberger** (Lead Software Developer): juergen.fuchsberger@uni-graz.at
+- **Gottfried Kirchengast** (Project and Methodology Lead): gottfried.kirchengast@uni-graz.at
+- **Stephanie Haas** (Software Co-Developer): stephanie.haas@uni-graz.at
 
 ## License
 This project is licensed under the Gnu General Public License v3.0 (GPL-3.0). See the LICENSE file for details.
@@ -97,16 +88,20 @@ This project is licensed under the Gnu General Public License v3.0 (GPL-3.0). Se
 If you use this code, please cite:
 
 ***This repository:***
-Fuchsberger, J., Haas, S. J., and Kirchengast, G. (2026). Data and Code for _A new class of climate hazard metrics and 
-its demonstration: revealing a ten-fold increase of extreme heat over Europe_. teametrics (Version 0.5). Zenodo. 
+Fuchsberger, J., Kirchengast, G., and Haas, S. J. (2026). TEAmetrics software for _A new class of climate hazard 
+metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe_ and other applications. 
+Version 0.5. Zenodo. 
 https://doi.org/10.5281/zenodo.17210239
 
 ***The related paper:***
-Kirchengast, G., S. J. Haas, and J. Fuchsberger.
+Kirchengast, G., S. J. Haas, and J. Fuchsberger (2026).
 A new class of climate hazard metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe.
-_Weather Clim. Extremes_, 100855, 2026
-https://doi.org/10.1016/j.wace.2026.100855.
+_Weather Clim. Extremes_, 51, 100855, 
+https://doi.org/10.1016/j.wace.2026.100855
 
-## Contributing
-Always welcome - just get in touch with the project developers.
+## TEAmetrics Run Control File (RCF) specifications
+See [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md) for detailed documentation of the run control file parameters.
+
+## Changelog
+See [Releases](https://github.com/wegc-juf/tea-metrics/releases) and [Tags](https://github.com/wegc-juf/tea-metrics/tags) for a detailed changelog.
 

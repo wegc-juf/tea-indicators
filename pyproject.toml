@@ -67,7 +67,7 @@ folders = [
         '''(^__version__\s*(?::.*?)?=\s*['"])[^'"]*(['"])''',
         { value = '''(^__version_tuple__\s*(?::.*?)?=\s*\()[^)]*(\))''', mode = "tuple" },
     ]  },
-    {path = ".", files = ["README.md"], patterns = ['''(teametrics-)[^ ]+(-py3)''']},
+    {path = ".", files = ["README.md"], patterns = ['''(teametrics-)[^ ]+(-py3)''', '''(Version\s+)[^ ]+(..Zenodo)''']},
 ]
 
 [tool.poetry-dynamic-versioning.files."README.md"]
