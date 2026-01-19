@@ -100,8 +100,25 @@ A new class of climate hazard metrics and its demonstration: revealing a ten-fol
 _Weather Clim. Extremes_, 51, 100855, 
 https://doi.org/10.1016/j.wace.2026.100855
 
-## TEAmetrics Run Control File (RCF) specifications
-See [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md) for detailed documentation of the run control file parameters.
+## TEA metrics Run Control File (RCF) specifications
+
+The **TEA metrics Run Control File (RCF) specifications** define and frame the scope of applicability of the software and are the basis for the config parameters file ([`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md)) that informs the yaml input files feeding the TEAmetrics computation scripts (`teametrics/config/` yaml files). Compiled and maintained by Gottfried Kirchengast. For a detailed methods description of the TEA metrics computations see the Supplementary materials PDF file of the related introduction paper at https://doi.org/10.1016/j.wace.2026.100855.
+
+[**TEAmetrics Run Control File (RCF) specifications v8-3Sep2025**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md) --- Structured in **seven definition 
+groups**, preceded by 
+an optional Project&TEArun Id group with specs for orderly filepath management and identification of ensembles of 
+TEAmetrics compute runs. **The following definitions apply** and are **summarized group by group below** 
+(structured per group in self-explanatory style; this version covering specs up to TEAmetrics v1.0):
+
+**#1 Input Datsets Definition**  
+**#2 Key Variable Defintions**  
+**#3 GeoRegions Definition**  
+**#4 Aggregate GeoRegions Definition**  
+**#5 Time Domain Definitions**  
+**#6 Threshold Map and Exceedance Definitions**  
+**#7 Natural Variability Estimation Definitions**  
+
+For details see [**TEAmetrics_RCFspecs_v8-3Sep2025.md**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md).
 
 ## Changelog
 See [Releases](https://github.com/wegc-juf/tea-metrics/releases) and [Tags](https://github.com/wegc-juf/tea-metrics/tags) for a detailed changelog.
