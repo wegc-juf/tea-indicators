@@ -1,17 +1,17 @@
-<pre>
-[Project-Id and TEArun-Id]
+# TEA metrics Run Control File (RCF) specifications
+
+## [Project-Id and TEArun-Id]
+```
 TEAmetrics_Version            = TEAmetrics v1.0      ;(vN.n)
 RCF_Creation_Date_and_Time    = 2025-09-03T15:01:16Z ;(ISO string*20)
 Project_Id                    = TEAmTestProject1     ;(string*25)
 TEArun_Id                     = Test1_Europe2AGR_1a  ;(string*25)
-*test*
-</pre>
+```
 
+## [#1 Input Datsets Definition]
 ```markdown
-[#1 Input Datsets Definition]
 KeyVarData_DatasetType           = ERA5             ;(string*25)
 *elem{ERA5, ERA5-Land, ERA5-HEAT, E-OBS, SPARTACUS, CMIP6, …}*
-```
 
 KeyVarData_GenericFilename       = ../InpData/ERA5/ERA5-EUR1961-2024v1_*.nc
 *(files need to supply the selected dataset type and to contain all relevant data to properly feed the Key Var, GRs, AGRs, and Time Domain Defs)*
@@ -29,6 +29,7 @@ NatVarData_DatasetType           = StnData_AUT      ;(string*25)
 
 NatVarData_GenericFilename       = ../InpData/AUT/GeoSph-HistDailyStDv2_*.nc
 *(files need to supply the selected dataset type and to contain all relevant data to properly feed the NatVar Estimation Defs)*
+```
 
 [#2 Key Variable Definitions]
 KeyVariable                        = TMax                  ;(string*6)
