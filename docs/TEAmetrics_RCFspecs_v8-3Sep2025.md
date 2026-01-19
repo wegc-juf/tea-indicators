@@ -1,5 +1,15 @@
 # TEA metrics Run Control File (RCF) specifications
 
+[**Project-Id and TEArun-Id**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#project-id-and-tearun-id)  
+[**1. Input Datsets Definition**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#input-datasets-def)  
+[**2. Key Variable Defintions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#key-variable-def)    
+[**3. GeoRegions Definition**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#georegions-def)      
+[**4. Aggregate GeoRegions Definition**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#aggregate-georegions-def)      
+[**5. Time Domain Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#time-domain-def)      
+[**6. Threshold Map and Exceedance Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#threshold-map-and-exceedance-def)      
+[**7. Natural Variability Estimation Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#natural-variability-estimation-def)
+
+<a name="project-id-and-tearun-id"></a>
 ## [Project-Id and TEArun-Id]
 ```markdown
 TEAmetrics_Version            = TEAmetrics v1.0      ;(vN.n)
