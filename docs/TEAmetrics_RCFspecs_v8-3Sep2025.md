@@ -8,7 +8,8 @@ Project_Id                    = TEAmTestProject1     ;(string*25)
 TEArun_Id                     = Test1_Europe2AGR_1a  ;(string*25)
 ```
 
-## [1. Input Datsets Definition] {#input-datasets-def}
+<a name="input-datasets-def"></a>
+## [1. Input Datsets Definition]
 ```markdown
 KeyVarData_DatasetType = ERA5 ;(string*25)
 *elem{ERA5, ERA5-Land, ERA5-HEAT, E-OBS, SPARTACUS, CMIP6, …}*
@@ -36,7 +37,8 @@ NatVarData_GenericFilename = ../InpData/AUT/GeoSph-HistDailyStDv2_*.nc
 *data to properly feed the NatVar Estimation Defs)*
 ```
 
-## [2. Key Variable Definitions] {#key-variable-def}
+<a name="key-variable-def"></a>
+## [2. Key Variable Definitions]
 ```markdown
 KeyVariable = TMax ;(string*6)
 *elem{TMax, TMin, Tm1H, TmaxUTCI, TmUTCI1H, TmaxWBGT, TmWBGT1H, P24H, P1H, …}*
@@ -56,7 +58,8 @@ KeyVariable_MSLAltitudeDomain[2]   = -10, 1500 ;[bottom m, top m]
 *if no “Surface” geographic domain is chosen, this key variable is N/A)*
 ```
 
-## [3. GeoRegions Definition] {#geo-regions-def}
+<a name="georegions-def"></a>
+## [3. GeoRegions Definition]
 ```markdown
 GR_Computation_Type = GridofGRs ;(string*25)
 *elem{OneGR, GridofGRs}*
@@ -119,7 +122,8 @@ GR_UTMXYArea_aroundCenterLatLon[2]     = 100.00, 100.00 ;[km S-N, km W-E]
 *direction; relative to the cell center location)*
 ```
 
-## [4. Aggregate GeoRegions Definition] {#aggregate-geo-regions-def}
+<a name="aggregate-georegions-def"></a>
+## [4. Aggregate GeoRegions Definition]
 ```markdown
 AGR_Computation_Type = SampleofAGRs ;(string*25)
 *elem{NoAGR, OneAGR, SampleofAGRs, GridofAGRs};*
@@ -190,7 +194,8 @@ AGR_UTMXYArea_aroundCenterLatLon[2]   = 100., 100. ;[km S-N, km W-E]
 *direction; relative to the cell center location)*
 ```
 
-## [5. Time Domain Definitions] {#time-domain-def}
+<a name="time-domain-def"></a>
+## [5. Time Domain Definitions]
 ```markdown
 TimePeriod_StartDate = 1961-01-01 ;(datestring*10)
 TimePeriod_EndDate = 2024-12-31 ;(datestring*10)
@@ -260,7 +265,8 @@ Percentile_ThresRange[2]             = 95.0, 99.0 ;[NN.N, NN.N]
 *enabling to analyze pctle-exceedances on top of the avg seasonal cycle)*
 ```
 
-## [7. Natural Variability Estimation Definitions] {#natural-variability-estimation-def}
+<a name="natural-variability-estimation-def"></a>
+## [7. Natural Variability Estimation Definitions]
 ```markdown
 NatVarPeriod_StartDate = 1880-01-01 ;(datestring*10)
 NatVarPeriod_EndDate = 1990-12-31 ;(datestring*10)
