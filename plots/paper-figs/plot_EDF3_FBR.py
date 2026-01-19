@@ -239,7 +239,7 @@ def run():
                 va='top', ha='left')
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.4, hspace=0.45)
-    plt.savefig('./ExtDataFig4_FBR.png', dpi=300, bbox_inches='tight')
+    plt.savefig('./ExtDataFig3_FBR.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

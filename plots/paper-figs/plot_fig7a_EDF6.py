@@ -175,7 +175,7 @@ def check_affected_area(data):
     gt10 = data.sel(lat=slice(55, 45), lon=slice(-11, 40)).where(data > 10)
 
     areas = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                            'area_grid_0p25_EUR_ERA5.nc')
+                              'area_grid_0p25_EUR_ERA5.nc')
     areas = areas.sel(lon=slice(-11, 40), lat=slice(70, 35))
     eur_area = areas.sum()
     ceur_area = areas.sel(lat=slice(55.25, 45)).sum()
@@ -227,7 +227,7 @@ def run():
             cx = cmax
             dc = 0.5
             vstr = vvar.split('_')[0]
-            outname = f'ExtDataFig7_{vstr}'
+            outname = f'ExtDataFig6_{vstr}'
         ext = 'neither'
         if data[vvar].max() > cx:
             ext = 'max'

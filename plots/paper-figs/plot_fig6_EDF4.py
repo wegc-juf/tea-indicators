@@ -320,7 +320,7 @@ def run():
     if land:
         fstr = 'Figure6'
     else:
-        fstr = 'ExtDataFig5'
+        fstr = 'ExtDataFig4'
         
     plt.savefig(f'./{fstr}.png', dpi=300, bbox_inches='tight')
 
