@@ -110,15 +110,15 @@ an optional Project&TEArun Id group with specs for orderly filepath management a
 TEAmetrics compute runs. **The following definitions apply** and are **summarized group by group below** 
 (structured per group in self-explanatory style; this version covering specs up to TEAmetrics v1.0):
 
-**#1 Input Datsets Definition**  
-**#2 Key Variable Defintions**  
-**#3 GeoRegions Definition**  
-**#4 Aggregate GeoRegions Definition**  
-**#5 Time Domain Definitions**  
-**#6 Threshold Map and Exceedance Definitions**  
-**#7 Natural Variability Estimation Definitions**  
+[**1. Input Datsets Definition**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#input-datasets-def)  
+[**2. Key Variable Defintions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#key-variable-def)    
+[**3. GeoRegions Definition**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#georegions-def)      
+[**4. Aggregate GeoRegions Definition**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#aggregate-georegions-def)      
+[**5. Time Domain Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#time-domain-def)      
+[**6. Threshold Map and Exceedance Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#threshold-map-and-exceedance-def)      
+[**7. Natural Variability Estimation Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#natural-variability-estimation-def)      
 
-For details see [**TEAmetrics_RCFspecs_v8-3Sep2025.md**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md).
+For full definitions, see [**TEAmetrics_RCFspecs_v8-3Sep2025.md**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md).
 
 ## Changelog
 See [Releases](https://github.com/wegc-juf/tea-metrics/releases) and [Tags](https://github.com/wegc-juf/tea-metrics/tags) for a detailed changelog.

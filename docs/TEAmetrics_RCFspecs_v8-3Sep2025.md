@@ -3,40 +3,40 @@
 ## [Project-Id and TEArun-Id]
 ```markdown
 TEAmetrics_Version            = TEAmetrics v1.0      ;(vN.n)
-RCF_Creation_Date_and_Time    = 2025-09-03T15:01:16Z ;`(ISO string*20)`
+RCF_Creation_Date_and_Time    = 2025-09-03T15:01:16Z ;(ISO string*20)
 Project_Id                    = TEAmTestProject1     ;(string*25)
 TEArun_Id                     = Test1_Europe2AGR_1a  ;(string*25)
 ```
 
-## [1. Input Datsets Definition]
+## [1. Input Datsets Definition] {#input-datasets-def}
 ```markdown
 KeyVarData_DatasetType = ERA5 ;(string*25)
 *elem{ERA5, ERA5-Land, ERA5-HEAT, E-OBS, SPARTACUS, CMIP6, …}*
 
 KeyVarData_GenericFilename = ../InpData/ERA5/ERA5-EUR1961-2024v1_*.nc
 *(files need to supply the selected dataset type and to contain all relevant*
-data to properly feed the Key Var, GRs, AGRs, and Time Domain Defs)*
+*data to properly feed the Key Var, GRs, AGRs, and Time Domain Defs)*
 
 ThreshData_DatasetType = ERA5-Land ;(string*25)
 *elem{NoDataset, ERA5, ERA5-Land, ERA5-HEAT, E-OBS, SPARTACUS, CMIP6, …}*
 *(if NoDataset the ThreshData_GenericFilename is N/A and the ThresholdMap_Type*
-within the Threshold Map and Exceedance Defs must be set to Constant)*
+*within the Threshold Map and Exceedance Defs must be set to Constant)*
 
 ThreshData_GenericFilename = ../InpData/ERA5L/ERA5L-EUR1961-1990v1_*.nc
 *(files need to supply the selected dataset type and to contain all relevant*
-data to properly feed the Key Var, GRs, AGRs, and Threshold Map and Exc Defs)*
+*data to properly feed the Key Var, GRs, AGRs, and Threshold Map and Exc Defs)*
 
 NatVarData_DatasetType = StnData_AUT ;(string*25)
 *elem{NoDataset, StnData_AUT, ModData_MPI-GE, ModData_CMIP6, …}*
 *(if NoDataset the NatVarData_GenericFilename is N/A and no NatVar estimates are*
-computed along with the amplification factor variable timeseries)*
+*computed along with the amplification factor variable timeseries)*
 
 NatVarData_GenericFilename = ../InpData/AUT/GeoSph-HistDailyStDv2_*.nc
 *(files need to supply the selected dataset type and to contain all relevant*
-data to properly feed the NatVar Estimation Defs)*
+*data to properly feed the NatVar Estimation Defs)*
 ```
 
-## [2. Key Variable Definitions]
+## [2. Key Variable Definitions] {#key-variable-def}
 ```markdown
 KeyVariable = TMax ;(string*6)
 *elem{TMax, TMin, Tm1H, TmaxUTCI, TmUTCI1H, TmaxWBGT, TmWBGT1H, P24H, P1H, …}*
@@ -56,7 +56,7 @@ KeyVariable_MSLAltitudeDomain[2]   = -10, 1500 ;[bottom m, top m]
 *if no “Surface” geographic domain is chosen, this key variable is N/A)*
 ```
 
-## [3. GeoRegions Definition]
+## [3. GeoRegions Definition] {#geo-regions-def}
 ```markdown
 GR_Computation_Type = GridofGRs ;(string*25)
 *elem{OneGR, GridofGRs}*
@@ -73,8 +73,8 @@ GR_CellShape_Type = LatLonArea ;(string*25)
 /if Types PolygonRegion and Polygon selected:
 GR_PolygonRegion = Austria ;(string*25)
 GR_PolygonShapefile = ../RegShapefiles/AustriaBorders1.sh
-*(from list of polygon-region names, e.g., of countries, states of the world;
-and the shapefile from those available for the selected GR_PolygonRegion)*
+*(from list of polygon-region names, e.g., of countries, states of the world;*
+*and the shapefile from those available for the selected GR_PolygonRegion)*
 
 ---
 /if Type CenterLatLon selected:
@@ -119,7 +119,7 @@ GR_UTMXYArea_aroundCenterLatLon[2]     = 100.00, 100.00 ;[km S-N, km W-E]
 *direction; relative to the cell center location)*
 ```
 
-## [4. Aggregate GeoRegions Definition]
+## [4. Aggregate GeoRegions Definition] {#aggregate-geo-regions-def}
 ```markdown
 AGR_Computation_Type = SampleofAGRs ;(string*25)
 *elem{NoAGR, OneAGR, SampleofAGRs, GridofAGRs};*
@@ -190,7 +190,7 @@ AGR_UTMXYArea_aroundCenterLatLon[2]   = 100., 100. ;[km S-N, km W-E]
 *direction; relative to the cell center location)*
 ```
 
-## [5. Time Domain Definitions]
+## [5. Time Domain Definitions] {#time-domain-def}
 ```markdown
 TimePeriod_StartDate = 1961-01-01 ;(datestring*10)
 TimePeriod_EndDate = 2024-12-31 ;(datestring*10)
@@ -203,8 +203,8 @@ TimeSampling_TEAmetrics = Annual ;(string*6)
 *elem{Annual}*
 
 AnnualCTP_TEAmetrics = ANN ;(string*3)
-*elem{ANN; WAS, ESS, EWS; MAM...DJF; Jan...Dec; warm season WAS: Apr-Oct,
-extended summer season ESS: May-Sep, extended winter season EWS: Nov-Mar}*
+*elem{ANN; WAS, ESS, EWS; MAM...DJF; Jan...Dec; warm season WAS: Apr-Oct,*
+*extended summer season ESS: May-Sep, extended winter season EWS: Nov-Mar}*
 
 AvgWindow_DecadalTEAmetrics[3]    = 10, -5, 4 ;[yrs, -deltayrs, +deltayrs]
 *(range 1 to 30 yrs; deltayrs specify the positioning of the averaging window*
@@ -218,7 +218,7 @@ CCPeriod_TEAmetrics[2]            = 2010, 2024 ;[first yr, last yr]
 *setting first yr = last yr deactivates the Ref and CC metrics computation)*
 ```
 
-## [6. Threshold Map and Exceedance Definitions]
+## [6. Threshold Map and Exceedance Definitions] {#threshold-map-and-exceedance-def}
 ```markdown
 ThresholdMap_Type = Percentile ;(string*25)
 *elem{Constant, Percentile, SeasonalVar Percentile}*
@@ -260,7 +260,7 @@ Percentile_ThresRange[2]             = 95.0, 99.0 ;[NN.N, NN.N]
 *enabling to analyze pctle-exceedances on top of the avg seasonal cycle)*
 ```
 
-## [7. Natural Variability Estimation Definitions]
+## [7. Natural Variability Estimation Definitions] {#natural-variability-estimation-def}
 ```markdown
 NatVarPeriod_StartDate = 1880-01-01 ;(datestring*10)
 NatVarPeriod_EndDate = 1990-12-31 ;(datestring*10)
