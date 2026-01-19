@@ -4,8 +4,8 @@
 
 This repository provides the software to compute the threshold-exceedance-amount (TEA) metrics as demonstrated in 
 the paper _A new class of climate hazard metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe_ 
-(https://doi.org/10.1016/j.wace.2026.100855; a detailed TEA metrics methods description is part of the 
-Supplementary Information of the paper).
+(https://doi.org/10.1016/j.wace.2026.100855). A detailed TEA metrics methods description is part of the 
+Supplementary Information of the paper.
 
 ## Installation
 Start by creating a new `virtualenv` for your project e.g. by using `virtualenvwrapper` (https://virtualenvwrapper.readthedocs.io/en/latest/):
