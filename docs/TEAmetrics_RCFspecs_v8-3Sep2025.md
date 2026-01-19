@@ -217,8 +217,8 @@ CCPeriod_TEAmetrics[2]            = 2010, 2024 ;[first yr, last yr]
 *(time periods at least as long as the AvgWindow_DecadalTEAmetrics choice;*
 *setting first yr = last yr deactivates the Ref and CC metrics computation)*
 ```
-
-## [6. Threshold Map and Exceedance Definitions] {#threshold-map-and-exceedance-def}
+<a name="threshold-map-and-exceedance-def"></a>
+## [6. Threshold Map and Exceedance Definitions]
 ```markdown
 ThresholdMap_Type = Percentile ;(string*25)
 *elem{Constant, Percentile, SeasonalVar Percentile}*
