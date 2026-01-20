@@ -1,3 +1,7 @@
+"""
+Plot Figure 7c
+"""
+from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
@@ -5,6 +9,9 @@ import seaborn as sns
 import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
+
+INPUT_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/')
+
 
 def run():
     regs = ['EUR', 'S-EUR', 'C-EUR', 'N-EUR']
@@ -22,7 +29,7 @@ def run():
     cc_vals = {}
     xv = -4
     for ireg, reg in enumerate(regs):
-        data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
+        data = xr.open_dataset(INPUT_PATH / 'results/dec_indicator_variables' /
                                f'amplification/AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         if reg == 'EUR':
             axs.fill_between(x=xticks[1:],

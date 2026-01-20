@@ -4,6 +4,7 @@ Plot script for ExtDataFig1
 @revised by: juf 2024-09-23
 """
 
+from pathlib import Path
 import cartopy.crs as ccrs
 import cartopy.feature as cfea
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -15,6 +16,9 @@ import numpy as np
 import seaborn as sns
 from shapely import geometry
 import xarray as xr
+
+STATIC_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/')
+MASKS_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/')
 
 
 def get_lims(param, reg):
@@ -67,16 +71,15 @@ def plot_eur_thresh():
     ExtDataFig 1a
     :return:
     """
-    thr = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                          'static_Tx99.0p_EUR_ERA5.nc')
+    thr = xr.open_dataset(STATIC_PATH / 'static_Tx99.0p_EUR_ERA5.nc')
 
     thr = thr.threshold
     thr = thr.sel(lat=slice(72, 35), lon=slice(-10, 40))
-    
+
     # move longitude half a pixel eastward
     pix_size = thr.lon[1] - thr.lon[0]
     thr = thr.assign_coords(lon=thr.lon + pix_size / 2)
-    
+
     levels = np.arange(10, 42.5, 2.5)
     cmap = sns.color_palette('Reds', len(levels))
 
@@ -162,11 +165,9 @@ def plot_aut_era5land():
     ExtDataFig 1 b
     :return:
     """
-    thr = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                          'static_Tx99.0p_AUT_ERA5Land.nc')
+    thr = xr.open_dataset(STATIC_PATH / 'static_Tx99.0p_AUT_ERA5Land.nc')
 
-    aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'AUT_masks_ERA5Land.nc')
+    aut = xr.open_dataset(MASKS_PATH / 'AUT_masks_ERA5Land.nc')
 
     thr = thr.where(aut.nw_mask == 1)
 
@@ -234,8 +235,7 @@ def plot_sea_spartacus():
                            'ext': 'neither', 'pstr': 'P24h_7to7_95.0p'}}
 
     for par in param:
-        thr = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                              f'static_{props[par]["pstr"]}_SEA_SPARTACUS.nc')
+        thr = xr.open_dataset(STATIC_PATH / f'static_{props[par]["pstr"]}_SEA_SPARTACUS.nc')
         thr = thr.threshold
 
         fig, axs = plt.subplots(1, 1, figsize=(4.5, 3))

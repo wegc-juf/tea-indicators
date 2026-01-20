@@ -1,3 +1,8 @@
+"""
+Plot Figure 7a and Extended Data Figure 6
+"""
+
+from pathlib import Path
 import cartopy.crs as ccrs
 import cartopy.feature as cfea
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -7,6 +12,9 @@ import matplotlib.ticker as mticker
 import numpy as np
 from shapely import geometry
 import xarray as xr
+
+INPUT_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/')
+STATIC_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/')
 
 
 def create_cmap_tex():
@@ -174,8 +182,7 @@ def check_affected_area(data):
     gt8 = data.sel(lat=slice(70, 35), lon=slice(-11, 40)).where(data > 8)
     gt10 = data.sel(lat=slice(55, 45), lon=slice(-11, 40)).where(data > 10)
 
-    areas = xr.open_dataarray('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                              'area_grid_0p25_EUR_ERA5.nc')
+    areas = xr.open_dataarray(STATIC_PATH / 'area_grid_0p25_EUR_ERA5.nc')
     areas = areas.sel(lon=slice(-11, 40), lat=slice(70, 35))
     eur_area = areas.sum()
     ceur_area = areas.sel(lat=slice(55.25, 45)).sum()
@@ -190,13 +197,13 @@ def check_affected_area(data):
 
 
 def run():
-    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
+    data = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables' /
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
     data = data.sel(lat=slice(72, 35), lon=slice(-11, 40))
     vkeep = ['EF_AF_CC', 'ED_avg_AF_CC', 'EM_avg_AF_CC', 'EA_avg_AF_CC', 'TEX_AF_CC']
     vdrop = [vvar for vvar in data.data_vars if vvar not in vkeep]
     data = data.drop_vars(vdrop)
-    
+
     # move longitude half a pixel eastward
     pix_size = data.lon[1] - data.lon[0]
     data = data.assign_coords(lon=data.lon + pix_size / 2)

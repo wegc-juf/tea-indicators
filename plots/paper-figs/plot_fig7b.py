@@ -1,3 +1,7 @@
+"""
+Plot Figure 7b
+"""
+from pathlib import Path
 import matplotlib as mpl
 import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
@@ -7,6 +11,8 @@ from scipy.stats import gmean
 import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
+
+INPUT_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/')
 
 PARAMS = ref_cc_params()
 
@@ -179,10 +185,9 @@ def run():
     fw, fh, dpi = scale_figsize(figwidth=14, figheight=5, figdpi=300)
     fig, axs = plt.subplots(1, 3, figsize=(fw, fh), dpi=dpi)
 
-    data = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
+    data = xr.open_dataset(INPUT_PATH / 'results' / 'dec_indicator_variables' /
                            'amplification/AF_Tx99.0p_AGR-EUR_annual_ERA5_1961to2024.nc')
-    thresh = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                             'static_Tx99.0p_EUR_ERA5.nc')
+    thresh = xr.open_dataset(INPUT_PATH / 'static' / 'static_Tx99.0p_EUR_ERA5.nc')
     thresh = thresh.threshold
 
     regions = ['SAF', 'IBE', 'SCN']

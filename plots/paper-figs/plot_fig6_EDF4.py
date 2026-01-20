@@ -1,3 +1,7 @@
+"""
+Plot Figure 6 and Extended Data Figure 4 of the TEA paper
+"""
+from pathlib import Path
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
@@ -6,6 +10,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import pyproj
 import xarray as xr
+
+INPUT_PATH = Path('/data/users/hst/TEA-clean/TEA/paper_data/')
 
 
 def get_data(reg, var, ds):
@@ -17,8 +23,10 @@ def get_data(reg, var, ds):
         season = 'WAS'
 
     reg_str, gr_str = reg, 'GR'
-    data = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                           f'amplification/AF_{pstr}_{reg_str}_{season}_{ds}_1961to2024.nc')
+    file_path = (INPUT_PATH / 'dec_indicator_variables' / 'amplification' /
+                 f'AF_{pstr}_{reg_str}_{season}_{ds}_1961to2024.nc')
+    print(f'Loading data from {file_path}')
+    data = xr.open_dataset(file_path)
 
     fd_gr = 10 ** (np.log10(data[f'EF_{gr_str}_AF'])
                    + np.log10(data[f'ED_avg_{gr_str}_AF']))
@@ -138,8 +146,7 @@ def plot_subplot(ax, spcus, era5, var, reg, land):
     if reg != 'AUT':
         rstr = 'SEA'
 
-    nv = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                         f'NV_AF_{pstr}_{rstr}.nc')
+    nv = xr.open_dataset(INPUT_PATH / 'natural_variability' / f'NV_AF_{pstr}_{rstr}.nc')
 
     nat_var_low = np.ones(len(xticks)) * (1 - nv[f'{nv_var}low'].values * 1.645)
     nat_var_upp = np.ones(len(xticks)) * (1 + nv[f'{nv_var}upp'].values * 1.645)
@@ -260,6 +267,7 @@ def create_legend(fig, ax, land):
                 r'$\mathcal{A}^\mathrm{t}$', r'$\mathcal{A}^\mathrm{T}$'),
                ncol=6, loc=(0.27, 0.01))
 
+
 def load_e5l_data():
 
     sar = get_data(reg='SAR', var='Precip24Hsum_7to7', ds='ERA5Land')
@@ -277,52 +285,54 @@ def load_e5l_data():
 
 
 def run():
-    land = True
 
-    vvars = ['Temperature', 'Precip24Hsum_7to7']
-    regions = ['AUT', 'SEA', 'FBR']
+    lands = [True, False]
 
-    e5_ds = 'ERA5'
-    if land:
-        e5_ds = f'{e5_ds}Land'
+    for land in lands:
+        vvars = ['Temperature', 'Precip24Hsum_7to7']
+        regions = ['AUT', 'SEA', 'FBR']
 
-    fig, axs = plt.subplots(3, 2, figsize=(12, 10))
+        e5_ds = 'ERA5'
+        if land:
+            e5_ds = f'{e5_ds}Land'
 
-    for icol, vvar in enumerate(vvars):
-        for irow, reg in enumerate(regions):
-            if vvar == 'Precip24Hsum_7to7' and reg == 'AUT':
-                axs[irow, icol].axis('off')
-                continue
-            e5_data = get_data(reg=reg, var=vvar, ds=e5_ds)
-            sp_data = get_data(reg=reg, var=vvar, ds='SPARTACUS')
-            if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
-                if e5_ds == 'ERA5':
-                    e5_map_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
-                else:
-                    e5_map_data = load_e5l_data()
-                plot_maps(fig=fig, spcus=sp_data, era5=e5_map_data, land=land)
-            plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=vvar, reg=reg,
-                         land=land)
+        fig, axs = plt.subplots(3, 2, figsize=(12, 10))
 
-    axs[2, 0].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
-    axs[2, 1].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
-    axs[0, 1].set_title('Extremity amplification SEA/FBR | Precipitation', fontsize=14)
+        for icol, vvar in enumerate(vvars):
+            for irow, reg in enumerate(regions):
+                if vvar == 'Precip24Hsum_7to7' and reg == 'AUT':
+                    axs[irow, icol].axis('off')
+                    continue
+                e5_data = get_data(reg=reg, var=vvar, ds=e5_ds)
+                sp_data = get_data(reg=reg, var=vvar, ds='SPARTACUS')
+                if vvar == 'Precip24Hsum_7to7' and reg == 'SEA':
+                    if e5_ds == 'ERA5':
+                        e5_map_data = get_data(reg='SAR', var=vvar, ds=e5_ds)
+                    else:
+                        e5_map_data = load_e5l_data()
+                    plot_maps(fig=fig, spcus=sp_data, era5=e5_map_data, land=land)
+                plot_subplot(ax=axs[irow, icol], spcus=sp_data, era5=e5_data, var=vvar, reg=reg,
+                             land=land)
 
-    fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
+        axs[2, 0].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
+        axs[2, 1].set_xlabel('Time (core year of decadal-mean value)', fontsize=12)
+        axs[0, 1].set_title('Extremity amplification SEA/FBR | Precipitation', fontsize=14)
 
-    create_legend(fig=fig, ax=axs[0, 0], land=land)
+        fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    labels = ['a)', 'd)', 'b)', 'e)', 'c)', 'f)']
-    for i, ax in enumerate(axs.flat):
-        ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
-                va='top', ha='left')
+        create_legend(fig=fig, ax=axs[0, 0], land=land)
 
-    if land:
-        fstr = 'Figure6'
-    else:
-        fstr = 'ExtDataFig4'
-        
-    plt.savefig(f'./{fstr}.png', dpi=300, bbox_inches='tight')
+        labels = ['a)', 'd)', 'b)', 'e)', 'c)', 'f)']
+        for i, ax in enumerate(axs.flat):
+            ax.text(-0.1, 1.2, labels[i], transform=ax.transAxes, fontsize=14,
+                    va='top', ha='left')
+
+        if land:
+            fstr = 'Figure6'
+        else:
+            fstr = 'ExtDataFig4'
+
+        plt.savefig(f'./{fstr}.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':

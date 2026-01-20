@@ -1,7 +1,11 @@
+"""
+Creates Figure 1 panels c, d, e.
+"""
 import cartopy.crs as ccrs
 import cartopy.feature as cfea
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import glob
+from pathlib import Path
 import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
@@ -12,6 +16,11 @@ import warnings
 import xarray as xr
 
 from plot_EDF1 import get_lims
+
+# Input data paths; modify as needed
+ERA5LAND_PATH = Path('/data/arsclisys/normal/ERA5_land/')
+STATIC_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/')
+MASKS_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/')
 
 
 def calc_percentile(_data):
@@ -57,13 +66,11 @@ def load_data_1c(file, var):
 
 
 def plot_fig1c():
-    lsm = load_data_1c(file='/data/arsclisys/normal/ERA5_land/invariants/'
-                            'lsm_1279l4_0.1x0.1.grb_v4_unpack.nc', var='lsm')
+    lsm = load_data_1c(file=ERA5LAND_PATH / 'invariants' / 'lsm_1279l4_0.1x0.1.grb_v4_unpack.nc', var='lsm')
     lsm = lsm.where(lsm > 0.5)
     lsm = lsm.where(lsm.isnull(), 1)
 
-    z = load_data_1c(file='/data/arsclisys/normal/ERA5_land/invariants/'
-                          'geo_1279l4_0.1x0.1.grib2_v4_unpack.nc', var='z')
+    z = load_data_1c(file=ERA5LAND_PATH / 'invariants' / 'geo_1279l4_0.1x0.1.grib2_v4_unpack.nc', var='z')
     altitude = z / 9.80665
 
     data = altitude * lsm
@@ -154,12 +161,10 @@ def plot_fig1d():
 
     fig, axs = plt.subplots(1, 1, figsize=(10, 6))
 
-    data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                           f'static_Tx99.0p_AUT_SPARTACUS.nc')
+    data = xr.open_dataset(STATIC_PATH / 'static_Tx99.0p_AUT_SPARTACUS.nc')
     t99 = data.threshold
 
-    mask = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                           f'AUT_masks_SPARTACUS.nc')
+    mask = xr.open_dataset(MASKS_PATH / 'AUT_masks_SPARTACUS.nc')
 
     lvls = np.arange(19, 34)
 
@@ -178,8 +183,7 @@ def plot_fig1d():
 
 
 def plot_fig1e():
-    data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/static/'
-                           f'static_Tx99.0p_FBR_SPARTACUS.nc')
+    data = xr.open_dataset(STATIC_PATH / 'static_Tx99.0p_FBR_SPARTACUS.nc')
     t99 = data.threshold
 
     lims = t99.where(t99.notnull(), drop=True)

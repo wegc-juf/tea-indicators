@@ -1,9 +1,16 @@
+"""
+Plot Figure 8: Climate change amplification of AHC gain and AEHC vs Ref1961-1990
+"""
+from pathlib import Path
 import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy.stats import gmean
 import xarray as xr
+
+INPUT_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/')
+AHC_PATH = Path('/data/users/hst/cdrDPS/AHC/')
 
 
 def scale_figsize(figwidth, figheight, figdpi):
@@ -67,11 +74,9 @@ def load_tea_data():
     reftr = {}
 
     for reg in ['EUR', 'C-EUR', 'S-EUR', 'N-EUR']:
-        af_data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
-                                  f'dec_indicator_variables/amplification/'
+        af_data = xr.open_dataset(INPUT_PATH / 'results' / 'dec_indicator_variables/amplification/' /
                                   f'AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
-        dec_data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/'
-                                   f'dec_indicator_variables/'
+        dec_data = xr.open_dataset(INPUT_PATH / 'results' / 'dec_indicator_variables' /
                                    f'DEC_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         ref = dec_data.sel(time=slice('1966-01-01', '1985-12-31'))
         ref = gmean(ref['TEX_AGR'])
@@ -240,7 +245,7 @@ def plot_panel2(axs, af, uc, ref, ccs):
 
 def run():
     # load and prepare AHC data
-    ahc_data = xr.open_dataset(f'/data/users/hst/cdrDPS/AHC/ahc_anomalies_1961to2024.nc')
+    ahc_data = xr.open_dataset(AHC_PATH / 'ahc_anomalies_1961to2024.nc')
     ahc_data = ahc_data.sel(time=slice('1961-01-01', '2024-12-31'))
     af_ahc, uc_ahc, refv_ahc, ccv_ahc = calc_bw_af(data=ahc_data)
 

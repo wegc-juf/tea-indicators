@@ -1,4 +1,8 @@
+"""
+Plot Figure 5
+"""
 import glob
+from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
 from matplotlib.ticker import FormatStrFormatter, FixedLocator
@@ -11,17 +15,21 @@ from plot_fig4 import find_range
 
 from teametrics.common.general_functions import ref_cc_params
 
+INPUT_DATA_PATH = Path('/data/users/hst/TEA-clean/TEA/paper_data/')
+MASK_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/')
+
 PARAMS = ref_cc_params()
 
+
 def get_data():
-    dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    dec = xr.open_dataset(INPUT_DATA_PATH / 'dec_indicator_variables' /
                           'DEC_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
     ctp = xr.open_mfdataset(
-        sorted(glob.glob('/data/users/hst/TEA-clean/TEA/paper_data/ctp_indicator_variables/'
-                         'CTP_Tx99.0p_AUT_annual_SPARTACUS_*.nc')), data_vars='minimal')
+        sorted((INPUT_DATA_PATH / 'ctp_indicator_variables').glob('CTP_Tx99.0p_AUT_annual_SPARTACUS_*.nc')),
+        data_vars='minimal')
 
-    af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    af = xr.open_dataset(INPUT_DATA_PATH / 'dec_indicator_variables' /
                          'amplification/AF_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
     return dec, ctp, af
@@ -37,26 +45,26 @@ def gr_plot_params(vname):
                         'unit': 'ev/yr',
                         'ref': r'$F_\mathrm{Ref}$', 'cc': r'$F_\mathrm{CC}$'},
               'ED_avg_GR': {'col': 'tab:purple',
-                           'ylbl': r'ED $(\overline{D}_s$|$\overline{D}_p)$ (days)',
-                           'title': 'Average Event Duration (events-mean)',
-                           'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
-                           'nv_name': 'ED',
-                           'yx': 10, 'dy': 2,
+                            'ylbl': r'ED $(\overline{D}_s$|$\overline{D}_p)$ (days)',
+                            'title': 'Average Event Duration (events-mean)',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
+                            'nv_name': 'ED',
+                            'yx': 10, 'dy': 2,
                             'unit': 'days',
-                        'ref': r'$\overline{D}_\mathrm{Ref}$', 'cc': r'$\overline{D}_\mathrm{CC}$'},
+                            'ref': r'$\overline{D}_\mathrm{Ref}$', 'cc': r'$\overline{D}_\mathrm{CC}$'},
               'EM_avg_GR': {'col': 'tab:orange',
-                           'ylbl': r'EM $(\overline{M}_s$|$\overline{M}_p)$ (°C)',
-                           'title': 'Average Exceedance Magnitude (daily-mean)',
-                           'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
-                           'nv_name': 'EM',
-                           'yx': 2, 'dy': 0.5, 'unit': '°C',
+                            'ylbl': r'EM $(\overline{M}_s$|$\overline{M}_p)$ (°C)',
+                            'title': 'Average Exceedance Magnitude (daily-mean)',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
+                            'nv_name': 'EM',
+                            'yx': 2, 'dy': 0.5, 'unit': '°C',
                             'ref': r'$\overline{M}_\mathrm{Ref}$',
                             'cc': r'$\overline{M}_\mathrm{CC}$'},
               'EA_avg_GR': {'col': 'tab:red',
-                           'ylbl': r'EA $(\overline{A}_s$|$\overline{A}_p)$ (areals)',
-                           'title': 'Average Exceedance Area (daily-mean)',
-                           'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$', 'nv_name': 'EA',
-                           'yx': 600, 'dy': 100, 'unit': 'areals',
+                            'ylbl': r'EA $(\overline{A}_s$|$\overline{A}_p)$ (areals)',
+                            'title': 'Average Exceedance Area (daily-mean)',
+                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$', 'nv_name': 'EA',
+                            'yx': 600, 'dy': 100, 'unit': 'areals',
                             'ref': r'$\overline{A}_\mathrm{Ref}$',
                             'cc': r'$\overline{A}_\mathrm{CC}$'},
               'TEX_GR': {'col': 'tab:red',
@@ -146,13 +154,13 @@ def map_plot_params(vname):
                      'title': 'Event Frequency (Annual) (CC2010-2024)',
                      'lvls': np.arange(1, 11)},
               'ED_avg': {'cmap': 'Purples',
-                        'lbl': r'ED$_\mathrm{CC}$(i,j) (days)',
-                        'title': 'Avarage Event Duration (CC2010-2024)',
-                        'lvls': np.arange(1, 3.75, 0.25)},
+                         'lbl': r'ED$_\mathrm{CC}$(i,j) (days)',
+                         'title': 'Avarage Event Duration (CC2010-2024)',
+                         'lvls': np.arange(1, 3.75, 0.25)},
               'EM_avg': {'cmap': 'Oranges',
-                        'lbl': r'EM$_\mathrm{CC}$(i,j) (°C)',
-                        'title': 'Average Exceedance Magnitude (CC2010-2024)',
-                        'lvls': np.arange(1, 2.6, 0.2)}
+                         'lbl': r'EM$_\mathrm{CC}$(i,j) (°C)',
+                         'title': 'Average Exceedance Magnitude (CC2010-2024)',
+                         'lvls': np.arange(1, 2.6, 0.2)}
               }
 
     return params[vname]
@@ -161,8 +169,7 @@ def map_plot_params(vname):
 def plot_map(fig, ax, data):
     props = map_plot_params(vname=data.name)
 
-    aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'AUT_masks_SPARTACUS.nc')
+    aut = xr.open_dataset(MASK_PATH / 'AUT_masks_SPARTACUS.nc')
     aut = aut.sel(x=data.x, y=data.y)
     ax.contourf(aut.nw_mask, colors='mistyrose')
 
