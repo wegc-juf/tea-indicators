@@ -1,3 +1,7 @@
+"""
+Plot Extended Data Figure 2: Natural variability amplification factors
+"""
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter, FixedLocator, MultipleLocator
 import numpy as np
@@ -5,6 +9,8 @@ import pandas as pd
 import seaborn as sns
 from scipy.stats import gmean
 import xarray as xr
+
+INPUT_PATH = Path('/data/users/hst/TEA-clean/TEA/paper_data/')
 
 
 def load_data(city, param):
@@ -15,7 +21,7 @@ def load_data(city, param):
     :return:
     """
 
-    path = '/data/users/hst/TEA-clean/TEA/paper_data/ctp_indicator_variables/'
+    path = INPUT_PATH / 'ctp_indicator_variables'
 
     if param == 'Tx':
         pstr = 'Tx99.0p'
@@ -24,7 +30,7 @@ def load_data(city, param):
         pstr = 'P24h_7to7_95.0p'
         mvar = 'EM_avg'
 
-    ds = xr.open_dataset(f'{path}CTP_{pstr}_{city}_annual_HistAlp_1877to2024.nc')
+    ds = xr.open_dataset(path / f'CTP_{pstr}_{city}_annual_HistAlp_1877to2024.nc')
     ds = ds.sel(time=slice('1875-01-01', '1990-12-31'))
 
     for ivar in ds.data_vars:
@@ -277,8 +283,7 @@ def run():
     for ict in cities:
         data[ict] = load_data(city=ict, param=param)
 
-    nat_var = xr.open_dataset(f'/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                              f'NV_AF_{pstr}_{reg}.nc')
+    nat_var = xr.open_dataset(INPUT_PATH / 'natural_variability' / f'NV_AF_{pstr}_{reg}.nc')
     fac = nat_var['std_scaling_EA_DM'].values
 
     fig, axs = plt.subplots(3, 2, figsize=(14, 12))

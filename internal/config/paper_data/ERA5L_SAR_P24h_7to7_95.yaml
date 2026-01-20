@@ -1,0 +1,85 @@
+common_params:
+  GeoRegion: &GR
+    region: SAR
+    # agr: false
+    # use full data without land, border, and altitude masks
+    full_region: false
+    gr_type: polygon
+    sw_corner: null
+    ne_corner: null
+    center: null
+    we_len: null
+    ns_len: null
+  parameter: &PARAM
+    parameter: P24h_7to7
+    precip: true
+    threshold: 95
+    threshold_type: perc
+    unit: mm
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: WAS
+    # ref period from-to (inclusive)
+    ref_period: 1961-1990
+    # cc period from-to (inclusive)
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: ERA5Land
+  paths: &PATHS
+    data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Land/
+    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    maskpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ # *statpath
+    mask_sub: masks/
+    result_path: &result_path /data/users/hst/TEA-clean/TEA/paper_data/
+
+regrid_SPARTACUS_to_WEGNext:
+  <<: *PARAM
+  inpath: /data/users/hst/TEA-clean/SPARTACUS/
+  orography: false
+  orofile: /data/reloclim/backup/ZAMG_INCA/data/original/INCA_orog_corrected_y_dim.nc
+  wegnfile: /data/users/hst/cdrDPS/wegnet/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/SPARTACUS/
+
+create_region_masks:
+  <<: *GR
+  subreg: custom
+  target_sys: 4326
+  target_ds: ERA5
+  xy_name: lon,lat
+  shpfile: /data/reloclim/backup/GEO/shapefiles/OEKS15/good/AUSTRIA.shp
+  testfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_1961.nc
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/ERA5_orography.nc
+  lsmfile: /data/users/hst/cdrDPS/ERA5/ERA5_LSM.nc
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+
+create_static_files:
+  <<: *GR
+  <<: *TIME
+  <<: *PARAM
+  <<: *DATA
+  <<: *PATHS
+  smoothing: 7
+  outpath: *statpath
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  outpath: *result_path
+  recalc_daily: true
+  decadal: true
+  spreads: false
+  decadal_only: false
+  recalc_decadal: true
+  compare_to_ref: false
+
+calc_station_TEA:
+  <<: *TIME
+  <<: *PARAM
+  station: Graz
+  inpath: /data/users/hst/cdrDPS/station_data/
+  outpath: /home/wegnet/results/TEA_indicators/station_indices/

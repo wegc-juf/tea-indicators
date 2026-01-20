@@ -1,0 +1,65 @@
+# Template for gridded data TEA indicators; for details and available options see CFG-PARAMS-doc.md
+common_params:
+  input_data: &DATA
+    dataset: ERA5
+  GeoRegion: &GR
+    region: MG
+    agr: MG
+    # land_frac_min: 0.5
+    # agr_cell_size: 2
+    # agr_grid_spacing: 0.5
+  parameter: &PARAM
+    parameter: Tx
+    precip: false
+    threshold_type: perc
+    threshold: 99
+    unit: degC
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: annual
+    ref_period: 1961-1990
+    cc_period: 2010-2024
+  paths: &PATHS
+    input_data_path: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/africa/
+    statpath: &statpath /data/arsclisys/normal/clim-hydro/TEA-Indicators/static/
+    maskpath: *statpath
+    mask_sub: masks/
+    outpath: /data/users/hst/TEA/TEA/africa_data/
+  general: &GENERAL
+    gui: false
+
+create_region_masks:
+  <<: *GR
+  <<: *PARAM
+  <<: *DATA
+  <<: *PATHS
+  <<: *TIME
+  <<: *GENERAL
+  gr_type: polygon
+  sw_corner: null
+  ne_corner: null
+  center: null
+  we_len: null
+  ns_len: null
+  shpfile: /data/arsclisys/backup/clim-hydro/TEA-Indicators/shapefiles/shapes_europe/CNTR_RG_01M_2020_4326.shp.zip
+  orofile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/africa/ERA5_orography.nc
+  lsmfile: /data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5/africa/ERA5_LSM.nc
+  outpath: /data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  <<: *GENERAL
+  recalc_threshold: false
+  recalc_daily: true
+  hourly: false
+  decadal: true
+  recalc_decadal: true
+  spreads: true
+  decadal_only: false
+  use_dask: false
