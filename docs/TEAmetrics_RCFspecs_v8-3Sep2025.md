@@ -13,22 +13,22 @@
 ## [Project-Id and TEArun-Id]
 ```markdown
 TEAmetrics_Version            = TEAmetrics v1.0      ;(vN.n)
-RCF_Creation_Date_and_Time    = 2025-09-03T15:01:16Z ;(ISO string*20)
-Project_Id                    = TEAmTestProject1     ;(string*25)
-TEArun_Id                     = Test1_Europe2AGR_1a  ;(string*25)
+RCF_Creation_Date_and_Time    = 2025-09-03T15:01:16Z ;(ISO string20)
+Project_Id                    = TEAmTestProject1     ;(string25)
+TEArun_Id                     = Test1_Europe2AGR_1a  ;(string25)
 ```
 
 <a name="input-datasets-def"></a>
 ## [1. Input Datsets Definition]
 ```markdown
-KeyVarData_DatasetType           = ERA5             ;(string*25)
+KeyVarData_DatasetType           = ERA5             ;(string25)
 *elem{ERA5, ERA5-Land, ERA5-HEAT, E-OBS, SPARTACUS, CMIP6, …}*
 
 KeyVarData_GenericFilename       = ../InpData/ERA5/ERA5-EUR1961-2024v1_*.nc
 *(files need to supply the selected dataset type and to contain all relevant*
 *data to properly feed the Key Var, GRs, AGRs, and Time Domain Defs)*
 
-ThreshData_DatasetType           = ERA5-Land        ;(string*25)
+ThreshData_DatasetType           = ERA5-Land        ;(string25)
 *elem{NoDataset, ERA5, ERA5-Land, ERA5-HEAT, E-OBS, SPARTACUS, CMIP6, …}*
 *(if NoDataset the ThreshData_GenericFilename is N/A and the ThresholdMap_Type*
 *within the Threshold Map and Exceedance Defs must be set to Constant)*
@@ -37,7 +37,7 @@ ThreshData_GenericFilename       = ../InpData/ERA5L/ERA5L-EUR1961-1990v1_*.nc
 *(files need to supply the selected dataset type and to contain all relevant*
 *data to properly feed the Key Var, GRs, AGRs, and Threshold Map and Exc Defs)*
 
-NatVarData_DatasetType           = StnData_AUT      ;(string*25)
+NatVarData_DatasetType           = StnData_AUT      ;(string25)
 *elem{NoDataset, StnData_AUT, ModData_MPI-GE, ModData_CMIP6, …}*
 *(if NoDataset the NatVarData_GenericFilename is N/A and no NatVar estimates are*
 *computed along with the amplification factor variable timeseries)*
@@ -50,16 +50,16 @@ NatVarData_GenericFilename       = ../InpData/AUT/GeoSph-HistDailyStDv2_*.nc
 <a name="key-variable-def"></a>
 ## [2. Key Variable Definitions]
 ```markdown
-KeyVariable                        = TMax                  ;(string*6)
+KeyVariable                        = TMax                  ;(string6)
 *elem{TMax, TMin, Tm1H, TmaxUTCI, TmUTCI1H, TmaxWBGT, TmWBGT1H, P24H, P1H, …}*
 
-KeyVariable_LongName               = Daily Max Temperature ;(string*50)
+KeyVariable_LongName               = Daily Max Temperature ;(string50)
 *elem{Daily Max Temperature, Daily Min Temperature, Hourly-mean Temperature,*
 *Daily Max Universal Thermal Comfort Index, Hourly-mean Universal Thermal Comfort*
 *Index, Daily Max Wet-Bulb Globe Temperature, Hourly-mean Wet-Bulb Globe*
 *Temperature, Daily Precipitation Sum, Hourly Precipitation Sum, …}*
 
-KeyVariable_GeographicDomain       = Land Surface          ;(string*25)
+KeyVariable_GeographicDomain       = Land Surface          ;(string25)
 *elem{Land Surface, Sea Surface, Earth Surface, <N> hPa Pressure level, <N> km*
 *Altitude level, <N> m Ocean depth level, …}*
 
@@ -71,40 +71,40 @@ KeyVariable_MSLAltitudeDomain[2]   = -10, 1500             ;[bottom m, top m]
 <a name="georegions-def"></a>
 ## [3. GeoRegions Definition]
 ```markdown
-GR_Computation_Type                    = GridofGRs         ;(string*25)
+GR_Computation_Type                    = GridofGRs         ;(string25)
 *elem{OneGR, GridofGRs}*
 
-GR_Geolocation_Type                    = LatLonGrid        ;(string*25)
+GR_Geolocation_Type                    = LatLonGrid        ;(string25)
 *if OneGR elem{PolygonRegion, CenterLatLon, CenterUTMXY}*
 *if GridofGRs elem{LatLonGrid, UTMXYGrid}*
 
-GR_CellShape_Type                      = LatLonArea        ;(string*25)
+GR_CellShape_Type                      = LatLonArea        ;(string25)
 *if PolygonRegion elem{Polygon)*
 *if any other Geolocation Type elem{LatLonArea, UTMXYArea}*
 
 ---
 /if Types PolygonRegion and Polygon selected:
-GR_PolygonRegion                       = Austria           ;(string*25)
+GR_PolygonRegion                       = Austria           ;(string25)
 GR_PolygonShapefile                    = ../RegShapefiles/AustriaBorders1.sh
 *(from list of polygon-region names, e.g., of countries, states of the world;*
 *and the shapefile from those available for the selected GR_PolygonRegion)*
 
 ---
 /if Type CenterLatLon selected:
-GR_LatLonRegion                        = SAR               ;(string*25)
+GR_LatLonRegion                        = SAR               ;(string25)
 GR_CenterLatLon[2]                     = 47.0000, 15.0000  ;[deg N, deg E]
 *(range -90 to 90 deg N, -180 to 180 deg E)*
 
 ---
 /if Type CenterUTMXY selected:
-GR_UTMXYRegion                         = SAR               ;(string*25)
-GR_UTMZone                             = 33N               ;(string*3)
+GR_UTMXYRegion                         = SAR               ;(string25)
+GR_UTMZone                             = 33N               ;(string3)
 GR_CenterUTMXY[2]                      = 5200.00, 550.00   ;[km N|S, km E]
 *(range 0 to 10000 km N or S(+FalseN), 0 to 1000 km E; zones 01N|S-60N|S)*
 
 ---
 /if Type LatLonGrid selected:
-GR_LatLonGridRegion                    = EUR-GRsGrid       ;(string*25)
+GR_LatLonGridRegion                    = EUR-GRsGrid       ;(string25)
 GR_LatLonGrid_SWcorner[2]              = 35.0000, -11.0000 ;[deg N, deg E]
 GR_LatLonGrid_NEcorner[2]              = 71.0000, 40.0000  ;[deg N, deg E]
 GR_LatLonGrid_Spacing[2]               = 0.5000, 0.5000    ;[deg N, deg E]
@@ -112,8 +112,8 @@ GR_LatLonGrid_Spacing[2]               = 0.5000, 0.5000    ;[deg N, deg E]
 
 ---
 /if Type UTMXYGrid selected:
-GR_UTMXYGridRegion                     = ATR-GRsGrid       ;(string*25)
-GR_UTMZone                             = 33N               ;(string*3)
+GR_UTMXYGridRegion                     = ATR-GRsGrid       ;(string25)
+GR_UTMZone                             = 33N               ;(string3)
 GR_UTMXXGrid_SWcorner[2]               = 5100.00, 100.00   ;[km N, km E]
 GR_UTMXYGrid_NEcorner[2]               = 5450.00, 650.00   ;[km N, km E]
 GR_UTMXYGrid_Spacing[2]                = 10.00, 10.00      ;[km N, km E]
@@ -135,22 +135,22 @@ GR_UTMXYArea_aroundCenterLatLon[2]     = 100.00, 100.00    ;[km S-N, km W-E]
 <a name="aggregate-georegions-def"></a>
 ## [4. Aggregate GeoRegions Definition]
 ```markdown
-AGR_Computation_Type                   = SampleofAGRs        ;(string*25)
+AGR_Computation_Type                   = SampleofAGRs        ;(string25)
 *elem{NoAGR, OneAGR, SampleofAGRs, GridofAGRs};*
 *if NoAGR all further AGR type variables are N/A (no AGR results computed)*
 
-AGR_Geolocation_Type                   = PolygonRegionSample ;(string*25)
+AGR_Geolocation_Type                   = PolygonRegionSample ;(string25)
 *if OneAGR elem{PolygonRegion, CenterLatLon, CenterUTMXY}*
 *if SampleofAGRs elem{PolygonRegionSample}*
 *if GridofAGRs elem{LatLonGrid, UTMXYGrid}*
 
-AGR_CellShape_Type                     = LatLonArea          ;(string*25)
+AGR_CellShape_Type                     = LatLonArea          ;(string25)
 *if PolygonRegion or PolygonRegionSample elem{Polygon}*
 *if any other Geolocation Type elem{LatLonArea, UTMXYArea}*
 
 ---
 /if Types PolygonRegion and Polygon selected:
-AGR_PolygonRegion                      = Germany             ;(string*25)
+AGR_PolygonRegion                      = Germany             ;(string25)
 AGR_PolygonShapefile                   = ../RegShapefiles/DE_Borders1.sh
 *(from list of polygon-region names, e.g., of countries & states of the world;*
 *and the shapefile from those available for the selected AGR_PolygonRegion)*
@@ -163,20 +163,20 @@ AGR_PolygonShapefilesList             = ../RegListfiles/Eur2AGR_1a.shlist
 
 ---
 /if Type CenterLatLon selected:
-AGR_LatLonRegion                      = EUR                ;(string*25)
+AGR_LatLonRegion                      = EUR                ;(string25)
 AGR_CenterLatLon[2]                   = 53.50, 15.00       ;[deg N, deg E]
 *(range -90 to 90 deg N, -180 to 180 deg E)*
 
 ---
 /if Type CenterUTMXY selected:
-AGR_UTMXYRegion                       = ATR                ;(string*25)
-AGR_UTMZone                           = 33N                ;(string*3)
+AGR_UTMXYRegion                       = ATR                ;(string25)
+AGR_UTMZone                           = 33N                ;(string3)
 AGR_CenterUTMXY[2]                    = 5280., 380.        ;[km N|S, km E]
 *(range 0 to 10000 km N or S(+FalseN), 0 to 1000 km E; zones 01N|S-60N|S)*
 
 ---
 /if Type LatLonGrid selected:
-AGR_LatLonGridRegion                  = EUR-10x20degAGRs   ;(string*25)
+AGR_LatLonGridRegion                  = EUR-10x20degAGRs   ;(string25)
 AGR_LatLonGrid_SWcorner[2]            = 40.00, 0.00        ;[deg N, deg E]
 AGR_LatLonGrid_NEcorner[2]            = 65.00, 30.00       ;[deg N, deg E]
 AGR_LatLonGrid_Spacing[2]             = 5.00, 10.00        ;[deg N, deg E]
@@ -184,8 +184,8 @@ AGR_LatLonGrid_Spacing[2]             = 5.00, 10.00        ;[deg N, deg E]
 
 ---
 /if Type UTMXYGrid selected:
-AGR_UTMXYGridRegion                   = ATR-100x100kmAGRs  ;(string*25)
-AGR_UTMZone                           = 33N                ;(string*3)
+AGR_UTMXYGridRegion                   = ATR-100x100kmAGRs  ;(string25)
+AGR_UTMZone                           = 33N                ;(string3)
 AGR_UTMXXGrid_SWcorner[2]             = 5150.00, 150.00    ;[km N, km E]
 AGR_UTMXYGrid_NEcorner[2]             = 5400.00, 600.00    ;[km N, km E]
 AGR_UTMXYGrid_Spacing[2]              = 50.00, 50.00       ;[km N, km E]
@@ -207,17 +207,17 @@ AGR_UTMXYArea_aroundCenterLatLon[2]   = 100., 100.         ;[km S-N, km W-E]
 <a name="time-domain-def"></a>
 ## [5. Time Domain Definitions]
 ```markdown
-TimePeriod_StartDate              = 1961-01-01   ;(datestring*10)
-TimePeriod_EndDate                = 2024-12-31   ;(datestring*10)
+TimePeriod_StartDate              = 1961-01-01   ;(datestring10)
+TimePeriod_EndDate                = 2024-12-31   ;(datestring10)
 *(range from 1 year up to the time period available from the input data)*
 
-TimeResolution_KeyVarFields       = Hourly       ;(string*6)
+TimeResolution_KeyVarFields       = Hourly       ;(string6)
 *elem{Hourly, Daily}*
 
-TimeSampling_TEAmetrics           = Annual       ;(string*6)
+TimeSampling_TEAmetrics           = Annual       ;(string6)
 *elem{Annual}*
 
-AnnualCTP_TEAmetrics              = ANN          ;(string*3)
+AnnualCTP_TEAmetrics              = ANN          ;(string3)
 *elem{ANN; WAS, ESS, EWS; MAM...DJF; Jan...Dec; warm season WAS: Apr-Oct,*
 *extended summer season ESS: May-Sep, extended winter season EWS: Nov-Mar}*
 
@@ -235,10 +235,10 @@ CCPeriod_TEAmetrics[2]            = 2010, 2024 ;[first yr, last yr]
 <a name="threshold-map-and-exceedance-def"></a>
 ## [6. Threshold Map and Exceedance Definitions]
 ```markdown
-ThresholdMap_Type                    = Percentile            ;(string*25)
+ThresholdMap_Type                    = Percentile            ;(string25)
 *elem{Constant, Percentile, SeasonalVar Percentile}*
 
-ThresholdExceedance_Type             = Exceed Thres Upward   ;(string*25)
+ThresholdExceedance_Type             = Exceed Thres Upward   ;(string25)
 *elem{Exceed Thres Upward, Exceed Thres Downward, Confined in ThresRange}*
 
 MinimumGRThresExceedanceArea         = 1                     ;[areals](=100km2)
@@ -257,7 +257,7 @@ Constant_ThresRange[2]               = -1.0, 2.0    ;[degC, degC]
 Percentile_EstimationTimePeriod[2]   = 1961, 1990   ;[first yr, last yr]
 *(recommended estimation time period is at least 30 years)*
 
-Percentile_EstimationCTPperYear      = ANN          ;(string*3)
+Percentile_EstimationCTPperYear      = ANN          ;(string3)
 *elem{ANN; WAS, ESS, EWS; MAM...DJF; Jan...Dec; warm season WAS: Apr-Oct,*
 *extended summer season ESS: May-Sep, extended winter season EWS: Nov-Mar}*
 
@@ -278,14 +278,14 @@ Percentile_ThresRange[2]             = 95.0, 99.0 ;[NN.N, NN.N]
 <a name="natural-variability-estimation-def"></a>
 ## [7. Natural Variability Estimation Definitions]
 ```markdown
-NatVarPeriod_StartDate            = 1880-01-01   ;(datestring*10)
-NatVarPeriod_EndDate              = 1990-12-31   ;(datestring*10)
+NatVarPeriod_StartDate            = 1880-01-01   ;(datestring10)
+NatVarPeriod_EndDate              = 1990-12-31   ;(datestring10)
 *(range from 30 years, the minimum period considered formally useful (for a*
 *station included) to contribute to NatVar estimation, up to the time period*
 *covered by the NatVar data; time periods longer than the longest (station) data*
 *record available in the NatVar input data file are not meaningful)*
 
-TimeResolution_NatVarData         = Daily        ;(string*6)
+TimeResolution_NatVarData         = Daily        ;(string6)
 *elem{Hourly, Daily}*
 
 ---
