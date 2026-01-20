@@ -67,7 +67,7 @@ The configuration options (_run-control file_) for the script are documented in 
 ### 5) Using the TEA metrics classes TEAIndicators and TEAAgr (optional)
 In case you want a more fine-grained control over the TEA metrics calculations, you can use the classes
 `teametrics.TEA.TEAIndicators` for normal GeoRegions, and \
-`teametrics.TEA_AGR.TEAAgr` for Aggregated GeoRegions.
+`teametrics.TEA_AGR.TEAAgr` for Aggregate GeoRegions.
 
 A simple example can be found in the script [`tea_example`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/TEA_example.py).
 
@@ -91,13 +91,13 @@ If you use this code, please cite:
 ***This repository:***
 Fuchsberger, J., Kirchengast, G., and Haas, S. J. (2026). TEAmetrics software for _A new class of climate hazard 
 metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe_ and other applications. 
-Version 0.5. Zenodo. 
+Version 0.6. Zenodo. 
 https://doi.org/10.5281/zenodo.17210239
 
 ***The related paper:***
 Kirchengast, G., S. J. Haas, and J. Fuchsberger (2026).
 A new class of climate hazard metrics and its demonstration: revealing a ten-fold increase of extreme heat over Europe.
-_Weather Clim. Extremes_, 51, 100855, 
+_Weather Clim. Extremes_ 51, 100855. 
 https://doi.org/10.1016/j.wace.2026.100855
 
 ## TEA metrics Run Control File (RCF) specifications
@@ -118,7 +118,7 @@ TEAmetrics compute runs. **The following definitions apply** and are **summarize
 [**6. Threshold Map and Exceedance Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#threshold-map-and-exceedance-def)      
 [**7. Natural Variability Estimation Definitions**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md?ref_type=heads#natural-variability-estimation-def)      
 
-For full definitions, see [**TEAmetrics_RCFspecs_v8-3Sep2025.md**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md).
+For the complete specification file see [**TEAmetrics_RCFspecs_v8-3Sep2025.md**](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md).
 
 ## Changelog
 See [Releases](https://github.com/wegc-juf/tea-metrics/releases) and [Tags](https://github.com/wegc-juf/tea-metrics/tags) for a detailed changelog.
