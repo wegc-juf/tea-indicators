@@ -15,7 +15,7 @@ mkvirtualenv <project_name>
 
 Then, install the package using `pip`:
 ```bash
-pip install https://wegenernet.org/downloads/teametrics/teametrics-0.5.8-py3-none-any.whl
+pip install https://wegenernet.org/downloads/teametrics/teametrics-0.6.0-py3-none-any.whl
 ```
 
 ## Usage
@@ -59,10 +59,12 @@ The configuration options (_run-control file_) for the script are documented in 
 ### 4) Calculation of TEA metrics
 After preparing all the necessary input and mask data, run `calc_tea --config-file CONFIG_FILE`.
 
-A minimal example config can be found in [`TEA_CFG_minimal.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_minimal.yaml).
-Template config files are [`TEA_CFG_template.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template.yaml) for
-gridded data and [`TEA_CFG_template_station.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template_station.yaml) for station data. \
-The configuration options (_run-control file_) for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md).
+- A minimal example config can be found in [`TEA_CFG_minimal.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_minimal.yaml)
+- Template config files are [`TEA_CFG_template.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template.yaml) for
+gridded data and [`TEA_CFG_template_station.yaml`](https://github.com/wegc-juf/tea-metrics/blob/main/src/teametrics/config/TEA_CFG_template_station.yaml) for station data
+- Templates for recreating the results of the TEAmetrics introduction paper can be found in
+the `teametrics/config/paper_data/` folder
+- The configuration options (_run-control file_) for the script are documented in [`CFG-PARAMS-doc.md`](https://github.com/wegc-juf/tea-metrics/blob/main/docs/CFG-PARAMS-doc.md)
 
 ### 5) Using the TEA metrics classes TEAIndicators and TEAAgr (optional)
 In case you want a more fine-grained control over the TEA metrics calculations, you can use the classes

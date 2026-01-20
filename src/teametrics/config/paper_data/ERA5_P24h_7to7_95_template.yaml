@@ -1,0 +1,47 @@
+common_params:
+  GeoRegion: &GR
+    region: FBR # TODO: choose between SEA and FBR
+    full_region: false
+  parameter: &PARAM
+    parameter: P24h_7to7
+    precip: true
+    threshold: 95
+    threshold_type: perc
+    unit: mm
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: WAS
+    ref_period: 1961-1990
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: ERA5Land # TODO: choose between ERA5 and ERA5Land
+  paths: &PATHS
+    data_path: # TODO: add path to ERA5 or ERA5Land data
+    statpath: &statpath ./static/
+    maskpath: *statpath
+    mask_sub: masks/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  outpath: ./results/
+  recalc_threshold: true
+  recalc_daily: true
+  decadal: true
+  spreads: true
+  decadal_only: false
+  recalc_decadal: true
+
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  target_sys: 32633
+  gr_type: polygon

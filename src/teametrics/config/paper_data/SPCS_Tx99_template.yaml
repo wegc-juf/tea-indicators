@@ -1,0 +1,57 @@
+common_params:
+  GeoRegion: &GR
+    region: FBR # TODO: choose between AUT, SEA, and FBR
+  parameter: &PARAM
+    parameter: Tx
+    precip: false
+    threshold: 99
+    threshold_type: perc
+    unit: degC
+    low_extreme: false
+    smoothing_radius: 7
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: annual
+    ref_period: 1961-1990
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: SPARTACUS
+  paths: &PATHS
+    data_path: ./SPARTACUS_regridded/
+    statpath: &statpath ./static/
+    maskpath: *statpath
+    mask_sub: masks/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  outpath: ./TEA_results/
+  recalc_threshold: true
+  recalc_daily: true
+  decadal: true
+  spreads: false
+  decadal_only: false
+  recalc_decadal: true
+
+regrid_SPARTACUS_to_WEGNext:
+  <<: *PARAM
+  <<: *DATA
+  raw_data_path: # TODO: add path to original SPARTACUS data here
+  orog_file: ../TEA-metrics-data/aux/INCA_orog_corrected_y_dim.nc
+  wegn_file: ../TEA-metrics-data/aux/WN_L2_DD_v7_UTM_TF1_UTC_2020-08.nc
+  regridded_data_path: ./SPARTACUS_regridded/
+
+create_region_masks:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  gr_type: polygon
+  shpfile: ../TEA-metrics-data/shpfiles/AUSTRIA.shp
+  target_sys: 32633
+  orofile: ./SPARTACUS_regridded/SPARTACUSreg_orography.nc
