@@ -2,6 +2,14 @@
 
 Parameters used in TEAmetrics scripts are documented in the following tables. Each table corresponds to one script. Parameters that are common to all scripts are listed in the first table. For example configurations, see files under `teametrics/config/`.
 
+- [Common parameters (used in all scripts)](#common-parameters-used-in-all-scripts)
+- [calc_TEA](#calc_tea)
+- [create_region_masks](#create_region_masks)
+- [regrid_SPARTACUS_to_WEGNext](#regrid_spartacus_to_wegnext)
+
+You can use the following variables as placeholders in your config files, values will be replaced at runtime:  
+- [List of allowed variables](#list-of-allowed-variables)
+
 ## Common parameters (used in all scripts)
 | NAME                  | DESCRIPTION                                                                                                                                                                                                                                                           | TYPE    | DEFAULT                                     | EQUIVALENT PAREMETER IN [RCF SPECS](https://github.com/wegc-juf/tea-metrics/blob/main/docs/TEAmetrics_RCFspecs_v8-3Sep2025.md)   |
 |-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|---------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
@@ -85,7 +93,9 @@ Parameters used in TEAmetrics scripts are documented in the following tables. Ea
 | *regridded_data_path* | Path of output directory.               | path | null    |
 
 
-## List of allowed variables (you can use these as a placeholder in your config files, values will be replaced at runtime)
+## List of allowed variables
+(you can use these as a placeholder in your config files, values will be replaced at runtime)
+
 | NAME         | DESCRIPTION                                |
 |--------------|--------------------------------------------|
 | $script_path | Path to the script that is being executed. |
