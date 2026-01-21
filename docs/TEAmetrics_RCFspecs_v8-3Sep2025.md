@@ -114,7 +114,7 @@ GR_LatLonGrid_Spacing[2]               = 0.5000, 0.5000    ;[deg N, deg E]
 /if Type UTMXYGrid selected:
 GR_UTMXYGridRegion                     = ATR-GRsGrid       ;(string25)
 GR_UTMZone                             = 33N               ;(string3)
-GR_UTMXXGrid_SWcorner[2]               = 5100.00, 100.00   ;[km N, km E]
+GR_UTMXYGrid_SWcorner[2]               = 5100.00, 100.00   ;[km N, km E]
 GR_UTMXYGrid_NEcorner[2]               = 5450.00, 650.00   ;[km N, km E]
 GR_UTMXYGrid_Spacing[2]                = 10.00, 10.00      ;[km N, km E]
 *(range 0 to 10000 km N or S(x+FalseN), 0 to 1000 km E; zones 01N|S-60N|S)*
@@ -127,9 +127,9 @@ GR_LatLonArea_aroundCenterLatLon[2]    = 2.0000, 2.0000    ;[deg S-N, degEq W-E]
 
 ---
 /if Type UTMXYArea selected:
-GR_UTMXYArea_aroundCenterLatLon[2]     = 100.00, 100.00    ;[km S-N, km W-E]
+GR_UTMXYArea_aroundCenterUTMXY[2]     = 100.00, 100.00    ;[km S-N, km W-E]
 *(full width in km of the GR cell’s UTMXY area in South-North and West-East*
-*direction; relative to the cell center location)*
+*direction; around the cell center location)*
 ```
 
 <a name="aggregate-georegions-def"></a>
@@ -186,7 +186,7 @@ AGR_LatLonGrid_Spacing[2]             = 5.00, 10.00        ;[deg N, deg E]
 /if Type UTMXYGrid selected:
 AGR_UTMXYGridRegion                   = ATR-100x100kmAGRs  ;(string25)
 AGR_UTMZone                           = 33N                ;(string3)
-AGR_UTMXXGrid_SWcorner[2]             = 5150.00, 150.00    ;[km N, km E]
+AGR_UTMXYGrid_SWcorner[2]             = 5150.00, 150.00    ;[km N, km E]
 AGR_UTMXYGrid_NEcorner[2]             = 5400.00, 600.00    ;[km N, km E]
 AGR_UTMXYGrid_Spacing[2]              = 50.00, 50.00       ;[km N, km E]
 *(range 0 to 10000 km N or S(x+FalseN), 0 to 1000 km E; zones 01N|S-60N|S)*
@@ -199,9 +199,9 @@ AGR_LatLonArea_aroundCenterLatLon[2]  = 10.00, 20.00       ;[deg S-N, degEq W-E]
 
 ---
 /if Type UTMXYArea selected:
-AGR_UTMXYArea_aroundCenterLatLon[2]   = 100., 100.         ;[km S-N, km W-E]
+AGR_UTMXYArea_aroundCenterUTMXY[2]    = 100., 100.         ;[km S-N, km W-E]
 *(full width in km of the AGR cell’s UTMXY area in South-North and West-East*
-*direction; relative to the cell center location)*
+*direction; around the cell center location)*
 ```
 
 <a name="time-domain-def"></a>
