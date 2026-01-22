@@ -1,3 +1,8 @@
+"""
+Plot Extended Data Figure 5: DET and AEP time series and amplification factors
+"""
+
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator, MultipleLocator
 import numpy as np
@@ -5,6 +10,8 @@ import pandas as pd
 import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
+
+INPUT_PATH = Path('/data/users/hst/TEA-clean/TEA/paper_data/')
 
 PARAMS = ref_cc_params()
 
@@ -14,12 +21,10 @@ def load_aep_data(ds):
     aep = pd.DataFrame(columns=regs)
     aep_af = pd.DataFrame(columns=regs)
     for reg in regs:
-        data = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-            f'DEC_Tx99.0p_{reg}_annual_{ds}_1961to2024.nc')
-        data_af = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/amplification/'
-            f'AF_Tx99.0p_{reg}_annual_{ds}_1961to2024.nc')
+        data = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables' /
+                               f'DEC_Tx99.0p_{reg}_annual_{ds}_1961to2024.nc')
+        data_af = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables/amplification' /
+                                  f'AF_Tx99.0p_{reg}_annual_{ds}_1961to2024.nc')
 
         aep[reg] = data['AEP_GR']
         aep_af[reg] = data_af['AEP_GR_AF']
@@ -32,12 +37,10 @@ def load_det_data():
     det = pd.DataFrame(columns=regs)
     det_af = pd.DataFrame(columns=regs)
     for reg in regs:
-        data = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-            f'DEC_Tx99.0p_{reg}_annual_ERA5_1961to2024.nc')
-        data_af = xr.open_dataset(
-            f'/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/amplification/'
-            f'AF_Tx99.0p_{reg}_annual_ERA5_1961to2024.nc')
+        data = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables' /
+                               f'DEC_Tx99.0p_{reg}_annual_ERA5_1961to2024.nc')
+        data_af = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables/amplification' /
+                                  f'AF_Tx99.0p_{reg}_annual_ERA5_1961to2024.nc')
 
         det[reg] = data['h_avg_GR']
         det_af[reg] = data_af['h_avg_GR_AF']
@@ -248,7 +251,7 @@ def run():
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.35)
 
-    outpath = f'/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/ExtDataFig6.png'
+    outpath = f'./ExtDataFig5.png'
     plt.savefig(outpath, bbox_inches='tight', dpi=300)
 
     # plt.show()

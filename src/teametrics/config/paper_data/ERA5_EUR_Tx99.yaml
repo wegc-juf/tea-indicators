@@ -1,0 +1,52 @@
+# config file for recalculating Tx99 TEA metrics for EUR region using ERA5 data
+common_params:
+  GeoRegion: &GR
+    region: EUR
+    agr: EUR
+    full_region: false
+    grg_grid_spacing: 0.25
+    land_frac_min: 0.25
+  parameter: &PARAM
+    parameter: Tx
+    precip: false
+    threshold: 99
+    threshold_type: perc
+    unit: degC
+    low_extreme: false
+  time_params: &TIME
+    start: 1961
+    end: 2024
+    period: annual
+    ref_period: 1961-1990
+    cc_period: 2010-2024
+  dataset: &DATA
+    dataset: ERA5
+  paths: &PATHS
+    data_path: # add path to daily ERA5 data here
+    statpath: &statpath ./static/
+    maskpath: *statpath
+    mask_sub: masks/
+
+calc_TEA:
+  <<: *GR
+  <<: *PARAM
+  <<: *TIME
+  <<: *DATA
+  <<: *PATHS
+  outpath: ./TEA_results/
+  recalc_threshold: true
+  recalc_daily: true
+  decadal: true
+  spreads: true
+  decadal_only: false
+  recalc_decadal: true
+
+create_region_masks:
+  <<: *GR
+  <<: *PATHS
+  <<: *DATA
+  <<: *PARAM
+  <<: *TIME
+  # use UTM33N for SPARTACUS, because it has been regridded to WEGN grid
+  target_sys: 32633
+  gr_type: polygon

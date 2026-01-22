@@ -1,3 +1,7 @@
+"""
+Plot Figure 7c
+"""
+from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
@@ -6,7 +10,7 @@ import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
 
-PARAMS = ref_cc_params()
+INPUT_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/')
 
 
 def run():
@@ -25,7 +29,7 @@ def run():
     cc_vals = {}
     xv = -4
     for ireg, reg in enumerate(regs):
-        data = xr.open_dataset(f'/data/arsclisys/normal/clim-hydro/TEA-Indicators/results/dec_indicator_variables/'
+        data = xr.open_dataset(INPUT_PATH / 'results/dec_indicator_variables' /
                                f'amplification/AF_Tx99.0p_AGR-{reg}_annual_ERA5_1961to2024.nc')
         if reg == 'EUR':
             axs.fill_between(x=xticks[1:],
@@ -99,9 +103,7 @@ def run():
     plt.yticks(fontsize=12)
 
     fig.subplots_adjust(bottom=0.15, top=0.9, left=0.1, right=0.9)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure4/panels/'
-                'Figure4c_2026-01-07.png',
-                bbox_inches='tight', dpi=300)
+    plt.savefig('./Figure7c.png', bbox_inches='tight', dpi=300)
 
 
 if __name__ == '__main__':

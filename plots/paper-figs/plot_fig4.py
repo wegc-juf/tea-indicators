@@ -1,5 +1,9 @@
+"""
+Plot Figure 4 of the TEA paper
+"""
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
+from pathlib import Path
 from matplotlib.ticker import FormatStrFormatter, FixedLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
@@ -8,19 +12,20 @@ import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
 
+INPUT_DATA_PATH = Path('/data/users/hst/TEA-clean/TEA/paper_data/')
+MASK_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/')
+
 PARAMS = ref_cc_params()
 
 
 def get_data():
-    af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                         'amplification/'
+    af = xr.open_dataset(INPUT_DATA_PATH / 'dec_indicator_variables/amplification' /
                          'AF_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
-    dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    dec = xr.open_dataset(INPUT_DATA_PATH / 'dec_indicator_variables' /
                           'DEC_Tx99.0p_AUT_annual_SPARTACUS_1961to2024.nc')
 
-    nv = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                         'NV_AF_Tx99.0p_AUT.nc')
+    nv = xr.open_dataset(INPUT_DATA_PATH / 'natural_variability' / 'NV_AF_Tx99.0p_AUT.nc')
 
     return af, dec, nv
 
@@ -33,23 +38,23 @@ def gr_plot_params(vname):
                            'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{F}$',
                            'nv_name': 's_EF_AF_NV'},
               'ED_avg_GR_AF': {'col': 'tab:purple',
-                              'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
-                              'title': 'Average Event Duration (events-mean)',
-                              'unit': 'days',
-                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
-                              'nv_name': 's_ED_avg_AF_NV'},
+                               'ylbl': r'ED amplification $(\mathcal{A}^\mathrm{D})$',
+                               'title': 'Average Event Duration (events-mean)',
+                               'unit': 'days',
+                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{D}$',
+                               'nv_name': 's_ED_avg_AF_NV'},
               'EM_avg_GR_AF': {'col': 'tab:orange',
-                              'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
-                              'title': 'Average Exceedance Magnitude (daily-mean)',
-                              'unit': '°C',
-                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
-                              'nv_name': 's_EM_avg_AF_NV'},
+                               'ylbl': r'EM amplification $(\mathcal{A}^\mathrm{M})$',
+                               'title': 'Average Exceedance Magnitude (daily-mean)',
+                               'unit': '°C',
+                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{M}$',
+                               'nv_name': 's_EM_avg_AF_NV'},
               'EA_avg_GR_AF': {'col': 'tab:red',
-                              'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
-                              'title': 'Average Exceedance Area (daily-mean)',
-                              'unit': 'areals',
-                              'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$',
-                              'nv_name': 's_EA_avg_AF_NV'}
+                               'ylbl': r'EA amplification $(\mathcal{A}^\mathrm{A})$',
+                               'title': 'Average Exceedance Area (daily-mean)',
+                               'unit': 'areals',
+                               'acc': r'$\mathcal{A}_\mathrm{CC}^\mathrm{A}$',
+                               'nv_name': 's_EA_avg_AF_NV'}
               }
 
     return params[vname]
@@ -60,11 +65,11 @@ def map_plot_params(vname):
                            'lbl': r'$\mathcal{A}^\mathrm{F}_\mathrm{CC}$',
                            'title': f'Event Frequency (EF) amplification (CC2010-2024)'},
               'ED_avg_AF_CC': {'cmap': 'Purples',
-                              'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
-                              'title': f'Event Duration (ED) amplification (CC2010-2024)'},
+                               'lbl': r'$\mathcal{A}^\mathrm{D}_\mathrm{CC}$',
+                               'title': f'Event Duration (ED) amplification (CC2010-2024)'},
               'EM_avg_AF_CC': {'cmap': 'Oranges',
-                              'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
-                              'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
+                               'lbl': r'$\mathcal{A}^\mathrm{M}_\mathrm{CC}$',
+                               'title': f'Exceedance Magnitude (EM) amplification (CC2010-2024)'}
               }
 
     return params[vname]
@@ -217,13 +222,11 @@ def find_range(data):
 
     aut_min, aut_max = data.min().values, data.max().values
 
-    sea_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                               'SEA_masks_SPARTACUS.nc')
+    sea_mask = xr.open_dataset(MASK_PATH / 'SEA_masks_SPARTACUS.nc')
     sea_data = data * sea_mask.nw_mask
     sea_min, sea_max = sea_data.min().values, sea_data.max().values
 
-    fbr_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                               'FBR_masks_SPARTACUS.nc')
+    fbr_mask = xr.open_dataset(MASK_PATH / 'FBR_masks_SPARTACUS.nc')
     fbr_data = data * fbr_mask.nw_mask
     fbr_min, fbr_max = fbr_data.min().values, fbr_data.max().values
 
@@ -235,8 +238,7 @@ def find_range(data):
 def plot_map(fig, ax, data):
     props = map_plot_params(vname=data.name)
 
-    aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'AUT_masks_SPARTACUS.nc')
+    aut = xr.open_dataset(MASK_PATH / 'AUT_masks_SPARTACUS.nc')
     aut = aut.sel(x=data.x, y=data.y)
     ax.contourf(aut.nw_mask, colors='mistyrose')
 
@@ -304,8 +306,8 @@ def run():
                 va='top', ha='left')
 
     fig.subplots_adjust(wspace=0.2, hspace=0.33)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/figure2/Figure2.png',
-                dpi=300, bbox_inches='tight')
+    plt.savefig('./Figure4.png', dpi=300, bbox_inches='tight')
+
 
 if __name__ == '__main__':
     run()

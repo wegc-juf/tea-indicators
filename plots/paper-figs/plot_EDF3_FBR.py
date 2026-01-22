@@ -1,3 +1,7 @@
+"""
+Plot Extended Data Figure 3 for FBR
+"""
+from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
 from matplotlib.ticker import FormatStrFormatter, FixedLocator
@@ -8,24 +12,24 @@ import xarray as xr
 
 from teametrics.common.general_functions import ref_cc_params
 
+INPUT_PATH = Path('/data/users/hst/TEA-clean/TEA/paper_data/')
+MASK_PATH = Path('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/')
+
 
 def get_data():
-    af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                         'amplification/'
+    af = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables' / 'amplification' /
                          'AF_P24h_7to7_95.0p_FBR_WAS_SPARTACUS_1961to2024.nc')
 
-    nv = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/natural_variability/'
-                         'NV_AF_P24h_7to7_95.0p_SEA.nc')
+    nv = xr.open_dataset(INPUT_PATH / 'natural_variability' / 'NV_AF_P24h_7to7_95.0p_SEA.nc')
 
-    dec = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
+    dec = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables' /
                           'DEC_P24h_7to7_95.0p_FBR_WAS_SPARTACUS_1961to2024.nc')
 
     return af, nv, dec
 
 
 def get_map_data():
-    af = xr.open_dataset('/data/users/hst/TEA-clean/TEA/paper_data/dec_indicator_variables/'
-                         'amplification/'
+    af = xr.open_dataset(INPUT_PATH / 'dec_indicator_variables' / 'amplification' /
                          'AF_P24h_7to7_95.0p_SEA_WAS_SPARTACUS_1961to2024.nc')
 
     return af
@@ -150,13 +154,11 @@ def find_range(data):
 
     data = data.where(data > 0)
 
-    sea_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                               'SEA_masks_SPARTACUS.nc')
+    sea_mask = xr.open_dataset(MASK_PATH / 'SEA_masks_SPARTACUS.nc')
     sea_data = data * sea_mask.nw_mask
     sea_min, sea_max = sea_data.min().values, sea_data.max().values
 
-    fbr_mask = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                               'FBR_masks_SPARTACUS.nc')
+    fbr_mask = xr.open_dataset(MASK_PATH / 'FBR_masks_SPARTACUS.nc')
     fbr_data = data * fbr_mask.nw_mask
     fbr_min, fbr_max = fbr_data.min().values, fbr_data.max().values
 
@@ -168,8 +170,7 @@ def find_range(data):
 def plot_map(fig, ax, data):
     props = map_plot_params(vname=data.name)
 
-    aut = xr.open_dataset('/data/arsclisys/normal/clim-hydro/TEA-Indicators/masks/'
-                          'AUT_masks_SPARTACUS.nc')
+    aut = xr.open_dataset(MASK_PATH / 'AUT_masks_SPARTACUS.nc')
     ax.contourf(aut.x, aut.y, aut.nw_mask, colors='mistyrose')
 
     if data.max() > props['lvls'][-1] and data.min() > props['lvls'][0]:
@@ -239,8 +240,7 @@ def run():
                 va='top', ha='left')
 
     fig.subplots_adjust(left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.4, hspace=0.45)
-    plt.savefig('/nas/home/hst/work/cdrDPS/plots/01_paper_figures/ExtDataFigs/'
-                'ExtDataFig4_FBR.png', dpi=300, bbox_inches='tight')
+    plt.savefig('./ExtDataFig3_FBR.png', dpi=300, bbox_inches='tight')
 
 
 if __name__ == '__main__':
