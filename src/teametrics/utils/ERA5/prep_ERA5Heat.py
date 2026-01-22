@@ -4,7 +4,8 @@ import os
 import xarray as xr
 
 def combine_daily_files():
-    directory = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Heat_GLO/'
+    # directory = '/data/arsclisys/normal/clim-hydro/TEA-Indicators/ERA5Heat_GLO/'
+    directory = '/data/users/hst/TEA/ERA5Heat/'
 
     zip_files = sorted(glob.glob(os.path.join(directory, 'raw', '*')))
 
@@ -14,8 +15,6 @@ def combine_daily_files():
 
         # find year in the filename
         year = file.split('/')[-1].split('_')[1][:4]
-        if int(year) != 2002:
-            continue
 
         # Extract the zip file
         os.system(f'unzip {file} -d {os.path.join(directory, "raw/tmp")}')

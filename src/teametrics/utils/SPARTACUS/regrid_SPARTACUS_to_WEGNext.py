@@ -196,7 +196,7 @@ def run():
     if opts.orography:
         regrid_orog(opts=opts)
     else:
-        input_path = Path(opts.raw_data_path)
+        input_path = Path(opts.input_data_path)
         input_files = sorted(input_path.glob(f'*{opts.parameter.upper()}*.nc'))
         if len(input_files) == 0:
             raise FileNotFoundError(f'No input files found in {input_path}/*{opts.parameter}*.nc')
