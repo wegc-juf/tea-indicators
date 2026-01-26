@@ -2,7 +2,7 @@ import cdsapi
 
 if __name__ == "__main__":
     # YEARS = ["%d" % (y) for y in range(1979, 2022)]
-    YEARS = ['2023', '2024']
+    YEARS = ['2025']
     VARS = ['10m_u_component_of_wind',
             '10m_v_component_of_wind',
             '2m_dewpoint_temperature',
