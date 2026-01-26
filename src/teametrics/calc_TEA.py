@@ -671,10 +671,8 @@ def _load_gr_grid_static(opts):
         gr_grid_areas = gr_grid_areas.area_grid
     except FileNotFoundError:
         if opts.decadal_only:
-            # TODO: make AGR code work without area grid (assuming all grid cells have same area)
-            raise FileNotFoundError(
-                f'No GR area grid found at {gr_grid_areas_file}. GR area grid is needed for '
-                f'AGR calculations.')
+            logger.info(
+                f'No GR area grid found at {gr_grid_areas_file}. Trying to generate one')
         gr_grid_areas = None
     return gr_grid_mask, gr_grid_areas
 
